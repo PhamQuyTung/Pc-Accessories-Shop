@@ -4,7 +4,7 @@ import Logo from '~/assets/logo/logo4.png'; // Import logo image
 import { Link } from 'react-router-dom'; // Import Link từ react-router-dom để sử dụng cho điều hướng
 import Button from '~/components/Button'; // Import Button component nếu cần sử dụng
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; // Import FontAwesomeIcon để sử dụng biểu tượng
-import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'; // Import biểu tượng tìm kiếm từ FontAwesome
+import { faAngleDown, faAngleUp, faArrowDown, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'; // Import biểu tượng tìm kiếm từ FontAwesome
 import DropdownMenu from '~/components/DropdownMenu'; // Import DropdownMenu component nếu cần sử dụng
 
 const productMenuItems = [
@@ -34,18 +34,23 @@ function Header() {
                     </form>
 
                     <a href="/login" className="header__text--login">
-                        <Button outline Small>Đăng nhập</Button>
+                        <Button outline Small>
+                            Đăng nhập
+                        </Button>
                     </a>
 
                     <a href="/register" className="header__text--login">
                         <Button primary2>Đăng ký</Button>
                     </a>
                 </div>
-        
+
                 <div className="header__nav">
                     <a href="/">Trang chủ</a>
                     <a href="/about">Giới thiệu</a>
-                    <DropdownMenu ref={dropdownRef} title="Sản phẩm" items={productMenuItems} />
+                    <span className="header__nav--product">
+                        <DropdownMenu ref={dropdownRef} title="Sản phẩm" items={productMenuItems} />
+                        <FontAwesomeIcon icon={faAngleUp} className="header__nav--icon" />
+                    </span>
                     <a href="/cart">Giỏ hàng</a>
                     <a href="/contact">Liên hệ</a>
                     <a href="/blog">Blog</a>

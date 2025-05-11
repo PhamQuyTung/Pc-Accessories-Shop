@@ -20,6 +20,7 @@ const DropdownMenu = forwardRef(({ title, items }, ref) => {
                     </div>
                 }
                 interactive={true}
+                // visible
                 placement="bottom-start"
                 ref={ref} // Truyền ref vào Tippy
             >

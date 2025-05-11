@@ -92,3 +92,34 @@
 .header__nav a:hover {
     color: #fff; /* Màu chữ đỏ khi hover */
 }
+
+.header__nav--product {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+}
+
+/* Mũi tên ban đầu (faAngleDown) */
+.header__nav--icon {
+    width: 20px;
+    height: 20px;
+    color: #fff; /* Màu icon trắng */
+    transition: transform 0.3s ease; /* Hiệu ứng mượt mà khi xoay */
+    transform: rotate(0deg); /* Mặc định mũi tên xuống */
+}
+
+/* Khi hover vào phần "Sản phẩm" hoặc submenu */
+.header__nav--product:hover .header__nav--icon {
+    transform: rotate(180deg); /* Xoay 180 độ để chuyển thành faAngleUp */
+}
+
+/* Keyframes cho hiệu ứng mũi tên */
+@keyframes arrowDownUp {
+    0% {
+        transform: rotate(0deg); /* Mũi tên xuống */
+    }
+    100% {
+        transform: rotate(180deg); /* Mũi tên lên */
+    }
+}
