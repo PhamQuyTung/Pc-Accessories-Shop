@@ -115,8 +115,8 @@ span.Button_title__yIuSg {
     border-color: currentColor;
 
     &:hover {
-        border-color: currentColor; //Xử lý vấn đề xung đột hover giữa các nút outline và rounded
-        color: var(--title-color);
+        border-color: var(--black-color); //Xử lý vấn đề xung đột hover giữa các nút outline và rounded
+        color: var(--white-color);
         background-color: var(--black-color);
     }
 }

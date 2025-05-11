@@ -4,7 +4,8 @@ import Product from '../pages/Product';
 import Cart from '../pages/Cart';
 import Contact from '../pages/Contact';
 import Blog from '../pages/Blog';
-import Login from '../pages/Login';
+import Login from '../pages/Login/Login';
+import Register from '../pages/Register/Register';
 import Promotion from '../pages/Promotion';
 import MainLayout from '../layout/MainLayout';
 import AuthLayout from '../layout/AuthLayout';
@@ -18,6 +19,7 @@ const routes = [
     { path: '/blog', element: <Blog />, layout: MainLayout },
     { path: '/promotion', element: <Promotion />, layout: MainLayout },
     { path: '/login', element: <Login />, layout: AuthLayout },
+    { path: '/register', element: <Register />, layout: AuthLayout },
 ];
 
 export default routes;

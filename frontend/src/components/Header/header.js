@@ -33,18 +33,15 @@ function Header() {
                         </button>
                     </form>
 
-                    <Button outline Small>
-                        <a href="/login" className="header__text--login">
-                            Đăng nhập
-                        </a>
-                    </Button>
-                    <Button primary2>
-                        <a href="/login" className="header__text--login">
-                            Đăng ký
-                        </a>
-                    </Button>
-                </div>
+                    <a href="/login" className="header__text--login">
+                        <Button outline Small>Đăng nhập</Button>
+                    </a>
 
+                    <a href="/register" className="header__text--login">
+                        <Button primary2>Đăng ký</Button>
+                    </a>
+                </div>
+        
                 <div className="header__nav">
                     <a href="/">Trang chủ</a>
                     <a href="/about">Giới thiệu</a>
