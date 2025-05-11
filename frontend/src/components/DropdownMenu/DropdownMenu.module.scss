@@ -1,0 +1,29 @@
+/* filepath: d:\Workspace2\MyProjects\pc_accessories\frontend\src\components\DropdownMenu\DropdownMenu.module.scss */
+.dropdown-menu {
+    background-color: #000; /* Nền đen */
+    border: 1px solid #ff0000; /* Viền đỏ */
+    border-radius: 5px;
+    padding: 10px 0;
+    min-width: 150px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-menu__item {
+    display: block;
+    padding: 10px 20px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.dropdown-menu__item:hover {
+    background-color: #ff0000; /* Đổi màu nền khi hover */
+}
+
+.dropdown-menu__title {
+    cursor: pointer;
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+}

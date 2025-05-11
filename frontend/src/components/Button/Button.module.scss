@@ -1,0 +1,155 @@
+//Thuộc tính wrapper mặc định của button là phải có các thuộc tính css này
+.wrapper {
+    --theme-color: #0d5ef4;
+    --theme-color2: #f20f10;
+    --title-color: #0f2239;
+    --body-color: #4d5765;
+    --smoke-color: #f3f7fb;
+    --black-color: #000000;
+    --white-color: #ffffff;
+    --border-color: #ffffff33;
+    --light-color: #72849b;
+    --yellow-color: #ffb539;
+    --success-color: #28a745;
+    --error-color: #dc3545;
+    --border-color: #ecf1f9;
+    --transition: all 0.3s linear;
+    --animation-fadeIn: slideIn 0.3s ease forwards;
+
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-family: var(--font-family-primary);
+    text-transform: uppercase;
+    min-width: 100px;
+    padding: 9px 16px;
+    border-radius: 5px;
+    background-color: var(--white);
+    border: 1px solid transparent;
+    cursor: pointer;
+    user-select: none;
+    transition: var(--transition);
+
+    //CSS các nút đứng cạnh nhau
+    + .wrapper {
+        margin-left: 16px;
+    }
+
+    //CSS nút trạng thái disabled
+    &.disabled {
+        pointer-events: none;
+        opacity: 0.5;
+    }
+}
+
+span.Button_title__yIuSg {
+    color: var(--title-color) !important;
+}
+
+//Xử lý icon trái phải đều cách title
+.icon + .title,
+.title + .icon {
+    margin-left: 8px;
+}
+
+.icon {
+    width: 12px;
+    height: 14px;
+    display: flex;
+    text-align: center;
+    align-items: center;
+}
+
+//Button types
+.rounded {
+    border-radius: 24px;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.22);
+    border-color: rgba(22, 24, 35, 0.12);
+
+    &:hover {
+        background-color: rgba(22, 24, 35, 0.03);
+        border-color: rgba(22, 24, 35, 0.2);
+    }
+} //Xử lý vấn đề xung đột giữa hover các nút primary và rounded. Cách khắc phục: ưu tiên primary
+
+.primary {
+    color: var(--white-color);
+    background-color: var(--theme-color);
+    // border-color: var(--theme-color); //Đã xử lý vấn đề: Border
+
+    &:hover {
+        background-color: var(--title-color); //Đã xử lý vấn đề: Border
+        // background: linear-gradient(0deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.06)), rgb(254, 44, 85);
+    }
+}
+
+.primary2 {
+    color: var(--white-color);
+    background-color: var(--black-color);
+    // border-color: var(--theme-color); //Đã xử lý vấn đề: Border
+
+    &:hover {
+        background-color: transparent; //Đã xử lý vấn đề: Border
+        border: 1px solid var(--black-color); //Đã xử lý vấn đề: Border
+        // background: linear-gradient(0deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.06)), rgb(254, 44, 85);
+    }
+}
+
+.primary3 {
+    color: var(--title-color);
+    background-color: var(--white-color);
+    // border-color: var(--theme-color); //Đã xử lý vấn đề: Border
+
+    &:hover {
+        background-color: var(--title-color); //Đã xử lý vấn đề: Border
+        color: var(--white-color);
+        // background: linear-gradient(0deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.06)), rgb(254, 44, 85);
+    }
+}
+
+.outline {
+    color: var(--black-color);
+    border-color: currentColor;
+
+    &:hover {
+        border-color: currentColor; //Xử lý vấn đề xung đột hover giữa các nút outline và rounded
+        color: var(--title-color);
+        background-color: var(--black-color);
+    }
+}
+
+.text {
+    background-color: transparent !important;
+    color: var(--theme-color) !important;
+    font-weight: 500;
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+//Button size
+.Small {
+    // width: 100%;
+    height: 35.8px;
+}
+
+.Medium {
+    // width: 100%;
+    height: 45.8px;
+    padding: 20px;
+}
+
+.Large {
+    // width: 100%;
+    height: 50.8px;
+    padding: 20px;
+}
+
+.ExtraLarge {
+    // width: 100%;
+    height: 55.8px;
+    padding: 20px;
+}
