@@ -5,7 +5,7 @@ const morgan = require('morgan');
 const methodOverride = require('method-override');
 const { engine } = require('express-handlebars');
 const cookieParser = require('cookie-parser');
-const validateMiddleware = require('./app/middlewares/validateMiddleware');
+// const validateMiddleware = require('./app/middlewares/validateMiddleware');
 const authRoutes = require('./routes/authRoutes'); // Đảm bảo đúng đường dẫn
 const connectDB = require('./config/db');
 const dotenv = require('dotenv');
@@ -28,7 +28,7 @@ app.use(morgan('combined'));
 app.use(cookieParser());
 
 // Sử dụng route auth
-app.use('/auth', authRoutes); // Đảm bảo rằng authRoutes được sử dụng đúng
+app.use('/api/auth', authRoutes); // Đảm bảo rằng authRoutes được sử dụng đúng
 
 // Cấu hình view engine
 app.engine(

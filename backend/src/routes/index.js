@@ -10,7 +10,7 @@ function route(app) {
 
     // Route cho đăng nhập, đăng ký
     console.log('Register route: ', authRoutes);
-    app.use('/auth', authRoutes);
+    app.use('/api/auth', authRoutes);
 
     // Route cho sản phẩm
     // app.use('/products', productRoutes);

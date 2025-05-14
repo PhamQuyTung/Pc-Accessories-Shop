@@ -106,7 +106,7 @@ function Login() {
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
-                        onBlur={handleBlur}
+                        // onBlur={handleBlur}
                         error={errors.name}
                         placeholder="Nhập tên đăng nhập..."
                     />
@@ -116,7 +116,7 @@ function Login() {
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
-                        onBlur={handleBlur}
+                        // onBlur={handleBlur}
                         error={errors.password}
                         placeholder="Nhập mật khẩu..."
                     />
