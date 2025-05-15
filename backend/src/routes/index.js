@@ -1,4 +1,5 @@
 const authRoutes = require('./authRoutes');
+const errorHandle = require('../helpers/error.handle');
 // const productRoutes = require('./productRoutes');
 // const adminRoutes = require('./adminRoutes'); // nếu có
 
@@ -11,6 +12,9 @@ function route(app) {
     // Route cho đăng nhập, đăng ký
     console.log('Register route: ', authRoutes);
     app.use('/api/auth', authRoutes);
+
+    // Trung tâm xử lý lỗi của website
+    app.use(errorHandle);
 
     // Route cho sản phẩm
     // app.use('/products', productRoutes);
