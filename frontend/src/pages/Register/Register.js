@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import InputField from '../../components/InputField/InputField';
-import styles from './Register.module.scss';
 import classNames from 'classnames/bind';
+
+import styles from './Register.module.scss';
+import InputField from '../../components/InputField/InputField';
 
 const cx = classNames.bind(styles);
 
@@ -14,31 +15,39 @@ function Register() {
     });
 
     const [errors, setErrors] = useState({});
+    const [serverError, setServerError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        // Cập nhật giá trị input
         setFormData({ ...formData, [name]: value });
 
-        // Xóa lỗi khi người dùng bắt đầu nhập
         if (errors[name]) {
             setErrors({ ...errors, [name]: '' });
         }
+
+        // Clear server error on typing
+        setServerError('');
+        setSuccessMessage('');
     };
 
     const handleBlur = (e) => {
         const { name, value } = e.target;
 
-        // Kiểm tra nếu input bị bỏ trống khi mất focus
         if (!value.trim()) {
             setErrors((prevErrors) => ({
                 ...prevErrors,
-                [name]: `${name === 'confirmPassword' ? 'Mật khẩu xác nhận' : name === 'name' ? 'Tên đăng nhập' : name.charAt(0).toUpperCase() + name.slice(1)} không được để trống.`,
+                [name]: `${
+                    name === 'confirmPassword'
+                        ? 'Mật khẩu xác nhận'
+                        : name === 'name'
+                        ? 'Tên đăng nhập'
+                        : name.charAt(0).toUpperCase() + name.slice(1)
+                } không được để trống.`,
             }));
         }
 
-        // Kiểm tra thêm các lỗi cụ thể (ví dụ: email không hợp lệ)
         if (name === 'email' && value.trim() && !/\S+@\S+\.\S+/.test(value)) {
             setErrors((prevErrors) => ({
                 ...prevErrors,
@@ -74,7 +83,7 @@ function Register() {
         }
 
         if (!formData.confirmPassword) {
-            newErrors.confirmPassword = 'Mật khẩu không được để trống.';
+            newErrors.confirmPassword = 'Mật khẩu xác nhận không được để trống.';
         }
 
         if (formData.confirmPassword !== formData.password) {
@@ -84,15 +93,42 @@ function Register() {
         return newErrors;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const validationErrors = validate();
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
-        } else {
-            setErrors({});
-            console.log('Form submitted successfully:', formData);
-            // Thực hiện logic gửi dữ liệu lên server tại đây
+            return;
+        }
+
+        try {
+            const res = await fetch('http://localhost:5000/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: formData.name,
+                    email: formData.email,
+                    password: formData.password,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                setServerError(data.message || 'Đăng ký thất bại.');
+            } else {
+                setSuccessMessage('Đăng ký thành công! Bạn có thể đăng nhập.');
+                setFormData({
+                    name: '',
+                    email: '',
+                    password: '',
+                    confirmPassword: '',
+                });
+            }
+        } catch (err) {
+            setServerError('Lỗi máy chủ. Vui lòng thử lại sau.');
         }
     };
 
@@ -100,7 +136,11 @@ function Register() {
         <div className={cx('container')}>
             <div className={cx('card')}>
                 <h2 className={cx('title')}>Đăng Ký</h2>
-                <form action="#" className={cx('form')} onSubmit={handleSubmit}>
+
+                {serverError && <p className={cx('error-msg')}>{serverError}</p>}
+                {successMessage && <p className={cx('success-msg')}>{successMessage}</p>}
+
+                <form className={cx('form')} onSubmit={handleSubmit}>
                     <InputField
                         label="Tên đăng nhập"
                         name="name"
@@ -144,9 +184,8 @@ function Register() {
                         Đăng Ký
                     </button>
 
-                    {/* checkbox */}
                     <div className={cx('checkbox')}>
-                        <input type="checkbox" id="terms" name="terms" />{' '}
+                        <input type="checkbox" id="terms" name="terms" />
                         <label htmlFor="terms">Tôi đồng ý với các điều khoản và điều kiện.</label>
                     </div>
 
@@ -154,7 +193,6 @@ function Register() {
                         <p className={cx('footer-text')}>
                             Bạn đã có tài khoản? <a href="/login">Đăng nhập</a>
                         </p>
-
                         <p className={cx('footer-text')}>
                             Quay về <a href="/">trang chủ</a>
                         </p>

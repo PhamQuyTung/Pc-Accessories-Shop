@@ -9,12 +9,19 @@ const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/authRoutes'); // Đảm bảo đúng đường dẫn
 const connectDB = require('./config/db');
 const dotenv = require('dotenv');
+const cors = require('cors');
 
 // Sử dụng dotenv để quản lý biến môi trường
 dotenv.config();
 
 // Khởi tạo ứng dụng
 const app = express();
+
+// Cấu hình CORS cho phép từ frontend (localhost:3000)
+app.use(cors({
+    origin: 'http://localhost:3000', // Hoặc dùng '*' nếu bạn đang thử nghiệm
+    credentials: true,
+}));
 
 // Kết nối database
 connectDB();
