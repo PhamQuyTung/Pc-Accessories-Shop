@@ -3,6 +3,8 @@ import axios from 'axios';
 import InputField from '~/components/InputField';
 import styles from './Login.module.scss';
 import classNames from 'classnames/bind';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '~/components/ToastMessager/ToastMessager';
 
 const cx = classNames.bind(styles);
 
@@ -14,6 +16,8 @@ function Login() {
 
     const [errors, setErrors] = useState({});
     const [serverError, setServerError] = useState('');
+    const navigate = useNavigate();
+    const toast = useToast();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -69,14 +73,18 @@ function Login() {
         try {
             const res = await axios.post('http://localhost:5000/api/auth/login', formData);
             // Xử lý khi đăng nhập thành công (ví dụ: lưu token, chuyển trang...)
-            alert(res.data.message);
+            toast('Đăng nhập thành công!', 'success');
+            setTimeout(() => navigate('/'), 1500);
         } catch (err) {
             if (err.response && err.response.data && err.response.data.errors) {
                 setErrors(err.response.data.errors);
+                toast('Vui lòng kiểm tra lại thông tin!', 'error');
             } else if (err.response && err.response.data && err.response.data.message) {
                 setServerError(err.response.data.message);
+                toast(err.response.data.message, 'error');
             } else {
-                setServerError('Đã có lỗi xảy ra. Vui lòng thử lại!');
+                setServerError('Tên đăng nhập hoặc mật khẩu không chính xác.');
+                toast('Tên đăng nhập hoặc mật khẩu không chính xác.', 'error');
             }
         }
     };

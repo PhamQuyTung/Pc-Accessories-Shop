@@ -1,0 +1,22 @@
+.toast {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    min-width: 200px;
+    padding: 16px 24px;
+    border-radius: 6px;
+    color: #fff;
+    font-weight: 600;
+    z-index: 9999;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    opacity: 0.95;
+    animation: fadeInOut 2s;
+}
+.toast.success { background: #28a745; }
+.toast.error { background: #dc3545; }
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(-20px);}
+    10% { opacity: 1; transform: translateY(0);}
+    90% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-20px);}
+}

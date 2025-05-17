@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import classNames from 'classnames/bind';
+import { useNavigate } from 'react-router-dom';
 
 import styles from './Register.module.scss';
 import InputField from '../../components/InputField/InputField';
+import { useToast } from '../../components/ToastMessager/ToastMessager';
 
 const cx = classNames.bind(styles);
 
@@ -16,20 +18,17 @@ function Register() {
 
     const [errors, setErrors] = useState({});
     const [serverError, setServerError] = useState('');
-    const [successMessage, setSuccessMessage] = useState('');
+    const toast = useToast();
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-
         setFormData({ ...formData, [name]: value });
 
         if (errors[name]) {
             setErrors({ ...errors, [name]: '' });
         }
-
-        // Clear server error on typing
         setServerError('');
-        setSuccessMessage('');
     };
 
     const handleBlur = (e) => {
@@ -118,17 +117,22 @@ function Register() {
 
             if (!res.ok) {
                 setServerError(data.message || 'Đăng ký thất bại.');
+                toast(data.message || 'Đăng ký thất bại.', 'error');
             } else {
-                setSuccessMessage('Đăng ký thành công! Bạn có thể đăng nhập.');
+                toast('Đăng ký thành công! Bạn có thể đăng nhập.', 'success');
                 setFormData({
                     name: '',
                     email: '',
                     password: '',
                     confirmPassword: '',
                 });
+                setTimeout(() => {
+                    navigate('/login');
+                }, 1500); // Chờ 1.5s cho toast hiển thị rồi chuyển trang
             }
         } catch (err) {
             setServerError('Lỗi máy chủ. Vui lòng thử lại sau.');
+            toast('Lỗi máy chủ. Vui lòng thử lại sau.', 'error');
         }
     };
 
@@ -136,10 +140,6 @@ function Register() {
         <div className={cx('container')}>
             <div className={cx('card')}>
                 <h2 className={cx('title')}>Đăng Ký</h2>
-
-                {serverError && <p className={cx('error-msg')}>{serverError}</p>}
-                {successMessage && <p className={cx('success-msg')}>{successMessage}</p>}
-
                 <form className={cx('form')} onSubmit={handleSubmit}>
                     <InputField
                         label="Tên đăng nhập"
