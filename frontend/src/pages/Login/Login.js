@@ -73,7 +73,13 @@ function Login() {
         try {
             const res = await axios.post('http://localhost:5000/api/auth/login', formData);
             // Xử lý khi đăng nhập thành công (ví dụ: lưu token, chuyển trang...)
+            // ✅ Lưu token và user vào localStorage
+            localStorage.setItem('token', res.data.token);
+            localStorage.setItem('user', JSON.stringify(res.data.user));
+
             toast('Đăng nhập thành công!', 'success');
+
+            // ✅ Chuyển hướng sau 1.5s
             setTimeout(() => navigate('/'), 1500);
         } catch (err) {
             if (err.response && err.response.data && err.response.data.errors) {
@@ -118,8 +124,7 @@ function Login() {
 
                     <div className={cx('remember-forgot')}>
                         <label className={cx('remember')}>
-                            <input type="checkbox" />{' '}
-                            Ghi nhớ mật khẩu
+                            <input type="checkbox" /> Ghi nhớ mật khẩu
                         </label>
                         <a href="/forgot-password" className={cx('forgot-password')}>
                             Quên mật khẩu?

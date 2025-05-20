@@ -17,6 +17,7 @@ const productMenuItems = [
 
 function Header() {
     const dropdownRef = useRef();
+    const user = JSON.parse(localStorage.getItem('user')); // Lấy thông tin user từ localStorage
 
     return (
         <header className="header">
@@ -33,15 +34,24 @@ function Header() {
                         </button>
                     </form>
 
-                    <a href="/login" className="header__text--login">
-                        <Button outline Small>
-                            Đăng nhập
-                        </Button>
-                    </a>
+                    {/* Nếu có user thì hiển thị tên user không thì hiển thị button đăng kí/đăng nhập */}
+                    {user ? (
+                        <div className="header__user">
+                            <span className="header__user-name">{user.name}</span>
+                        </div>
+                    ) : (
+                        <>
+                            <a href="/login" className="header__text--login">
+                                <Button outline Small>
+                                    Đăng nhập
+                                </Button>
+                            </a>
 
-                    <a href="/register" className="header__text--login">
-                        <Button primary2>Đăng ký</Button>
-                    </a>
+                            <a href="/register" className="header__text--login">
+                                <Button primary2>Đăng ký</Button>
+                            </a>
+                        </>
+                    )}
                 </div>
 
                 <div className="header__nav">
