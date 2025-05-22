@@ -1,11 +1,12 @@
 import React, { useRef } from 'react';
-import './header.css'; // Import file CSS để style
-import Logo from '~/assets/logo/logo4.png'; // Import logo image
-import { Link } from 'react-router-dom'; // Import Link từ react-router-dom để sử dụng cho điều hướng
-import Button from '~/components/Button'; // Import Button component nếu cần sử dụng
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; // Import FontAwesomeIcon để sử dụng biểu tượng
-import { faAngleDown, faAngleUp, faArrowDown, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'; // Import biểu tượng tìm kiếm từ FontAwesome
-import DropdownMenu from '~/components/DropdownMenu'; // Import DropdownMenu component nếu cần sử dụng
+import './header.css';
+import Logo from '~/assets/logo/logo4.png';
+import { Link, useNavigate } from 'react-router-dom';
+import Button from '~/components/Button';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faAngleUp, faBox, faClockRotateLeft, faHand, faMagnifyingGlass, faRightFromBracket, faUser } from '@fortawesome/free-solid-svg-icons';
+import DropdownMenu from '~/components/DropdownMenu';
+import Tippy from '@tippyjs/react';
 
 const productMenuItems = [
     { label: 'Laptop', href: '/products/laptops' },
@@ -17,7 +18,28 @@ const productMenuItems = [
 
 function Header() {
     const dropdownRef = useRef();
-    const user = JSON.parse(localStorage.getItem('user')); // Lấy thông tin user từ localStorage
+    const navigate = useNavigate();
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    const handleLogout = async () => {
+        try {
+            await fetch('http://localhost:5000/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Nếu cần xác thực, gửi token ở header
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                },
+            });
+        } catch (err) {
+            // Có thể toast lỗi nếu muốn
+        }
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        // ✅ Chuyển hướng sau 1.5s
+        setTimeout(() => navigate('/'), 1500);
+        window.location.reload();
+    };
 
     return (
         <header className="header">
@@ -37,7 +59,38 @@ function Header() {
                     {/* Nếu có user thì hiển thị tên user không thì hiển thị button đăng kí/đăng nhập */}
                     {user ? (
                         <div className="header__user">
-                            <span className="header__user-name">{user.name}</span>
+                            <Tippy
+                                content={
+                                    <div className="header__user-dropdown">
+                                        <p className="dropdown__greeting">
+                                            <FontAwesomeIcon icon={faHand} className='icon-hand' />
+                                            <strong>Xin chào, {user.name}</strong>
+                                        </p>
+                                        <Link to="/orders" className="dropdown__item">
+                                            <FontAwesomeIcon icon={faBox} />
+                                            <span>Đơn hàng của tôi</span>
+                                        </Link>
+                                        <Link to="/recent" className="dropdown__item">
+                                            <FontAwesomeIcon icon={faClockRotateLeft} />
+                                            <span>Đã xem gần đây</span>
+                                        </Link>
+                                        <button className="dropdown__item logout" onClick={handleLogout}>
+                                            <FontAwesomeIcon icon={faRightFromBracket} />
+                                            <span>Đăng xuất</span>
+                                        </button>
+                                    </div>
+                                }
+                                interactive={true}
+                                placement="bottom-start"
+                                offset={[0, 10]}
+                            >
+                                <div className="header__user-box">
+                                    <FontAwesomeIcon icon={faUser} className="user-icon" />
+                                    <div className="user-text">
+                                        <span className="name">{user.name}</span>
+                                    </div>
+                                </div>
+                            </Tippy>
                         </div>
                     ) : (
                         <>

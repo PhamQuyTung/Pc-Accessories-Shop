@@ -14,7 +14,6 @@ function Login() {
         password: '',
     });
 
-    const [errors, setErrors] = useState({});
     const [serverError, setServerError] = useState('');
     const navigate = useNavigate();
     const toast = useToast();
@@ -22,70 +21,20 @@ function Login() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
-
-        // Xóa lỗi khi người dùng bắt đầu nhập
-        if (errors[name]) {
-            setErrors({ ...errors, [name]: '' });
-        }
         setServerError('');
-    };
-
-    const handleBlur = (e) => {
-        const { name, value } = e.target;
-
-        // Kiểm tra nếu input bị bỏ trống khi mất focus
-        if (!value.trim()) {
-            setErrors((prevErrors) => ({
-                ...prevErrors,
-                [name]: `${name === 'name' ? 'Tên đăng nhập' : name.charAt(0).toUpperCase() + name.slice(1)} không được để trống.`,
-            }));
-        }
-        // Có thể bổ sung validate khác nếu cần
-    };
-
-    const validate = () => {
-        const newErrors = {};
-
-        if (!formData.name.trim()) {
-            newErrors.name = 'Tên đăng nhập không được để trống.';
-        } else if (formData.name.length < 10 || formData.name.length > 50) {
-            newErrors.name = 'Tên đăng nhập phải có độ dài từ 10 đến 50 ký tự.';
-        }
-
-        if (!formData.password) {
-            newErrors.password = 'Mật khẩu không được để trống.';
-        } else if (formData.password.length < 10 || formData.password.length > 50) {
-            newErrors.password = 'Mật khẩu phải có độ dài từ 10 đến 50 ký tự.';
-        }
-
-        return newErrors;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const validationErrors = validate();
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors(validationErrors);
-            return;
-        }
-        setErrors({});
         setServerError('');
         try {
             const res = await axios.post('http://localhost:5000/api/auth/login', formData);
-            // Xử lý khi đăng nhập thành công (ví dụ: lưu token, chuyển trang...)
-            // ✅ Lưu token và user vào localStorage
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('user', JSON.stringify(res.data.user));
-
             toast('Đăng nhập thành công!', 'success');
-
-            // ✅ Chuyển hướng sau 1.5s
             setTimeout(() => navigate('/'), 1500);
         } catch (err) {
-            if (err.response && err.response.data && err.response.data.errors) {
-                setErrors(err.response.data.errors);
-                toast('Vui lòng kiểm tra lại thông tin!', 'error');
-            } else if (err.response && err.response.data && err.response.data.message) {
+            if (err.response && err.response.data && err.response.data.message) {
                 setServerError(err.response.data.message);
                 toast(err.response.data.message, 'error');
             } else {
@@ -105,8 +54,6 @@ function Login() {
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={errors.name}
                         placeholder="Nhập tên đăng nhập..."
                     />
                     <InputField
@@ -115,8 +62,6 @@ function Login() {
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={errors.password}
                         placeholder="Nhập mật khẩu..."
                     />
 

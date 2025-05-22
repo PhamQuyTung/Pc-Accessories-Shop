@@ -64,4 +64,14 @@ module.exports = {
             message: 'Đăng ký thành công',
         });
     },
+
+    logout: async (req, res) => {
+        // Xóa token hoặc làm gì đó để đăng xuất
+        await Token.deleteOne({ token: req.body.refreshToken });
+        
+        return res.status(200).json({
+            statusCode: 200,
+            message: 'Đăng xuất thành công',
+        });
+    },
 };
