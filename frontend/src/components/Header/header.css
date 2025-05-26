@@ -142,7 +142,7 @@
     }
 
     .header__user-dropdown {
-        min-width: 200px;
+        min-width: 323px;
         background: white;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         border-radius: 8px;
@@ -156,6 +156,12 @@
             margin-bottom: 5px;
             font-weight: 500;
             padding: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            border-radius: 6px;
+            border-bottom: 1px solid #e9e9e9;
 
             & .icon-hand {
                 font-size: 1.6rem;
@@ -166,6 +172,10 @@
             & strong {
                 font-size: 1.6rem;
                 color: #111111; /* Màu chữ đỏ */
+            }
+
+            &:hover {
+                background: #f2f2f2;
             }
         }
 
@@ -179,22 +189,68 @@
             text-decoration: none;
             transition: background 0.2s;
 
+            & span {
+                font-size: 1.6rem;
+                color: #111111; /* Màu chữ đen */
+            }
+
             &:hover {
                 background: #f2f2f2;
             }
 
-            &.logout {
-                background: none;
-                border: none;
-                cursor: pointer;
-                color: #e53935;
+            & svg {
+                width: 24px;
+                height: 24px;
+                flex-shrink: 0;
+                vertical-align: middle;
+                display: inline-block;
+            }
+        }
 
-                &:hover {
-                    background: #fdecea;
-                }
+        .dropdown__logout {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            border-radius: 6px;
+            color: #333;
+            text-decoration: none;
+            transition: background 0.2s;
+            cursor: pointer;
+            border-top: 1px solid #e9e9e9;
+
+            &:hover {
+                background: #f2f2f2;
             }
         }
     }
+}
+
+.dropdown__line {
+    width: 100%;
+    height: 1px;
+    background: #e0e0e0;
+    margin: 8px 0;
+}
+
+.tippy-box {
+    position: relative;
+    background: #fff !important;
+    color: #fff;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: normal;
+    outline: 0;
+    transition-property: transform, visibility, opacity;
+}
+
+.tippy-arrow {
+    color: #fff !important;
+}
+
+.tippy-content {
+    padding: 0 !important;
 }
 
 .header__nav {

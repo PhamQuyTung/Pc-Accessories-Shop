@@ -4,9 +4,18 @@ import Logo from '~/assets/logo/logo4.png';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '~/components/Button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faAngleUp, faBox, faClockRotateLeft, faHand, faMagnifyingGlass, faRightFromBracket, faUser } from '@fortawesome/free-solid-svg-icons';
+import {
+    faAngleUp,
+    faBox,
+    faClockRotateLeft,
+    faHand,
+    faMagnifyingGlass,
+    faRightFromBracket,
+    faUser,
+} from '@fortawesome/free-solid-svg-icons';
 import DropdownMenu from '~/components/DropdownMenu';
 import Tippy from '@tippyjs/react';
+import { EyeIcon, HandWaveIcon, ListItemIcon, OutTheDoor } from '~/components/Icons';
 
 const productMenuItems = [
     { label: 'Laptop', href: '/products/laptops' },
@@ -62,27 +71,33 @@ function Header() {
                             <Tippy
                                 content={
                                     <div className="header__user-dropdown">
-                                        <p className="dropdown__greeting">
-                                            <FontAwesomeIcon icon={faHand} className='icon-hand' />
+                                        <Link to="/profile" className="dropdown__greeting">
+                                            <HandWaveIcon />
                                             <strong>Xin chào, {user.name}</strong>
-                                        </p>
+                                        </Link>
+
                                         <Link to="/orders" className="dropdown__item">
-                                            <FontAwesomeIcon icon={faBox} />
+                                            <ListItemIcon />
                                             <span>Đơn hàng của tôi</span>
                                         </Link>
+
                                         <Link to="/recent" className="dropdown__item">
-                                            <FontAwesomeIcon icon={faClockRotateLeft} />
+                                            <span className="icon-wrapper">
+                                                <EyeIcon />
+                                            </span>
                                             <span>Đã xem gần đây</span>
                                         </Link>
-                                        <button className="dropdown__item logout" onClick={handleLogout}>
-                                            <FontAwesomeIcon icon={faRightFromBracket} />
-                                            <span>Đăng xuất</span>
-                                        </button>
+
+                                        <Link to="#" className="dropdown__logout" onClick={handleLogout}>
+                                            <OutTheDoor />
+                                            <span className="logout">Đăng xuất</span>
+                                        </Link>
                                     </div>
                                 }
                                 interactive={true}
-                                placement="bottom-start"
+                                placement="bottom-end"
                                 offset={[0, 10]}
+                                // visible
                             >
                                 <div className="header__user-box">
                                     <FontAwesomeIcon icon={faUser} className="user-icon" />

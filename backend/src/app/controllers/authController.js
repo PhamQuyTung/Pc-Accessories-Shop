@@ -3,21 +3,33 @@ const jwt = require('jsonwebtoken');
 const accountModel = require('../models/account');
 const accountValid = require('../../validations/account');
 const ErrorResponse = require('../../helpers/ErrorResponse');
+const Token = require('../models/token');
 
 const JWT_SECRET = '9b1c2f3e4d5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7d8f9b0b1c'; // 🔐 Nên để trong biến môi trường .env
 
 module.exports = {
     login: async (req, res) => {
+        console.log(req.body);
         const { name, password } = req.body;
 
+        // ✅ Kiểm tra xem tên đăng nhập và mật khẩu có được cung cấp không
         const account = await accountModel.findOne({ name: name });
 
+        console.log('Tài khoản tìm được:', account);
+        console.log('Mật khẩu nhập vào:', password);
+        console.log('Mật khẩu trong DB:', account.password);
+
+        // ✅ Sửa chỗ này:
+        const checkPass = await bcrypt.compare(password, account.password);
+        console.log('Kết quả check mật khẩu:', checkPass);
+
+
+        // ✅ Kiểm tra xem tài khoản có tồn tại không
         if (!account) {
             throw new ErrorResponse(400, "Tài khoản hoặc mật khẩu không đúng");
         }
 
-        const checkPass = bcrypt.compareSync(password, account.password);
-
+        // Nếu mật khẩu không khớp, trả về lỗi
         if (!checkPass) {
             throw new ErrorResponse(400, "Tài khoản hoặc mật khẩu không đúng");
         }
@@ -28,6 +40,12 @@ module.exports = {
             JWT_SECRET,                                 // secret key
             { expiresIn: '1h' }                          // thời hạn token
         );
+
+        // ✅ Lưu token vào cơ sở dữ liệu (nếu cần)
+        await Token.create({
+            userId: account._id,
+            token: token,
+        });
 
         // ✅ Trả về token + thông tin user
         return res.status(200).json({
@@ -53,9 +71,11 @@ module.exports = {
             });
         }
 
-        // ✅ Hash password trước khi lưu
-        const salt = bcrypt.genSaltSync(10);
-        value.password = bcrypt.hashSync(value.password, salt);
+        // Bỏ đi vì đã hash mật khẩu trong mô hình account
+        // // ✅ Hash password trước khi lưu
+        // const salt = await bcrypt.genSalt(10);
+        // value.password = await bcrypt.hash(value.password, salt);
+
 
         const account = await accountModel.create(value);
 
