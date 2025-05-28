@@ -18,6 +18,7 @@ function Register() {
 
     const [errors, setErrors] = useState({});
     const [serverError, setServerError] = useState('');
+    const [isChecked, setIsChecked] = useState(false);
     const toast = useToast();
     const navigate = useNavigate();
 
@@ -41,8 +42,8 @@ function Register() {
                     name === 'confirmPassword'
                         ? 'Mật khẩu xác nhận'
                         : name === 'name'
-                        ? 'Tên đăng nhập'
-                        : name.charAt(0).toUpperCase() + name.slice(1)
+                          ? 'Tên đăng nhập'
+                          : name.charAt(0).toUpperCase() + name.slice(1)
                 } không được để trống.`,
             }));
         }
@@ -87,6 +88,11 @@ function Register() {
 
         if (formData.confirmPassword !== formData.password) {
             newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp.';
+        }
+
+        // Kiểm tra checkbox
+        if (!isChecked) {
+            newErrors.terms = 'Bạn cần đồng ý với điều khoản và điều kiện.';
         }
 
         return newErrors;
@@ -185,19 +191,25 @@ function Register() {
                     </button>
 
                     <div className={cx('checkbox')}>
-                        <input type="checkbox" id="terms" name="terms" />
+                        <input
+                            type="checkbox"
+                            id="terms"
+                            name="terms"
+                            checked={isChecked}
+                            onChange={(e) => setIsChecked(e.target.checked)}
+                        />{' '}
                         <label htmlFor="terms">Tôi đồng ý với các điều khoản và điều kiện.</label>
-                    </div>
-
-                    <div className={cx('footer')}>
-                        <p className={cx('footer-text')}>
-                            Bạn đã có tài khoản? <a href="/login">Đăng nhập</a>
-                        </p>
-                        <p className={cx('footer-text')}>
-                            Quay về <a href="/">trang chủ</a>
-                        </p>
+                        {errors.terms && <p style={{ color: 'red' }}>{errors.terms}</p>}
                     </div>
                 </form>
+                <div className={cx('footer')}>
+                    <p className={cx('footer-text')}>
+                        Bạn đã có tài khoản? <a href="/login">Đăng nhập</a>
+                    </p>
+                    <p className={cx('footer-text')}>
+                        Quay về <a href="/">trang chủ</a>
+                    </p>
+                </div>
             </div>
         </div>
     );
