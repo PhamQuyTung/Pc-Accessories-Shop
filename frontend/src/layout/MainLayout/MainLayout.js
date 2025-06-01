@@ -1,9 +1,13 @@
 import React from 'react';
-import Header from '../components/Header/header'; // Import Header component
+import Header from '../../components/Header/header'; // Import Header component
+import styles from './MainLayout.module.scss'; // Import file CSS Modules
+import classNames from 'classnames/bind';
+
+const cx = classNames.bind(styles);
 
 function MainLayout({ children }) {
     return (
-        <div>
+        <div className={cx('main')}>
             <header>
                 <Header />
             </header>

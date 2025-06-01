@@ -233,7 +233,8 @@
     margin: 8px 0;
 }
 
-.tippy-box {
+:global(.tippy-box) {
+    min-width: 300px;
     position: relative;
     background: #fff !important;
     color: #fff;
@@ -245,11 +246,11 @@
     transition-property: transform, visibility, opacity;
 }
 
-.tippy-arrow {
+:global(.tippy-arrow) {
     color: #fff !important;
 }
 
-.tippy-content {
+:global(.tippy-content) {
     padding: 0 !important;
 }
 
@@ -261,15 +262,16 @@
     margin: 10px 0;
 }
 
-.header__nav a {
+.header__nav .header__nav-link {
     margin: 0 15px;
     text-decoration: none;
     color: #fff;
     font-size: 16px;
+    cursor: pointer;
 }
 
-.header__nav a:hover {
-    color: #fff; /* Màu chữ đỏ khi hover */
+.header__nav .header__nav-link:hover {
+    /* color: #fff; Màu chữ đỏ khi hover */
 }
 
 .header__nav--product {

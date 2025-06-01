@@ -7,7 +7,7 @@ import Blog from '../pages/Blog';
 import Login from '../pages/Login/Login';
 import Register from '../pages/Register/Register';
 import Promotion from '../pages/Promotion';
-import MainLayout from '../layout/MainLayout';
+import MainLayout from '../layout/MainLayout/MainLayout';
 import AuthLayout from '../layout/AuthLayout';
 
 const routes = [

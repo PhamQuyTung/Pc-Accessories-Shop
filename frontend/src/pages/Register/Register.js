@@ -137,8 +137,8 @@ function Register() {
                 }, 1500); // Chờ 1.5s cho toast hiển thị rồi chuyển trang
             }
         } catch (err) {
-            setServerError('Lỗi máy chủ. Vui lòng thử lại sau.');
-            toast('Lỗi máy chủ. Vui lòng thử lại sau.', 'error');
+            setServerError('⚠️ Tài khoản đã tồn tại trong hệ thống. Vui lòng kiểm tra lại thông tin.');
+            toast('⚠️ Tài khoản đã tồn tại trong hệ thống. Vui lòng kiểm tra lại thông tin.', 'error');
         }
     };
 
