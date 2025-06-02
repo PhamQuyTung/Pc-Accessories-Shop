@@ -6,7 +6,7 @@ const cx = classNames.bind(styles);
 function CFSlider() {
     return (
         <div className={cx('CFSlider')}>
-            <div className={cx('CFSlider-content')}>CFSlider</div>
+            <div className={cx('CFSlider-wrap')}>CFSlider</div>
         </div>
     )
 }

@@ -1,8 +1,64 @@
 .CFNav {
-    width: 216px;
-    background-color: red;
+    width: 230px;
+    border-radius: 4px;
+    background-color: #fff;
 }
 
-.CFNav-content {
-    text-align: center;
+.CFNav-list {
+    list-style: none;
+    // padding: 4px;
+    margin: 0;
+
+    .CFNav-item {
+        font-size: 1.6rem;
+        padding: 4px 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 4px;
+        transition:
+            background-color 0.25s,
+            color 0.25s;
+        cursor: pointer;
+
+        &:hover {
+            background-color: #e80000; // màu đỏ đậm giống GearVN
+            color: #fff;
+
+            .CFNav-boxIcon,
+            .CFNav-label,
+            .arrow-right {
+                color: #fff !important; // đổi màu chữ + icon khi hover
+            }
+        }
+
+        .CFNav-item__wrap {
+            display: flex;
+            align-items: center;
+
+            .CFNav-boxIcon {
+                margin-right: 10px;
+                font-size: 1.6rem;
+                color: #333;
+                transition: color 0.25s;
+                width: 20px; // hoặc auto tùy bạn
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 10px;
+            }
+
+            .CFNav-label {
+                color: #333;
+                transition: color 0.25s;
+            }
+        }
+
+        .arrow-right {
+            font-size: 1.2rem;
+            color: #888;
+            transition: color 0.25s;
+        }
+    }
 }
