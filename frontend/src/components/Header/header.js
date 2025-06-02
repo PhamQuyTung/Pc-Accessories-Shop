@@ -7,11 +7,7 @@ import Button from '~/components/Button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faAngleUp,
-    faBox,
-    faClockRotateLeft,
-    faHand,
     faMagnifyingGlass,
-    faRightFromBracket,
     faUser,
 } from '@fortawesome/free-solid-svg-icons';
 import DropdownMenu from '~/components/DropdownMenu';
