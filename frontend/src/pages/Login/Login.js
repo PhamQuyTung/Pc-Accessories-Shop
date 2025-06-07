@@ -4,7 +4,7 @@ import InputField from '~/components/InputField';
 import styles from './Login.module.scss';
 import classNames from 'classnames/bind';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '~/components/ToastMessager/ToastMessager';
+import { useToast } from '~/components/ToastMessager';
 
 const cx = classNames.bind(styles);
 

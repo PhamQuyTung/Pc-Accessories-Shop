@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import styles from './Register.module.scss';
 import InputField from '../../components/InputField/InputField';
-import { useToast } from '../../components/ToastMessager/ToastMessager';
+import { useToast } from '~/components/ToastMessager';
 
 const cx = classNames.bind(styles);
 

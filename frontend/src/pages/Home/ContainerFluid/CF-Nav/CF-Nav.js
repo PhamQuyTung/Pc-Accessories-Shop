@@ -1,140 +1,485 @@
-import styles from './CF-Nav.module.scss';
-import classNames from 'classnames/bind';
+import React, { useState } from 'react';
 import {
-    LapTopIcon, LapTopGamingIcon, KeyBoardIcon, MouseIcon,
-    HeadPhoneIcon, CharIcon, PCGVNIcon, RAMIcon, LoaIcon,
-    ScreenIcon, PrintIcon, ConsoleIcon, BoxIcon,
+    LapTopIcon,
+    LapTopGamingIcon,
+    KeyBoardIcon,
+    BoxIcon,
+    CharIcon,
+    ConsoleIcon,
+    MouseIcon,
+    HeadPhoneIcon,
+    LoaIcon,
+    PCGVNIcon,
+    PrintIcon,
+    RAMIcon,
+    ScreenIcon,
+    RightIcon,
 } from '~/components/Icons';
-import MenuItem from '~/components/MenuItem/MenuItem';
+import classNames from 'classnames/bind';
+import styles from './CF-Nav.module.scss';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
 
 const cx = classNames.bind(styles);
 
-const listNavigation = [
+const menuItems = [
     {
+        title: 'Laptop',
         icon: <LapTopIcon />,
-        label: 'Laptop',
         children: [
             {
-                label: 'Thương hiệu',
-                path: '/collections/laptop',
-                children: [
-                    { label: 'Asus', path: '/collections/laptop/asus' },
-                    { label: 'Acer', path: '/collections/laptop/acer' },
-                    { label: 'Lenovo', path: '/collections/laptop/lenovo' },
-                ],
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
             },
             {
-                label: 'Giá bán',
-                path: '/collections/laptop',
-                children: [
-                    { label: 'Dưới 15 triệu', path: '/collections/laptop/duoi-15-trieu' },
-                    { label: 'Từ 15 đến 20 triệu', path: '/collections/laptop/15-20-trieu' },
-                    { label: 'Trên 20 triệu', path: '/collections/laptop/tren-20-trieu' },
-                ],
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
             },
             {
-                label: 'CPU Intel - AMD',
-                path: '/collections/laptop',
-                children: [
-                    { label: 'Intel Core i3', path: '/collections/laptop/core-i3' },
-                    { label: 'Intel Core i5', path: '/collections/laptop/core-i5' },
-                    { label: 'Intel Core i7', path: '/collections/laptop/core-i7' },
-                    { label: 'AMD Ryzen ', path: '/collections/laptop/amd-ryzen' },
-                ],
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
             },
             {
-                label: 'Nhu cầu sử dụng',
-                path: '/collections/laptop',
-                children: [
-                    { label: 'Đồ họa - Studio', path: '/collections/laptop/do-hoa' },
-                    { label: 'Học sinh - sinh viên', path: '/collections/laptop/hoc-sinh-sinh-vien' },
-                    { label: 'Mỏng nhẹ cao cấp', path: '/collections/laptop/mong-nhe-cao-cap' },
-                ],
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
             },
             {
-                label: 'Linh phụ kiện laptop',
-                path: '/collections/linh-kien-phu-kien-laptop',
-                children: [
-                    { label: 'RAM laptop', path: '/collections/laptop/ram-laptop' },
-                    { label: 'SSD laptop', path: '/collections/laptop/ssd-laptop' },
-                    { label: 'Ổ cứng di động', path: '/collections/laptop/o-cung-di-dong' },
-                ],
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
             },
         ],
     },
     {
+        title: 'PC Gaming',
         icon: <LapTopGamingIcon />,
-        label: 'Laptop Gaming',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
     {
+        title: 'PC GVN',
         icon: <PCGVNIcon />,
-        label: 'PC GVN',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
     {
+        title: 'Main, CPU, VGA',
         icon: <PCGVNIcon />,
-        label: 'Main, CPU, VGA',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
     {
+        title: 'Case, Nguồn, Tản nhiệt',
         icon: <PCGVNIcon />,
-        label: 'Case, Nguồn, Tản',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
     {
+        title: 'Ổ cứng, RAM, Thẻ nhớ',
         icon: <RAMIcon />,
-        label: 'Ổ cứng, RAM, Thẻ nhớ',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
     {
+        title: 'Loa, Micro, Webcam',
         icon: <LoaIcon />,
-        label: 'Loa, Micro, Webcam',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
     {
+        title: 'Màn hình',
         icon: <ScreenIcon />,
-        label: 'Màn hình',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
     {
+        title: 'Bàn phím',
         icon: <KeyBoardIcon />,
-        label: 'Bàn phím',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
     {
+        title: 'Chuột + Lót chuột',
         icon: <MouseIcon />,
-        label: 'Chuột + Lót chuột',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
     {
+        title: 'Tai nghe',
         icon: <HeadPhoneIcon />,
-        label: 'Tai nghe',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
     {
+        title: 'Ghế - Bàn',
         icon: <CharIcon />,
-        label: 'Ghế - Bàn',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
     {
+        title: 'Phần mềm, mạng',
         icon: <PrintIcon />,
-        label: 'Phần mềm, mạng',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
     {
+        title: 'Handheld, Console',
         icon: <ConsoleIcon />,
-        label: 'Handheld, Console',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
     {
+        title: 'Phụ kiện',
         icon: <ConsoleIcon />,
-        label: 'Phụ kiện (Hub, sạc, cáp...)',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
     {
+        title: 'Dịch vụ và thông tin khác',
         icon: <BoxIcon />,
-        label: 'Dịch vụ và thông tin khác',
+        children: [
+            {
+                title: 'Thương hiệu',
+                items: ['ACER', 'ASUS', 'MSI', 'LENOVO', 'DELL', 'HP - Pavilion', 'LG - Gram'],
+            },
+            {
+                title: 'Giá bán',
+                items: ['Dưới 15 triệu', 'Từ 15 – 20 triệu', 'Trên 20 triệu'],
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                items: ['Đồ họa - Studio', 'Học sinh - sinh viên', 'Mỏng nhẹ cao cấp'],
+            },
+            {
+                title: 'CPU Intel - AMD',
+                items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'AMD Ryzen'],
+            },
+            {
+                title: 'Linh phụ kiện Laptop',
+                items: ['Ram laptop', 'SSD laptop', 'Ổ cứng di động'],
+            },
+        ],
     },
 ];
 
 function CFNav() {
+    const [activeMenu, setActiveMenu] = useState(null);
+
     return (
-        <div className={cx('CFNav')}>
-            <div className={cx('CFNav-wrap')}>
-                <ul className={cx('CFNav-list')}>
-                    {listNavigation.map((item, index) => (
-                        <MenuItem key={index} item={item} />
+        <nav className={cx('navbar')}>
+            <div className={cx('menu-wrapper')} onMouseLeave={() => setActiveMenu(null)}>
+                {/* Sidebar */}
+                <div className={cx('menu-sidebar')}>
+                    {menuItems.map((item, index) => (
+                        <div key={index} className={cx('menu-item')} onMouseEnter={() => setActiveMenu(index)}>
+                            <div className={cx('menu-item__wrap')}>
+                                {item.icon}
+                                <span>{item.title}</span>
+                            </div>
+                            <RightIcon className={cx('icon-right')} />
+                        </div>
                     ))}
-                </ul>
+                </div>
+
+                {/* Bridge (khoảng đệm để không bị mất hover khi rê từ sidebar sang mega-menu) */}
+                {activeMenu !== null && menuItems[activeMenu]?.children && <div className={cx('menu-bridge')} />}
+
+                {/* Mega Menu */}
+                {activeMenu !== null && menuItems[activeMenu]?.children && (
+                    <div className={cx('mega-menu')}>
+                        {menuItems[activeMenu].children.map((column, colIndex) => (
+                            <div key={colIndex} className={cx('menu-column')}>
+                                <h4>{column.title}</h4>
+                                <ul>
+                                    {column.items.map((item, i) => (
+                                        <li key={i}>{item}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
-        </div>
+        </nav>
     );
 }
 

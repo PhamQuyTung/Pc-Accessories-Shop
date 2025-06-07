@@ -1,7 +1,62 @@
 .container-fluid {
-    display: flex;
-    align-items: center;
     max-width: 1320px;
     margin: 0 auto;
     padding: 17px 10px 10px 10px;
+    display: grid;
+    align-items: start;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: auto 1fr;
+    gap: 8px;
 }
+
+.div1 {
+    grid-row: span 5 / span 5;
+}
+
+.div3 {
+    grid-column: span 4 / span 4;
+    grid-row: span 5 / span 5;
+}
+
+// 
+:global(.megaMenu-pos) {
+    position: relative;
+    top: -24px;
+    height: 528px;
+    background: #fff;
+    // display: none;
+}
+
+.megaMenu {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 8px;
+    padding: 10px;
+}
+    
+.megaMenu__div1 {
+    grid-row: span 5 / span 5;
+    padding: 5px
+}
+
+.megaMenu__div2 {
+    grid-row: span 5 / span 5;
+    padding: 5px
+}
+
+.megaMenu__div3 {
+    grid-row: span 5 / span 5;
+    padding: 5px
+}
+
+.megaMenu__div4 {
+    grid-row: span 5 / span 5;
+    padding: 5px
+}
+
+.megaMenu__div5 {
+    grid-row: span 5 / span 5;
+    padding: 5px
+}
+        

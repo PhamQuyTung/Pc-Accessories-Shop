@@ -183,7 +183,7 @@ export const ScreenIcon = ({ width = '20px', height = '13px', className }) => (
             fill="currentcolor"
         ></path>
         <rect x="8" y="11.871" width="2" height="4.12903" fill="currentcolor"></rect>
-        <path d="M5 15.4839L13 15.4839" stroke="currentcolor" stroke-linecap="round"></path>
+        <path d="M5 15.4839L13 15.4839" stroke="currentcolor" strokeLinecap="round"></path>
     </svg>
 );
 export const LoaIcon = ({ width = '20px', height = '13px', className }) => (
@@ -223,13 +223,13 @@ export const MouseIcon = ({ width = '20px', height = '13px', className }) => (
         fill="currentcolor"
     >
         <path
-            class="st0"
+            className="st0"
             d="M7,19.5L7,19.5c-3.6,0-6.5-3.1-6.5-6.8V7.3c0-3.7,2.9-6.8,6.5-6.8c3.6,0,6.5,3.1,6.5,6.8v5.4
             C13.5,16.4,10.6,19.5,7,19.5z M7,1.5C4,1.5,1.5,4.1,1.5,7.3v5.4c0,3.2,2.5,5.8,5.5,5.8h0c3,0,5.5-2.6,5.5-5.8V7.3
             C12.5,4.1,10,1.5,7,1.5z"
         ></path>
         <path
-            class="st0"
+            className="st0"
             d="M7,10L7,10c-0.3,0-0.5-0.2-0.5-0.5v-5C6.5,4.2,6.7,4,7,4h0c0.3,0,0.5,0.2,0.5,0.5v5C7.5,9.8,7.3,10,7,10z"
         ></path>
     </svg>
@@ -284,15 +284,15 @@ export const PrintIcon = ({ width = '20px', height = '13px', className }) => (
         <path
             d="M4 16H3.5C1.84315 16 0.5 14.6569 0.5 13V7C0.5 5.34315 1.84315 4 3.5 4H14.5C16.1569 4 17.5 5.34315 17.5 7V13C17.5 14.6569 16.1569 16 14.5 16H14"
             stroke="currentcolor"
-            stroke-linecap="round"
+            strokeLinecap="round"
         ></path>
         <path
             d="M14.5 4V3C14.5 1.89543 13.6046 1 12.5 1H5.5C4.39543 1 3.5 1.89543 3.5 3L3.5 4"
             stroke="currentcolor"
-            stroke-linecap="round"
+            strokeLinecap="round"
         ></path>
         <rect x="4" y="12.5" width="10" height="6" rx="1.5" stroke="currentcolor"></rect>
-        <path d="M2.5 7L5.5 7" stroke="currentcolor" stroke-linecap="round"></path>
+        <path d="M2.5 7L5.5 7" stroke="currentcolor" strokeLinecap="round"></path>
     </svg>
 );
 
@@ -301,20 +301,32 @@ export const BoxIcon = ({ width = '20px', height = '13px', className }) => (
         <path
             d="M9 3.5V6M9 3.5C9 3.00555 9.14662 2.5222 9.42133 2.11108C9.69603 1.69995 10.0865 1.37952 10.5433 1.1903C11.0001 1.00108 11.5028 0.951575 11.9877 1.04804C12.4727 1.1445 12.9181 1.3826 13.2678 1.73223C13.6174 2.08187 13.8555 2.52732 13.952 3.01228C14.0484 3.49723 13.9989 3.99989 13.8097 4.45671C13.6205 4.91352 13.3 5.30397 12.8889 5.57867C12.4778 5.85338 11.9945 6 11.5 6H9M9 3.5C9 3.00555 8.85338 2.5222 8.57867 2.11108C8.30397 1.69995 7.91352 1.37952 7.45671 1.1903C6.99989 1.00108 6.49723 0.951575 6.01227 1.04804C5.52732 1.1445 5.08187 1.3826 4.73223 1.73223C4.3826 2.08187 4.1445 2.52732 4.04804 3.01228C3.95157 3.49723 4.00108 3.99989 4.1903 4.45671C4.37952 4.91352 4.69995 5.30397 5.11108 5.57867C5.5222 5.85338 6.00555 6 6.5 6H9"
             stroke="currentcolor"
-            stroke-miterlimit="10"
-            stroke-linecap="round"
+            strokeMiterlimit="10"
+            strokeLinecap="round"
         ></path>
         <path
             d="M15.6667 6H2.33333C1.59695 6 1 6.63959 1 7.42857V9.57143C1 10.3604 1.59695 11 2.33333 11H15.6667C16.403 11 17 10.3604 17 9.57143V7.42857C17 6.63959 16.403 6 15.6667 6Z"
             stroke="currentcolor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+            strokeLinecap="round"
+            strokeLinejoin="round"
         ></path>
         <path
             d="M16 10.7895V16.9474C16 17.4918 15.7788 18.0139 15.3849 18.3988C14.9911 18.7837 14.457 19 13.9 19H4.1C3.54305 19 3.0089 18.7837 2.61508 18.3988C2.22125 18.0139 2 17.4918 2 16.9474V10.7895M9 6V19"
             stroke="currentcolor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        ></path>
+    </svg>
+);
+
+export const RightIcon = ({ width = '20px', height = '13px', className }) => (
+    <svg className={className} viewBox="0 0 6 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+            d="M1.5 1.5L4.5 4L1.5 6.5"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
         ></path>
     </svg>
 );

@@ -1,1 +1,1 @@
-export { default } from './ToastMessager';
+export { default, useToast } from './ToastMessager';
