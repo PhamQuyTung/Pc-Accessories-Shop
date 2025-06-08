@@ -62,3 +62,29 @@
 img {
     width: 100%;
 }
+
+.custom-swiper {
+    --swiper-pagination-color: #ff4d4f; // màu active (tuỳ chọn)
+
+    .swiper-pagination {
+        bottom: 16px; // chỉnh vị trí pagination nếu cần
+    }
+
+    .swiper-pagination-bullet {
+        width: 10px;
+        height: 10px;
+        background-color: #ccc;
+        opacity: 1;
+        margin: 0 6px;
+        transition: all 0.3s ease;
+    }
+
+    .swiper-pagination-bullet-active {
+        background-color: var(--swiper-pagination-color);
+        transform: scale(1.1);
+    }
+
+    .swiper-pagination-bullet:hover {
+        background-color: #999;
+    }
+}

@@ -45,20 +45,23 @@
     position: absolute; /* dùng absolute thay vì fixed */
     top: 0;
     left: 260px; /* chiều rộng của menu-sidebar */
-    width: 1040px;
+    width: 1050px;
     height: 500px;
     border-radius: 4px;
     background: #fff;
     padding: 12px 15px;
-    display: flex;
-    justify-content: space-between;
-    gap: 40px;
+    display: grid;
+    // flex-wrap: wrap;
+    // justify-content: space-between;
+    grid-template-columns: repeat(5, 1fr);
+    align-items: start;
+    gap: 15px;
     z-index: 100;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .menu-column h4 {
-    margin-bottom: 8px;
+    font-size: 1.6rem;
     color: #d90000;
 }
 
@@ -68,7 +71,8 @@
     margin: 0;
 
     li {
-        padding: 6px 0;
+        font-size: 1.4rem;
+        padding: 2px 0;
         cursor: pointer;
 
         &:hover {
