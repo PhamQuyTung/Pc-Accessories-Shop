@@ -1,4 +1,4 @@
-.CFSlider-wrap {
+.CFSlider {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
     grid-template-rows: repeat(6, 1fr);
@@ -63,28 +63,30 @@ img {
     width: 100%;
 }
 
+.img-slide {
+    width: 100%;
+    border-radius: 4px;
+}
+
 .custom-swiper {
     --swiper-pagination-color: #ff4d4f; // màu active (tuỳ chọn)
-
-    .swiper-pagination {
-        bottom: 16px; // chỉnh vị trí pagination nếu cần
+    :global(.swiper-pagination) {
+        bottom: 20px !important;
     }
 
-    .swiper-pagination-bullet {
-        width: 10px;
-        height: 10px;
-        background-color: #ccc;
+    :global(.swiper-pagination-bullet) {
+        width: 25px !important;
+        height: 6px !important;
+        background-color: #0000004d;
+        border-radius: 0 !important;
         opacity: 1;
-        margin: 0 6px;
+        margin: 0 6px !important;
         transition: all 0.3s ease;
+        border-radius: 2px;
     }
 
-    .swiper-pagination-bullet-active {
+    :global(.swiper-pagination-bullet-active),
+    :global(.swiper-pagination-bullet:hover) {
         background-color: var(--swiper-pagination-color);
-        transform: scale(1.1);
-    }
-
-    .swiper-pagination-bullet:hover {
-        background-color: #999;
     }
 }
