@@ -66,32 +66,23 @@ function CFSlider() {
                     </div>
                     <div className={cx('CFSlider-row2')}>
                         <div className={cx('CFSlider-row2__banner')}>
-                            <img src={Banner2} alt="Banner2" />
+                            <Link to='/ban-phim-may-tinh'><img src={Banner2} alt="Banner2" /></Link>
                         </div>
                         <div className={cx('CFSlider-row2__banner')}>
-                            <img src={Banner3} alt="Banner3" />
+                            <Link to='/ban-phim-may-tinh'><img src={Banner3} alt="Banner3" /></Link>
                         </div>
-                        {/* <div className={cx('CFSlider-row2__banner')}>
-                            <img src={Banner4} alt="Banner4" />
-                        </div>
-                        <div className={cx('CFSlider-row2__banner')}>
-                            <img src={Banner5} alt="Banner5" />
-                        </div>
-                        <div className={cx('CFSlider-row2__banner')}>
-                            <img src={Banner6} alt="Banner6" />
-                        </div> */}
                     </div>
                 </Col>
                 <Col lg={4} md={12} xs={12}>
                     <div className={cx('CFSlider-col3')}>
                         <div className={cx('CFSlider-row2__banner')}>
-                            <img src={Banner4} alt="Banner4" />
+                            <Link to='/ban-phim-may-tinh'><img src={Banner4} alt="Banner4" /></Link>
                         </div>
                         <div className={cx('CFSlider-row2__banner')}>
-                            <img src={Banner5} alt="Banner5" />
+                            <Link to='/ban-phim-may-tinh'><img src={Banner5} alt="Banner5" /></Link>
                         </div>
                         <div className={cx('CFSlider-row2__banner')}>
-                            <img src={Banner6} alt="Banner6" />
+                            <Link to='/ban-phim-may-tinh'><img src={Banner6} alt="Banner6" /></Link>
                         </div>
                     </div>
                 </Col>

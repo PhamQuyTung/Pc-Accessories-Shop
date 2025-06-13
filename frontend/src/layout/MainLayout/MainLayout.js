@@ -1,7 +1,8 @@
 import React from 'react';
-import Header from '../../components/Header/header'; // Import Header component
+import Header from '../Header/header'; // Import Header component
 import styles from './MainLayout.module.scss'; // Import file CSS Modules
 import classNames from 'classnames/bind';
+import Footer from '../Footer/Footer';
 
 const cx = classNames.bind(styles);
 
@@ -11,10 +12,8 @@ function MainLayout({ children }) {
             <header className={cx('header-wrapper')}>
                 <Header />
             </header>
-            <main style={{marginTop: '155px'}}>
-                {children}
-            </main>
-            <footer>Main Footer</footer>
+            <main style={{ marginTop: '155px' }}>{children}</main>
+            <Footer />
         </div>
     );
 }

@@ -18,10 +18,7 @@ import {
 } from '~/components/Icons';
 import classNames from 'classnames/bind';
 import styles from './CF-Nav.module.scss';
-import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
 
 const cx = classNames.bind(styles);
 

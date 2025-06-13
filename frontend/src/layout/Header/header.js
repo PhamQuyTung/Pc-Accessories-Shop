@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import Logo from '~/assets/logo/logo4.png';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './Header.module.scss'; // Import file CSS Modules
@@ -6,32 +6,15 @@ import classNames from 'classnames/bind';
 import Button from '~/components/Button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-    faAngleUp,
     faMagnifyingGlass,
     faUser,
 } from '@fortawesome/free-solid-svg-icons';
-import DropdownMenu from '~/components/DropdownMenu';
 import Tippy from '@tippyjs/react';
 import { EyeIcon, HandWaveIcon, ListItemIcon, OutTheDoor } from '~/components/Icons';
 
 const cx = classNames.bind(styles);
 
-// const productMenuItems = [
-//     { label: 'Laptop', href: '/products/laptops' },
-//     { label: 'Bàn phím', href: '/products/keyboards' },
-//     { label: 'Chuột', href: '/products/mice' },
-//     { label: 'Tai nghe', href: '/products/headphones' },
-//     { label: 'Tất cả sản phẩm', href: '/product' },
-// ];
-
-// const listService = [
-//     { label: 'Sửa chữa', href: '/service/repair' },
-//     { label: 'Lắp đặt tại nhà', href: '/service/installation' },
-//     { label: 'Chăm sóc khách hàng', href: '/service/support' },
-// ];
-
 function Header() {
-    const dropdownRef = useRef();
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user'));
 
@@ -134,10 +117,6 @@ function Header() {
                     <a className={cx('header__nav-link')} href="/contact">Liên hệ</a>
                     <a className={cx('header__nav-link')} href="/blog">Blog</a>
                     <a className={cx('header__nav-link')} href="/promotion">Khuyến mãi</a>
-                    {/* <span className={cx("header__nav--product")}>
-                        <DropdownMenu ref={dropdownRef} title="Dịch vụ" items={listService} />
-                        <FontAwesomeIcon icon={faAngleUp} className={cx("header__nav--icon")} />
-                    </span> */}
                 </div>
             </div>
         </header>

@@ -2,7 +2,6 @@ import CFNav from '~/pages/Home/ContainerFluid/CF-Nav/CF-Nav';
 import CFSlider from '~/pages/Home/ContainerFluid/CF-Slider/CF-Slider';
 import styles from './ContainerFluid.module.scss';
 import classNames from 'classnames/bind';
-import DuoBanner from './CF-DuoBanner/CF-DuoBanner';
 import { Container, Row, Col } from 'react-bootstrap';
 
 const cx = classNames.bind(styles);
