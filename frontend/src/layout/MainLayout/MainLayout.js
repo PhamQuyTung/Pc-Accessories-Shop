@@ -8,10 +8,10 @@ const cx = classNames.bind(styles);
 function MainLayout({ children }) {
     return (
         <div className={cx('main')}>
-            <header>
+            <header className={cx('header-wrapper')}>
                 <Header />
             </header>
-            <main style={{marginTop: '162px'}}>
+            <main style={{marginTop: '155px'}}>
                 {children}
             </main>
             <footer>Main Footer</footer>

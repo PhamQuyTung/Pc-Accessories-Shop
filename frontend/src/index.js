@@ -5,6 +5,7 @@ import reportWebVitals from './reportWebVitals';
 import GlobalStyles from './components/GlobalStyles';
 // import { AuthProvider } from './contexts/AuthContext';
 import ToastMessagerProvider from './components/ToastMessager';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 

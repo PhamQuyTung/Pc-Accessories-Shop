@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
     LapTopIcon,
     LapTopGamingIcon,
@@ -28,6 +29,7 @@ const menuItems = [
     {
         title: 'Laptop',
         icon: <LapTopIcon />,
+        href: '/laptop-van-phong',
         children: [
             {
                 title: 'Thương hiệu',
@@ -52,8 +54,9 @@ const menuItems = [
         ],
     },
     {
-        title: 'PC Gaming',
+        title: 'Laptop Gaming',
         icon: <LapTopGamingIcon />,
+        href: '/laptop-gaming',
         children: [
             {
                 title: 'Thương hiệu',
@@ -95,6 +98,7 @@ const menuItems = [
     {
         title: 'PC GVN',
         icon: <PCGVNIcon />,
+        href: '/pc-gvn',
         children: [
             {
                 title: 'PC RTX 50 SERIES',
@@ -157,6 +161,7 @@ const menuItems = [
     {
         title: 'Main, CPU, VGA',
         icon: <PCGVNIcon />, // Thay thế bằng icon phù hợp nếu có
+        href: '#',
         children: [
             {
                 title: 'VGA RTX 50 SERIES',
@@ -213,6 +218,7 @@ const menuItems = [
     {
         title: 'Case, Nguồn, Tản nhiệt',
         icon: <PCGVNIcon />, // Thay bằng icon phù hợp nếu có
+        href: '#',
         children: [
             {
                 title: 'Case - Theo hãng',
@@ -259,6 +265,7 @@ const menuItems = [
     {
         title: 'Ổ cứng, RAM, Thẻ nhớ',
         icon: <RAMIcon />, // Thay bằng icon thực tế nếu có
+        href: '#',
         children: [
             {
                 title: 'Dung lượng RAM',
@@ -309,6 +316,7 @@ const menuItems = [
     {
         title: 'Loa, Micro, Webcam',
         icon: <LoaIcon />,
+        href: '#',
         children: [
             {
                 title: 'Thương hiệu loa',
@@ -331,6 +339,7 @@ const menuItems = [
     {
         title: 'Màn hình',
         icon: <ScreenIcon />,
+        href: '/man-hinh',
         children: [
             {
                 title: 'Hãng sản xuất',
@@ -391,6 +400,7 @@ const menuItems = [
     {
         title: 'Bàn phím',
         icon: <KeyBoardIcon />,
+        href: '/ban-phim-may-tinh',
         children: [
             {
                 title: 'Thương hiệu',
@@ -431,6 +441,7 @@ const menuItems = [
     {
         title: 'Chuột + Lót chuột',
         icon: <MouseIcon />,
+        href: '/chuot-may-tinh',
         children: [
             {
                 title: 'Thương hiệu chuột',
@@ -475,6 +486,7 @@ const menuItems = [
     {
         title: 'Tai nghe',
         icon: <HeadPhoneIcon />,
+        href: '/tai-nghe-may-tinh',
         children: [
             {
                 title: 'Thương hiệu',
@@ -503,6 +515,7 @@ const menuItems = [
     {
         title: 'Ghế - Bàn',
         icon: <CharIcon />,
+        href: '/ghe-gia-tot',
         children: [
             {
                 title: 'Thương hiệu ghế Gaming',
@@ -533,6 +546,7 @@ const menuItems = [
     {
         title: 'Phần mềm, mạng',
         icon: <PrintIcon />,
+        href: '/thiet-bi-mang',
         children: [
             {
                 title: 'Hãng sản xuất',
@@ -559,6 +573,7 @@ const menuItems = [
     {
         title: 'Handheld, Console',
         icon: <ConsoleIcon />,
+        href: '/may-choi-game',
         children: [
             {
                 title: 'Handheld PC',
@@ -579,8 +594,9 @@ const menuItems = [
         ],
     },
     {
-        title: 'Phụ kiện',
+        title: 'Phụ kiện (Hub, sạc, cáp, ...)',
         icon: <ConsoleIcon />,
+        href: '/phu-kien',
         children: [
             {
                 title: 'Hub, sạc, cáp',
@@ -599,6 +615,7 @@ const menuItems = [
     {
         title: 'Dịch vụ và thông tin khác',
         icon: <BoxIcon />,
+        href: '#',
         children: [
             {
                 title: 'Dịch vụ',
@@ -625,41 +642,44 @@ function CFNav() {
     const [activeMenu, setActiveMenu] = useState(null);
 
     return (
-        <nav className={cx('navbar')}>
-            <div className={cx('menu-wrapper')} onMouseLeave={() => setActiveMenu(null)}>
-                {/* Sidebar */}
-                <div className={cx('menu-sidebar')}>
-                    {menuItems.map((item, index) => (
-                        <div key={index} className={cx('menu-item')} onMouseEnter={() => setActiveMenu(index)}>
-                            <div className={cx('menu-item__wrap')}>
-                                {item.icon}
-                                <span>{item.title}</span>
-                            </div>
-                            <RightIcon className={cx('icon-right')} />
+        <div className={cx('menu-wrapper')} onMouseLeave={() => setActiveMenu(null)}>
+            {/* Sidebar */}
+            <div className={cx('menu-sidebar')}>
+                {menuItems.map((item, index) => (
+                    <Link
+                        to={item.href}
+                        key={index}
+                        className={cx('menu-item')}
+                        onMouseEnter={() => setActiveMenu(index)}
+                    >
+                        <span className={cx('menu-item__wrap')}>
+                            {item.icon}
+                            <span>{item.title}</span>
+                        </span>
+                        <RightIcon className={cx('icon-right')} />
+                    </Link>
+                ))}
+            </div>
+
+            {/* Bridge (khoảng đệm để không bị mất hover khi rê từ sidebar sang mega-menu) */}
+            {activeMenu !== null && menuItems[activeMenu]?.children && <div className={cx('menu-bridge')} />}
+
+            {/* Mega Menu */}
+            {activeMenu !== null && menuItems[activeMenu]?.children && (
+                <div className={cx('mega-menu')}>
+                    {menuItems[activeMenu].children.map((column, colIndex) => (
+                        <div key={colIndex} className={cx('menu-column')}>
+                            <h4>{column.title}</h4>
+                            <ul>
+                                {column.items.map((item, i) => (
+                                    <li key={i}>{item}</li>
+                                ))}
+                            </ul>
                         </div>
                     ))}
                 </div>
-
-                {/* Bridge (khoảng đệm để không bị mất hover khi rê từ sidebar sang mega-menu) */}
-                {activeMenu !== null && menuItems[activeMenu]?.children && <div className={cx('menu-bridge')} />}
-
-                {/* Mega Menu */}
-                {activeMenu !== null && menuItems[activeMenu]?.children && (
-                    <div className={cx('mega-menu')}>
-                        {menuItems[activeMenu].children.map((column, colIndex) => (
-                            <div key={colIndex} className={cx('menu-column')}>
-                                <h4>{column.title}</h4>
-                                <ul>
-                                    {column.items.map((item, i) => (
-                                        <li key={i}>{item}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </nav>
+            )}
+        </div>
     );
 }
 

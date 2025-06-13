@@ -6,7 +6,7 @@
 .menu-sidebar {
     display: flex;
     flex-direction: column;
-    width: 240px;
+    width: 100%;
     height: 500px;
     background-color: #fff;
     border-radius: 4px;
@@ -22,6 +22,8 @@
     align-items: center;
     gap: 10px;
     font-size: 1.4rem;
+    text-decoration: none;
+    color: #111111;
 
     .menu-item__wrap {
         padding: 2px 3px;
@@ -32,7 +34,6 @@
         justify-content: space-between;
         align-items: center;
         gap: 10px;
-        font-size: 1.4rem;
     }
 
     &:hover {
@@ -44,7 +45,7 @@
 .mega-menu {
     position: absolute; /* dùng absolute thay vì fixed */
     top: 0;
-    left: 260px; /* chiều rộng của menu-sidebar */
+    left: 330px; /* chiều rộng của menu-sidebar */
     width: 1050px;
     height: 500px;
     border-radius: 4px;
@@ -89,7 +90,7 @@
 .menu-bridge {
     position: absolute;
     top: 0;
-    left: 240px; // đúng bằng chiều rộng .menu-sidebar
+    left: 315px; // đúng bằng chiều rộng .menu-sidebar
     width: 40px; // khoảng cách bạn muốn giữa sidebar và mega menu
     height: 100%;
     z-index: 50;
