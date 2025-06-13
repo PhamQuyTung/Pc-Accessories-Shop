@@ -7,6 +7,7 @@ const { engine } = require('express-handlebars');
 const cookieParser = require('cookie-parser');
 // const validateMiddleware = require('./app/middlewares/validateMiddleware');
 const authRoutes = require('./routes/authRoutes'); // Đảm bảo đúng đường dẫn
+const productRoutes = require('./routes/product'); // Nếu dùng require
 const connectDB = require('./config/db');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -36,6 +37,9 @@ app.use(cookieParser());
 
 // Sử dụng route auth
 app.use('/api/auth', authRoutes); // Đảm bảo rằng authRoutes được sử dụng đúng
+
+// Sử dụng route product
+app.use('/api/products', productRoutes);
 
 // Cấu hình view engine
 app.engine(

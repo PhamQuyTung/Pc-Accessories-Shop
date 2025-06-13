@@ -1,9 +1,11 @@
 import ContainerFluid from "./ContainerFluid/ContainerFluid";
+import PC from "./PC/PC";
 
 function Home() {
     return ( 
         <div>
-            <ContainerFluid></ContainerFluid>
+            <ContainerFluid />
+            <PC/>
         </div>
     );
 }

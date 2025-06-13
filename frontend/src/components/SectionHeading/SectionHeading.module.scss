@@ -1,0 +1,74 @@
+.PC-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #fff;
+    padding: 12px 28px 12px 24px;
+}
+
+.PC-heading__top {
+    display: flex;
+    align-items: center;
+
+    h2 {
+        margin: 0;
+    }
+
+    h2 a {
+        text-decoration: none;
+        font-size: 22px;
+        color: #333;
+        font-weight: 600;
+        transition: all 0.3s linear;
+
+        &:hover {
+            color: #e30019;
+        }
+    }
+}
+
+.PC-heading__top--shTitle {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 1.8rem;
+    line-height: 22px;
+    padding-left: 21px;
+    margin: 0 0 0 20px;
+    position: relative;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        margin: auto;
+        width: 1px;
+        height: 85%;
+        background: #97999d;
+    }
+
+    h3 {
+        margin: 0;
+    }
+}
+
+.PC-heading__watchAll {
+
+    a {
+        text-decoration: none;
+        font-size: 1.4rem;
+        transition: all 0.3s linear;
+
+        &:hover {
+            color: #e30019;
+        }
+    }
+}
+
+.icon-car {
+    width: 20px;
+    height: 14px;
+    margin-right: 10px;
+}
