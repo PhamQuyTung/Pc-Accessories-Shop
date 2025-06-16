@@ -1,6 +1,6 @@
 import Home from '../pages/Home/Home';
 import About from '../pages/About';
-import Product from '../pages/Product';
+import Product from '../pages/Product/Product';
 import Cart from '../pages/Cart';
 import Contact from '../pages/Contact';
 import Blog from '../pages/Blog';
@@ -9,11 +9,16 @@ import Register from '../pages/Register/Register';
 import Promotion from '../pages/Promotion';
 import MainLayout from '../layout/MainLayout/MainLayout';
 import AuthLayout from '../layout/AuthLayout';
+import ProductDetail from '../pages/Product/ProductDetail/ProductDetail'; // 👈 Tạo trang này
 
 const routes = [
     { path: '/', element: <Home />, layout: MainLayout },
     { path: '/about', element: <About />, layout: MainLayout },
     { path: '/product', element: <Product />, layout: MainLayout },
+    
+    // ✅ Route chi tiết sản phẩm PC theo slug
+    { path: '/products/:slug', element: <ProductDetail />, layout: MainLayout },
+
     { path: '/cart', element: <Cart />, layout: MainLayout },
     { path: '/contact', element: <Contact />, layout: MainLayout },
     { path: '/blog', element: <Blog />, layout: MainLayout },

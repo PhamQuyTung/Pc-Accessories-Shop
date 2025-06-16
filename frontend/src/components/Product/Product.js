@@ -70,7 +70,7 @@ function Product() {
                                 )}
                             </div>
 
-                            <Link to="#">
+                            <Link to={`/products/${product.slug}`}>
                                 <img src={product.image} alt={product.name} />
                             </Link>
 
@@ -79,7 +79,7 @@ function Product() {
                             </div>
 
                             <div className={cx('product-card__des')}>
-                                <Link to="#">{product.name}</Link>
+                                <Link to={`/products/${product.slug}`}>{product.name}</Link>
 
                                 <div className={cx('specs')}>
                                     <span>{product.specs.cpu}</span> | <span>{product.specs.vga}</span> |{' '}
