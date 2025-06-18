@@ -1,6 +1,6 @@
 const authRoutes = require('./authRoutes');
 const errorHandle = require('../helpers/error.handle');
-// const productRoutes = require('./productRoutes');
+const productRoutes = require('./productRoutes');
 // const adminRoutes = require('./adminRoutes'); // nếu có
 
 function route(app) {
@@ -17,7 +17,7 @@ function route(app) {
     app.use(errorHandle);
 
     // Route cho sản phẩm
-    // app.use('/products', productRoutes);
+    app.use('/api/products', productRoutes);
 
     // Thêm các route khác nếu có
     // app.use('/admin', adminRoutes);

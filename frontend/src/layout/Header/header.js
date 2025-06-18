@@ -104,7 +104,7 @@ function Header() {
                             </a>
 
                             <a href="/register" className={cx("header__text--login")}>
-                                <Button primary2>Đăng ký</Button>
+                                <Button primary2 Small>Đăng ký</Button>
                             </a>
                         </>
                     )}

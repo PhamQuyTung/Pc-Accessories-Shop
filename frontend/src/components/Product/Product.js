@@ -21,8 +21,11 @@ function Product() {
     useEffect(() => {
         axios
             .get('http://localhost:5000/api/products')
-            .then((res) => setProducts(res.data))
-            .catch((err) => console.log(err));
+            .then((res) => {
+                console.log('Kết quả trả về:', res.data); // <-- Xem console trình duyệt
+                setProducts(res.data);
+            })
+            .catch((err) => console.log('Lỗi gọi API:', err));
     }, []);
 
     return (

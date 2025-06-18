@@ -1,6 +1,6 @@
 .product-detail {
     padding: 40px;
-    max-width: 1000px;
+    max-width: 1320px;
     margin: 0 auto;
     background: #fff;
     border-radius: 10px;
@@ -26,4 +26,33 @@
 
 .specs p {
     margin: 5px 0;
+}
+
+// PRODUCT-GALLERY
+.gallery {
+    max-width: 500px;
+    .mainSwiper {
+        img {
+            width: 100%;
+            border-radius: 8px;
+        }
+    }
+
+    .thumbSwiper {
+        margin-top: 10px;
+        .swiper-slide {
+            opacity: 0.4;
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 4px;
+        }
+        .swiper-slide-thumb-active {
+            opacity: 1;
+            border-color: red;
+        }
+        img {
+            width: 100%;
+            border-radius: 4px;
+        }
+    }
 }

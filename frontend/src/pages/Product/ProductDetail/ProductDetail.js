@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import { Row, Col } from 'react-bootstrap';
 import styles from './ProductDetail.module.scss';
 import classNames from 'classnames/bind';
+import Breadcrumb from '~/components/Breadcrumb/Breadcrumb';
+import ProductGallery from './ProductGallery';
 
 const cx = classNames.bind(styles);
 
@@ -24,13 +27,27 @@ function ProductDetail() {
             });
     }, [slug]);
 
-    console.log("Slug:", slug);
+    console.log('Slug:', slug);
 
     if (error) return <div>{error}</div>;
     if (!product) return <div>Đang tải...</div>;
 
     return (
         <div className={cx('product-detail')}>
+            <Row>
+                <Col lg={6} md={12} xs={12}>
+                    {/* Product-slider */}
+                    <div className={cx('product-slider')}>
+                        {/* <ProductGallery /> */}
+                        <Breadcrumb />
+                    </div>
+                </Col>
+
+                <Col lg={6} md={12} xs={12}>
+                    {/* Product-info */}
+                    <div className={cx('product-info')}></div>
+                </Col>
+            </Row>
             <h1 className={cx('title')}>{product.name}</h1>
             <img className={cx('image')} src={product.image} alt={product.name} />
 
