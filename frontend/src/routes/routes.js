@@ -10,12 +10,16 @@ import Promotion from '../pages/Promotion';
 import MainLayout from '../layout/MainLayout/MainLayout';
 import AuthLayout from '../layout/AuthLayout';
 import ProductDetail from '../pages/Product/ProductDetail/ProductDetail'; // 👈 Tạo trang này
+import CreateProduct from '../pages/CreateProduct/CreateProduct'; // tạo component này
 
 const routes = [
     { path: '/', element: <Home />, layout: MainLayout },
     { path: '/about', element: <About />, layout: MainLayout },
     { path: '/product', element: <Product />, layout: MainLayout },
-    
+
+    // Route trang tạo sản phẩm
+    { path: '/products/create', element: <CreateProduct />, layout: MainLayout },
+
     // ✅ Route chi tiết sản phẩm PC theo slug
     { path: '/products/:slug', element: <ProductDetail />, layout: MainLayout },
 

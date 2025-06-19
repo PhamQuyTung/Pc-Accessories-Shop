@@ -45,9 +45,17 @@ class ProductController {
     }
   }
 
-  // Tạm thời mock create
-  create(req, res) {
-    res.send("Trang tạo sản phẩm");
+  // API tạo sản phẩm từ React (POST /api/products)
+  async createProduct(req, res) {
+    try {
+      const product = new Product(req.body); // Tự động tạo slug bằng middleware
+      await product.save();
+      res.status(201).json(product);
+    } catch (err) {
+      res
+        .status(400)
+        .json({ error: "Tạo sản phẩm thất bại", details: err.message });
+    }
   }
 }
 
