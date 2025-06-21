@@ -5,7 +5,7 @@ const slugify = require("slugify");
 const ProductSchema = new mongoose.Schema({
     name: String,
     slug: String, 
-    image: String,
+    images: [String],
     price: Number,
     discountPrice: Number,
     status: [String],
@@ -16,6 +16,7 @@ const ProductSchema = new mongoose.Schema({
         ram: String,
         ssd: String,
     },
+    description: String,
     rating: Number,
 });
 

@@ -2,7 +2,7 @@
     font-size: 14px;
     margin: 16px 0;
     color: #666;
-    display: flex;
+    display: inline-flex;
 }
 
 .breadcrumb-wrap {
@@ -13,6 +13,10 @@
         text-decoration: none;
         color: #1250dc;
         font-weight: 500;
+
+        &:hover {
+            text-decoration: none;
+        }
     }
 }
 

@@ -25,3 +25,22 @@
         cursor: pointer;
     }
 }
+
+.image-input {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+
+    input {
+        flex: 1;
+    }
+
+    .remove-btn {
+        background-color: red;
+        color: white;
+        border: none;
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+}

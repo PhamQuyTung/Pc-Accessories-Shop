@@ -1,4 +1,3 @@
-// src/pages/Product/CreateProduct/CreateProduct.js
 import React, { useState } from 'react';
 import axios from 'axios';
 import styles from './CreateProduct.module.scss';
@@ -9,7 +8,7 @@ const cx = classNames.bind(styles);
 function CreateProduct() {
     const [formData, setFormData] = useState({
         name: '',
-        image: '',
+        images: [''], // ← dùng mảng để chứa nhiều ảnh
         price: '',
         discountPrice: '',
         status: '',
@@ -20,12 +19,14 @@ function CreateProduct() {
             ram: '',
             ssd: '',
         },
+        description: '',
         rating: '',
     });
 
     const handleChange = (e) => {
         const { name, value } = e.target;
 
+        // specs.* handling
         if (name.startsWith('specs.')) {
             const key = name.split('.')[1];
             setFormData((prev) => ({
@@ -35,12 +36,31 @@ function CreateProduct() {
                     [key]: value,
                 },
             }));
-        } else {
+        }
+        // images[i] handling
+        else if (name.startsWith('image-')) {
+            const index = parseInt(name.split('-')[1], 10);
+            const newImages = [...formData.images];
+            newImages[index] = value;
+            setFormData((prev) => ({
+                ...prev,
+                images: newImages,
+            }));
+        }
+        // default fields
+        else {
             setFormData((prev) => ({
                 ...prev,
                 [name]: value,
             }));
         }
+    };
+
+    const handleAddImageField = () => {
+        setFormData((prev) => ({
+            ...prev,
+            images: [...prev.images, ''],
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -64,6 +84,13 @@ function CreateProduct() {
         }
     };
 
+    const handleRemoveImageField = (index) => {
+        setFormData((prev) => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== index),
+        }));
+    };
+
     return (
         <div className={cx('wrapper')}>
             <h2>Tạo sản phẩm mới</h2>
@@ -76,14 +103,32 @@ function CreateProduct() {
                     onChange={handleChange}
                     required
                 />
-                <input
-                    type="text"
-                    name="image"
-                    placeholder="URL hình ảnh"
-                    value={formData.image}
-                    onChange={handleChange}
-                    required
-                />
+
+                {/* Multiple Image Inputs */}
+                {formData.images.map((img, index) => (
+                    <div key={index} className={cx('image-input')}>
+                        <input
+                            type="text"
+                            name={`image-${index}`}
+                            placeholder={`URL hình ảnh ${index + 1}`}
+                            value={img}
+                            onChange={handleChange}
+                            required
+                        />
+                        <button
+                            type="button"
+                            onClick={() => handleRemoveImageField(index)}
+                            className={cx('remove-btn')}
+                        >
+                            X
+                        </button>
+                    </div>
+                ))}
+
+                <button type="button" onClick={handleAddImageField}>
+                    + Thêm ảnh
+                </button>
+
                 <input
                     type="number"
                     name="price"
@@ -141,6 +186,13 @@ function CreateProduct() {
                     placeholder="SSD"
                     value={formData.specs.ssd}
                     onChange={handleChange}
+                />
+                <textarea
+                    name="description"
+                    placeholder="Mô tả sản phẩm"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={5}
                 />
                 <input
                     type="number"

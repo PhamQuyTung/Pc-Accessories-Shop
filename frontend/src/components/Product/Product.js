@@ -74,11 +74,19 @@ function Product() {
                             </div>
 
                             <Link to={`/products/${product.slug}`}>
-                                <img src={product.image} alt={product.name} />
+                                <img src={product.images?.[0]} alt={product.name} />
                             </Link>
 
                             <div className={cx('proloop-label--bottom')}>
                                 {product.status.includes('mới') && <span className={cx('new-tag')}>Sản phẩm mới</span>}
+                            </div>
+
+                            <div>
+                                {product.status.includes('còn') && <span className={cx('in-stock')}>Còn hàng</span>}
+                            </div>
+
+                            <div>
+                                {product.status.includes('hết') && <span className={cx('out-stock')}>Hết hàng</span>}
                             </div>
 
                             <div className={cx('product-card__des')}>
