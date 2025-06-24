@@ -344,16 +344,37 @@
 .specs-table {
     width: 100%;
     border-collapse: collapse;
+    background-color: #fef1f5;
+    overflow: hidden;
+    font-size: 15px;
+    border: 1px solid #ddd;
+
+    tr {
+        border-top: 1px solid #ddd;
+        border-bottom: 1px solid #ddd;
+    }
 
     td {
-        padding: 8px 12px;
+        padding: 14px 18px;
         border-bottom: 1px solid #ddd;
+        vertical-align: top;
+    }
 
-        &:first-child {
-            font-weight: 600;
-            width: 160px;
-            color: #444;
-        }
+    .specs-key {
+        width: 35%; // Chia cột bên trái
+        font-weight: 600;
+        color: #5a5a5a;
+        text-transform: capitalize;
+    }
+
+    .specs-value {
+        width: 65%; // Cột giá trị
+        color: #222;
+        border-left: 1px solid #ddd;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
     }
 }
 
@@ -365,5 +386,72 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+.related-products {
+    margin-top: 40px;
+    max-width: none;
+    width: 100%;
+    padding: 0 16px; // giữ khoảng cách nếu cần
+}
+
+.swiper-wrapper-fix {
+    position: relative;
+    margin-top: 25px;
+
+    &:hover .prev-btn,
+    &:hover .next-btn {
+        display: block;
+    }
+}
+
+.prev-btn {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    z-index: 2;
+    background-color: #ececec;
+    color: #333;
+    border: none;
+    border-radius: 50%;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 18px;
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+
+    &:hover {
+        color: #f00000;
+    }
+}
+
+.next-btn {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    z-index: 2;
+    background-color: #ececec;
+    color: #333;
+    border: none;
+    border-radius: 50%;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 18px;
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+
+    &:hover {
+        color: #f00000;
+    }
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
     }
 }

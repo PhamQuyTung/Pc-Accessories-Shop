@@ -15,6 +15,9 @@ router.get("/breadcrumb/:slug", ProductController.getBreadcrumb);
 // [POST] /api/products => Thêm sản phẩm mới
 router.post("/", ProductController.createProduct);
 
+// [GET] /api/products/related?category=abc&exclude=123
+router.get("/related", ProductController.getRelatedProducts);
+
 // [GET] /api/products/:slug => Chi tiết theo slug
 router.get("/:slug", ProductController.getBySlug);
 

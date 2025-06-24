@@ -12,6 +12,7 @@ function CreateProduct() {
         price: '',
         discountPrice: '',
         status: '',
+        category: '',
         specs: {
             cpu: '',
             vga: '',
@@ -193,6 +194,13 @@ function CreateProduct() {
                     value={formData.description}
                     onChange={handleChange}
                     rows={5}
+                />
+                <input
+                    type="text"
+                    name="category"
+                    placeholder="Danh mục sản phẩm (VD: PC Gaming, Laptop,...)"
+                    value={formData.category}
+                    onChange={handleChange}
                 />
                 <input
                     type="number"

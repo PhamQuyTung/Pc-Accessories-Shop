@@ -9,6 +9,7 @@ const ProductSchema = new mongoose.Schema({
     price: Number,
     discountPrice: Number,
     status: [String],
+    category: String,
     specs: {
         cpu: String,
         vga: String,

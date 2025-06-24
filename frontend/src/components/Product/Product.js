@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import styles from './Product.module.scss';
+import styles from './ProductCard.module.scss';
 import classNames from 'classnames/bind';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation } from 'swiper/modules';
@@ -10,7 +10,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons';
-import { FireIcon, GiftIcon } from '../Icons';
+import { FireIcon, GiftIcon } from '../Icons/Icons';
 import RatingComponent from '../Rating/Rating';
 
 const cx = classNames.bind(styles);
@@ -82,11 +82,11 @@ function Product() {
                             </div>
 
                             <div>
-                                {product.status.includes('còn') && <span className={cx('in-stock')}>Còn hàng</span>}
+                                {product.status.includes('còn hàng') && <span className={cx('in-stock')}>Còn hàng</span>}
                             </div>
 
                             <div>
-                                {product.status.includes('hết') && <span className={cx('out-stock')}>Hết hàng</span>}
+                                {product.status.includes('hết hàng') && <span className={cx('out-stock')}>Hết hàng</span>}
                             </div>
 
                             <div className={cx('product-card__des')}>

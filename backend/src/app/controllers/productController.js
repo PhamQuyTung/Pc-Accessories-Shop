@@ -57,6 +57,22 @@ class ProductController {
         .json({ error: "Tạo sản phẩm thất bại", details: err.message });
     }
   }
+
+  // Lấy sản phẩm liên quan
+  async getRelatedProducts(req, res) {
+    const { category, exclude } = req.query;
+
+    try {
+      const related = await Product.find({
+        category, // cùng category
+        _id: { $ne: exclude }, // loại trừ sản phẩm hiện tại
+      }).limit(7); // lấy tối đa 4 sản phẩm
+
+      res.json(related);
+    } catch (err) {
+      res.status(500).json({ error: "Không thể lấy sản phẩm liên quan" });
+    }
+  }
 }
 
 module.exports = new ProductController();

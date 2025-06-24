@@ -70,6 +70,11 @@
         font-weight: 600;
         color: #333;
         text-align: start;
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* Giới hạn 2 dòng */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
         line-height: 1.4;
         // margin: 8px 0;
     }

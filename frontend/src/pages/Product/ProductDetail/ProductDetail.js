@@ -2,6 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
 import { Row, Col } from 'react-bootstrap';
 import styles from './ProductDetail.module.scss';
 import classNames from 'classnames/bind';
@@ -9,9 +13,10 @@ import Breadcrumb from '~/components/Breadcrumb/Breadcrumb';
 import ProductGallery from './ProductGallery';
 import BasicRating from '~/components/Rating/Rating';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShoppingCart } from '@fortawesome/free-solid-svg-icons';
+import { faAngleLeft, faAngleRight, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 import { faHeart } from '@fortawesome/free-regular-svg-icons';
 import { faHeart as solidHeart } from '@fortawesome/free-solid-svg-icons';
+import ProductCard from '~/components/Product/ProductCard';
 
 const cx = classNames.bind(styles);
 
@@ -23,6 +28,19 @@ function ProductDetail() {
     const [isFavorite, setIsFavorite] = useState(false);
     const [activeTab, setActiveTab] = useState('description');
 
+    const [relatedProducts, setRelatedProducts] = useState([]);
+
+    // Logic lấy sản phẩm liên quan
+    useEffect(() => {
+        if (product) {
+            axios
+                .get(`http://localhost:5000/api/products/related?category=${product.category}&exclude=${product._id}`)
+                .then((res) => setRelatedProducts(res.data))
+                .catch((err) => console.error('Lỗi khi lấy sản phẩm liên quan:', err));
+        }
+    }, [product]);
+
+    //
     useEffect(() => {
         axios
             .get(`http://localhost:5000/api/products/${slug}`)
@@ -46,20 +64,21 @@ function ProductDetail() {
                 return <p>{product.description || 'Không có dòng mô tả'}</p>;
             case 'additional':
                 return (
-                    <table className={cx('specs-table')}>
-                        <tbody>
-                            {product.specs &&
-                                Object.entries(product.specs).map(([key, value]) => (
-                                    <tr key={key}>
-                                        <td>
-                                            <strong>{key.toUpperCase()}</strong>
-                                        </td>
-                                        <td>{value}</td>
-                                    </tr>
-                                ))}
-                        </tbody>
-                    </table>
+                    <>
+                        <table className={cx('specs-table')}>
+                            <tbody>
+                                {product.specs &&
+                                    Object.entries(product.specs).map(([key, value]) => (
+                                        <tr key={key}>
+                                            <td className={cx('specs-key')}>{key}</td>
+                                            <td className={cx('specs-value')}>{value}</td>
+                                        </tr>
+                                    ))}
+                            </tbody>
+                        </table>
+                    </>
                 );
+
             case 'reviews':
                 return <p>Chức năng đánh giá đang được phát triển.</p>;
             default:
@@ -146,22 +165,62 @@ function ProductDetail() {
                         onClick={() => setActiveTab('description')}
                         className={cx('tab-btn', { active: activeTab === 'description' })}
                     >
-                        Description
+                        Mô tả
                     </button>
                     <button
                         onClick={() => setActiveTab('additional')}
                         className={cx('tab-btn', { active: activeTab === 'additional' })}
                     >
-                        Additional Info
+                        Thông số kĩ thuật
                     </button>
                     <button
                         onClick={() => setActiveTab('reviews')}
                         className={cx('tab-btn', { active: activeTab === 'reviews' })}
                     >
-                        Reviews
+                        Đánh giá
                     </button>
                 </div>
+                <br></br>
                 <div className={cx('tab-content')}>{renderTabContent()}</div>
+            </div>
+
+            {/* Related Products Section */}
+            <div className={cx('related-products')}>
+                <h2>Sản phẩm liên quan</h2>
+                <div className={cx('swiper-wrapper-fix')}>
+                    <Swiper
+                        modules={[Navigation, Autoplay]}
+                        spaceBetween={10}
+                        slidesPerView={5}
+                        loop={true}
+                        autoplay={{ delay: 5000, disableOnInteraction: false }}
+                        navigation={{
+                            prevEl: `.${cx('prev-btn')}`,
+                            nextEl: `.${cx('next-btn')}`,
+                        }}
+                        onInit={(swiper) => {
+                            // Fix: for custom navigation buttons to work
+                            swiper.params.navigation.prevEl = `.${cx('prev-btn')}`;
+                            swiper.params.navigation.nextEl = `.${cx('next-btn')}`;
+                            swiper.navigation.init();
+                            swiper.navigation.update();
+                        }}
+                    >
+                        {relatedProducts.map((item) => (
+                            <SwiperSlide key={item._id}>
+                                <ProductCard product={item} />
+                            </SwiperSlide>
+                        ))}
+                    </Swiper>
+
+                    {/* Button prev next */}
+                    <button className={cx('prev-btn')}>
+                        <FontAwesomeIcon icon={faAngleLeft} />
+                    </button>
+                    <button className={cx('next-btn')}>
+                        <FontAwesomeIcon icon={faAngleRight} />
+                    </button>
+                </div>
             </div>
         </div>
     );
