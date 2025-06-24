@@ -17,6 +17,7 @@ import { faAngleLeft, faAngleRight, faShoppingCart } from '@fortawesome/free-sol
 import { faHeart } from '@fortawesome/free-regular-svg-icons';
 import { faHeart as solidHeart } from '@fortawesome/free-solid-svg-icons';
 import ProductCard from '~/components/Product/ProductCard';
+import SpinnerLoading from '~/components/SpinnerLoading/SpinnerLoading';
 
 const cx = classNames.bind(styles);
 
@@ -27,6 +28,7 @@ function ProductDetail() {
     const [quantity, setQuantity] = useState(1);
     const [isFavorite, setIsFavorite] = useState(false);
     const [activeTab, setActiveTab] = useState('description');
+    const [loading, setLoading] = useState(true);
 
     const [relatedProducts, setRelatedProducts] = useState([]);
 
@@ -42,19 +44,27 @@ function ProductDetail() {
 
     //
     useEffect(() => {
+        window.scrollTo(0, 0);
+        setLoading(true); // ✅ Bắt đầu loading
+        setProduct(null); // ✅ Reset product để tránh hiển thị cũ
+
         axios
             .get(`http://localhost:5000/api/products/${slug}`)
             .then((res) => {
-                setProduct(res.data);
+                setTimeout(() => {
+                    setProduct(res.data);
+                    setLoading(false); // ✅ Dừng loading
+                }, 1500);
             })
             .catch((err) => {
                 console.error('Lỗi khi lấy sản phẩm:', err);
                 setError('Không tìm thấy sản phẩm');
+                setLoading(false);
             });
     }, [slug]);
 
     if (error) return <div>{error}</div>;
-    if (!product) return <div>Đang tải...</div>;
+    if (loading) return <SpinnerLoading />;
 
     const toggleFavorite = () => setIsFavorite((prev) => !prev);
 
@@ -117,6 +127,9 @@ function ProductDetail() {
                                         {product.discountPrice?.toLocaleString()}₫
                                     </p>
                                     <p className={cx('product-info__price')}>{product.price?.toLocaleString()}₫</p>
+                                    <span className={cx('product-info__discount-percent')}>
+                                        -{Math.round((1 - product.discountPrice / product.price) * 100)}%
+                                    </span>
                                 </div>
 
                                 <div className={cx('product-info__status')}>
