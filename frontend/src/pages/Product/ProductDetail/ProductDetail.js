@@ -1,5 +1,5 @@
 // --- Imports giữ nguyên ---
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -31,6 +31,8 @@ function ProductDetail() {
     const [loading, setLoading] = useState(true);
 
     const [relatedProducts, setRelatedProducts] = useState([]);
+
+    const reviewSectionRef = useRef(null);
 
     // Logic lấy sản phẩm liên quan
     useEffect(() => {
@@ -90,7 +92,34 @@ function ProductDetail() {
                 );
 
             case 'reviews':
-                return <p>Chức năng đánh giá đang được phát triển.</p>;
+                return (
+                    <div className={cx('review-section')}>
+                        <h3>Đánh giá của khách hàng</h3>
+
+                        <br></br>
+
+                        <div className={cx('add-review')}>
+                            <h4>Add a review</h4>
+
+                            <textarea
+                                className={cx('review-textarea')}
+                                placeholder="Write a Review"
+                                rows={5}
+                            ></textarea>
+
+                            {/* Rating Stars */}
+                            <div className={cx('rating-stars')}>
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <span key={star} className={cx('star')}>
+                                        &#9733;
+                                    </span> // Unicode star ★
+                                ))}
+                            </div>
+
+                            <button className={cx('submit-review-btn')}>Submit Review</button>
+                        </div>
+                    </div>
+                );
             default:
                 return null;
         }
@@ -119,7 +148,18 @@ function ProductDetail() {
                             <div className={cx('product-info__fsz16')}>
                                 <div className={cx('product-info__rating')}>
                                     <BasicRating className={cx('custom-rating')} />
-                                    <span>5 đánh giá</span>
+                                    <span
+                                        className={cx('rating-count')}
+                                        onClick={() => {
+                                            setActiveTab('reviews');
+                                            setTimeout(() => {
+                                                reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+                                            }, 0);
+                                        }}
+                                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                    >
+                                        0 đánh giá
+                                    </span>
                                 </div>
 
                                 <div className={cx('product-info__cost')}>
@@ -172,7 +212,7 @@ function ProductDetail() {
             </div>
 
             {/* Tabs section */}
-            <div className={cx('tab-container')}>
+            <div ref={reviewSectionRef} className={cx('tab-container')}>
                 <div className={cx('tab-buttons')}>
                     <button
                         onClick={() => setActiveTab('description')}
@@ -187,14 +227,21 @@ function ProductDetail() {
                         Thông số kĩ thuật
                     </button>
                     <button
-                        onClick={() => setActiveTab('reviews')}
+                        onClick={() => {
+                            setActiveTab('reviews');
+                            setTimeout(() => {
+                                reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+                            }, 0); // đảm bảo render xong tab content
+                        }}
                         className={cx('tab-btn', { active: activeTab === 'reviews' })}
                     >
                         Đánh giá
                     </button>
                 </div>
                 <br></br>
-                <div className={cx('tab-content')}>{renderTabContent()}</div>
+                <div ref={reviewSectionRef} className={cx('tab-content')}>
+                    {renderTabContent()}
+                </div>
             </div>
 
             {/* Related Products Section */}
