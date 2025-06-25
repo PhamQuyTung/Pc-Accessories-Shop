@@ -2,6 +2,16 @@
 const mongoose = require('mongoose');
 const slugify = require("slugify");
 
+const reviewSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    rating: { type: Number, required: true },
+    comment: { type: String },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const ProductSchema = new mongoose.Schema({
     name: String,
     slug: String, 
@@ -19,6 +29,7 @@ const ProductSchema = new mongoose.Schema({
     },
     description: String,
     rating: Number,
+    reviews: [reviewSchema],
 });
 
 // Tạo slug trước khi lưu vào DB

@@ -73,6 +73,44 @@ class ProductController {
       res.status(500).json({ error: "Không thể lấy sản phẩm liên quan" });
     }
   }
+
+  // Thêm đánh giá cho sản phẩm
+  async addReview(req, res) {
+    const { rating, comment } = req.body;
+
+    try {
+      const product = await Product.findById(req.params.id);
+      if (!product)
+        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+
+      const newReview = {
+        name: req.user.name, // ✅ Lấy từ middleware
+        rating: Number(rating),
+        comment,
+      };
+
+      product.reviews.push(newReview);
+      await product.save();
+
+      res.status(201).json({ message: "Đã thêm đánh giá", review: newReview });
+    } catch (err) {
+      res.status(500).json({ error: "Lỗi khi thêm đánh giá" });
+    }
+  }
+
+  // Lấy danh sách đánh giá của sản phẩm
+  async getReviews(req, res) {
+    try {
+      const product = await Product.findById(req.params.id).select("reviews");
+
+      if (!product)
+        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+
+      res.json(product.reviews);
+    } catch (err) {
+      res.status(500).json({ error: "Lỗi khi lấy danh sách đánh giá" });
+    }
+  }
 }
 
 module.exports = new ProductController();

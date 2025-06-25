@@ -512,15 +512,18 @@
             display: flex;
             gap: 0.5rem;
             font-size: 24px;
-            color: #ccc;
             margin-bottom: 1.5rem;
 
             .star {
                 cursor: pointer;
+                color: #ccc; // sao mặc định chưa chọn
                 transition: color 0.2s ease;
 
-                &:hover,
-                &:hover ~ .star {
+                &.active {
+                    color: #ffcc00; // sao được chọn (vàng)
+                }
+
+                &:hover {
                     color: #ffcc00;
                 }
             }
@@ -528,7 +531,7 @@
 
         .submit-review-btn {
             padding: 0.6rem 1.5rem;
-            background-color: #6f42c1;
+            background-color: #c92a5e;
             color: white;
             border: none;
             border-radius: 8px;
@@ -538,8 +541,24 @@
             transition: background-color 0.3s ease;
 
             &:hover {
-                background-color: #5936a8;
+                background-color: #9a234b;
             }
         }
+    }
+}
+
+.review-item {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+
+    p {
+        margin: 5px 0;
+    }
+
+    strong {
+        font-weight: 600;
     }
 }

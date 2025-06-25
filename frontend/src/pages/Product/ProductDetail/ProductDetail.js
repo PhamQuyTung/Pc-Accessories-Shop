@@ -32,7 +32,18 @@ function ProductDetail() {
 
     const [relatedProducts, setRelatedProducts] = useState([]);
 
+    const [hoverStar, setHoverStar] = useState(0);
+    const [selectedStar, setSelectedStar] = useState(0);
+    const [reviewText, setReviewText] = useState('');
+
+    const [reviews, setReviews] = useState([]);
+
     const reviewSectionRef = useRef(null);
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN'); // ví dụ: 25/06/2025
+    };
 
     // Logic lấy sản phẩm liên quan
     useEffect(() => {
@@ -65,6 +76,16 @@ function ProductDetail() {
             });
     }, [slug]);
 
+    //
+    useEffect(() => {
+        if (activeTab === 'reviews' && product?._id) {
+            axios
+                .get(`http://localhost:5000/api/products/${product._id}/reviews`)
+                .then((res) => setReviews(res.data))
+                .catch((err) => console.error('Lỗi khi lấy đánh giá:', err));
+        }
+    }, [activeTab, product]);
+
     if (error) return <div>{error}</div>;
     if (loading) return <SpinnerLoading />;
 
@@ -96,32 +117,105 @@ function ProductDetail() {
                     <div className={cx('review-section')}>
                         <h3>Đánh giá của khách hàng</h3>
 
-                        <br></br>
+                        {/* --- ✅ Hiển thị danh sách đánh giá --- */}
+                        {reviews.length === 0 ? (
+                            <p>Chưa có đánh giá nào</p>
+                        ) : (
+                            reviews.map((review, index) => (
+                                <div key={index} className={cx('review-item')}>
+                                    <p>
+                                        <strong>{review.name}</strong> ({formatDate(review.createdAt)})
+                                    </p>
+                                    <p>
+                                        {Array.from({ length: review.rating }).map((_, i) => (
+                                            <span key={i} style={{ color: '#ffcc00', fontSize: '18px' }}>
+                                                ★
+                                            </span>
+                                        ))}
+                                    </p>
+                                    <p>{review.comment}</p>
+                                </div>
+                            ))
+                        )}
 
+                        <br />
+
+                        {/* --- ✅ Form thêm đánh giá --- */}
                         <div className={cx('add-review')}>
-                            <h4>Add a review</h4>
+                            <h4>Thêm đánh giá của bạn</h4>
 
                             <textarea
                                 className={cx('review-textarea')}
                                 placeholder="Write a Review"
                                 rows={5}
+                                value={reviewText}
+                                onChange={(e) => setReviewText(e.target.value)}
                             ></textarea>
 
-                            {/* Rating Stars */}
                             <div className={cx('rating-stars')}>
                                 {[1, 2, 3, 4, 5].map((star) => (
-                                    <span key={star} className={cx('star')}>
+                                    <span
+                                        key={star}
+                                        className={cx('star', {
+                                            active: (hoverStar || selectedStar) >= star,
+                                        })}
+                                        onMouseEnter={() => setHoverStar(star)}
+                                        onMouseLeave={() => setHoverStar(0)}
+                                        onClick={() => setSelectedStar(star)}
+                                    >
                                         &#9733;
-                                    </span> // Unicode star ★
+                                    </span>
                                 ))}
                             </div>
 
-                            <button className={cx('submit-review-btn')}>Submit Review</button>
+                            <button className={cx('submit-review-btn')} onClick={handleSubmitReview}>
+                                Gửi đánh giá
+                            </button>
                         </div>
                     </div>
                 );
             default:
                 return null;
+        }
+    };
+
+    const handleSubmitReview = async () => {
+        const token = localStorage.getItem('token');
+        console.log('Token:', token); // check log
+
+        if (!token) {
+            alert('Vui lòng đăng nhập để gửi đánh giá');
+            return;
+        }
+
+        try {
+            const response = await axios.post(
+                `http://localhost:5000/api/products/${product._id}/reviews`,
+                {
+                    rating: selectedStar,
+                    comment: reviewText,
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`, // <-- rất quan trọng
+                    },
+                },
+            );
+
+            alert('Gửi đánh giá thành công');
+
+            // Cập nhật lại danh sách đánh giá
+            setReviewText('');
+            setSelectedStar(0);
+            setHoverStar(0);
+
+            // Gọi lại API để load đánh giá mới
+            const res = await axios.get(`http://localhost:5000/api/products/${product._id}/reviews`);
+            setReviews(res.data);
+        } catch (error) {
+            console.error('Lỗi khi gửi đánh giá:', error);
+            alert('Không thể gửi đánh giá');
         }
     };
 
