@@ -18,6 +18,7 @@ import { faHeart } from '@fortawesome/free-regular-svg-icons';
 import { faHeart as solidHeart } from '@fortawesome/free-solid-svg-icons';
 import ProductCard from '~/components/Product/ProductCard';
 import SpinnerLoading from '~/components/SpinnerLoading/SpinnerLoading';
+import { useToast } from '~/components/ToastMessager';
 
 const cx = classNames.bind(styles);
 
@@ -38,7 +39,11 @@ function ProductDetail() {
 
     const [reviews, setReviews] = useState([]);
 
+    const [averageRating, setAverageRating] = useState(0);
+
     const reviewSectionRef = useRef(null);
+
+    const toast = useToast();
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -76,15 +81,21 @@ function ProductDetail() {
             });
     }, [slug]);
 
-    //
+    // Sau khi load sản phẩm, gọi luôn đánh giá
     useEffect(() => {
-        if (activeTab === 'reviews' && product?._id) {
+        if (product?._id) {
             axios
                 .get(`http://localhost:5000/api/products/${product._id}/reviews`)
-                .then((res) => setReviews(res.data))
+                .then((res) => {
+                    setReviews(res.data);
+
+                    const totalStars = res.data.reduce((sum, r) => sum + r.rating, 0);
+                    const avg = res.data.length > 0 ? totalStars / res.data.length : 0;
+                    setAverageRating(avg);
+                })
                 .catch((err) => console.error('Lỗi khi lấy đánh giá:', err));
         }
-    }, [activeTab, product]);
+    }, [product]);
 
     if (error) return <div>{error}</div>;
     if (loading) return <SpinnerLoading />;
@@ -184,7 +195,13 @@ function ProductDetail() {
         console.log('Token:', token); // check log
 
         if (!token) {
-            alert('Vui lòng đăng nhập để gửi đánh giá');
+            toast('Vui lòng đăng nhập để gửi đánh giá', 'warning');
+            return;
+        }
+
+        // ✅ Kiểm tra người dùng có nhập nội dung và chọn sao không
+        if (selectedStar === 0 || reviewText.trim() === '') {
+            toast('Vui lòng điền đánh giá', 'warning');
             return;
         }
 
@@ -203,7 +220,7 @@ function ProductDetail() {
                 },
             );
 
-            alert('Gửi đánh giá thành công');
+            toast('Gửi đánh giá thành công!', 'success');
 
             // Cập nhật lại danh sách đánh giá
             setReviewText('');
@@ -213,6 +230,11 @@ function ProductDetail() {
             // Gọi lại API để load đánh giá mới
             const res = await axios.get(`http://localhost:5000/api/products/${product._id}/reviews`);
             setReviews(res.data);
+
+            // 👉 Cập nhật lại trung bình sao
+            const totalStars = res.data.reduce((sum, r) => sum + r.rating, 0);
+            const avg = res.data.length > 0 ? totalStars / res.data.length : 0;
+            setAverageRating(avg);
         } catch (error) {
             console.error('Lỗi khi gửi đánh giá:', error);
             alert('Không thể gửi đánh giá');
@@ -241,7 +263,6 @@ function ProductDetail() {
 
                             <div className={cx('product-info__fsz16')}>
                                 <div className={cx('product-info__rating')}>
-                                    <BasicRating className={cx('custom-rating')} />
                                     <span
                                         className={cx('rating-count')}
                                         onClick={() => {
@@ -250,9 +271,9 @@ function ProductDetail() {
                                                 reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
                                             }, 0);
                                         }}
-                                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                        style={{ cursor: 'pointer' }}
                                     >
-                                        0 đánh giá
+                                        {reviews.length} đánh giá | ⭐ {averageRating.toFixed(1)} / 5
                                     </span>
                                 </div>
 
@@ -329,7 +350,7 @@ function ProductDetail() {
                         }}
                         className={cx('tab-btn', { active: activeTab === 'reviews' })}
                     >
-                        Đánh giá
+                        Đánh giá ({reviews.length})
                     </button>
                 </div>
                 <br></br>
