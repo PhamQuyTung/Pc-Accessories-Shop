@@ -48,6 +48,7 @@
     border: 1px solid #000;
     color: #fff; /* Màu chữ trắng */
     padding: 10px 40px 10px 20px; /* Padding cho input */
+    font-size: 1.4rem;
 
     &:focus {
         border-color: #ff0000; /* Màu viền khi focus */
@@ -64,6 +65,7 @@
     padding: 0;
     margin-left: -30px;
     color: inherit; /* Giữ nguyên màu sắc của icon */
+    font-size: 1.4rem;
 }
 
 .header__text--login span {

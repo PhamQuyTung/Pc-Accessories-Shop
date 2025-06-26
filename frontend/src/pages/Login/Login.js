@@ -82,10 +82,10 @@ function Login() {
 
                     <div className={cx('footer')}>
                         <p className={cx('footer-text')}>
-                            Bạn chưa có tài khoản? <a href="/register">Đăng ký ngay!</a>
+                            Bạn chưa có tài khoản? <a href="/register">Đăng ký ngay</a>
                         </p>
                         <p className={cx('footer-text')}>
-                            Quay về <a href="/">trang chủ</a>
+                            hoặc quay về <a href="/">trang chủ</a>
                         </p>
                     </div>
                 </form>

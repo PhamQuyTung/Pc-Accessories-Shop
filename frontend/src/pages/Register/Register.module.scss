@@ -3,7 +3,7 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background: linear-gradient(90deg, red, black); 
+    background: linear-gradient(90deg, red, black);
 }
 
 .card {
@@ -70,6 +70,7 @@
     text-align: center;
     font-size: 1.6rem; /* text-sm */
     font-weight: 500;
+    border: none;
     cursor: pointer;
     transition: background-color 0.2s ease;
 
@@ -78,11 +79,28 @@
     }
 }
 
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 1.6rem;
+}
+
 .footer {
     font-size: 1.6rem; /* text-sm */
     text-align: center;
     color: #6b7280; /* text-gray-600 */
     margin-top: 1rem; /* mt-4 */
+    display: flex;
+    align-items: center;
+    gap: 10px; /* space-x-2 */
+
+    .footer-text {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: 500; /* font-medium */
+    }
 }
 
 .link {

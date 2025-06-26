@@ -207,7 +207,7 @@ function Register() {
                         Bạn đã có tài khoản? <a href="/login">Đăng nhập</a>
                     </p>
                     <p className={cx('footer-text')}>
-                        Quay về <a href="/">trang chủ</a>
+                        hoặc quay về <a href="/">trang chủ</a>
                     </p>
                 </div>
             </div>

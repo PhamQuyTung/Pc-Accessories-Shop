@@ -237,7 +237,7 @@ function ProductDetail() {
             setAverageRating(avg);
         } catch (error) {
             console.error('Lỗi khi gửi đánh giá:', error);
-            alert('Không thể gửi đánh giá');
+            toast('Không thể gửi đánh giá', 'error');
         }
     };
 
