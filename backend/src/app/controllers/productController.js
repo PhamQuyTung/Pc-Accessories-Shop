@@ -1,5 +1,6 @@
 // app/controllers/productController.js
 const Product = require("../models/product");
+const mongoose = require("mongoose");
 
 class ProductController {
   // Lấy tất cả sản phẩm
@@ -109,6 +110,49 @@ class ProductController {
       res.json(product.reviews);
     } catch (err) {
       res.status(500).json({ error: "Lỗi khi lấy danh sách đánh giá" });
+    }
+  }
+
+  // Trang edit sản phẩm
+  async editProduct(req, res) {
+    try {
+      const product = await Product.findById(req.params.id);
+      if (!product)
+        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+
+      // Gửi JSON cho frontend React
+      res.json(product);
+    } catch (err) {
+      res.status(500).json({ error: "Lỗi khi lấy thông tin sản phẩm" });
+    }
+  }
+
+  // Cập nhật sản phẩm
+  async getById(req, res) {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: "ID không hợp lệ" });
+    }
+    try {
+      const product = await Product.findById(req.params.id);
+      if (!product)
+        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      res.json(product);
+    } catch (err) {
+      res.status(500).json({ error: "Lỗi server" });
+    }
+  }
+
+  // Cập nhật sản phẩm
+  async updateProduct(req, res) {
+    try {
+      const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+      });
+      if (!updated)
+        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ error: "Lỗi khi cập nhật sản phẩm" });
     }
   }
 }

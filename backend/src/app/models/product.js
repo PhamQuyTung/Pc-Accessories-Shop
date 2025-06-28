@@ -30,6 +30,8 @@ const ProductSchema = new mongoose.Schema({
     description: String,
     rating: Number,
     reviews: [reviewSchema],
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
 });
 
 // Tạo slug trước khi lưu vào DB

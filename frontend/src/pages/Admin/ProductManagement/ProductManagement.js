@@ -71,8 +71,14 @@ const ProductManagement = () => {
                             <td>{product.status ? 'Hiển thị' : 'Ẩn'}</td>
                             <td>{formatDate(product.createdAt)}</td>
                             <td>
-                                <button className={cx('btn-edit')}>✏️</button>
-                                <button className={cx('btn-delete')}>🗑️</button>
+                                <div className={cx('action-buttons')}>
+                                    <Link to={`/products/edit/${product._id}`} className={cx('btn-edit-link')}>
+                                        <button className={cx('btn-edit')}>✏️</button>
+                                    </Link>
+                                    <Link to={`/products//delete/${product._id}`} className={cx('btn-delete-link')}>
+                                        <button className={cx('btn-delete')}>🗑️</button>
+                                    </Link>
+                                </div>
                             </td>
                         </tr>
                     ))}

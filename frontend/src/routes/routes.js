@@ -14,6 +14,7 @@ import CreateProduct from '../pages/CreateProduct/CreateProduct'; // tạo compo
 import ProductManagement from '../pages/Admin/ProductManagement/ProductManagement';
 import UserManagement from '../pages/Admin/AccountManagement/AccountManagement';
 import AdminLayout from '../layout/AdminLayout/AdminLayout'; // layout riêng cho admin
+import EditProduct from '../pages/EditProduct/EditProduct'; // Trang chỉnh sửa sản phẩm
 
 const routes = [
     { path: '/', element: <Home />, layout: MainLayout },
@@ -22,6 +23,9 @@ const routes = [
 
     // Route trang tạo sản phẩm
     { path: '/products/create', element: <CreateProduct />, layout: MainLayout },
+
+    // Route chỉnh sửa sản phẩm theo ID
+    { path: '/products/edit/:id', element: <EditProduct />, layout: MainLayout },
 
     // ✅ Route chi tiết sản phẩm PC theo slug
     { path: '/products/:slug', element: <ProductDetail />, layout: MainLayout },

@@ -9,24 +9,27 @@ console.log(
 
 // [GET] /api/products => Lấy danh sách
 router.get("/", ProductController.getAll);
-
 // [GET] /api/products/create => Trang create (render handlebars)
 router.get("/create", ProductController.createProduct);
-
 // [GET] /api/breadcrumb/:slug — phải đặt trước /:slug
 router.get("/breadcrumb/:slug", ProductController.getBreadcrumb);
-
+// [GET] /api/products/related?category=abc&exclude=123
+router.get("/related", ProductController.getRelatedProducts);
 // [POST] /api/products => Thêm sản phẩm mới
 router.post("/", ProductController.createProduct);
 
-// [GET] /api/products/related?category=abc&exclude=123
-router.get("/related", ProductController.getRelatedProducts);
+// [GET] /api/products/:id => Lấy chi tiết sản phẩm theo id (JSON)
+router.get("/id/:id", ProductController.getById);
+// [PUT] /api/products/:id => Cập nhật sản phẩm
+router.put("/:id", ProductController.updateProduct);
 
 // [GET] /api/products/:id/reviews => Lấy danh sách đánh giá
 router.get("/:id/reviews", ProductController.getReviews);
-
 // [POST] /api/products/:id/reviews => Thêm đánh giá
 router.post("/:id/reviews", authMiddleware, ProductController.addReview);
+
+// [GET] /:id/edit => Trang edit 
+router.get("/edit/:id", ProductController.editProduct);
 
 // [GET] /api/products/:slug => Chi tiết theo slug
 router.get("/:slug", ProductController.getBySlug);
