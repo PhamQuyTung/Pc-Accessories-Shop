@@ -1,0 +1,33 @@
+.wrapper {
+    // display: flex;
+    // max-width: 1320px;
+    // margin: 0 auto;
+    overflow: hidden;
+}
+
+.main {
+    // margin-left: 200px; // match sidebar width
+    font-size: 1.4rem;
+    padding: 20px;
+    flex-grow: 1;
+    background-color: #f9f9f9;
+    min-height: 100vh;
+}
+
+.header {
+    background-color: #f8f9fa;
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.sidebar {
+    background-color: #343a40;
+    color: #fff;
+    padding: 20px 0 !important;
+    height: 100vh; // full height
+    // position: fixed; // fixed sidebar
+    // top: 0;
+    // left: 0;
+    width: 200px; // fixed width
+}

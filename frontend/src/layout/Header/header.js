@@ -1,16 +1,14 @@
 import React from 'react';
 import Logo from '~/assets/logo/logo4.png';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import styles from './Header.module.scss'; // Import file CSS Modules
 import classNames from 'classnames/bind';
 import Button from '~/components/Button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-    faMagnifyingGlass,
-    faUser,
-} from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass, faPlus, faPlusCircle, faUser } from '@fortawesome/free-solid-svg-icons';
 import Tippy from '@tippyjs/react';
 import { EyeIcon, HandWaveIcon, ListItemIcon, OutTheDoor } from '~/components/Icons';
+import { faPenToSquare } from '@fortawesome/free-regular-svg-icons';
 
 const cx = classNames.bind(styles);
 
@@ -39,46 +37,66 @@ function Header() {
     };
 
     return (
-        <header className={cx("header")}>
-            <div className={cx("header-container")}>
-                <div className={cx("header__top")}>
-                    <Link to="/" className={cx("header__logo")}>
+        <header className={cx('header')}>
+            <div className={cx('header-container')}>
+                <div className={cx('header__top')}>
+                    <Link to="/" className={cx('header__logo')}>
                         <img src={Logo} alt="Logo" />
                     </Link>
 
-                    <form action="#" className={cx("header__search")}>
+                    <form action="#" className={cx('header__search')}>
                         <input type="text" placeholder="Tìm kiếm sản phẩm..." required />
-                        <button type="submit" className={cx("header__search-icon")}>
+                        <button type="submit" className={cx('header__search-icon')}>
                             <FontAwesomeIcon icon={faMagnifyingGlass} />
                         </button>
                     </form>
 
                     {/* Nếu có user thì hiển thị tên user không thì hiển thị button đăng kí/đăng nhập */}
                     {user ? (
-                        <div className={cx("header__user")}>
+                        <div className={cx('header__user')}>
                             <Tippy
                                 content={
-                                    <div className={cx("header__user-dropdown")}>
-                                        <Link to="/profile" className={cx("dropdown__greeting")}>
+                                    <div className={cx('header__user-dropdown')}>
+                                        <Link to="/profile" className={cx('dropdown__greeting')}>
                                             <HandWaveIcon />
                                             <strong>Xin chào, {user.name}</strong>
                                         </Link>
 
-                                        <Link to="/orders" className={cx("dropdown__item")}>
+                                        <Link to="/orders" className={cx('dropdown__item')}>
                                             <ListItemIcon />
                                             <span>Đơn hàng của tôi</span>
                                         </Link>
 
-                                        <Link to="/recent" className={cx("dropdown__item")}>
-                                            <span className={cx("icon-wrapper")}>
+                                        <Link to="/recent" className={cx('dropdown__item')}>
+                                            <span className={cx('icon-wrapper')}>
                                                 <EyeIcon />
                                             </span>
                                             <span>Đã xem gần đây</span>
                                         </Link>
 
-                                        <Link to="#" className={cx("dropdown__logout")} onClick={handleLogout}>
+                                        <NavLink
+                                            to="/products/create"
+                                            className={({ isActive }) => cx('dropdown__item', { active: isActive })}
+                                        >
+                                            <span className={cx('icon-wrapper')}>
+                                                <FontAwesomeIcon icon={faPlusCircle} />
+                                            </span>
+                                            <span>Thêm sản phẩm</span>
+                                        </NavLink>
+
+                                        <NavLink
+                                            to="/admin/products"
+                                            className={({ isActive }) => cx('dropdown__item', { active: isActive })}
+                                        >
+                                            <span className={cx('icon-wrapper')}>
+                                                <FontAwesomeIcon icon={faPenToSquare} />
+                                            </span>
+                                            <span>My Admin</span>
+                                        </NavLink>
+
+                                        <Link to="#" className={cx('dropdown__logout')} onClick={handleLogout}>
                                             <OutTheDoor />
-                                            <span className={cx("logout")}>Đăng xuất</span>
+                                            <span className={cx('logout')}>Đăng xuất</span>
                                         </Link>
                                     </div>
                                 }
@@ -87,36 +105,50 @@ function Header() {
                                 offset={[0, 10]}
                                 // visible
                             >
-                                <div className={cx("header__user-box")}>
-                                    <FontAwesomeIcon icon={faUser} className={cx("user-icon")} />
-                                    <div className={cx("user-text")}>
-                                        <span className={cx("name")}>{user.name}</span>
+                                <div className={cx('header__user-box')}>
+                                    <FontAwesomeIcon icon={faUser} className={cx('user-icon')} />
+                                    <div className={cx('user-text')}>
+                                        <span className={cx('name')}>{user.name}</span>
                                     </div>
                                 </div>
                             </Tippy>
                         </div>
                     ) : (
                         <>
-                            <a href="/login" className={cx("header__text--login")}>
+                            <a href="/login" className={cx('header__text--login')}>
                                 <Button outline Small>
                                     Đăng nhập
                                 </Button>
                             </a>
 
-                            <a href="/register" className={cx("header__text--login")}>
-                                <Button primary2 Small>Đăng ký</Button>
+                            <a href="/register" className={cx('header__text--login')}>
+                                <Button primary2 Small>
+                                    Đăng ký
+                                </Button>
                             </a>
                         </>
                     )}
                 </div>
 
-                <div className={cx("header__nav")}>
-                    <a className={cx('header__nav-link')} href="/">Trang chủ</a>
-                    <a className={cx('header__nav-link')} href="/about">Giới thiệu</a>
-                    <a className={cx('header__nav-link')} href="/cart">Giỏ hàng</a>
-                    <a className={cx('header__nav-link')} href="/contact">Liên hệ</a>
-                    <a className={cx('header__nav-link')} href="/blog">Blog</a>
-                    <a className={cx('header__nav-link')} href="/promotion">Khuyến mãi</a>
+                <div className={cx('header__nav')}>
+                    <a className={cx('header__nav-link')} href="/">
+                        Trang chủ
+                    </a>
+                    <a className={cx('header__nav-link')} href="/about">
+                        Giới thiệu
+                    </a>
+                    <a className={cx('header__nav-link')} href="/cart">
+                        Giỏ hàng
+                    </a>
+                    <a className={cx('header__nav-link')} href="/contact">
+                        Liên hệ
+                    </a>
+                    <a className={cx('header__nav-link')} href="/blog">
+                        Blog
+                    </a>
+                    <a className={cx('header__nav-link')} href="/promotion">
+                        Khuyến mãi
+                    </a>
                 </div>
             </div>
         </header>

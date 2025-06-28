@@ -1,0 +1,19 @@
+.link {
+    text-decoration: none;
+    color: #fff;
+    padding: 18px 32px;
+    font-size: 1.4rem;
+
+    &:hover {
+        background-color: #495057;
+        color: #fff;
+        text-decoration: none;
+    }
+}
+
+.active {
+    background-color: #495057;
+    color: #fff;
+}
+
+

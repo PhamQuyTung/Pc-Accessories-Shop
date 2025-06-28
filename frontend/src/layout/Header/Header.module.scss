@@ -306,3 +306,12 @@
         transform: rotate(180deg); /* Mũi tên lên */
     }
 }
+
+.dropdown__item {
+    color: black;
+
+    &.active {
+        color: #007bff;
+        font-weight: bold;
+    }
+}

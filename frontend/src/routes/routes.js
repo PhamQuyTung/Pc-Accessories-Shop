@@ -11,6 +11,9 @@ import MainLayout from '../layout/MainLayout/MainLayout';
 import AuthLayout from '../layout/AuthLayout';
 import ProductDetail from '../pages/Product/ProductDetail/ProductDetail'; // 👈 Tạo trang này
 import CreateProduct from '../pages/CreateProduct/CreateProduct'; // tạo component này
+import ProductManagement from '../pages/Admin/ProductManagement/ProductManagement';
+import UserManagement from '../pages/Admin/AccountManagement/AccountManagement';
+import AdminLayout from '../layout/AdminLayout/AdminLayout'; // layout riêng cho admin
 
 const routes = [
     { path: '/', element: <Home />, layout: MainLayout },
@@ -22,6 +25,10 @@ const routes = [
 
     // ✅ Route chi tiết sản phẩm PC theo slug
     { path: '/products/:slug', element: <ProductDetail />, layout: MainLayout },
+
+    // --- Admin routes ---
+    { path: '/admin/products', element: <ProductManagement />, layout: AdminLayout },
+    { path: '/admin/users', element: <UserManagement />, layout: AdminLayout },
 
     { path: '/cart', element: <Cart />, layout: MainLayout },
     { path: '/contact', element: <Contact />, layout: MainLayout },
