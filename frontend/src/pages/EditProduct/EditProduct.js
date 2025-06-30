@@ -3,11 +3,18 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import styles from './EditProduct.module.scss';
 import classNames from 'classnames/bind';
+import { useToast } from '~/components/ToastMessager';
 
 const cx = classNames.bind(styles);
 
 function EditProduct() {
+    // Sử dụng useToast để hiển thị thông báo
+    const toast = useToast();
+
+    // Lấy ID sản phẩm từ URL params
     const { id } = useParams();
+
+    // Khởi tạo state để lưu trữ dữ liệu form
     const navigate = useNavigate();
     const [formData, setFormData] = useState(null);
 
@@ -15,7 +22,7 @@ function EditProduct() {
         axios
             .get(`http://localhost:5000/api/products/edit/${id}`)
             .then((res) => setFormData(res.data))
-            .catch(() => alert('Không tìm thấy sản phẩm!'));
+            .catch(() => toast('Không tìm thấy sản phẩm!', 'error'));
     }, [id]);
 
     const handleChange = (e) => {
@@ -73,11 +80,11 @@ function EditProduct() {
                 rating: Number(formData.rating),
             };
             await axios.put(`http://localhost:5000/api/products/${id}`, payload);
-            alert('Cập nhật sản phẩm thành công!');
+            toast('Cập nhật sản phẩm thành công!', 'success');
             navigate('/admin/products');
         } catch (err) {
             console.error('Lỗi khi cập nhật sản phẩm:', err);
-            alert('Lỗi khi cập nhật sản phẩm!');
+            toast('Lỗi khi cập nhật sản phẩm!', 'error');
         }
     };
 

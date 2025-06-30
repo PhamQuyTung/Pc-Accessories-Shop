@@ -3,22 +3,26 @@ import axios from 'axios';
 import classNames from 'classnames/bind';
 import styles from './ProductManagement.module.scss';
 import { Link } from 'react-router-dom';
+import { useToast } from '~/components/ToastMessager';
+import Swal from 'sweetalert2';
 
 const cx = classNames.bind(styles);
 
 const ProductManagement = () => {
     const [products, setProducts] = useState([]);
+    const toast = useToast();
+
+    // Đưa fetchProducts ra ngoài useEffect
+    const fetchProducts = async () => {
+        try {
+            const res = await axios.get('http://localhost:5000/api/products');
+            setProducts(res.data);
+        } catch (err) {
+            console.error('Lỗi khi tải sản phẩm:', err);
+        }
+    };
 
     useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const res = await axios.get('http://localhost:5000/api/products');
-                setProducts(res.data);
-            } catch (err) {
-                console.error('Lỗi khi tải sản phẩm:', err);
-            }
-        };
-
         fetchProducts();
     }, []);
 
@@ -31,10 +35,34 @@ const ProductManagement = () => {
         return date.toLocaleDateString('vi-VN');
     };
 
+    const handleSoftDelete = async (id) => {
+        const result = await Swal.fire({
+            title: 'Bạn có chắc muốn xóa tạm thời sản phẩm này?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Có',
+            cancelButtonText: 'Không',
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await axios.delete(`http://localhost:5000/api/products/soft/${id}`);
+                toast('Đã chuyển sản phẩm vào thùng rác!', 'success');
+                fetchProducts();
+            } catch (err) {
+                toast('Lỗi khi xóa sản phẩm!', 'error');
+            }
+        }
+    };
+
     return (
         <div className={cx('product-management')}>
             <div className={cx('header')}>
-                <h2>Quản lý sản phẩm</h2>
+                <h2>
+                    Quản lý sản phẩm
+                    {/* Tổng tất cả sản phẩm */}
+                    <span className={cx('product-count')}>({products.length})</span>
+                </h2>
                 <button className={cx('btn-add')}>
                     <Link to="/products/create">+ Thêm sản phẩm mới</Link>
                 </button>
@@ -75,9 +103,9 @@ const ProductManagement = () => {
                                     <Link to={`/products/edit/${product._id}`} className={cx('btn-edit-link')}>
                                         <button className={cx('btn-edit')}>✏️</button>
                                     </Link>
-                                    <Link to={`/products//delete/${product._id}`} className={cx('btn-delete-link')}>
-                                        <button className={cx('btn-delete')}>🗑️</button>
-                                    </Link>
+                                    <button className={cx('btn-delete')} onClick={() => handleSoftDelete(product._id)}>
+                                        🗑️
+                                    </button>
                                 </div>
                             </td>
                         </tr>

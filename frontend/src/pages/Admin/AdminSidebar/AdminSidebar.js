@@ -16,6 +16,10 @@ const AdminSidebar = () => (
             Quản lý người dùng
         </NavLink>
 
+        <NavLink to="/admin/products/trash" className={({ isActive }) => cx('link', { active: isActive })}>
+            Thùng rác sản phẩm
+        </NavLink>
+
         <NavLink to="/" className={({ isActive }) => cx('link', { active: isActive })}>
             Quay về trang chủ
         </NavLink>

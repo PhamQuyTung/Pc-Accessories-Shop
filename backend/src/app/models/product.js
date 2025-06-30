@@ -32,6 +32,7 @@ const ProductSchema = new mongoose.Schema({
     reviews: [reviewSchema],
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
+    deleted: { type: Boolean, default: false }, // Thêm trường này
 });
 
 // Tạo slug trước khi lưu vào DB
@@ -42,5 +43,5 @@ ProductSchema.pre("save", function (next) {
   next();
 });
 
-module.exports = mongoose.model('product', ProductSchema); 
+module.exports = mongoose.model('product', ProductSchema);
 

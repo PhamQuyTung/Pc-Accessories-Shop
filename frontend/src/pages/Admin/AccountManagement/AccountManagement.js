@@ -26,7 +26,10 @@ const AccountManagement = () => {
     return (
         <div className={cx('user-management')}>
             <div className={cx('header')}>
-                <h2>Quản lý người dùng</h2>
+                <h2>
+                    Quản lý người dùng
+                    <span className={cx('user-count')}>({accounts.length})</span>
+                </h2>
                 <button className={cx('btn-add')}>
                     <Link to="/register">+ Thêm tài khoản</Link>
                 </button>

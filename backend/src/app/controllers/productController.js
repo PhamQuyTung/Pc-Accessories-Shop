@@ -6,10 +6,10 @@ class ProductController {
   // Lấy tất cả sản phẩm
   async getAll(req, res) {
     try {
-      const products = await Product.find();
-      res.json(products);
+        const products = await Product.find({ deleted: { $ne: true } }); // Chỉ lấy sản phẩm chưa bị xóa tạm thời
+        res.json(products);
     } catch (err) {
-      res.status(500).json({ error: "Lỗi server" });
+        res.status(500).json({ error: "Lỗi server" });
     }
   }
 
@@ -155,6 +155,57 @@ class ProductController {
       res.status(500).json({ error: "Lỗi khi cập nhật sản phẩm" });
     }
   }
+
+  // Xóa sản phẩm (chuyển vào thùng rác)
+  async softDeleteProduct(req, res) {
+    try {
+      const product = await Product.findByIdAndUpdate(
+        req.params.id,
+        { deleted: true },
+        { new: true }
+      );
+      if (!product) return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      res.json({ message: "Đã chuyển vào thùng rác", product });
+    } catch (err) {
+      res.status(500).json({ error: "Lỗi khi xóa tạm thời" });
+    }
+  }
+
+  // Lấy sản phẩm trong thùng rác
+  async getTrash(req, res) {
+    try {
+        const products = await Product.find({ deleted: true });
+        res.json(products);
+    } catch (err) {
+        res.status(500).json({ error: "Lỗi server" });
+    }
+  }
+
+  // Xóa sản phẩm vĩnh viễn
+  async forceDeleteProduct(req, res) {
+    try {
+        const product = await Product.findByIdAndDelete(req.params.id);
+        if (!product) return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+        res.json({ message: "Đã xóa vĩnh viễn" });
+    } catch (err) {
+        res.status(500).json({ error: "Lỗi khi xóa vĩnh viễn" });
+    }
+  }
+
+  // Khôi phục sản phẩm từ thùng rác
+  async restoreProduct(req, res) {
+    try {
+        const product = await Product.findByIdAndUpdate(
+            req.params.id,
+            { deleted: false },
+            { new: true }
+        );
+        if (!product) return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+        res.json({ message: "Đã khôi phục sản phẩm", product });
+    } catch (err) {
+        res.status(500).json({ error: "Lỗi khi khôi phục sản phẩm" });
+    }
+}
 }
 
 module.exports = new ProductController();

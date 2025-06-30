@@ -15,6 +15,7 @@ import ProductManagement from '../pages/Admin/ProductManagement/ProductManagemen
 import UserManagement from '../pages/Admin/AccountManagement/AccountManagement';
 import AdminLayout from '../layout/AdminLayout/AdminLayout'; // layout riêng cho admin
 import EditProduct from '../pages/EditProduct/EditProduct'; // Trang chỉnh sửa sản phẩm
+import Trash from '../pages/Trash/Trash'; // Trang chỉnh sửa sản phẩm
 
 const routes = [
     { path: '/', element: <Home />, layout: MainLayout },
@@ -33,6 +34,9 @@ const routes = [
     // --- Admin routes ---
     { path: '/admin/products', element: <ProductManagement />, layout: AdminLayout },
     { path: '/admin/users', element: <UserManagement />, layout: AdminLayout },
+
+    // Trang thùng rác sản phẩm
+    { path: '/admin/products/trash', element: <Trash />, layout: AdminLayout },
 
     { path: '/cart', element: <Cart />, layout: MainLayout },
     { path: '/contact', element: <Contact />, layout: MainLayout },

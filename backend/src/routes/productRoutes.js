@@ -31,6 +31,18 @@ router.post("/:id/reviews", authMiddleware, ProductController.addReview);
 // [GET] /:id/edit => Trang edit 
 router.get("/edit/:id", ProductController.editProduct);
 
+// [DELETE] /api/products/:id => Xóa sản phẩm
+router.delete("/soft/:id", ProductController.softDeleteProduct); // Xóa tạm thời
+
+// [GET] /api/products/trash => Lấy danh sách sản phẩm đã xóa tạm thời
+router.get("/trash", ProductController.getTrash); // Lấy danh sách thùng rác
+
+// [GET] /api/products/trash/:id => Lấy chi tiết sản phẩm đã xóa tạm thời
+router.delete("/force/:id", ProductController.forceDeleteProduct); // Xóa vĩnh viễn
+
+// [PATCH] /api/products/restore/:id => Khôi phục sản phẩm đã xóa tạm thời
+router.patch("/restore/:id", ProductController.restoreProduct);
+
 // [GET] /api/products/:slug => Chi tiết theo slug
 router.get("/:slug", ProductController.getBySlug);
 

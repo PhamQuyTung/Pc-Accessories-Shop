@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import styles from './CreateProduct.module.scss';
 import classNames from 'classnames/bind';
+import { useToast } from '~/components/ToastMessager';
+import { useNavigate } from 'react-router-dom';
 
 const cx = classNames.bind(styles);
 
@@ -23,6 +25,12 @@ function CreateProduct() {
         description: '',
         rating: '',
     });
+
+    // Sử dụng useNavigate để điều hướng sau khi tạo sản phẩm
+    const navigate = useNavigate();
+
+    // Sử dụng useToast để hiển thị thông báo
+    const toast = useToast();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -77,11 +85,12 @@ function CreateProduct() {
             };
 
             const res = await axios.post('http://localhost:5000/api/products', payload);
-            alert('Thêm sản phẩm thành công!');
+            toast('Thêm sản phẩm thành công!', 'success');
+            navigate('/admin/products'); // Điều hướng về trang quản lý sản phẩm
             console.log('Server response:', res.data);
         } catch (err) {
             console.error('Lỗi khi tạo sản phẩm:', err);
-            alert('Lỗi khi tạo sản phẩm!');
+            toast('Lỗi khi tạo sản phẩm!', 'error');
         }
     };
 
