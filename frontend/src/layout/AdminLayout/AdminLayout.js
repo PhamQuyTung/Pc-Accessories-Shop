@@ -1,5 +1,6 @@
 import React from 'react';
 import Sidebar from '~/pages/Admin/AdminSidebar/AdminSidebar'; // sidebar cho admin
+import AdminHeader from '~/pages/Admin/AdminHeader/AdminHeader';
 import styles from './AdminLayout.module.scss';
 import classNames from 'classnames/bind';
 import { Row, Col } from 'react-bootstrap';
@@ -11,7 +12,7 @@ const AdminLayout = ({ children }) => {
         <div className={cx('wrapper')}>
             <Row>
                 <Col xs={12} className={cx('header')}>
-                    <h1>Admin Dashboard</h1>
+                    <AdminHeader />
                 </Col>
 
                 <Col lg={2} md={3} xs={12} className={cx('sidebar')}>
@@ -19,7 +20,7 @@ const AdminLayout = ({ children }) => {
                 </Col>
 
                 <Col lg={10} md={3} xs={12} className={cx('content')}>
-                    <main className={cx('main')}>{children}</main>
+                    <main className={cx('admin-content')}>{children}</main>
                 </Col>
             </Row>
         </div>

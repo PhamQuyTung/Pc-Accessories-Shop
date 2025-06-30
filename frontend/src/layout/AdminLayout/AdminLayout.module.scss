@@ -5,18 +5,19 @@
     overflow: hidden;
 }
 
-.main {
+.admin-content {
     // margin-left: 200px; // match sidebar width
     font-size: 1.4rem;
     padding: 20px;
     flex-grow: 1;
     background-color: #f9f9f9;
     min-height: 100vh;
+    margin-top: 64px; // Giá trị này phải bằng height của header
 }
 
 .header {
     background-color: #f8f9fa;
-    padding: 20px;
+    // padding: 20px;
     text-align: center;
     border-bottom: 1px solid #dee2e6;
 }
@@ -24,10 +25,11 @@
 .sidebar {
     background-color: #343a40;
     color: #fff;
-    padding: 20px 0 !important;
+    padding: 20px 0;
     height: 100vh; // full height
     // position: fixed; // fixed sidebar
     // top: 0;
     // left: 0;
     width: 200px; // fixed width
+    margin-top: 64px !important; // Giá trị này phải bằng height của header
 }

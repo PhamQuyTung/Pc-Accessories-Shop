@@ -8,7 +8,7 @@ const cx = classNames.bind(styles);
 
 const AdminSidebar = () => (
     <div className={cx('AdminSidebar')}>
-        <NavLink to="/admin/products" className={({ isActive }) => cx('link', { active: isActive })}>
+        <NavLink to="/admin/products" end className={({ isActive }) => cx('link', { active: isActive })}>
             Quản lý sản phẩm
         </NavLink>
 
