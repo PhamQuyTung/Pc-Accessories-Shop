@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Logo from '~/assets/logo/logo4.png';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import styles from './Header.module.scss'; // Import file CSS Modules
@@ -9,12 +9,65 @@ import { faMagnifyingGlass, faPlus, faPlusCircle, faUser } from '@fortawesome/fr
 import Tippy from '@tippyjs/react';
 import { EyeIcon, HandWaveIcon, ListItemIcon, OutTheDoor } from '~/components/Icons';
 import { faPenToSquare } from '@fortawesome/free-regular-svg-icons';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 
 const cx = classNames.bind(styles);
 
+const MySwal = withReactContent(Swal);
+
 function Header() {
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem('user'));
+    const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')));
+
+    useEffect(() => {
+        const checkToken = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            try {
+                const res = await fetch('http://localhost:5000/api/auth/verify-token', {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (res.status !== 200) {
+                    // Token hết hạn hoặc không hợp lệ
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('token');
+
+                    // ✅ Hiển thị SweetAlert thông báo hết phiên
+                    await MySwal.fire({
+                        icon: 'warning',
+                        title: 'Phiên đăng nhập đã hết hạn',
+                        text: 'Vui lòng đăng nhập lại.',
+                        confirmButtonText: 'Đồng ý',
+                        timer: 4000,
+                        timerProgressBar: true,
+                    });
+
+                    navigate('/login');
+                }
+            } catch (error) {
+                console.error('Lỗi khi kiểm tra token:', error);
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+
+                // ✅ Hiển thị lỗi nếu server không phản hồi
+                await MySwal.fire({
+                    icon: 'error',
+                    title: 'Có lỗi xảy ra!',
+                    text: 'Không thể xác minh phiên đăng nhập. Vui lòng thử lại.',
+                    confirmButtonText: 'OK',
+                });
+
+                navigate('/login');
+            }
+        };
+
+        checkToken();
+    }, [navigate]);
 
     const handleLogout = async () => {
         try {

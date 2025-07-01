@@ -30,6 +30,7 @@
     "react-toastify": "^11.0.5",
     "slugify": "^1.6.6",
     "sweetalert2": "^11.22.2",
+    "sweetalert2-react-content": "^5.1.0",
     "swiper": "^11.2.8",
     "tippy.js": "^6.3.7",
     "web-vitals": "^2.1.4"

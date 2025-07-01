@@ -16,6 +16,7 @@ import UserManagement from '../pages/Admin/AccountManagement/AccountManagement';
 import AdminLayout from '../layout/AdminLayout/AdminLayout'; // layout riêng cho admin
 import EditProduct from '../pages/EditProduct/EditProduct'; // Trang chỉnh sửa sản phẩm
 import Trash from '../pages/Trash/Trash'; // Trang chỉnh sửa sản phẩm
+import Profile from '~/pages/Profile/Profile';
 
 const routes = [
     { path: '/', element: <Home />, layout: MainLayout },
@@ -37,6 +38,9 @@ const routes = [
 
     // Trang thùng rác sản phẩm
     { path: '/admin/products/trash', element: <Trash />, layout: AdminLayout },
+
+    // Trang profile người dùng
+    { path: '/profile', element: <Profile />, layout: MainLayout },
 
     { path: '/cart', element: <Cart />, layout: MainLayout },
     { path: '/contact', element: <Contact />, layout: MainLayout },

@@ -94,4 +94,29 @@ module.exports = {
             message: 'Đăng xuất thành công',
         });
     },
+
+    verifyToken: async (req, res) => {
+        const token = req.headers.authorization?.split(' ')[1]; // Lấy token từ header
+
+        if (!token) {
+            return res.status(401).json({
+                statusCode: 401,
+                message: 'Không có token, yêu cầu xác thực',
+            });
+        }
+
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            return res.status(200).json({
+                statusCode: 200,
+                message: 'Token hợp lệ',
+                user: decoded,
+            });
+        } catch (error) {
+            return res.status(401).json({
+                statusCode: 401,
+                message: 'Token không hợp lệ hoặc đã hết hạn',
+            });
+        }
+    }
 };
