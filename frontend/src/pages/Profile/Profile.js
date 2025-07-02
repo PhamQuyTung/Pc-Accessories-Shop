@@ -1,11 +1,15 @@
 // src/pages/Profile.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './Profile.module.scss';
 import classNames from 'classnames/bind';
+import Swal from 'sweetalert2';
+import AddressModal from './AddressModal/AddressModal';
 
 const cx = classNames.bind(styles);
 
 const Profile = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('info');
     const [showAddressModal, setShowAddressModal] = useState(false);
     const [addressForm, setAddressForm] = useState({
@@ -18,6 +22,18 @@ const Profile = () => {
         type: 'home',
     });
 
+    // Lấy user từ localStorage
+    const [user, setUser] = useState(() => {
+        const stored = localStorage.getItem('user');
+        return stored ? JSON.parse(stored) : {};
+    });
+
+    // Nếu user thay đổi (ví dụ sau khi cập nhật profile), có thể cập nhật lại state
+    useEffect(() => {
+        const stored = localStorage.getItem('user');
+        if (stored) setUser(JSON.parse(stored));
+    }, []);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setAddressForm({ ...addressForm, [name]: value });
@@ -25,9 +41,7 @@ const Profile = () => {
 
     const handleSubmitAddress = (e) => {
         e.preventDefault();
-        // Xử lý lưu địa chỉ ở đây
         setShowAddressModal(false);
-        // Reset form nếu muốn
         setAddressForm({
             name: '',
             phone: '',
@@ -39,12 +53,33 @@ const Profile = () => {
         });
     };
 
+    const handleLogout = async () => {
+        const result = await Swal.fire({
+            title: 'Đăng xuất',
+            text: 'Bạn có chắc chắn muốn đăng xuất không?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Đăng xuất',
+            cancelButtonText: 'Hủy',
+        });
+
+        if (result.isConfirmed) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setUser({});
+            navigate('/');
+            window.location.reload();
+        }
+    };
+
     return (
         <div className={cx('profile-container')}>
             <div className={cx('sidebar')}>
                 <div className={cx('avatar')}>
-                    <div className={cx('circle')}>PQ</div>
-                    <h2>PHẠM QUÝ TÙNG</h2>
+                    <div className={cx('circle')}>
+                        {user.name ? user.name.slice(0, 2).toUpperCase() : 'U'}
+                    </div>
+                    <h2>{user.name || 'Tên người dùng'}</h2>
                 </div>
                 <ul className={cx('menu')}>
                     <li className={cx({ active: activeTab === 'info' })} onClick={() => setActiveTab('info')}>
@@ -71,7 +106,7 @@ const Profile = () => {
                         <form className={cx('form')}>
                             <label>
                                 Họ Tên
-                                <input type="text" defaultValue="PHẠM QUÝ TÙNG" />
+                                <input type="text" defaultValue={user.name || ''} />
                             </label>
                             <label>Giới tính</label>
                             <div className={cx('radio-group')}>
@@ -84,7 +119,7 @@ const Profile = () => {
                             </div>
                             <label>
                                 Email
-                                <input type="email" defaultValue="pqthp18903@gmail.com" disabled />
+                                <input type="email" defaultValue={user.email || ''} disabled />
                             </label>
                             <label>Ngày sinh</label>
                             <div className={cx('dob')}>
@@ -126,114 +161,14 @@ const Profile = () => {
                             </div>
                         </div>
                         {showAddressModal && (
-                            <div className={cx('modal-overlay')}>
-                                <div className={cx('modal')}>
-                                    <h3>Thêm địa chỉ mới</h3>
-                                    <form onSubmit={handleSubmitAddress}>
-                                        {/* Thông tin khách hàng */}
-                                        <h5 className={cx('section-title')}>Thông tin khách hàng</h5>
-                                        <div className={cx('form-group-col')}>
-                                            <div>
-                                                <label>Họ và tên</label>
-                                                <input
-                                                    type="text"
-                                                    name="name"
-                                                    value={addressForm.name}
-                                                    onChange={handleChange}
-                                                    required
-                                                />
-                                            </div>
-                                            <div>
-                                                <label>Số điện thoại</label>
-                                                <input
-                                                    type="text"
-                                                    name="phone"
-                                                    value={addressForm.phone}
-                                                    onChange={handleChange}
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* Địa chỉ */}
-                                        <div className={cx('section-title')}>Địa chỉ</div>
-                                        <div className={cx('form-group-row')}>
-                                            <div>
-                                                <label>Tỉnh/Thành phố</label>
-                                                <input
-                                                    type="text"
-                                                    name="city"
-                                                    value={addressForm.city}
-                                                    onChange={handleChange}
-                                                    required
-                                                />
-                                            </div>
-                                            <div>
-                                                <label>Quận/Huyện</label>
-                                                <input
-                                                    type="text"
-                                                    name="district"
-                                                    value={addressForm.district}
-                                                    onChange={handleChange}
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className={cx('form-group-row')}>
-                                            <div>
-                                                <label>Phường/Xã</label>
-                                                <input
-                                                    type="text"
-                                                    name="ward"
-                                                    value={addressForm.ward}
-                                                    onChange={handleChange}
-                                                    required
-                                                />
-                                            </div>
-                                            <div>
-                                                <label>Số nhà/ngõ/đường</label>
-                                                <input
-                                                    type="text"
-                                                    name="detail"
-                                                    value={addressForm.detail}
-                                                    onChange={handleChange}
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* Loại địa chỉ */}
-                                        <div className={cx('section-title')}>Loại địa chỉ</div>
-                                        <div className={cx('address-type-row')}>
-                                            <label>
-                                                <input
-                                                    type="radio"
-                                                    name="type"
-                                                    value="home"
-                                                    checked={addressForm.type === 'home'}
-                                                    onChange={handleChange}
-                                                />
-                                                Nhà riêng
-                                            </label>
-                                            <label>
-                                                <input
-                                                    type="radio"
-                                                    name="type"
-                                                    value="office"
-                                                    checked={addressForm.type === 'office'}
-                                                    onChange={handleChange}
-                                                />
-                                                Văn phòng
-                                            </label>
-                                        </div>
-
-                                        <div className={cx('modal-actions')}>
-                                            <button type="submit" className={cx('submit-btn')}>Hoàn thành</button>
-                                            <button type="button" className={cx('cancel-btn')} onClick={() => setShowAddressModal(false)}>Hủy</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
+                            <AddressModal
+                                show={showAddressModal}
+                                onClose={() => setShowAddressModal(false)}
+                                onSubmit={handleSubmitAddress}
+                                addressForm={addressForm}
+                                handleChange={handleChange}
+                                cx={cx}
+                            />
                         )}
                     </>
                 )}
@@ -256,7 +191,9 @@ const Profile = () => {
                     <>
                         <h2>Đăng xuất</h2>
                         <div>Bạn có chắc chắn muốn đăng xuất không?</div>
-                        <button className={cx('submit-btn')}>Đăng xuất</button>
+                        <button className={cx('submit-btn')} onClick={handleLogout}>
+                            Đăng xuất
+                        </button>
                     </>
                 )}
             </div>

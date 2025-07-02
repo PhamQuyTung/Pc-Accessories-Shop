@@ -18,7 +18,28 @@ const MySwal = withReactContent(Swal);
 
 function Header() {
     const navigate = useNavigate();
-    const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')));
+    const [user, setUser] = useState(() => {
+        const stored = localStorage.getItem('user');
+        return stored ? JSON.parse(stored) : null;
+    });
+
+    useEffect(() => {
+        const handleStorage = () => {
+            const stored = localStorage.getItem('user');
+            setUser(stored ? JSON.parse(stored) : null);
+        };
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
+    }, []);
+
+    // Nếu muốn cập nhật ngay khi đăng xuất ở cùng tab:
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const stored = localStorage.getItem('user');
+            setUser(stored ? JSON.parse(stored) : null);
+        }, 500);
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         const checkToken = async () => {
@@ -70,23 +91,22 @@ function Header() {
     }, [navigate]);
 
     const handleLogout = async () => {
-        try {
-            await fetch('http://localhost:5000/api/auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    // Nếu cần xác thực, gửi token ở header
-                    Authorization: `Bearer ${localStorage.getItem('token')}`,
-                },
-            });
-        } catch (err) {
-            // Có thể toast lỗi nếu muốn
+        const result = await Swal.fire({
+            title: 'Đăng xuất',
+            text: 'Bạn có chắc chắn muốn đăng xuất không?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Đăng xuất',
+            cancelButtonText: 'Hủy',
+        });
+
+        if (result.isConfirmed) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setUser({});
+            navigate('/');
+            window.location.reload(); // Thêm dòng này để reload toàn bộ app
         }
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        // ✅ Chuyển hướng sau 1.5s
-        setTimeout(() => navigate('/'), 1500);
-        window.location.reload();
     };
 
     return (
