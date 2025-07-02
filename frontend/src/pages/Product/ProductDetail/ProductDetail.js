@@ -327,7 +327,7 @@ function ProductDetail() {
             </div>
 
             {/* Tabs section */}
-            <div ref={reviewSectionRef} className={cx('tab-container')}>
+            <div className={cx('tab-container')}>
                 <div className={cx('tab-buttons')}>
                     <button
                         onClick={() => setActiveTab('description')}
@@ -353,7 +353,7 @@ function ProductDetail() {
                         Đánh giá ({reviews.length})
                     </button>
                 </div>
-                <br></br>
+                <br />
                 <div ref={reviewSectionRef} className={cx('tab-content')}>
                     {renderTabContent()}
                 </div>

@@ -20,11 +20,9 @@ const DropdownMenu = forwardRef(({ title, items }, ref) => {
                     </div>
                 }
                 interactive={true}
-                // visible
                 placement="bottom-start"
-                ref={ref} // Truyền ref vào Tippy
             >
-                <span className={cx('dropdown-menu__title')}>{title}</span>
+                <span ref={ref} className={cx('dropdown-menu__title')}>{title}</span>
             </Tippy>
         </div>
     );
