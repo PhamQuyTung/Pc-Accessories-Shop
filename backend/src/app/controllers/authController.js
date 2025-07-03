@@ -55,7 +55,8 @@ module.exports = {
             user: {
                 id: account._id,
                 name: account.name,
-                email: account.email // nếu có
+                email: account.email, // nếu có
+                role: account.role // nếu có
             }
         });
     },

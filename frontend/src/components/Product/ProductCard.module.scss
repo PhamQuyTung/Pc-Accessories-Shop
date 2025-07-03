@@ -53,6 +53,19 @@
     text-align: start;
     background-color: #fff;
     height: 468px;
+    transition: box-shadow 0.25s, transform 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    margin: 10px 0;
+
+    &:hover {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+        transform: translateY(-6px) scale(1.03);
+        z-index: 2;
+        border: 1px solid #007bff;
+    }
 
     .product-card__des {
         display: flex;
@@ -192,4 +205,21 @@
     border-radius: 16px;
     font-size: 12px;
     font-weight: 600;
+}
+
+.custom-slide {
+    padding: 4px 1px;
+    margin: 0 4px;
+}
+
+.rating {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+
+    .rating-count {
+        font-size: 14px;
+        color: #6d6e72;
+        margin-left: 4px;
+    }
 }

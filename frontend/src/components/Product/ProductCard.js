@@ -4,12 +4,14 @@ import { Link } from 'react-router-dom';
 import styles from './ProductCard.module.scss';
 import classNames from 'classnames/bind';
 import { FireIcon, GiftIcon } from '../Icons/Icons';
-import RatingComponent from '../Rating/Rating';
+import BasicRating from '~/components/Rating/Rating';
 
 const cx = classNames.bind(styles);
 
 function ProductCard({ product }) {
     if (!product) return null;
+
+    console.log('Product:', product);
 
     return (
         <div className={cx('product-card')}>
@@ -62,7 +64,8 @@ function ProductCard({ product }) {
 
                 {/* Rating Star */}
                 <div className={cx('rating')}>
-                    <RatingComponent />
+                    <BasicRating value={product.averageRating || 0} />
+                    <span className={cx('rating-count')}>({product.reviewCount || 0} đánh giá)</span>
                 </div>
             </div>
         </div>

@@ -11,7 +11,7 @@ import 'swiper/css/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons';
 import { FireIcon, GiftIcon } from '../Icons/Icons';
-import RatingComponent from '../Rating/Rating';
+import BasicRating from '~/components/Rating/Rating';
 
 const cx = classNames.bind(styles);
 
@@ -57,7 +57,7 @@ function Product() {
                 }}
             >
                 {products.map((product) => (
-                    <SwiperSlide key={product._id}>
+                    <SwiperSlide key={product._id} className={cx('custom-slide')}>
                         <div className={cx('product-card')}>
                             <div className={cx('proloop-label--bottom')}>
                                 {product.status.includes('quà tặng') && (
@@ -82,11 +82,15 @@ function Product() {
                             </div>
 
                             <div>
-                                {product.status.includes('còn hàng') && <span className={cx('in-stock')}>Còn hàng</span>}
+                                {product.status.includes('còn hàng') && (
+                                    <span className={cx('in-stock')}>Còn hàng</span>
+                                )}
                             </div>
 
                             <div>
-                                {product.status.includes('hết hàng') && <span className={cx('out-stock')}>Hết hàng</span>}
+                                {product.status.includes('hết hàng') && (
+                                    <span className={cx('out-stock')}>Hết hàng</span>
+                                )}
                             </div>
 
                             <div className={cx('product-card__des')}>
@@ -114,7 +118,8 @@ function Product() {
 
                                 {/* Rating Star */}
                                 <div className={cx('rating')}>
-                                    <RatingComponent />
+                                    <BasicRating value={product.averageRating || 0} />
+                                    <span className={cx('rating-count')}>({product.reviewCount || 0} đánh giá)</span>
                                 </div>
                             </div>
                         </div>

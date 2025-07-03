@@ -92,7 +92,7 @@ const Profile = () => {
                         Quản lý đơn hàng
                     </li>
                     <li className={cx({ active: activeTab === 'viewed' })} onClick={() => setActiveTab('viewed')}>
-                        Sản phẩm đã xem
+                        Sản phẩm đã thích
                     </li>
                     <li className={cx({ active: activeTab === 'logout' })} onClick={() => setActiveTab('logout')}>
                         Đăng xuất
@@ -182,8 +182,8 @@ const Profile = () => {
 
                 {activeTab === 'viewed' && (
                     <>
-                        <h2>Sản phẩm đã xem</h2>
-                        <div>Danh sách sản phẩm đã xem sẽ hiển thị ở đây.</div>
+                        <h2>Sản phẩm đã thích</h2>
+                        <div>Danh sách sản phẩm đã thích sẽ hiển thị ở đây.</div>
                     </>
                 )}
 

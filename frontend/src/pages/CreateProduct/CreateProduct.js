@@ -81,7 +81,6 @@ function CreateProduct() {
                 status: formData.status.split(',').map((s) => s.trim()),
                 price: Number(formData.price),
                 discountPrice: Number(formData.discountPrice),
-                rating: Number(formData.rating),
             };
 
             const res = await axios.post('http://localhost:5000/api/products', payload);
@@ -209,14 +208,6 @@ function CreateProduct() {
                     name="category"
                     placeholder="Danh mục sản phẩm (VD: PC Gaming, Laptop,...)"
                     value={formData.category}
-                    onChange={handleChange}
-                />
-                <input
-                    type="number"
-                    step="0.1"
-                    name="rating"
-                    placeholder="Đánh giá (rating)"
-                    value={formData.rating}
                     onChange={handleChange}
                 />
                 <button type="submit">Tạo sản phẩm</button>

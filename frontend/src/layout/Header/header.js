@@ -147,25 +147,31 @@ function Header() {
                                             <span>Đã xem gần đây</span>
                                         </Link>
 
-                                        <NavLink
-                                            to="/products/create"
-                                            className={({ isActive }) => cx('dropdown__item', { active: isActive })}
-                                        >
-                                            <span className={cx('icon-wrapper')}>
-                                                <FontAwesomeIcon icon={faPlusCircle} />
-                                            </span>
-                                            <span>Thêm sản phẩm</span>
-                                        </NavLink>
+                                        {/* Chỉ có Admin mới đc vào hoặc thấy chức năng này */}
+                                        {user.role === 'admin' && (
+                                            <NavLink
+                                                to="/products/create"
+                                                className={({ isActive }) => cx('dropdown__item', { active: isActive })}
+                                            >
+                                                <span className={cx('icon-wrapper')}>
+                                                    <FontAwesomeIcon icon={faPlusCircle} />
+                                                </span>
+                                                <span>Thêm sản phẩm</span>
+                                            </NavLink>
+                                        )}
 
-                                        <NavLink
-                                            to="/admin/products"
-                                            className={({ isActive }) => cx('dropdown__item', { active: isActive })}
-                                        >
-                                            <span className={cx('icon-wrapper')}>
-                                                <FontAwesomeIcon icon={faPenToSquare} />
-                                            </span>
-                                            <span>My Admin</span>
-                                        </NavLink>
+                                        {/* Chỉ có Admin mới đc vào hoặc thấy chức năng này */}
+                                        {user.role === 'admin' && (
+                                            <NavLink
+                                                to="/admin/products"
+                                                className={({ isActive }) => cx('dropdown__item', { active: isActive })}
+                                            >
+                                                <span className={cx('icon-wrapper')}>
+                                                    <FontAwesomeIcon icon={faPenToSquare} />
+                                                </span>
+                                                <span>My Admin</span>
+                                            </NavLink>
+                                        )}
 
                                         <Link to="#" className={cx('dropdown__logout')} onClick={handleLogout}>
                                             <OutTheDoor />

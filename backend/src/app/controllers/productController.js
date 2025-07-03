@@ -6,20 +6,51 @@ class ProductController {
   // Lấy tất cả sản phẩm
   async getAll(req, res) {
     try {
-        const products = await Product.find({ deleted: { $ne: true } }); // Chỉ lấy sản phẩm chưa bị xóa tạm thời
-        res.json(products);
+      const products = await Product.find({ deleted: { $ne: true } }).lean(); // .lean() giúp tăng hiệu suất
+
+      // Tính rating trung bình và số lượng đánh giá cho mỗi sản phẩm
+      const enrichedProducts = products.map((product) => {
+        const reviews = product.reviews || [];
+        const reviewCount = reviews.length;
+        const averageRating = reviewCount
+          ? reviews.reduce((acc, cur) => acc + cur.rating, 0) / reviewCount
+          : 0;
+
+        return {
+          ...product,
+          averageRating: Number(
+            (Math.round(averageRating * 10) / 10).toFixed(1)
+          ), // làm tròn 1 số thập phân
+          reviewCount,
+        };
+      });
+
+      res.json(enrichedProducts);
     } catch (err) {
-        res.status(500).json({ error: "Lỗi server" });
+      console.error(err);
+      res.status(500).json({ error: "Lỗi server" });
     }
   }
 
   // Lấy chi tiết sản phẩm theo slug
   async getBySlug(req, res) {
     try {
-      const product = await Product.findOne({ slug: req.params.slug });
+      const product = await Product.findOne({ slug: req.params.slug }).lean();
+
       if (!product)
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
-      res.json(product);
+
+      const reviews = product.reviews || [];
+      const reviewCount = reviews.length;
+      const averageRating = reviewCount
+        ? reviews.reduce((acc, cur) => acc + cur.rating, 0) / reviewCount
+        : 0;
+
+      res.json({
+        ...product,
+        averageRating: Number((Math.round(averageRating * 10) / 10).toFixed(1)),
+        reviewCount,
+      });
     } catch (err) {
       res.status(500).json({ error: "Lỗi server" });
     }
@@ -65,12 +96,31 @@ class ProductController {
 
     try {
       const related = await Product.find({
-        category, // cùng category
-        _id: { $ne: exclude }, // loại trừ sản phẩm hiện tại
-      }).limit(7); // lấy tối đa 4 sản phẩm
+        category,
+        _id: { $ne: exclude },
+      })
+        .limit(7)
+        .lean(); // Thêm .lean() để hiệu suất tốt hơn
 
-      res.json(related);
+      const enrichedRelated = related.map((product) => {
+        const reviews = product.reviews || [];
+        const reviewCount = reviews.length;
+        const averageRating = reviewCount
+          ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+          : 0;
+
+        return {
+          ...product,
+          averageRating: Number(
+            (Math.round(averageRating * 10) / 10).toFixed(1)
+          ),
+          reviewCount,
+        };
+      });
+
+      res.json(enrichedRelated);
     } catch (err) {
+      console.error("Lỗi khi lấy sản phẩm liên quan:", err);
       res.status(500).json({ error: "Không thể lấy sản phẩm liên quan" });
     }
   }
@@ -164,7 +214,8 @@ class ProductController {
         { deleted: true },
         { new: true }
       );
-      if (!product) return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      if (!product)
+        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
       res.json({ message: "Đã chuyển vào thùng rác", product });
     } catch (err) {
       res.status(500).json({ error: "Lỗi khi xóa tạm thời" });
@@ -174,38 +225,40 @@ class ProductController {
   // Lấy sản phẩm trong thùng rác
   async getTrash(req, res) {
     try {
-        const products = await Product.find({ deleted: true });
-        res.json(products);
+      const products = await Product.find({ deleted: true });
+      res.json(products);
     } catch (err) {
-        res.status(500).json({ error: "Lỗi server" });
+      res.status(500).json({ error: "Lỗi server" });
     }
   }
 
   // Xóa sản phẩm vĩnh viễn
   async forceDeleteProduct(req, res) {
     try {
-        const product = await Product.findByIdAndDelete(req.params.id);
-        if (!product) return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
-        res.json({ message: "Đã xóa vĩnh viễn" });
+      const product = await Product.findByIdAndDelete(req.params.id);
+      if (!product)
+        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      res.json({ message: "Đã xóa vĩnh viễn" });
     } catch (err) {
-        res.status(500).json({ error: "Lỗi khi xóa vĩnh viễn" });
+      res.status(500).json({ error: "Lỗi khi xóa vĩnh viễn" });
     }
   }
 
   // Khôi phục sản phẩm từ thùng rác
   async restoreProduct(req, res) {
     try {
-        const product = await Product.findByIdAndUpdate(
-            req.params.id,
-            { deleted: false },
-            { new: true }
-        );
-        if (!product) return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
-        res.json({ message: "Đã khôi phục sản phẩm", product });
+      const product = await Product.findByIdAndUpdate(
+        req.params.id,
+        { deleted: false },
+        { new: true }
+      );
+      if (!product)
+        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      res.json({ message: "Đã khôi phục sản phẩm", product });
     } catch (err) {
-        res.status(500).json({ error: "Lỗi khi khôi phục sản phẩm" });
+      res.status(500).json({ error: "Lỗi khi khôi phục sản phẩm" });
     }
-}
+  }
 }
 
 module.exports = new ProductController();
