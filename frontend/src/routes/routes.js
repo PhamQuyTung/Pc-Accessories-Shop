@@ -17,6 +17,7 @@ import AdminLayout from '../layout/AdminLayout/AdminLayout'; // layout riêng ch
 import EditProduct from '../pages/EditProduct/EditProduct'; // Trang chỉnh sửa sản phẩm
 import Trash from '../pages/Trash/Trash'; // Trang chỉnh sửa sản phẩm
 import Profile from '~/pages/Profile/Profile';
+import RequireAdmin from '~/components/RequireAdmin/RequireAdmin'; // Kiểm tra quyền admin
 
 const routes = [
     { path: '/', element: <Home />, layout: MainLayout },
@@ -24,7 +25,15 @@ const routes = [
     { path: '/product', element: <Product />, layout: MainLayout },
 
     // Route trang tạo sản phẩm
-    { path: '/products/create', element: <CreateProduct />, layout: MainLayout },
+    {
+        path: '/products/create',
+        element: (
+            <RequireAdmin>
+                <CreateProduct />
+            </RequireAdmin>
+        ),
+        layout: MainLayout,
+    },
 
     // Route chỉnh sửa sản phẩm theo ID
     { path: '/products/edit/:id', element: <EditProduct />, layout: MainLayout },
