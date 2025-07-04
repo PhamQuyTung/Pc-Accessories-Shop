@@ -92,10 +92,10 @@ const ProductManagement = () => {
                                     className={cx('product-thumb')}
                                 />
                             </td>
-                            <td>{product.name}</td>
+                            <td>{product.name}</td> 
                             <td>{formatCurrency(product.price)}</td>
                             <td>{formatCurrency(product.discountPrice)}</td>
-                            <td>{product.category}</td>
+                            <td>{product.category?.name || 'Không có danh mục'}</td> {/* ✅ hiển thị tên danh mục */}
                             <td>{product.status ? 'Hiển thị' : 'Ẩn'}</td>
                             <td>{formatDate(product.createdAt)}</td>
                             <td>

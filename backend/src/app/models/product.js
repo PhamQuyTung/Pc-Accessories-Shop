@@ -19,14 +19,8 @@ const ProductSchema = new mongoose.Schema({
     price: Number,
     discountPrice: Number,
     status: [String],
-    category: String,
-    specs: {
-        cpu: String,
-        vga: String,
-        mainboard: String,
-        ram: String,
-        ssd: String,
-    },
+    specs: { type: Object, default: {} }, // specs linh hoạt
+    category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
     description: String,
     reviews: [reviewSchema],
     createdAt: { type: Date, default: Date.now },

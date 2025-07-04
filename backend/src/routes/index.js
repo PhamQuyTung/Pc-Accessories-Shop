@@ -2,6 +2,7 @@ const authRoutes = require('./authRoutes');
 const errorHandle = require('../helpers/error.handle');
 const productRoutes = require('./productRoutes');
 const accountRoutes = require('./accountRoutes');
+const categoryRoutes = require('./categoryRoutes'); // nếu có
 // const adminRoutes = require('./adminRoutes'); // nếu có
 
 function route(app) {
@@ -19,6 +20,10 @@ function route(app) {
 
     // Route cho sản phẩm
     app.use('/api/products', productRoutes);
+
+    // Route cho danh mục sản phẩm
+    console.log('Category route: ', categoryRoutes);
+    app.use('/api/categories', categoryRoutes);
 
     // Route cho tài khoản
     console.log('Account route: ', accountRoutes);

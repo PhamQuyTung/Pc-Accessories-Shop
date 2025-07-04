@@ -6,9 +6,10 @@ class ProductController {
   // Lấy tất cả sản phẩm
   async getAll(req, res) {
     try {
-      const products = await Product.find({ deleted: { $ne: true } }).lean(); // .lean() giúp tăng hiệu suất
+      const products = await Product.find({ deleted: { $ne: true } })
+        .populate("category", "name") // <-- Thêm dòng này
+        .lean();
 
-      // Tính rating trung bình và số lượng đánh giá cho mỗi sản phẩm
       const enrichedProducts = products.map((product) => {
         const reviews = product.reviews || [];
         const reviewCount = reviews.length;
@@ -20,7 +21,7 @@ class ProductController {
           ...product,
           averageRating: Number(
             (Math.round(averageRating * 10) / 10).toFixed(1)
-          ), // làm tròn 1 số thập phân
+          ),
           reviewCount,
         };
       });

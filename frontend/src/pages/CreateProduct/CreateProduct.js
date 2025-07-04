@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import styles from './CreateProduct.module.scss';
 import classNames from 'classnames/bind';
@@ -8,6 +8,8 @@ import { useNavigate } from 'react-router-dom';
 const cx = classNames.bind(styles);
 
 function CreateProduct() {
+    // Sử dụng useState để quản lý dữ liệu của form
+    // Mỗi trường trong form sẽ là một thuộc tính trong đối tượng formData
     const [formData, setFormData] = useState({
         name: '',
         images: [''], // ← dùng mảng để chứa nhiều ảnh
@@ -26,12 +28,27 @@ function CreateProduct() {
         rating: '',
     });
 
+    // Danh sách categories sẽ được lấy từ backend
+    // và hiển thị trong dropdown hoặc input
+    const [categories, setCategories] = useState([]);
+
     // Sử dụng useNavigate để điều hướng sau khi tạo sản phẩm
     const navigate = useNavigate();
 
     // Sử dụng useToast để hiển thị thông báo
     const toast = useToast();
 
+    // Lấy danh sách categories từ backend khi component mount
+    // Chỉ cần gọi API một lần khi component được mount
+    useEffect(() => {
+        // Lấy danh sách category từ backend
+        axios.get('http://localhost:5000/api/categories')
+            .then(res => setCategories(res.data))
+            .catch(() => setCategories([]));
+    }, []);
+
+    // Hàm xử lý thay đổi dữ liệu trong form
+    // Cần xử lý các trường hợp đặc biệt như specs.* và images[i]
     const handleChange = (e) => {
         const { name, value } = e.target;
 
@@ -65,6 +82,8 @@ function CreateProduct() {
         }
     };
 
+    // Hàm thêm trường nhập ảnh mới
+    // Mỗi lần gọi sẽ thêm một trường nhập ảnh mới vào mảng images
     const handleAddImageField = () => {
         setFormData((prev) => ({
             ...prev,
@@ -72,6 +91,8 @@ function CreateProduct() {
         }));
     };
 
+    // Hàm xử lý gửi form để tạo sản phẩm mới
+    // Chuyển đổi dữ liệu từ form thành định dạng phù hợp với backend
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -93,6 +114,8 @@ function CreateProduct() {
         }
     };
 
+    // Hàm xóa trường nhập ảnh
+    // Nhận vào index của trường ảnh cần xóa và cập nhật lại mảng images
     const handleRemoveImageField = (index) => {
         setFormData((prev) => ({
             ...prev,
@@ -100,6 +123,8 @@ function CreateProduct() {
         }));
     };
 
+    // Render form để tạo sản phẩm mới
+    // Hiển thị các trường nhập liệu cho tên, ảnh, giá, mô tả
     return (
         <div className={cx('wrapper')}>
             <h2>Tạo sản phẩm mới</h2>
@@ -203,13 +228,19 @@ function CreateProduct() {
                     onChange={handleChange}
                     rows={5}
                 />
-                <input
-                    type="text"
+                <select
                     name="category"
-                    placeholder="Danh mục sản phẩm (VD: PC Gaming, Laptop,...)"
                     value={formData.category}
                     onChange={handleChange}
-                />
+                    required
+                >
+                    <option value="">-- Chọn danh mục --</option>
+                    {categories.map((cat) => (
+                        <option key={cat._id} value={cat._id}>
+                            {cat.name}
+                        </option>
+                    ))}
+                </select>
                 <button type="submit">Tạo sản phẩm</button>
             </form>
         </div>
