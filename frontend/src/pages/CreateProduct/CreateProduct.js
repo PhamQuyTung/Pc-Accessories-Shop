@@ -12,7 +12,7 @@ function CreateProduct() {
     // Mỗi trường trong form sẽ là một thuộc tính trong đối tượng formData
     const [formData, setFormData] = useState({
         name: '',
-        images: [''], // ← dùng mảng để chứa nhiều ảnh
+        images: [''],
         price: '',
         discountPrice: '',
         status: '',
@@ -26,6 +26,8 @@ function CreateProduct() {
         },
         description: '',
         rating: '',
+        quantity: '', // Thêm trường số lượng
+        importing: false, // Thêm trường importing
     });
 
     // Danh sách categories sẽ được lấy từ backend
@@ -42,8 +44,9 @@ function CreateProduct() {
     // Chỉ cần gọi API một lần khi component được mount
     useEffect(() => {
         // Lấy danh sách category từ backend
-        axios.get('http://localhost:5000/api/categories')
-            .then(res => setCategories(res.data))
+        axios
+            .get('http://localhost:5000/api/categories')
+            .then((res) => setCategories(res.data))
             .catch(() => setCategories([]));
     }, []);
 
@@ -96,18 +99,42 @@ function CreateProduct() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // Nếu đang nhập hàng mà số lượng khác 0 thì cảnh báo và không submit
+        if (formData.importing && Number(formData.quantity) !== 0) {
+            toast('Khi đã nhấn xác nhận đang nhập hàng vui lòng nhập hàng tồn về 0', 'error');
+            return;
+        }
+
+        // Sinh status như cũ
+        let statusArr = [];
+        const qty = Number(formData.quantity);
+
+        if (formData.importing) {
+            statusArr.push('đang nhập hàng');
+        } else if (qty === 0) {
+            statusArr.push('hết hàng');
+        } else if (qty > 0 && qty < 15) {
+            statusArr.push('sắp hết hàng');
+        } else if (qty >= 15 && qty < 50) {
+            statusArr.push('còn hàng');
+        } else if (qty >= 50 && qty < 100) {
+            statusArr.push('nhiều hàng');
+        } else if (qty >= 100) {
+            statusArr.push('sản phẩm mới');
+        }
+
         try {
             const payload = {
                 ...formData,
-                status: formData.status.split(',').map((s) => s.trim()),
+                quantity: formData.importing ? 0 : Number(formData.quantity),
+                status: statusArr,
                 price: Number(formData.price),
                 discountPrice: Number(formData.discountPrice),
             };
 
             const res = await axios.post('http://localhost:5000/api/products', payload);
             toast('Thêm sản phẩm thành công!', 'success');
-            navigate('/admin/products'); // Điều hướng về trang quản lý sản phẩm
-            console.log('Server response:', res.data);
+            navigate('/admin/products');
         } catch (err) {
             console.error('Lỗi khi tạo sản phẩm:', err);
             toast('Lỗi khi tạo sản phẩm!', 'error');
@@ -181,13 +208,6 @@ function CreateProduct() {
                 />
                 <input
                     type="text"
-                    name="status"
-                    placeholder="Trạng thái (vd: mới, quà tặng)"
-                    value={formData.status}
-                    onChange={handleChange}
-                />
-                <input
-                    type="text"
                     name="specs.cpu"
                     placeholder="CPU"
                     value={formData.specs.cpu}
@@ -228,12 +248,7 @@ function CreateProduct() {
                     onChange={handleChange}
                     rows={5}
                 />
-                <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
-                    required
-                >
+                <select name="category" value={formData.category} onChange={handleChange} required>
                     <option value="">-- Chọn danh mục --</option>
                     {categories.map((cat) => (
                         <option key={cat._id} value={cat._id}>
@@ -241,6 +256,39 @@ function CreateProduct() {
                         </option>
                     ))}
                 </select>
+                <input
+                    type="number"
+                    name="quantity"
+                    placeholder="Số lượng sản phẩm"
+                    value={formData.quantity}
+                    onChange={handleChange}
+                    min={0}
+                    required
+                />
+                <label
+                    style={{
+                        gap: '5px',
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'baseline',
+                        fontSize: '14px',
+                    }}
+                >
+                    <input
+                        type="checkbox"
+                        name="importing"
+                        checked={formData.importing}
+                        onChange={(e) => {
+                            const checked = e.target.checked;
+                            setFormData((prev) => ({
+                                ...prev,
+                                importing: checked,
+                                quantity: checked ? 0 : prev.quantity, // Nếu đang nhập hàng thì quantity = 0
+                            }));
+                        }}
+                    />
+                    Đang nhập hàng (Nếu chọn thì số lượng phải được đặt về 0)
+                </label>
                 <button type="submit">Tạo sản phẩm</button>
             </form>
         </div>

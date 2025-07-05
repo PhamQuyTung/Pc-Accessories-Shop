@@ -288,14 +288,28 @@ function ProductDetail() {
                                 </div>
 
                                 <div className={cx('product-info__status')}>
-                                    <span
-                                        className={cx(
-                                            'product-info__status--badge',
-                                            'product-info__status--badge__success',
-                                        )}
-                                    >
-                                        {product.status?.join(', ') || 'Không có'}
-                                    </span>
+                                    {product.status && product.status.length > 0 ? (
+                                        product.status.map((st, idx) => (
+                                            <span
+                                                key={idx}
+                                                className={cx(
+                                                    'product-info__status--badge',
+                                                    {
+                                                        'badge-new': st === 'sản phẩm mới',
+                                                        'badge-many': st === 'nhiều hàng',
+                                                        'badge-instock': st === 'còn hàng',
+                                                        'badge-low': st === 'sắp hết hàng',
+                                                        'badge-out': st === 'hết hàng',
+                                                        'badge-importing': st === 'đang nhập hàng',
+                                                    }
+                                                )}
+                                            >
+                                                {st}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <span className={cx('product-info__status--badge', 'badge-default')}>Không có</span>
+                                    )}
                                 </div>
 
                                 <div className={cx('product-info__des')}>

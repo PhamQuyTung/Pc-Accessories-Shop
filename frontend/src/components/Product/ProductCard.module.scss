@@ -62,7 +62,8 @@
 
     &:hover {
         box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-        transform: translateY(-6px) scale(1.03);
+        transform: translateY(-6px);
+        // transform: translateY(-6px) scale(1.03);
         z-index: 2;
         border: 1px solid #007bff;
     }
@@ -207,9 +208,64 @@
     font-weight: 600;
 }
 
+.many-tag {
+    display: inline-block;
+    padding: 2px 16px;
+    background: #007bff;
+    color: #fff;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 6px;
+}
+
+.in-stock {
+    display: inline-block;
+    padding: 2px 16px;
+    background: #28a745;
+    color: #fff;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 6px;
+}
+
+.low-stock {
+    display: inline-block;
+    padding: 2px 16px;
+    background: #ff9800;
+    color: #fff;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 6px;
+}
+
+.out-stock {
+    display: inline-block;
+    padding: 2px 16px;
+    background: #dc3545;
+    color: #fff;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 6px;
+}
+
+.importing-tag {
+    display: inline-block;
+    padding: 2px 16px;
+    background: #6c757d;
+    color: #fff;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 6px;
+}
+
 .custom-slide {
     padding: 4px 1px;
-    margin: 0 4px;
+    // margin: 0 4px;
 }
 
 .rating {

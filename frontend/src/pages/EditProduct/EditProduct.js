@@ -8,20 +8,28 @@ import { useToast } from '~/components/ToastMessager';
 const cx = classNames.bind(styles);
 
 function EditProduct() {
-    // Sử dụng useToast để hiển thị thông báo
     const toast = useToast();
-
-    // Lấy ID sản phẩm từ URL params
     const { id } = useParams();
-
-    // Khởi tạo state để lưu trữ dữ liệu form
     const navigate = useNavigate();
     const [formData, setFormData] = useState(null);
+    const [categories, setCategories] = useState([]);
+    const [importing, setImporting] = useState(false);
 
+    // Lấy danh sách category
+    useEffect(() => {
+        axios.get('http://localhost:5000/api/categories')
+            .then(res => setCategories(res.data))
+            .catch(() => setCategories([]));
+    }, []);
+
+    // Lấy dữ liệu sản phẩm
     useEffect(() => {
         axios
             .get(`http://localhost:5000/api/products/edit/${id}`)
-            .then((res) => setFormData(res.data))
+            .then((res) => {
+                setFormData(res.data);
+                setImporting(res.data.status?.includes('đang nhập hàng') || false);
+            })
             .catch(() => toast('Không tìm thấy sản phẩm!', 'error'));
     }, [id]);
 
@@ -68,16 +76,40 @@ function EditProduct() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Nếu đang nhập hàng mà số lượng khác 0 thì cảnh báo và không submit
+        if (importing && Number(formData.quantity) !== 0) {
+            toast('Vui lòng đặt số lượng về 0 khi chọn "Đang nhập hàng"', 'error');
+            return;
+        }
+
+        // Sinh status tự động
+        let statusArr = [];
+        const qty = Number(formData.quantity);
+
+        if (importing) {
+            statusArr.push('đang nhập hàng');
+        } else if (qty === 0) {
+            statusArr.push('hết hàng');
+        } else if (qty > 0 && qty < 15) {
+            statusArr.push('sắp hết hàng');
+        } else if (qty >= 15 && qty < 50) {
+            statusArr.push('còn hàng');
+        } else if (qty >= 50 && qty < 100) {
+            statusArr.push('nhiều hàng');
+        } else if (qty >= 100) {
+            statusArr.push('sản phẩm mới');
+        }
+
         try {
             const payload = {
                 ...formData,
-                status:
-                    typeof formData.status === 'string'
-                        ? formData.status.split(',').map((s) => s.trim())
-                        : formData.status,
+                quantity: importing ? 0 : Number(formData.quantity),
+                status: statusArr,
                 price: Number(formData.price),
                 discountPrice: Number(formData.discountPrice),
                 rating: Number(formData.rating),
+                importing: importing,
             };
             await axios.put(`http://localhost:5000/api/products/${id}`, payload);
             toast('Cập nhật sản phẩm thành công!', 'success');
@@ -144,13 +176,7 @@ function EditProduct() {
                     onChange={handleChange}
                     required
                 />
-                <input
-                    type="text"
-                    name="status"
-                    placeholder="Trạng thái (vd: mới, quà tặng)"
-                    value={Array.isArray(formData.status) ? formData.status.join(', ') : formData.status}
-                    onChange={handleChange}
-                />
+
                 <input
                     type="text"
                     name="specs.cpu"
@@ -193,21 +219,37 @@ function EditProduct() {
                     onChange={handleChange}
                     rows={5}
                 />
-                <input
-                    type="text"
+                <select
                     name="category"
-                    placeholder="Danh mục sản phẩm (VD: PC Gaming, Laptop,...)"
                     value={formData.category}
                     onChange={handleChange}
-                />
+                    required
+                >
+                    <option value="">-- Chọn danh mục --</option>
+                    {categories.map((cat) => (
+                        <option key={cat._id} value={cat._id}>
+                            {cat.name}
+                        </option>
+                    ))}
+                </select>
                 <input
                     type="number"
-                    step="0.1"
-                    name="rating"
-                    placeholder="Đánh giá (rating)"
-                    value={formData.rating}
+                    name="quantity"
+                    placeholder="Số lượng sản phẩm"
+                    value={formData.quantity}
                     onChange={handleChange}
+                    min={0}
+                    required
                 />
+                <label style={{ gap: '5px', display: 'flex', flexDirection: 'row', alignItems: 'baseline', fontSize: '14px' }}>
+                    <input
+                        type="checkbox"
+                        name="importing"
+                        checked={importing}
+                        onChange={e => setImporting(e.target.checked)}
+                    />
+                    Đang nhập hàng (Nếu chọn thì số lượng phải được đặt về 0)
+                </label>
                 <button type="submit">Cập nhật sản phẩm</button>
             </form>
         </div>

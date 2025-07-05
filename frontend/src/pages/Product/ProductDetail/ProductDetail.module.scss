@@ -219,14 +219,49 @@
 }
 
 .product-info__status--badge {
-    border-radius: 20px;
     display: inline-block;
-    padding: 7px 10px;
+    padding: 2px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-right: 6px;
+    margin-bottom: 4px;
 }
 
-.product-info__status--badge__success {
-    background: #e5f8ed;
-    color: #00b853;
+.badge-new {
+    font-size: 1.6rem;
+    background: #1e9800;
+    color: #fff;
+}
+.badge-many {
+    font-size: 1.6rem;
+    background: #007bff;
+    color: #fff;
+}
+.badge-instock {
+    font-size: 1.6rem;
+    background: #28a745;
+    color: #fff;
+}
+.badge-low {
+    font-size: 1.6rem;
+    background: #ff9800;
+    color: #fff;
+}
+.badge-out {
+    font-size: 1.6rem;
+    background: #dc3545;
+    color: #fff;
+}
+.badge-importing {
+    font-size: 1.6rem;
+    background: #6c757d;
+    color: #fff;
+}
+.badge-default {
+    font-size: 1.6rem;
+    background: #ccc;
+    color: #333;
 }
 
 .product-info__des {

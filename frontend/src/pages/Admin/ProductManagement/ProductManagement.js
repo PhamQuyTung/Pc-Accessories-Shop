@@ -76,6 +76,7 @@ const ProductManagement = () => {
                         <th>Giá</th>
                         <th>Giá khuyến mãi</th>
                         <th>Danh mục</th>
+                        <th>Số lượng</th>
                         <th>Trạng thái</th>
                         <th>Ngày tạo</th>
                         <th>Hành động</th>
@@ -96,6 +97,11 @@ const ProductManagement = () => {
                             <td>{formatCurrency(product.price)}</td>
                             <td>{formatCurrency(product.discountPrice)}</td>
                             <td>{product.category?.name || 'Không có danh mục'}</td> {/* ✅ hiển thị tên danh mục */}
+                            <td>
+                                {product.status?.includes('đang nhập hàng')
+                                    ? 'Đang nhập hàng'
+                                    : product.quantity}
+                            </td>
                             <td>{product.status ? 'Hiển thị' : 'Ẩn'}</td>
                             <td>{formatDate(product.createdAt)}</td>
                             <td>

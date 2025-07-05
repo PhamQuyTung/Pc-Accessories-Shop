@@ -18,6 +18,7 @@ const ProductSchema = new mongoose.Schema({
     images: [String],
     price: Number,
     discountPrice: Number,
+    quantity: { type: Number, default: 0 },
     status: [String],
     specs: { type: Object, default: {} }, // specs linh hoạt
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
