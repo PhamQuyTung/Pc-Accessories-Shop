@@ -1,11 +1,15 @@
-import ContainerFluid from "./ContainerFluid/ContainerFluid";
-import PC from "./PC/PC";
+import ContainerFluid from './ContainerFluid/ContainerFluid';
+import LTG from './LTG/LTG';
+import PC from './PC/PC';
+import Chuot from './Chuot/Chuot';
 
 function Home() {
-    return ( 
+    return (
         <div>
             <ContainerFluid />
-            <PC/>
+            <PC />
+            <LTG />
+            <Chuot />
         </div>
     );
 }

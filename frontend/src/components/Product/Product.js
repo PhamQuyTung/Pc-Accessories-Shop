@@ -15,18 +15,18 @@ import BasicRating from '~/components/Rating/Rating';
 
 const cx = classNames.bind(styles);
 
-function Product() {
+function Product({ category }) {
     const [products, setProducts] = useState([]);
 
     useEffect(() => {
         axios
-            .get('http://localhost:5000/api/products')
+            .get(`http://localhost:5000/api/products?category=${category}`)
             .then((res) => {
-                console.log('Kết quả trả về:', res.data); // <-- Xem console trình duyệt
+                console.log('Kết quả trả về:', res.data);
                 setProducts(res.data);
             })
             .catch((err) => console.log('Lỗi gọi API:', err));
-    }, []);
+    }, [category]);
 
     return (
         <div className={cx('product-wrapper')}>
@@ -108,17 +108,29 @@ function Product() {
                                 </div>
 
                                 <div className={cx('price')}>
-                                    <div className={cx('price-wrap1')}>
-                                        <span className={cx('original-price')}>{product.price.toLocaleString()}₫</span>
-                                    </div>
-                                    <div className={cx('price-wrap2')}>
-                                        <span className={cx('discount-price')}>
-                                            {product.discountPrice.toLocaleString()}₫
-                                        </span>
-                                        <span className={cx('discount-percent')}>
-                                            -{Math.round((1 - product.discountPrice / product.price) * 100)}%
-                                        </span>
-                                    </div>
+                                    {product.discountPrice && product.discountPrice < product.price ? (
+                                        <>
+                                            <div className={cx('price-wrap1')}>
+                                                <span className={cx('original-price')}>
+                                                    {product.price.toLocaleString()}₫
+                                                </span>
+                                            </div>
+                                            <div className={cx('price-wrap2')}>
+                                                <span className={cx('discount-price')}>
+                                                    {product.discountPrice.toLocaleString()}₫
+                                                </span>
+                                                <span className={cx('discount-percent')}>
+                                                    -{Math.round((1 - product.discountPrice / product.price) * 100)}%
+                                                </span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className={cx('price-wrap2')}>
+                                            <span className={cx('discount-price')}>
+                                                {product.price.toLocaleString()}₫
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Rating Star */}

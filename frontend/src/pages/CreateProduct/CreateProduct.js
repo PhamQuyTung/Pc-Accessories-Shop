@@ -204,7 +204,6 @@ function CreateProduct() {
                     placeholder="Giá khuyến mãi"
                     value={formData.discountPrice}
                     onChange={handleChange}
-                    required
                 />
                 <input
                     type="text"

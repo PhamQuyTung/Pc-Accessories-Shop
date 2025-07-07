@@ -17,8 +17,9 @@ function EditProduct() {
 
     // Lấy danh sách category
     useEffect(() => {
-        axios.get('http://localhost:5000/api/categories')
-            .then(res => setCategories(res.data))
+        axios
+            .get('http://localhost:5000/api/categories')
+            .then((res) => setCategories(res.data))
             .catch(() => setCategories([]));
     }, []);
 
@@ -77,7 +78,12 @@ function EditProduct() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Nếu đang nhập hàng mà số lượng khác 0 thì cảnh báo và không submit
+        // --- Kiểm tra số âm ---
+        if (formData.price < 0 || formData.discountPrice < 0 || formData.quantity < 0 || formData.rating < 0) {
+            toast('Giá, khuyến mãi, số lượng và đánh giá phải là số dương!', 'error');
+            return;
+        }
+
         if (importing && Number(formData.quantity) !== 0) {
             toast('Vui lòng đặt số lượng về 0 khi chọn "Đang nhập hàng"', 'error');
             return;
@@ -166,15 +172,17 @@ function EditProduct() {
                     placeholder="Giá gốc"
                     value={formData.price}
                     onChange={handleChange}
+                    min={0}
                     required
                 />
+
                 <input
                     type="number"
                     name="discountPrice"
                     placeholder="Giá khuyến mãi"
                     value={formData.discountPrice}
                     onChange={handleChange}
-                    required
+                    min={0}
                 />
 
                 <input
@@ -219,12 +227,7 @@ function EditProduct() {
                     onChange={handleChange}
                     rows={5}
                 />
-                <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
-                    required
-                >
+                <select name="category" value={formData.category} onChange={handleChange} required>
                     <option value="">-- Chọn danh mục --</option>
                     {categories.map((cat) => (
                         <option key={cat._id} value={cat._id}>
@@ -241,12 +244,20 @@ function EditProduct() {
                     min={0}
                     required
                 />
-                <label style={{ gap: '5px', display: 'flex', flexDirection: 'row', alignItems: 'baseline', fontSize: '14px' }}>
+                <label
+                    style={{
+                        gap: '5px',
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'baseline',
+                        fontSize: '14px',
+                    }}
+                >
                     <input
                         type="checkbox"
                         name="importing"
                         checked={importing}
-                        onChange={e => setImporting(e.target.checked)}
+                        onChange={(e) => setImporting(e.target.checked)}
                     />
                     Đang nhập hàng (Nếu chọn thì số lượng phải được đặt về 0)
                 </label>

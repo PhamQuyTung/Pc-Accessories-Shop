@@ -278,13 +278,23 @@ function ProductDetail() {
                                 </div>
 
                                 <div className={cx('product-info__cost')}>
-                                    <p className={cx('product-info__discountPrice')}>
-                                        {product.discountPrice?.toLocaleString()}₫
-                                    </p>
-                                    <p className={cx('product-info__price')}>{product.price?.toLocaleString()}₫</p>
-                                    <span className={cx('product-info__discount-percent')}>
-                                        -{Math.round((1 - product.discountPrice / product.price) * 100)}%
-                                    </span>
+                                    {product.discountPrice && product.discountPrice < product.price ? (
+                                        <>
+                                            <p className={cx('product-info__discountPrice')}>
+                                                {product.discountPrice.toLocaleString()}₫
+                                            </p>
+                                            <p className={cx('product-info__price')}>
+                                                {product.price.toLocaleString()}₫
+                                            </p>
+                                            <span className={cx('product-info__discount-percent')}>
+                                                -{Math.round((1 - product.discountPrice / product.price) * 100)}%
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <p className={cx('product-info__discountPrice')}>
+                                            {product.price.toLocaleString()}₫
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className={cx('product-info__status')}>
@@ -292,23 +302,22 @@ function ProductDetail() {
                                         product.status.map((st, idx) => (
                                             <span
                                                 key={idx}
-                                                className={cx(
-                                                    'product-info__status--badge',
-                                                    {
-                                                        'badge-new': st === 'sản phẩm mới',
-                                                        'badge-many': st === 'nhiều hàng',
-                                                        'badge-instock': st === 'còn hàng',
-                                                        'badge-low': st === 'sắp hết hàng',
-                                                        'badge-out': st === 'hết hàng',
-                                                        'badge-importing': st === 'đang nhập hàng',
-                                                    }
-                                                )}
+                                                className={cx('product-info__status--badge', {
+                                                    'badge-new': st === 'sản phẩm mới',
+                                                    'badge-many': st === 'nhiều hàng',
+                                                    'badge-instock': st === 'còn hàng',
+                                                    'badge-low': st === 'sắp hết hàng',
+                                                    'badge-out': st === 'hết hàng',
+                                                    'badge-importing': st === 'đang nhập hàng',
+                                                })}
                                             >
                                                 {st}
                                             </span>
                                         ))
                                     ) : (
-                                        <span className={cx('product-info__status--badge', 'badge-default')}>Không có</span>
+                                        <span className={cx('product-info__status--badge', 'badge-default')}>
+                                            Không có
+                                        </span>
                                     )}
                                 </div>
 

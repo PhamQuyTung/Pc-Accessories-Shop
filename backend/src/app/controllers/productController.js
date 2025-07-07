@@ -1,13 +1,27 @@
 // app/controllers/productController.js
 const Product = require("../models/product");
+const Category = require("../models/category");
 const mongoose = require("mongoose");
 
 class ProductController {
   // Lấy tất cả sản phẩm
   async getAll(req, res) {
     try {
-      const products = await Product.find({ deleted: { $ne: true } })
-        .populate("category", "name") // <-- Thêm dòng này
+      const { category } = req.query;
+
+      let filter = { deleted: { $ne: true } };
+
+      // Nếu có truyền ?category=slug thì lọc theo slug
+      if (category) {
+        const foundCategory = await Category.findOne({ slug: category });
+        if (!foundCategory) {
+          return res.json([]); // Không tìm thấy category => trả về mảng rỗng
+        }
+        filter.category = foundCategory._id; // Gán _id vào filter
+      }
+
+      const products = await Product.find(filter)
+        .populate("category", "name") // Lấy thêm tên danh mục nếu cần
         .lean();
 
       const enrichedProducts = products.map((product) => {
@@ -28,7 +42,7 @@ class ProductController {
 
       res.json(enrichedProducts);
     } catch (err) {
-      console.error(err);
+      console.error("Lỗi khi lấy sản phẩm:", err);
       res.status(500).json({ error: "Lỗi server" });
     }
   }

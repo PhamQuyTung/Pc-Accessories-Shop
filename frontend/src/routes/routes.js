@@ -18,6 +18,7 @@ import EditProduct from '../pages/EditProduct/EditProduct'; // Trang chỉnh s�
 import Trash from '../pages/Trash/Trash'; // Trang chỉnh sửa sản phẩm
 import Profile from '~/pages/Profile/Profile';
 import RequireAdmin from '~/components/RequireAdmin/RequireAdmin'; // Kiểm tra quyền admin
+import CategoryManagement from '~/pages/Admin/CategoryManagement/CategoryManagement'; // Quản lý danh mục
 
 const routes = [
     { path: '/', element: <Home />, layout: MainLayout },
@@ -44,6 +45,7 @@ const routes = [
     // --- Admin routes ---
     { path: '/admin/products', element: <ProductManagement />, layout: AdminLayout },
     { path: '/admin/users', element: <UserManagement />, layout: AdminLayout },
+    { path: '/admin/categories', element: <CategoryManagement />, layout: AdminLayout },
 
     // Trang thùng rác sản phẩm
     { path: '/admin/products/trash', element: <Trash />, layout: AdminLayout },

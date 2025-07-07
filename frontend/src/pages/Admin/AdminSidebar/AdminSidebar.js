@@ -1,6 +1,6 @@
-// src/components/admin/Sidebar.jsx
+// src/pages/Admin/AdminSidebar/AdminSidebar.jsx
 import React from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import styles from './AdminSidebar.module.scss';
 import classNames from 'classnames/bind';
 
@@ -10,6 +10,10 @@ const AdminSidebar = () => (
     <div className={cx('AdminSidebar')}>
         <NavLink to="/admin/products" end className={({ isActive }) => cx('link', { active: isActive })}>
             Quản lý sản phẩm
+        </NavLink>
+
+        <NavLink to="/admin/categories" className={({ isActive }) => cx('link', { active: isActive })}>
+            Quản lý danh mục
         </NavLink>
 
         <NavLink to="/admin/users" className={({ isActive }) => cx('link', { active: isActive })}>
