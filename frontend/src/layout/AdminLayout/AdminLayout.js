@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import { Outlet } from 'react-router-dom';
 
 import Sidebar from '~/pages/Admin/AdminSidebar/AdminSidebar';
 import AdminHeader from '~/pages/Admin/AdminHeader/AdminHeader';

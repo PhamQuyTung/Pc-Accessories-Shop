@@ -5,14 +5,16 @@
     overflow: hidden;
 }
 
-.admin-content {
+.content {
+    display: flex;
+    flex-direction: column;
     // margin-left: 200px; // match sidebar width
     font-size: 1.4rem;
     padding: 20px;
     flex-grow: 1;
     background-color: #f9f9f9;
     min-height: 100vh;
-    margin-top: 64px; // Giá trị này phải bằng height của header
+    margin-top: 64px !important; // Giá trị này phải bằng height của header
 }
 
 .header {
@@ -25,7 +27,7 @@
 .sidebar {
     background-color: #343a40;
     color: #fff;
-    padding: 20px 0;
+    padding: 20px 0 !important;
     height: 100vh; // full height
     // position: fixed; // fixed sidebar
     // top: 0;

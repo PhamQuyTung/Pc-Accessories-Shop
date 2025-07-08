@@ -150,7 +150,7 @@ function Header() {
                                         {/* Chỉ có Admin mới đc vào hoặc thấy chức năng này */}
                                         {user.role === 'admin' && (
                                             <NavLink
-                                                to="/products/create"
+                                                to="/admin/products/create"
                                                 className={({ isActive }) => cx('dropdown__item', { active: isActive })}
                                             >
                                                 <span className={cx('icon-wrapper')}>

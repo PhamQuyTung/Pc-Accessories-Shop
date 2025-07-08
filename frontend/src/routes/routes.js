@@ -25,17 +25,6 @@ const routes = [
     { path: '/about', element: <About />, layout: MainLayout },
     { path: '/product', element: <Product />, layout: MainLayout },
 
-    // Route trang tạo sản phẩm
-    {
-        path: '/products/create',
-        element: (
-            <RequireAdmin>
-                <CreateProduct />
-            </RequireAdmin>
-        ),
-        layout: MainLayout,
-    },
-
     // Route chỉnh sửa sản phẩm theo ID
     { path: '/products/edit/:id', element: <EditProduct />, layout: MainLayout },
 
@@ -44,6 +33,16 @@ const routes = [
 
     // --- Admin routes ---
     { path: '/admin/products', element: <ProductManagement />, layout: AdminLayout },
+    // Route trang tạo sản phẩm
+    {
+        path: '/admin/products/create',
+        element: (
+            <RequireAdmin>
+                <CreateProduct />
+            </RequireAdmin>
+        ),
+        layout: AdminLayout,
+    },
     { path: '/admin/users', element: <UserManagement />, layout: AdminLayout },
     { path: '/admin/categories', element: <CategoryManagement />, layout: AdminLayout },
 
