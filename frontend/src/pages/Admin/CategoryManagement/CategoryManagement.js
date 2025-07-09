@@ -6,49 +6,91 @@ import { useToast } from '~/components/ToastMessager';
 import Swal from 'sweetalert2';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPen, faTrash, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import debounce from 'lodash.debounce';
+import Pagination from '~/components/Pagination/Pagination';
 
 const cx = classNames.bind(styles);
 
 function CategoryManagement() {
+    const [loadingCategories, setLoadingCategories] = useState(false);
+    const [loadingFiltering, setLoadingFiltering] = useState(false);
+
     const [categories, setCategories] = useState([]);
+    const [filteredCategories, setFilteredCategories] = useState([]);
+
     const [newCategory, setNewCategory] = useState({ name: '', slug: '', description: '', schema: [] });
-    const [specField, setSpecField] = useState({ label: '', key: '', type: 'text' });
     const [editingCategory, setEditingCategory] = useState(null);
     const [loading, setLoading] = useState(false);
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const [slugFilter, setSlugFilter] = useState('');
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+    const [debouncedSlugFilter, setDebouncedSlugFilter] = useState('');
+
+    const [sortOrder, setSortOrder] = useState('asc');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+
     const toast = useToast();
 
+    // Fetch categories
+    const fetchCategories = async () => {
+        setLoadingCategories(true);
+        try {
+            const res = await axios.get('http://localhost:5000/api/categories');
+            setCategories(res.data);
+        } catch (err) {
+            toast('Lỗi khi tải danh mục', 'error');
+        } finally {
+            setLoadingCategories(false);
+        }
+    };
+
     useEffect(() => {
-        axios
-            .get('http://localhost:5000/api/categories')
-            .then((res) => setCategories(res.data))
-            .catch(() => toast('Lỗi khi tải danh mục', 'error'));
+        fetchCategories();
     }, []);
 
-    // const handleAddSpecField = () => {
-    //     if (!specField.label || !specField.key) return;
-    //     setNewCategory((prev) => ({
-    //         ...prev,
-    //         schema: [...prev.schema, specField],
-    //     }));
-    //     setSpecField({ label: '', key: '', type: 'text' });
-    // };
+    // Debounce both search inputs
+    useEffect(() => {
+        const debounceHandler = debounce(() => {
+            setDebouncedSearchQuery(searchQuery);
+            setDebouncedSlugFilter(slugFilter);
+        }, 400);
 
-    // const handleRemoveSpec = (index) => {
-    //     setNewCategory((prev) => ({
-    //         ...prev,
-    //         schema: prev.schema.filter((_, i) => i !== index),
-    //     }));
-    // };
+        debounceHandler();
+        return () => debounceHandler.cancel();
+    }, [searchQuery, slugFilter]);
 
-    // Tạo danh mục mới
+    // Filter logic
+    const getFilteredCategories = (data, name, slug, sortOrder) => {
+        return data
+            .filter((cat) => cat.name.toLowerCase().includes(name.toLowerCase()))
+            .filter((cat) => cat.slug.toLowerCase().includes(slug.toLowerCase()))
+            .sort((a, b) => (sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)));
+    };
+
+    useEffect(() => {
+        const filterData = async () => {
+            setLoadingFiltering(true);
+            await new Promise((r) => setTimeout(r, 500));
+
+            const filtered = getFilteredCategories(categories, debouncedSearchQuery, debouncedSlugFilter, sortOrder);
+            setFilteredCategories(filtered);
+            setCurrentPage(1);
+            setLoadingFiltering(false);
+        };
+
+        filterData();
+    }, [categories, debouncedSearchQuery, debouncedSlugFilter, sortOrder]);
+
+    // Create
     const handleCreateCategory = async () => {
         setLoading(true);
         try {
             await axios.post('http://localhost:5000/api/categories', newCategory);
             toast('Tạo danh mục thành công!', 'success');
             setNewCategory({ name: '', slug: '', description: '', schema: [] });
-            const res = await axios.get('http://localhost:5000/api/categories');
-            setCategories(res.data);
+            await fetchCategories();
         } catch (err) {
             toast('Lỗi khi tạo danh mục!', 'error');
         } finally {
@@ -56,15 +98,14 @@ function CategoryManagement() {
         }
     };
 
-    // Cập nhật danh mục
+    // Update
     const handleUpdateCategory = async () => {
         setLoading(true);
         try {
             await axios.put(`http://localhost:5000/api/categories/${editingCategory._id}`, editingCategory);
             toast('Cập nhật danh mục thành công!', 'success');
             setEditingCategory(null);
-            const res = await axios.get('http://localhost:5000/api/categories');
-            setCategories(res.data);
+            await fetchCategories();
         } catch (err) {
             toast('Cập nhật thất bại!', 'error');
         } finally {
@@ -72,7 +113,7 @@ function CategoryManagement() {
         }
     };
 
-    // Xóa danh mục
+    // Delete
     const handleDeleteCategory = async (id) => {
         const result = await Swal.fire({
             title: 'Bạn chắc chắn?',
@@ -91,7 +132,7 @@ function CategoryManagement() {
         try {
             await axios.delete(`http://localhost:5000/api/categories/${id}`);
             toast('Xóa danh mục thành công!', 'success');
-            setCategories((prev) => prev.filter((cat) => cat._id !== id));
+            await fetchCategories();
         } catch (err) {
             toast('Xóa thất bại!', 'error');
         } finally {
@@ -99,9 +140,30 @@ function CategoryManagement() {
         }
     };
 
+    const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+    const paginatedCategories = filteredCategories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    const generatePagination = () => {
+        const pages = [];
+        const totalShown = 5; // Số trang muốn hiển thị (ngoài các dấu ...)
+
+        if (totalPages <= totalShown) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+        } else {
+            if (currentPage <= 3) {
+                pages.push(1, 2, 3, 4, '...', totalPages);
+            } else if (currentPage >= totalPages - 2) {
+                pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+            } else {
+                pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+            }
+        }
+
+        return pages;
+    };
+
     return (
         <div className={cx('wrapper')}>
-            {/* PHẦN 1 - Tạo mới danh mục */}
             <div className={cx('section')}>
                 <h2>{editingCategory ? 'Chỉnh sửa danh mục' : 'Tạo danh mục mới'}</h2>
                 <div className={cx('form-section')}>
@@ -117,7 +179,7 @@ function CategoryManagement() {
                     />
                     <input
                         type="text"
-                        placeholder="Slug (ví dụ: laptop-gaming)"
+                        placeholder="Slug"
                         value={editingCategory ? editingCategory.slug : newCategory.slug}
                         onChange={(e) =>
                             editingCategory
@@ -134,61 +196,16 @@ function CategoryManagement() {
                                 : setNewCategory({ ...newCategory, description: e.target.value })
                         }
                     />
-
-                    {/* Chỉ cho tạo mới thêm thông số kỹ thuật */}
-                    {!editingCategory && (
-                        <>
-                            <div className={cx('spec-field')}>
-                                <input
-                                    type="text"
-                                    placeholder="Tên hiển thị (VD: CPU)"
-                                    value={specField.label}
-                                    onChange={(e) => setSpecField({ ...specField, label: e.target.value })}
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Tên khóa (VD: cpu)"
-                                    value={specField.key}
-                                    onChange={(e) => setSpecField({ ...specField, key: e.target.value })}
-                                />
-                                <select
-                                    value={specField.type}
-                                    onChange={(e) => setSpecField({ ...specField, type: e.target.value })}
-                                >
-                                    <option value="text">Text</option>
-                                    <option value="number">Number</option>
-                                    <option value="select">Select</option>
-                                </select>
-                                {/* <button type="button" onClick={handleAddSpecField}>
-                                    Thêm
-                                </button> */}
-                            </div>
-
-                            {/* <ul className={cx('spec-list')}>
-                                {newCategory.schema.map((spec, index) => (
-                                    <li key={index}>
-                                        {spec.label} ({spec.key}) - {spec.type}
-                                        <button type="button" onClick={() => handleRemoveSpec(index)}>
-                                            X
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul> */}
-                        </>
-                    )}
-
                     <div className={cx('btn-group')}>
                         {editingCategory ? (
                             <>
-                                <button type="button" onClick={handleUpdateCategory} disabled={loading}>
+                                <button onClick={handleUpdateCategory} disabled={loading}>
                                     {loading ? <FontAwesomeIcon icon={faSpinner} spin /> : 'Cập nhật danh mục'}
                                 </button>
-                                <button type="button" onClick={() => setEditingCategory(null)}>
-                                    Hủy
-                                </button>
+                                <button onClick={() => setEditingCategory(null)}>Hủy</button>
                             </>
                         ) : (
-                            <button type="button" onClick={handleCreateCategory} disabled={loading}>
+                            <button onClick={handleCreateCategory} disabled={loading}>
                                 {loading ? <FontAwesomeIcon icon={faSpinner} spin /> : 'Tạo danh mục mới'}
                             </button>
                         )}
@@ -196,13 +213,33 @@ function CategoryManagement() {
                 </div>
             </div>
 
-            {/* PHẦN 2 - Danh sách danh mục */}
+            <div className={cx('search-section')}>
+                <input
+                    type="text"
+                    placeholder="Tìm danh mục theo tên..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <input
+                    type="text"
+                    placeholder="Lọc theo slug..."
+                    value={slugFilter}
+                    onChange={(e) => setSlugFilter(e.target.value)}
+                    style={{ marginTop: 10 }}
+                />
+            </div>
+
             <div className={cx('section')}>
                 <h2>Danh sách danh mục</h2>
                 <table className={cx('category-table')}>
                     <thead>
                         <tr>
-                            <th>Tên</th>
+                            <th
+                                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                Tên {sortOrder === 'asc' ? '↑' : '↓'}
+                            </th>
                             <th>Slug</th>
                             <th>Mô tả</th>
                             <th>Số sản phẩm</th>
@@ -210,24 +247,41 @@ function CategoryManagement() {
                         </tr>
                     </thead>
                     <tbody>
-                        {categories.map((cat) => (
-                            <tr key={cat._id}>
-                                <td>{cat.name}</td>
-                                <td>{cat.slug}</td>
-                                <td>{cat.description || 'Không có'}</td>
-                                <td>{cat.productCount || 0}</td>
-                                <td>
-                                    <button onClick={() => setEditingCategory(cat)} disabled={loading}>
-                                        <FontAwesomeIcon icon={faPen} /> Sửa
-                                    </button>
-                                    <button onClick={() => handleDeleteCategory(cat._id)} disabled={loading}>
-                                        <FontAwesomeIcon icon={faTrash} /> Xóa
-                                    </button>
+                        {loadingCategories || loadingFiltering ? (
+                            <tr>
+                                <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>
+                                    <FontAwesomeIcon icon={faSpinner} spin /> Đang tải danh mục...
                                 </td>
                             </tr>
-                        ))}
+                        ) : paginatedCategories.length > 0 ? (
+                            paginatedCategories.map((cat) => (
+                                <tr key={cat._id}>
+                                    <td>{cat.name}</td>
+                                    <td>{cat.slug}</td>
+                                    <td>{cat.description || 'Không có'}</td>
+                                    <td>{cat.productCount || 0}</td>
+                                    <td>
+                                        <button onClick={() => setEditingCategory(cat)} disabled={loading}>
+                                            <FontAwesomeIcon icon={faPen} /> Sửa
+                                        </button>
+                                        <button onClick={() => handleDeleteCategory(cat._id)} disabled={loading}>
+                                            <FontAwesomeIcon icon={faTrash} /> Xóa
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="5" style={{ textAlign: 'center', color: '#888' }}>
+                                    Không có danh mục nào tên là <strong>{debouncedSearchQuery}</strong> và slug là{' '}
+                                    <strong>{debouncedSlugFilter}</strong>
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
+
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
             </div>
         </div>
     );

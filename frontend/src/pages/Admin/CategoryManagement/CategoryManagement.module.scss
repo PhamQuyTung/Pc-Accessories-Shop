@@ -157,3 +157,51 @@
 .category-table td button svg {
     margin-right: 4px;
 }
+
+.search-section {
+    margin-bottom: 16px;
+
+    input {
+        padding: 8px 12px;
+        width: 100%;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+}
+
+.pagination {
+    display: flex;
+    gap: 6px;
+    margin-top: 16px;
+
+    button {
+        padding: 6px 10px;
+        border: none;
+        background-color: #eee;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: 0.3s;
+
+        &:hover {
+            background-color: #ccc;
+        }
+
+        &.active {
+            background-color: #333;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    }
+
+    .dots {
+        padding: 6px 10px;
+        color: #888;
+        user-select: none;
+    }
+}
