@@ -1,65 +1,159 @@
-/* src/pages/Admin/CategoryManagement/CategoryManagement.module.scss */
 .wrapper {
-    padding: 20px;
-    background-color: #fff;
+    padding: 24px;
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', sans-serif;
+    color: #333;
+}
+
+.section {
+    margin-bottom: 32px;
+    background: #fff;
+    border: 1px solid #ddd;
     border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-h2 {
-    font-size: 24px;
+.section h2 {
     margin-bottom: 16px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #222;
 }
 
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 30px;
-}
-
-.form input,
-.form textarea {
-    padding: 8px;
+.form-section input,
+.form-section textarea,
+.form-section select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 12px;
     border: 1px solid #ccc;
     border-radius: 6px;
     font-size: 14px;
+    transition: border-color 0.2s ease;
 }
 
-.field-list {
-    margin-top: 10px;
-    padding-left: 20px;
+.form-section input:focus,
+.form-section textarea:focus,
+.form-section select:focus {
+    border-color: #007bff;
+    outline: none;
 }
 
-.field-item {
+.btn-group {
     display: flex;
-    justify-content: space-between;
-    margin-top: 4px;
-    font-size: 14px;
+    gap: 12px;
 }
 
-.button {
-    width: fit-content;
-    padding: 6px 12px;
-    background-color: #007bff;
-    color: white;
+.btn-group button {
+    padding: 10px 16px;
+    font-size: 14px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;
+    background-color: #007bff;
+    color: white;
+    transition: background-color 0.2s ease;
 }
 
-.button:hover {
+.btn-group button:hover {
     background-color: #0056b3;
 }
 
-.category-list {
-    margin-top: 30px;
-    border-top: 1px solid #ccc;
-    padding-top: 20px;
+.btn-group button:last-child {
+    background-color: #6c757d;
 }
 
-.category-item {
-    margin-bottom: 20px;
-    border-bottom: 1px dashed #ccc;
-    padding-bottom: 10px;
+.btn-group button:last-child:hover {
+    background-color: #5a6268;
+}
+
+.spec-field {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.spec-field input,
+.spec-field select {
+    flex: 1;
+}
+
+.spec-list {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 16px;
+}
+
+.spec-list li {
+    padding: 6px 10px;
+    background-color: #f1f1f1;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.spec-list button {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.spec-list button:hover {
+    background: #b02a37;
+}
+
+.category-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.category-table th,
+.category-table td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+    font-size: 14px;
+}
+
+.category-table th {
+    background-color: #f0f0f0;
+    font-weight: 600;
+}
+
+.category-table td button {
+    margin-right: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.category-table td button:first-child {
+    background-color: #17a2b8; // Sửa
+    color: white;
+}
+
+.category-table td button:first-child:hover {
+    background-color: #138496;
+}
+
+.category-table td button:last-child {
+    background-color: #dc3545; // Xóa
+    color: white;
+}
+
+.category-table td button:last-child:hover {
+    background-color: #b02a37;
+}
+
+.category-table td button svg {
+    margin-right: 4px;
 }

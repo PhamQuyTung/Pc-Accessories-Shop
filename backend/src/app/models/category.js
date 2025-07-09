@@ -6,6 +6,7 @@ const categorySchema = new mongoose.Schema({
     slug: { type: String, required: true, unique: true },
     description: String,
     createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
 
     /**
      * Mỗi category có thể định nghĩa danh sách thông số riêng
