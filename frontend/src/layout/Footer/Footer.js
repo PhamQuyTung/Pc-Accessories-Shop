@@ -59,7 +59,7 @@ const Footer = () => {
                     </div>
                     <div className={cx('column')}>
                         <h4>ĐƠN VỊ VẬN CHUYỂN</h4>
-                        <div className={cx('shipping-logos')}>
+                        {/* <div className={cx('shipping-logos')}>
                             <img src="/shipping/ghn.png" alt="GHN" />
                             <img src="/shipping/ems.png" alt="EMS" />
                             <img src="/shipping/gvn.png" alt="GVN" />
@@ -73,7 +73,7 @@ const Footer = () => {
                             <img src="/payment/zalopay.png" alt="ZaloPay" />
                             <img src="/payment/visa.png" alt="Visa" />
                             <img src="/payment/momo.png" alt="MoMo" />
-                        </div>
+                        </div> */}
                     </div>
                 </div>
     
@@ -89,7 +89,7 @@ const Footer = () => {
                         </div>
                     </div>
                     <div className={cx('verified')}>
-                        <img src="/bocongthuong.png" alt="Bộ Công Thương" />
+                        {/* <img src="/bocongthuong.png" alt="Bộ Công Thương" /> */}
                     </div>
                 </div>
             </div>

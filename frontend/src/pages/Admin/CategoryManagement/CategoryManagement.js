@@ -230,7 +230,12 @@ function CategoryManagement() {
             </div>
 
             <div className={cx('section')}>
-                <h2>Danh sách danh mục</h2>
+                <h2>
+                    Danh sách danh mục {' '}
+                    {filteredCategories.length > 0 && (
+                        <span className={cx('count')}>({filteredCategories.length} danh mục)</span>
+                    )}
+                </h2>
                 <table className={cx('category-table')}>
                     <thead>
                         <tr>

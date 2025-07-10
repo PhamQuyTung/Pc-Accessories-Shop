@@ -1,4 +1,4 @@
-// routes/category.js
+// routes/categoryRoutes.js
 const express = require('express');
 const router = express.Router();
 const categoryController = require('../app/controllers/categoryController');
@@ -12,5 +12,8 @@ router.post('/', categoryController.createCategory);
 router.put('/:id', categoryController.updateCategory);
 // Xóa danh mục theo ID
 router.delete('/:id', categoryController.deleteCategory);
+
+// Lấy danh sách danh mục có cấu trúc lồng nhau
+router.get('/nested', categoryController.getNestedCategories);
 
 module.exports = router;

@@ -18,7 +18,17 @@ const categorySchema = new mongoose.Schema({
             key: { type: String, required: true },   // Tên khóa ví dụ "cpu"
             type: { type: String, default: 'text' }, // Kiểu input: text, number, select...
         }
-    ]
+    ],
+    
+    /**
+     * Danh mục có thể có danh mục con
+     * Ví dụ: Laptop -> Laptop Gaming, Laptop Văn phòng
+    */
+    parent: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category',
+        default: null, // null = category cấp 1
+    },
 });
 
 

@@ -1,36 +1,24 @@
+// routes/index.js
 const authRoutes = require('./authRoutes');
-const errorHandle = require('../helpers/error.handle');
 const productRoutes = require('./productRoutes');
 const accountRoutes = require('./accountRoutes');
-const categoryRoutes = require('./categoryRoutes'); // nếu có
-// const adminRoutes = require('./adminRoutes'); // nếu có
+const categoryRoutes = require('./categoryRoutes'); // ✔️ Đảm bảo đúng tên file
+const errorHandle = require('../helpers/error.handle');
 
 function route(app) {
     // Route cho trang chủ
     app.get('/', (req, res) => {
-        res.render('home'); // views/home.hbs
+        res.render('home');
     });
 
-    // Route cho đăng nhập, đăng ký
-    console.log('Register route: ', authRoutes);
+    // Route chính
     app.use('/api/auth', authRoutes);
-
-    // Trung tâm xử lý lỗi của website
-    app.use(errorHandle);
-
-    // Route cho sản phẩm
     app.use('/api/products', productRoutes);
-
-    // Route cho danh mục sản phẩm
-    console.log('Category route: ', categoryRoutes);
-    app.use('/api/categories', categoryRoutes);
-
-    // Route cho tài khoản
-    console.log('Account route: ', accountRoutes);
     app.use('/api/accounts', accountRoutes);
+    app.use('/api/categories', categoryRoutes); // 👈 Đây là route bạn cần
 
-    // Thêm các route khác nếu có
-    // app.use('/admin', adminRoutes);
+    // Middleware xử lý lỗi
+    app.use(errorHandle);
 }
 
 module.exports = route;

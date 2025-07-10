@@ -52,3 +52,31 @@ exports.deleteCategory = async (req, res) => {
         res.status(400).json({ message: 'Xóa danh mục thất bại' });
     }
 };
+
+// hàm tách category cha và danh sách con của nó
+exports.getNestedCategories = async (req, res) => {
+    try {
+        const allCategories = await Category.find();
+
+        const categoryMap = {};
+        allCategories.forEach((cat) => {
+            categoryMap[cat._id.toString()] = { ...cat._doc, children: [] };
+        });
+
+        const nestedCategories = [];
+        allCategories.forEach((cat) => {
+            const parentId = cat.parent?.toString();
+            if (parentId && categoryMap[parentId]) {
+                categoryMap[parentId].children.push(categoryMap[cat._id.toString()]);
+            } else {
+                nestedCategories.push(categoryMap[cat._id.toString()]);
+            }
+        });
+
+
+        res.json(nestedCategories);
+    } catch (err) {
+        console.error('Lỗi lấy nested categories:', err);
+        res.status(500).json({ message: 'Lỗi server' });
+    }
+};
