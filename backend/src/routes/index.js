@@ -16,6 +16,7 @@ function route(app) {
     app.use('/api/products', productRoutes);
     app.use('/api/accounts', accountRoutes);
     app.use('/api/categories', categoryRoutes); // 👈 Đây là route bạn cần
+    app.use('/api/menus', require('./menuRoutes')); // 👈 Thêm route cho menu
 
     // Middleware xử lý lỗi
     app.use(errorHandle);

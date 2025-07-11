@@ -7,26 +7,35 @@
 }
 
 .menu-group {
-    margin-bottom: 12px;
+    // margin-bottom: 12px;
 }
 
 .accordion-header {
+    padding: 6px 8px;
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
     cursor: pointer;
-    gap: 8px;
+    // background-color: #f3f4f6; // gray-100
+    color: #374151; // gray-700
     font-weight: 600;
-    color: #fff;
-    // padding: 8px 16px;
-    padding-right: 4px;
-    user-select: none;
+    transition: background 0.3s;
+
+    &.active {
+        background-color: #0073AA; // blue-700
+        color: #fff;
+
+        .custom-iconBox {
+            color: #fff;
+        }
+    }
 
     &:hover {
-        background-color: #0073AA;
+        background-color: #0073AA; // blue-500
         color: #fff;
     }
 }
+
 
 .accordion-header.active {
     background-color: #0073AA;
@@ -49,7 +58,7 @@
 }
 
 .custom-iconBox {
-    margin-right: 8px;
+    margin-right: 16px;
     color: #c1c1c1;
     font-size: 16px;
 }

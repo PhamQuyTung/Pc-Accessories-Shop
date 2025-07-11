@@ -11,12 +11,15 @@ import { EyeIcon, HandWaveIcon, ListItemIcon, OutTheDoor } from '~/components/Ic
 import { faPenToSquare } from '@fortawesome/free-regular-svg-icons';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import axios from 'axios';
 
 const cx = classNames.bind(styles);
 
 const MySwal = withReactContent(Swal);
 
 function Header() {
+    const [menus, setMenus] = useState([]);
+
     const navigate = useNavigate();
     const [user, setUser] = useState(() => {
         const stored = localStorage.getItem('user');
@@ -89,6 +92,13 @@ function Header() {
 
         checkToken();
     }, [navigate]);
+
+    useEffect(() => {
+        axios
+            .get('http://localhost:5000/api/menus')
+            .then((res) => setMenus(res.data))
+            .catch((err) => console.error('Lỗi khi lấy menu:', err));
+    }, []);
 
     const handleLogout = async () => {
         const result = await Swal.fire({
@@ -210,24 +220,13 @@ function Header() {
                 </div>
 
                 <div className={cx('header__nav')}>
-                    <a className={cx('header__nav-link')} href="/">
-                        Trang chủ
-                    </a>
-                    <a className={cx('header__nav-link')} href="/about">
-                        Giới thiệu
-                    </a>
-                    <a className={cx('header__nav-link')} href="/cart">
-                        Giỏ hàng
-                    </a>
-                    <a className={cx('header__nav-link')} href="/contact">
-                        Liên hệ
-                    </a>
-                    <a className={cx('header__nav-link')} href="/blog">
-                        Blog
-                    </a>
-                    <a className={cx('header__nav-link')} href="/promotion">
-                        Khuyến mãi
-                    </a>
+                    {menus
+                        .filter((menu) => !menu.parent)
+                        .map((menu) => (
+                            <a key={menu._id} className={cx('header__nav-link')} href={menu.link}>
+                                {menu.name}
+                            </a>
+                        ))}
                 </div>
             </div>
         </header>

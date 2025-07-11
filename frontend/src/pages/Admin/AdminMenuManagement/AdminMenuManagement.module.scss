@@ -1,0 +1,79 @@
+.wrapper {
+    padding: 20px;
+}
+
+.content {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+
+    @media (max-width: 768px) {
+        flex-direction: column;
+    }
+}
+
+.form {
+    flex: 1;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    input,
+    select {
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+            background-color: #0056b3;
+        }
+    }
+}
+
+.menu-list {
+    flex: 2;
+    min-width: 300px;
+
+    h3 {
+        margin-bottom: 10px;
+    }
+
+    button {
+        margin-left: 8px;
+        padding: 4px 8px;
+    }
+
+    div {
+        margin-bottom: 8px;
+    }
+}
+
+.cancel-button {
+    background-color: #6c757d !important;
+    color: white;
+    margin-left: 10px;
+
+    &:hover {
+        background-color: #5a6268 !important;
+    }
+}
+
+.form-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.editing {
+    background-color: #f0f8ff;
+    border-left: 4px solid #007bff;
+}
