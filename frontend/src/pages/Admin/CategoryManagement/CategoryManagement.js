@@ -177,6 +177,7 @@ function CategoryManagement() {
                                 : setNewCategory({ ...newCategory, name: e.target.value })
                         }
                     />
+
                     <input
                         type="text"
                         placeholder="Slug"
@@ -187,6 +188,7 @@ function CategoryManagement() {
                                 : setNewCategory({ ...newCategory, slug: e.target.value })
                         }
                     />
+
                     <textarea
                         placeholder="Mô tả"
                         value={editingCategory ? editingCategory.description : newCategory.description}
@@ -196,6 +198,26 @@ function CategoryManagement() {
                                 : setNewCategory({ ...newCategory, description: e.target.value })
                         }
                     />
+
+                    <select
+                        value={editingCategory ? editingCategory.parent || '' : newCategory.parent || ''}
+                        onChange={(e) => {
+                            const parentId = e.target.value === '' ? null : e.target.value;
+                            if (editingCategory) {
+                                setEditingCategory({ ...editingCategory, parent: parentId });
+                            } else {
+                                setNewCategory({ ...newCategory, parent: parentId });
+                            }
+                        }}
+                    >
+                        <option value="">-- Không có (cấp 1) --</option>
+                        {categories.map((cat) => (
+                            <option key={cat._id} value={cat._id}>
+                                {cat.name}
+                            </option>
+                        ))}
+                    </select>
+
                     <div className={cx('btn-group')}>
                         {editingCategory ? (
                             <>
@@ -231,7 +253,7 @@ function CategoryManagement() {
 
             <div className={cx('section')}>
                 <h2>
-                    Danh sách danh mục {' '}
+                    Danh sách danh mục{' '}
                     {filteredCategories.length > 0 && (
                         <span className={cx('count')}>({filteredCategories.length} danh mục)</span>
                     )}
@@ -248,6 +270,7 @@ function CategoryManagement() {
                             <th>Slug</th>
                             <th>Mô tả</th>
                             <th>Số sản phẩm</th>
+                            <th>Danh mục cha</th>
                             <th>Hành động</th>
                         </tr>
                     </thead>
@@ -265,6 +288,11 @@ function CategoryManagement() {
                                     <td>{cat.slug}</td>
                                     <td>{cat.description || 'Không có'}</td>
                                     <td>{cat.productCount || 0}</td>
+                                    <td>
+                                        {cat.parent
+                                            ? categories.find((p) => p._id === cat.parent)?.name || 'Không rõ'
+                                            : 'Không có'}
+                                    </td>
                                     <td>
                                         <button onClick={() => setEditingCategory(cat)} disabled={loading}>
                                             <FontAwesomeIcon icon={faPen} /> Sửa

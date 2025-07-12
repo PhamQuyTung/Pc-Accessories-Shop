@@ -80,3 +80,34 @@ exports.getNestedCategories = async (req, res) => {
         res.status(500).json({ message: 'Lỗi server' });
     }
 };
+
+function buildFullSlugPath(category, categoryMap) {
+    const path = [];
+    let current = category;
+
+    while (current) {
+        path.unshift(current.slug);
+        current = categoryMap[current.parent?.toString()];
+    }
+
+    return path.join('-'); // Ví dụ: laptop-thuong-hieu-asus
+}
+
+exports.getCategoriesWithFullPath = async (req, res) => {
+    try {
+        const categories = await Category.find().lean();
+        const categoryMap = {};
+        categories.forEach(cat => categoryMap[cat._id.toString()] = cat);
+
+        const categoriesWithPath = categories.map(cat => ({
+            ...cat,
+            fullSlug: buildFullSlugPath(cat, categoryMap),
+        }));
+
+        res.json(categoriesWithPath);
+    } catch (err) {
+        console.error('Lỗi tạo fullSlug:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+

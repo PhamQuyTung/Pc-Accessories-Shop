@@ -29,9 +29,7 @@ function getCategoryIcon(slug) {
         case 'laptop-gaming':
             return <LapTopGamingIcon />;
         case 'pc-gvn':
-            return <PCGVNIcon />;
         case 'main-cpu-vga':
-            return <PCGVNIcon />;
         case 'case-nguon-tan':
             return <PCGVNIcon />;
         case 'ban-phim':
@@ -45,7 +43,6 @@ function getCategoryIcon(slug) {
         case 'ghe-ban':
             return <CharIcon />;
         case 'may-choi-game':
-            return <ConsoleIcon />;
         case 'handheld-console':
             return <ConsoleIcon />;
         case 'phan-mem-mang':
@@ -63,14 +60,56 @@ function getCategoryIcon(slug) {
 
 function CFNav() {
     const [activeMenu, setActiveMenu] = useState(null);
-    const [categories, setCategories] = useState([]);
+    const [menuItems, setMenuItems] = useState([]);
+
+    function getCustomSlug(category, categoryMap) {
+        if (!category.parent) return category.slug; // Nếu là cha: slug gốc
+
+        const parent = categoryMap[category.parent];
+        if (parent && !parent.parent) {
+            return parent.slug; // Nếu là cấp 2 (con của cha): dùng slug của cha
+        }
+
+        if (parent && parent.parent) {
+            const grandParent = categoryMap[parent.parent];
+            if (grandParent) {
+                return `${grandParent.slug}-${category.slug}`; // Nếu là cấp 3: cha-con -> gộp slug
+            }
+        }
+
+        return category.slug; // fallback
+    }
 
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const res = await axios.get('/api/categories/nested');
-                setCategories(res.data);
-                console.log('Categories:', res.data);
+                const res = await axios.get('/api/categories/with-path');
+                const flatCategories = res.data;
+
+                // Tạo map ID -> category để truy xuất nhanh
+                const categoryMap = {};
+                flatCategories.forEach((cat) => {
+                    categoryMap[cat._id] = { ...cat, submenus: [], href: '' }; // thêm href rỗng
+                });
+
+                // Gán submenus và href
+                flatCategories.forEach((cat) => {
+                    // Tính href dựa trên cấp
+                    const hrefSlug = getCustomSlug(cat, categoryMap);
+                    categoryMap[cat._id].href = `/danh-muc/${hrefSlug}`;
+
+                    // Gắn con vào cha
+                    if (cat.parent) {
+                        const parent = categoryMap[cat.parent];
+                        if (parent) {
+                            parent.submenus.push(categoryMap[cat._id]);
+                        }
+                    }
+                });
+
+                // Lọc ra danh mục cấp 1
+                const topLevelMenus = flatCategories.filter((cat) => !cat.parent).map((cat) => categoryMap[cat._id]);
+                setMenuItems(topLevelMenus);
             } catch (error) {
                 console.error('Lỗi khi lấy danh mục:', error);
             }
@@ -79,18 +118,6 @@ function CFNav() {
         fetchCategories();
     }, []);
 
-    const menuItems = categories.map((cat) => ({
-        id: cat._id,
-        title: cat.name,
-        icon: getCategoryIcon(cat.slug),
-        href: `/danh-muc/${cat.slug}`,
-        submenus:
-            cat.children?.map((sub) => ({
-                title: sub.name,
-                href: `/danh-muc/${sub.slug}`,
-            })) || [],
-    }));
-
     return (
         <div className={cx('menu-wrapper')} onMouseLeave={() => setActiveMenu(null)}>
             {/* Sidebar */}
@@ -98,13 +125,13 @@ function CFNav() {
                 {menuItems.map((item, index) => (
                     <Link
                         to={item.href}
-                        key={index}
+                        key={item._id}
                         className={cx('menu-item')}
                         onMouseEnter={() => setActiveMenu(index)}
                     >
                         <span className={cx('menu-item__wrap')}>
-                            {item.icon}
-                            <span>{item.title}</span>
+                            {getCategoryIcon(item.slug)}
+                            <span>{item.name}</span>
                         </span>
                         <RightIcon className={cx('icon-right')} />
                     </Link>
@@ -116,14 +143,20 @@ function CFNav() {
                 <div className={cx('menu-bridge')} />
             )}
 
-            {/* Mega Menu hiển thị submenu (menu con) nếu có */}
-            {activeMenu !== null && menuItems[activeMenu]?.submenus.length > 0 && (
+            {/* Mega Menu */}
+            {activeMenu !== null && menuItems[activeMenu]?.submenus?.length > 0 && (
                 <div className={cx('mega-menu')}>
                     {menuItems[activeMenu].submenus.map((sub, i) => (
                         <div key={i} className={cx('menu-column')}>
                             <h4>
-                                <Link to={sub.href}>{sub.title}</Link>
+                                <Link to={sub.href}>{sub.name}</Link>
                             </h4>
+                            {sub.submenus?.length > 0 &&
+                                sub.submenus.map((child, j) => (
+                                    <p key={j} className={cx('menu-item-sub')}>
+                                        <Link to={child.href}>{child.name}</Link>
+                                    </p>
+                                ))}
                         </div>
                     ))}
                 </div>
