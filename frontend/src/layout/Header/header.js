@@ -119,6 +119,24 @@ function Header() {
         }
     };
 
+    // Hàm đệ quy để hiển thị menu đa cấp
+    const renderMenuTree = (menuList, parentId = null) => {
+        const children = menuList.filter((item) => String(item.parent) === String(parentId));
+        if (children.length === 0) return null;
+
+        return (
+            <ul className={cx('submenu')}>
+                {children.map((child) => (
+                    <li key={child._id} className={cx('submenu-item')}>
+                        <a href={child.link}>{child.name}</a>
+                        {/* Đệ quy hiển thị con */}
+                        {renderMenuTree(menuList, child._id)}
+                    </li>
+                ))}
+            </ul>
+        );
+    };
+
     return (
         <header className={cx('header')}>
             <div className={cx('header-container')}>
@@ -221,11 +239,17 @@ function Header() {
 
                 <div className={cx('header__nav')}>
                     {menus
-                        .filter((menu) => !menu.parent)
+                        .filter((menu) => !menu.parent) // chỉ menu cha (ví dụ: Trang chủ, Giới thiệu, Khuyến mãi)
                         .map((menu) => (
-                            <a key={menu._id} className={cx('header__nav-link')} href={menu.link}>
-                                {menu.name}
-                            </a>
+                            <div key={menu._id} className={cx('nav-item')}>
+                                <a href={menu.link} className={cx('header__nav-link')}>
+                                    {menu.name}
+                                </a>
+
+                                {/* Nếu có con thì mới render submenu */}
+                                {menus.some((m) => String(m.parent) === String(menu._id)) &&
+                                    renderMenuTree(menus, menu._id)}
+                            </div>
                         ))}
                 </div>
             </div>

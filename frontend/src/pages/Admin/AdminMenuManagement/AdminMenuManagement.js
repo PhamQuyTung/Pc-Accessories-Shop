@@ -95,6 +95,17 @@ function AdminMenuManagement() {
             ));
     };
 
+    const generateNestedOptions = (menuList, parent = null, level = 0) => {
+        return menuList
+            .filter((menu) => String(menu.parent) === String(parent))
+            .flatMap((menu) => [
+                <option key={menu._id} value={menu._id}>
+                    {'--'.repeat(level) + ' ' + menu.name}
+                </option>,
+                ...generateNestedOptions(menuList, menu._id, level + 1),
+            ]);
+    };
+
     return (
         <div className={cx('wrapper')}>
             <h2>Quản lý menu</h2>
@@ -124,13 +135,7 @@ function AdminMenuManagement() {
 
                     <select value={newMenu.parent} onChange={(e) => setNewMenu({ ...newMenu, parent: e.target.value })}>
                         <option value="">-- Menu cha --</option>
-                        {menus
-                            .filter((menu) => !menu.parent)
-                            .map((menu) => (
-                                <option key={menu._id} value={menu._id}>
-                                    {menu.name}
-                                </option>
-                            ))}
+                        {generateNestedOptions(menus)}
                     </select>
 
                     <div className={cx('form-buttons')}>
