@@ -20,6 +20,8 @@ import Profile from '~/pages/Profile/Profile';
 import RequireAdmin from '~/components/RequireAdmin/RequireAdmin'; // Kiểm tra quyền admin
 import CategoryManagement from '~/pages/Admin/CategoryManagement/CategoryManagement'; // Quản lý danh mục
 import AdminMenuManagement from '~/pages/Admin/AdminMenuManagement/AdminMenuManagement';
+import AttributeManagement from '~/pages/Admin/AttributeManagement/AttributeManagement';
+import AssignAttributeToCategory from '~/pages/Admin/AssignAttributeToCategory/AssignAttributeToCategory'; // Gán thuộc tính cho danh mục
 
 const routes = [
     { path: '/', element: <Home />, layout: MainLayout },
@@ -46,9 +48,13 @@ const routes = [
     },
     { path: '/admin/users', element: <UserManagement />, layout: AdminLayout },
     { path: '/admin/categories', element: <CategoryManagement />, layout: AdminLayout },
+    { path: '/admin/attributes', element: <AttributeManagement />, layout: AdminLayout },
 
     // Trang thùng rác sản phẩm
     { path: '/admin/products/trash', element: <Trash />, layout: AdminLayout },
+
+    // Route gán thuộc tính cho danh mục
+    { path: '/admin/attributes/assign', element: <AssignAttributeToCategory  />, layout: AdminLayout },
 
     // --- Quản lý giao diện ---
     { path: '/admin/menus', element: <AdminMenuManagement />, layout: AdminLayout },

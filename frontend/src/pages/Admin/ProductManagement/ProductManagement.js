@@ -64,7 +64,7 @@ const ProductManagement = () => {
                     <span className={cx('product-count')}>({products.length})</span>
                 </h2>
                 <button className={cx('btn-add')}>
-                    <Link to="/products/create">+ Thêm sản phẩm mới</Link>
+                    <Link to="/admin/products/create">+ Thêm sản phẩm mới</Link>
                 </button>
             </div>
             <table className={cx('table')}>

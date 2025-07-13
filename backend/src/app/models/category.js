@@ -19,6 +19,14 @@ const categorySchema = new mongoose.Schema({
             type: { type: String, default: 'text' }, // Kiểu input: text, number, select...
         }
     ],
+
+    attributes: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Attribute',
+        },
+    ],
+
     
     /**
      * Danh mục có thể có danh mục con

@@ -11,7 +11,7 @@ import styles from './ProductDetail.module.scss';
 import classNames from 'classnames/bind';
 import Breadcrumb from '~/components/Breadcrumb/Breadcrumb';
 import ProductGallery from './ProductGallery';
-import BasicRating from '~/components/Rating/Rating';
+// import BasicRating from '~/components/Rating/Rating';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleLeft, faAngleRight, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 import { faHeart } from '@fortawesome/free-regular-svg-icons';

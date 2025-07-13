@@ -8,8 +8,6 @@ import { useNavigate } from 'react-router-dom';
 const cx = classNames.bind(styles);
 
 function CreateProduct() {
-    // Sử dụng useState để quản lý dữ liệu của form
-    // Mỗi trường trong form sẽ là một thuộc tính trong đối tượng formData
     const [formData, setFormData] = useState({
         name: '',
         images: [''],
@@ -17,45 +15,70 @@ function CreateProduct() {
         discountPrice: '',
         status: '',
         category: '',
-        specs: {
-            cpu: '',
-            vga: '',
-            mainboard: '',
-            ram: '',
-            ssd: '',
-        },
+        specs: {},
         description: '',
         rating: '',
-        quantity: '', // Thêm trường số lượng
-        importing: false, // Thêm trường importing
+        quantity: '',
+        importing: false,
     });
 
-    // Danh sách categories sẽ được lấy từ backend
-    // và hiển thị trong dropdown hoặc input
     const [categories, setCategories] = useState([]);
+    const [categorySchema, setCategorySchema] = useState([]);
 
-    // Sử dụng useNavigate để điều hướng sau khi tạo sản phẩm
+    const [existingProducts, setExistingProducts] = useState([]);
+
     const navigate = useNavigate();
-
-    // Sử dụng useToast để hiển thị thông báo
     const toast = useToast();
 
-    // Lấy danh sách categories từ backend khi component mount
-    // Chỉ cần gọi API một lần khi component được mount
     useEffect(() => {
-        // Lấy danh sách category từ backend
+        axios
+            .get('http://localhost:5000/api/products')
+            .then((res) => setExistingProducts(res.data))
+            .catch(() => setExistingProducts([]));
+    }, []);
+
+    useEffect(() => {
         axios
             .get('http://localhost:5000/api/categories')
             .then((res) => setCategories(res.data))
             .catch(() => setCategories([]));
     }, []);
 
-    // Hàm xử lý thay đổi dữ liệu trong form
-    // Cần xử lý các trường hợp đặc biệt như specs.* và images[i]
-    const handleChange = (e) => {
-        const { name, value } = e.target;
+    useEffect(() => {
+        if (formData.category) {
+            axios.get(`http://localhost:5000/api/categories/${formData.category}`).then((res) => {
+                const attributes = res.data.attributes || [];
 
-        // specs.* handling
+                const schema = attributes.map((attr) => ({
+                    label: attr.name,
+                    key: attr.key,
+                    type: attr.type,
+                }));
+
+                setCategorySchema(schema);
+
+                const newSpecs = {};
+                schema.forEach((item) => {
+                    newSpecs[item.key] = formData.specs[item.key] || '';
+                });
+
+                setFormData((prev) => ({
+                    ...prev,
+                    specs: newSpecs,
+                }));
+            });
+        } else {
+            setCategorySchema([]);
+            setFormData((prev) => ({
+                ...prev,
+                specs: {},
+            }));
+        }
+    }, [formData.category]);
+
+    const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+
         if (name.startsWith('specs.')) {
             const key = name.split('.')[1];
             setFormData((prev) => ({
@@ -65,9 +88,7 @@ function CreateProduct() {
                     [key]: value,
                 },
             }));
-        }
-        // images[i] handling
-        else if (name.startsWith('image-')) {
+        } else if (name.startsWith('image-')) {
             const index = parseInt(name.split('-')[1], 10);
             const newImages = [...formData.images];
             newImages[index] = value;
@@ -75,9 +96,13 @@ function CreateProduct() {
                 ...prev,
                 images: newImages,
             }));
-        }
-        // default fields
-        else {
+        } else if (name === 'importing') {
+            setFormData((prev) => ({
+                ...prev,
+                importing: checked,
+                quantity: checked ? 0 : prev.quantity,
+            }));
+        } else {
             setFormData((prev) => ({
                 ...prev,
                 [name]: value,
@@ -85,8 +110,6 @@ function CreateProduct() {
         }
     };
 
-    // Hàm thêm trường nhập ảnh mới
-    // Mỗi lần gọi sẽ thêm một trường nhập ảnh mới vào mảng images
     const handleAddImageField = () => {
         setFormData((prev) => ({
             ...prev,
@@ -94,18 +117,30 @@ function CreateProduct() {
         }));
     };
 
-    // Hàm xử lý gửi form để tạo sản phẩm mới
-    // Chuyển đổi dữ liệu từ form thành định dạng phù hợp với backend
+    const handleRemoveImageField = (index) => {
+        setFormData((prev) => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== index),
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Nếu đang nhập hàng mà số lượng khác 0 thì cảnh báo và không submit
-        if (formData.importing && Number(formData.quantity) !== 0) {
-            toast('Khi đã nhấn xác nhận đang nhập hàng vui lòng nhập hàng tồn về 0', 'error');
+        // Kiểm tra trùng tên sản phẩm
+        const isDuplicateName = existingProducts.some(
+            (product) => product.name.trim().toLowerCase() === formData.name.trim().toLowerCase(),
+        );
+        if (isDuplicateName) {
+            toast('Tên sản phẩm đã tồn tại!', 'error');
             return;
         }
 
-        // Sinh status như cũ
+        if (formData.importing && Number(formData.quantity) !== 0) {
+            toast('Khi đã chọn đang nhập hàng, số lượng phải bằng 0', 'error');
+            return;
+        }
+
         let statusArr = [];
         const qty = Number(formData.quantity);
 
@@ -132,121 +167,61 @@ function CreateProduct() {
                 discountPrice: Number(formData.discountPrice),
             };
 
-            const res = await axios.post('http://localhost:5000/api/products', payload);
+            await axios.post('http://localhost:5000/api/products', payload);
             toast('Thêm sản phẩm thành công!', 'success');
             navigate('/admin/products');
         } catch (err) {
-            console.error('Lỗi khi tạo sản phẩm:', err);
+            console.error('Lỗi tạo sản phẩm:', err);
             toast('Lỗi khi tạo sản phẩm!', 'error');
         }
     };
 
-    // Hàm xóa trường nhập ảnh
-    // Nhận vào index của trường ảnh cần xóa và cập nhật lại mảng images
-    const handleRemoveImageField = (index) => {
-        setFormData((prev) => ({
-            ...prev,
-            images: prev.images.filter((_, i) => i !== index),
-        }));
-    };
-
-    // Render form để tạo sản phẩm mới
-    // Hiển thị các trường nhập liệu cho tên, ảnh, giá, mô tả
     return (
         <div className={cx('wrapper')}>
             <h2>Tạo sản phẩm mới</h2>
             <form onSubmit={handleSubmit} className={cx('form')}>
-                <input
-                    type="text"
-                    name="name"
-                    placeholder="Tên sản phẩm"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                />
+                <label>Tên sản phẩm</label>
+                <input name="name" value={formData.name} onChange={handleChange} required />
 
-                {/* Multiple Image Inputs */}
-                {formData.images.map((img, index) => (
-                    <div key={index} className={cx('image-input')}>
+                <label>Ảnh sản phẩm</label>
+                {formData.images.map((img, i) => (
+                    <div key={i} className={cx('image-input')}>
                         <input
-                            type="text"
-                            name={`image-${index}`}
-                            placeholder={`URL hình ảnh ${index + 1}`}
+                            name={`image-${i}`}
                             value={img}
                             onChange={handleChange}
+                            placeholder={`URL ảnh ${i + 1}`}
                             required
                         />
-                        <button
-                            type="button"
-                            onClick={() => handleRemoveImageField(index)}
-                            className={cx('remove-btn')}
-                        >
+                        <button type="button" onClick={() => handleRemoveImageField(i)}>
                             X
                         </button>
                     </div>
                 ))}
-
-                <button type="button" onClick={handleAddImageField}>
+                <button type="button" onClick={handleAddImageField} className={cx('add-btn')}>
                     + Thêm ảnh
                 </button>
 
-                <input
-                    type="number"
-                    name="price"
-                    placeholder="Giá gốc"
-                    value={formData.price}
-                    onChange={handleChange}
-                    required
-                />
-                <input
-                    type="number"
-                    name="discountPrice"
-                    placeholder="Giá khuyến mãi"
-                    value={formData.discountPrice}
-                    onChange={handleChange}
-                />
-                <input
-                    type="text"
-                    name="specs.cpu"
-                    placeholder="CPU"
-                    value={formData.specs.cpu}
-                    onChange={handleChange}
-                />
-                <input
-                    type="text"
-                    name="specs.vga"
-                    placeholder="VGA"
-                    value={formData.specs.vga}
-                    onChange={handleChange}
-                />
-                <input
-                    type="text"
-                    name="specs.mainboard"
-                    placeholder="Mainboard"
-                    value={formData.specs.mainboard}
-                    onChange={handleChange}
-                />
-                <input
-                    type="text"
-                    name="specs.ram"
-                    placeholder="RAM"
-                    value={formData.specs.ram}
-                    onChange={handleChange}
-                />
-                <input
-                    type="text"
-                    name="specs.ssd"
-                    placeholder="SSD"
-                    value={formData.specs.ssd}
-                    onChange={handleChange}
-                />
-                <textarea
-                    name="description"
-                    placeholder="Mô tả sản phẩm"
-                    value={formData.description}
-                    onChange={handleChange}
-                    rows={5}
-                />
+                <div className={cx('form-row')}>
+                    <div style={{ flex: 1 }}>
+                        <label>Giá gốc</label>
+                        <input type="number" name="price" value={formData.price} onChange={handleChange} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <label>Giá khuyến mãi</label>
+                        <input
+                            type="number"
+                            name="discountPrice"
+                            value={formData.discountPrice}
+                            onChange={handleChange}
+                        />
+                    </div>
+                </div>
+
+                <label>Mô tả sản phẩm</label>
+                <textarea name="description" value={formData.description} onChange={handleChange} rows={4} />
+
+                <label>Danh mục</label>
                 <select name="category" value={formData.category} onChange={handleChange} required>
                     <option value="">-- Chọn danh mục --</option>
                     {categories.map((cat) => (
@@ -255,40 +230,55 @@ function CreateProduct() {
                         </option>
                     ))}
                 </select>
-                <input
-                    type="number"
-                    name="quantity"
-                    placeholder="Số lượng sản phẩm"
-                    value={formData.quantity}
-                    onChange={handleChange}
-                    min={0}
-                    required
-                />
-                <label
-                    style={{
-                        gap: '5px',
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'baseline',
-                        fontSize: '14px',
-                    }}
-                >
+
+                <h4>Thông số kỹ thuật</h4>
+                <div className={cx('specs-grid')}>
+                    {categorySchema.map((field, idx) => (
+                        <div key={idx}>
+                            <label>{field.label || field.key}</label>
+                            <input
+                                name={`specs.${field.key}`}
+                                value={formData.specs[field.key] || ''}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                <div className={cx('input-group')}>
+                    <label className={cx('label')}>Số lượng</label>
+                    <input
+                        type="number"
+                        name="quantity"
+                        placeholder="Nhập số lượng"
+                        value={formData.quantity}
+                        onChange={handleChange}
+                        min={0}
+                        required
+                        className={cx('input')}
+                    />
+                </div>
+
+                <div className={cx('checkbox-wrapper')}>
                     <input
                         type="checkbox"
+                        id="importing"
                         name="importing"
                         checked={formData.importing}
-                        onChange={(e) => {
-                            const checked = e.target.checked;
+                        onChange={(e) =>
                             setFormData((prev) => ({
                                 ...prev,
-                                importing: checked,
-                                quantity: checked ? 0 : prev.quantity, // Nếu đang nhập hàng thì quantity = 0
-                            }));
-                        }}
+                                importing: e.target.checked,
+                                quantity: e.target.checked ? 0 : prev.quantity,
+                            }))
+                        }
                     />
-                    Đang nhập hàng (Nếu chọn thì số lượng phải được đặt về 0)
-                </label>
-                <button type="submit">Tạo sản phẩm</button>
+                    <label htmlFor="importing">Đang nhập hàng</label>
+                </div>
+
+                <button type="submit" className={cx('submit-btn')}>
+                    Tạo sản phẩm
+                </button>
             </form>
         </div>
     );

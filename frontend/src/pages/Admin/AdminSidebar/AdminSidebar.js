@@ -95,6 +95,12 @@ const AdminSidebar = () => {
                                 Các thuộc tính
                             </NavLink>
                             <NavLink
+                                to="/admin/attributes/assign"
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
+                                Gán thuộc tính vào danh mục
+                            </NavLink>
+                            <NavLink
                                 to="/admin/products/trash"
                                 className={({ isActive }) => cx('link', { active: isActive })}
                             >

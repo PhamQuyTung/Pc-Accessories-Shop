@@ -52,7 +52,7 @@
     border-radius: 8px;
     text-align: start;
     background-color: #fff;
-    height: 468px;
+    // height: 468px;
     transition: box-shadow 0.25s, transform 0.2s;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     border-radius: 8px;
@@ -71,6 +71,10 @@
     .product-card__des {
         display: flex;
         flex-direction: column;
+
+        a {
+            margin-bottom: 8px;
+        }
     }
 
     a img {

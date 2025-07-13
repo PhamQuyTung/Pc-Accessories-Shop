@@ -47,22 +47,37 @@ function ProductCard({ product }) {
             <div className={cx('product-card__des')}>
                 <Link to={`/products/${product.slug}`}>{product.name}</Link>
 
-                <div className={cx('specs')}>
-                    <span>{product.specs.cpu}</span> | <span>{product.specs.vga}</span> |{' '}
-                    <span>{product.specs.ssd}</span> | <span>{product.specs.mainboard}</span> |{' '}
-                    <span>{product.specs.ram}</span>
-                </div>
+                {product.specs && Object.values(product.specs).some((value) => value?.trim()) && (
+                    <div className={cx('specs')}>
+                        {Object.values(product.specs)
+                            .filter((value) => value?.trim())
+                            .map((value, index, array) => (
+                                <span key={index}>
+                                    {value}
+                                    {index < array.length - 1 && ' | '}
+                                </span>
+                            ))}
+                    </div>
+                )}
 
                 <div className={cx('price')}>
-                    <div className={cx('price-wrap1')}>
-                        <span className={cx('original-price')}>{product.price.toLocaleString()}₫</span>
-                    </div>
-                    <div className={cx('price-wrap2')}>
-                        <span className={cx('discount-price')}>{product.discountPrice.toLocaleString()}₫</span>
-                        <span className={cx('discount-percent')}>
-                            -{Math.round((1 - product.discountPrice / product.price) * 100)}%
-                        </span>
-                    </div>
+                    {product.discountPrice && product.discountPrice < product.price ? (
+                        <>
+                            <div className={cx('price-wrap1')}>
+                                <span className={cx('original-price')}>{product.price.toLocaleString()}₫</span>
+                            </div>
+                            <div className={cx('price-wrap2')}>
+                                <span className={cx('discount-price')}>{product.discountPrice.toLocaleString()}₫</span>
+                                <span className={cx('discount-percent')}>
+                                    -{Math.round((1 - product.discountPrice / product.price) * 100)}%
+                                </span>
+                            </div>
+                        </>
+                    ) : (
+                        <div className={cx('price-wrap2')}>
+                            <span className={cx('discount-price')}>{product.price.toLocaleString()}₫</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Rating Star */}

@@ -3,6 +3,8 @@ const authRoutes = require('./authRoutes');
 const productRoutes = require('./productRoutes');
 const accountRoutes = require('./accountRoutes');
 const categoryRoutes = require('./categoryRoutes'); // ✔️ Đảm bảo đúng tên file
+const menuRoutes = require('./menuRoutes'); // ✔️ Đảm bảo đúng tên file
+const attributeRoutes = require('./attributeRoutes'); // ✔️ Thêm route cho attribute
 const errorHandle = require('../helpers/error.handle');
 
 function route(app) {
@@ -16,7 +18,8 @@ function route(app) {
     app.use('/api/products', productRoutes);
     app.use('/api/accounts', accountRoutes);
     app.use('/api/categories', categoryRoutes); // 👈 Đây là route bạn cần
-    app.use('/api/menus', require('./menuRoutes')); // 👈 Thêm route cho menu
+    app.use('/api/attributes', attributeRoutes); // 👈 Thêm route cho attribute
+    app.use('/api/menus', menuRoutes); // 👈 Thêm route cho menu
 
     // Middleware xử lý lỗi
     app.use(errorHandle);

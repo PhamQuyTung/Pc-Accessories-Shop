@@ -96,7 +96,7 @@ function CFNav() {
                 flatCategories.forEach((cat) => {
                     // Tính href dựa trên cấp
                     const hrefSlug = getCustomSlug(cat, categoryMap);
-                    categoryMap[cat._id].href = `/danh-muc/${hrefSlug}`;
+                    categoryMap[cat._id].href = `/collections/${hrefSlug}`;
 
                     // Gắn con vào cha
                     if (cat.parent) {

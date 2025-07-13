@@ -1,19 +1,26 @@
 import React from 'react';
-// import { Link } from 'react-router-dom';
-// import { CarIcon } from '~/components/Icons';
 import styles from './LTG.module.scss';
 import classNames from 'classnames/bind';
 import SectionHeading from '~/components/SectionHeading/SectionHeading';
 import ProductList from '~/components/Product/Product';
+import { CATEGORY_LIST } from '~/constants/categories';
 
 const cx = classNames.bind(styles);
 
 function LTG() {
+    const category = CATEGORY_LIST.find((c) => c.slug === 'laptop-gaming');
+
+    if (!category) return null; // fallback nếu không có danh mục
+
     return (
         <div className={cx('LTG-container')}>
-            <SectionHeading title="Laptop gaming" shTitle="Miễn phí giao hàng" link='/laptop-gaming' />
+            <SectionHeading
+                title={category.name}
+                shTitle="Miễn phí giao hàng"
+                link={`/collections/${category.slug}`}
+            />
             <div className={cx('LTG-product')}>
-                <ProductList category="laptop-gaming" />
+                <ProductList category={category.slug} />
             </div>
         </div>
     );

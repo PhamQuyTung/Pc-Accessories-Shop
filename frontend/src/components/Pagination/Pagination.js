@@ -37,7 +37,7 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
                     </span>
                 ) : (
                     <button
-                        key={page}
+                        key={`page-${index}`}
                         className={cx({ active: currentPage === page })}
                         onClick={() => onPageChange(page)}
                     >

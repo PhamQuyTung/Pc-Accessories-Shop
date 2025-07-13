@@ -111,3 +111,34 @@ exports.getCategoriesWithFullPath = async (req, res) => {
     }
 };
 
+// Lấy chi tiết danh mục theo ID (dùng để lấy schema hiển thị specs)
+exports.getCategoryById = async (req, res) => {
+    try {
+        const category = await Category.findById(req.params.id).populate('attributes');
+        if (!category) {
+            return res.status(404).json({ message: 'Không tìm thấy danh mục' });
+        }
+        res.json(category);
+    } catch (err) {
+        console.error('Lỗi lấy danh mục theo ID:', err);
+        res.status(500).json({ message: 'Lỗi server khi lấy danh mục' });
+    }
+};
+
+// Gán attributes cho category
+exports.assignAttributes = async (req, res) => {
+    try {
+        const { categoryId, attributes } = req.body; // attributes = [attrId1, attrId2]
+
+        const updatedCategory = await Category.findByIdAndUpdate(
+            categoryId,
+            { attributes },
+            { new: true }
+        ).populate('attributes');
+
+        res.json(updatedCategory);
+    } catch (err) {
+        console.error('Lỗi gán thuộc tính:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+};

@@ -74,7 +74,9 @@ class ProductController {
   // Lấy breadcrumb theo slug
   async getBreadcrumb(req, res) {
     try {
-      const product = await Product.findOne({ slug: req.params.slug });
+      const product = await Product.findOne({ slug: req.params.slug }).populate(
+        "category"
+      );
 
       if (!product) {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
@@ -82,7 +84,10 @@ class ProductController {
 
       const breadcrumb = [
         { label: "Trang chủ", path: "/" },
-        { label: "PC GVN", path: "/collections/pc-gvn" }, // Tạm hardcode
+        {
+          label: product.category?.name || "Danh mục",
+          path: `/collections/${product.category?.slug || ""}`,
+        },
         { label: product.name, path: `/products/${product.slug}` },
       ];
 

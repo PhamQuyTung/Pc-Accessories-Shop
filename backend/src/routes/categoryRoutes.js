@@ -19,4 +19,10 @@ router.get('/nested', categoryController.getNestedCategories);
 // Lấy danh sách danh mục với đường dẫn đầy đủ (bao gồm danh mục cha)
 router.get('/with-path', categoryController.getCategoriesWithFullPath);
 
+// Lấy chi tiết danh mục theo ID (bao gồm schema)
+router.get('/:id', categoryController.getCategoryById);
+
+router.post('/assign-attributes', categoryController.assignAttributes);
+
+
 module.exports = router;
