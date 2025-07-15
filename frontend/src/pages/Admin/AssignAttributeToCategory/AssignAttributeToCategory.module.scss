@@ -1,61 +1,122 @@
-.wrapper {
-    // max-width: 600px;
-    // margin: 40px auto;
+.container {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.label {
+    font-weight: bold;
+    margin-bottom: 8px;
+    margin-right: 10px;
+}
+
+.left-panel {
+    flex: 1;
+    background-color: #fff;
     padding: 20px;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    font-family: 'Segoe UI', Roboto, sans-serif;
+    border: 1px solid #ddd;
+    border-radius: 8px;
 }
 
-.title {
-    font-size: 22px;
+.right-panel {
+    flex: 1.2;
+    background-color: #fff;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+/* Cố định độ rộng 2 panel khi đủ không gian */
+.left-panel,
+.right-panel {
+    flex: 1 1 48%;
+    min-width: 320px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 20px;
-    color: #1d1d1f;
 }
 
-.select {
+.assigned-table {
     width: 100%;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    margin-bottom: 20px;
-    font-size: 14px;
+    border-collapse: collapse;
+    margin-top: 12px;
+
+    th,
+    td {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #f0f0f0;
+        text-align: left;
+    }
 }
 
 .attribute-section {
     margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border: 1px solid #ddd;
+    padding: 16px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    
+    .subtitle {
+        font-size: 16px;
+        color: #333;
+    }
 }
 
-.subtitle {
-    margin-bottom: 10px;
-    font-size: 16px;
-    font-weight: 500;
+.attr-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
 }
 
-.checkbox {
-    display: block;
-    margin: 6px 0;
-    font-size: 14px;
+.remove-btn {
+    margin-left: 8px;
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 2px 6px;
+    cursor: pointer;
+    font-size: 12px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+        background-color: darkred;
+    }
 }
 
-.checkbox input {
-    margin-right: 6px;
-    transform: scale(1.2);
+.attribute-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .assign-btn {
-    margin-top: 20px;
-    padding: 10px 18px;
-    background-color: #2271b1;
+    background-color: #007bff;
+    color: white;
+    padding: 8px 16px;
     border: none;
-    color: #fff;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
-    font-weight: 500;
-    transition: background 0.2s;
-}
+    text-decoration: none;
+    font-size: 14px;
+    margin-top: 12px;
+    transition: background-color 0.3s ease;
 
-.assign-btn:hover {
-    background-color: #135e96;
+    &:hover {
+        background-color: #0056b3;
+    }
 }

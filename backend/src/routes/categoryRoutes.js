@@ -22,7 +22,11 @@ router.get('/with-path', categoryController.getCategoriesWithFullPath);
 // Lấy chi tiết danh mục theo ID (bao gồm schema)
 router.get('/:id', categoryController.getCategoryById);
 
+// Gán thuộc tính vào danh mục
 router.post('/assign-attributes', categoryController.assignAttributes);
+
+// Gỡ thuộc tính khỏi danh mục
+router.post('/remove-attribute', categoryController.removeAttributeFromCategory);
 
 
 module.exports = router;

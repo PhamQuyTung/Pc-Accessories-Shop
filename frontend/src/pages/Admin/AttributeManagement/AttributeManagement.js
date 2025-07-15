@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import styles from './AttributeManagement.module.scss';
 import classNames from 'classnames/bind';
+import Swal from 'sweetalert2';
+import { useToast } from '~/components/ToastMessager/ToastMessager'; // hook toast của bạn
 
 const cx = classNames.bind(styles);
 
@@ -9,14 +12,19 @@ function AttributeManagement() {
     const [attributes, setAttributes] = useState([]);
     const [form, setForm] = useState({ name: '', key: '', type: 'text' });
     const [editingId, setEditingId] = useState(null);
+    const toast = useToast(); // sử dụng hook
 
     useEffect(() => {
         fetchAttributes();
     }, []);
 
     const fetchAttributes = async () => {
-        const res = await axios.get('http://localhost:5000/api/attributes');
-        setAttributes(res.data);
+        try {
+            const res = await axios.get('http://localhost:5000/api/attributes');
+            setAttributes(res.data);
+        } catch (err) {
+            toast('Không thể tải danh sách thuộc tính', 'error');
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -24,14 +32,16 @@ function AttributeManagement() {
         try {
             if (editingId) {
                 await axios.put(`http://localhost:5000/api/attributes/${editingId}`, form);
+                toast('Cập nhật thuộc tính thành công!', 'success');
             } else {
                 await axios.post('http://localhost:5000/api/attributes', form);
+                toast('Thêm thuộc tính thành công!', 'success');
             }
             setForm({ name: '', key: '', type: 'text' });
             setEditingId(null);
             fetchAttributes();
         } catch (err) {
-            alert('Lỗi khi lưu thuộc tính');
+            toast('Lỗi khi lưu thuộc tính!', 'error');
         }
     };
 
@@ -41,15 +51,36 @@ function AttributeManagement() {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('Bạn có chắc chắn muốn xóa?')) {
-            await axios.delete(`http://localhost:5000/api/attributes/${id}`);
-            fetchAttributes();
+        const result = await Swal.fire({
+            title: 'Xác nhận xóa?',
+            text: 'Bạn có chắc chắn muốn xóa thuộc tính này?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy',
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await axios.delete(`http://localhost:5000/api/attributes/${id}`);
+                toast('Xóa thuộc tính thành công!', 'success');
+                fetchAttributes();
+            } catch (err) {
+                toast('Lỗi khi xóa thuộc tính!', 'error');
+            }
         }
     };
 
     return (
         <div className={cx('wrapper')}>
-            <h2 className={cx('title')}>Quản lý thuộc tính</h2>
+            <div className={cx('header')}>
+                <h2 className={cx('title')}>Quản lý thuộc tính</h2>
+
+                {/* Button link gán thuộc tính vào danh mục */}
+                <Link to="/admin/attributes/assign" className={cx('assignBtn')}>
+                    + Thêm thuộc tính vào danh mục
+                </Link>
+            </div>
             <form className={cx('form')} onSubmit={handleSubmit}>
                 <input
                     className={cx('input')}
