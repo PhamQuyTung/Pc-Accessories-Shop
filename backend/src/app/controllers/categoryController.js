@@ -1,5 +1,6 @@
 const Category = require("../models/category"); // Đường dẫn tới model category
 const Product = require("../models/product"); // Đường dẫn tới model product
+const mongoose = require("mongoose");
 
 // Lấy tất cả category
 exports.getAllCategories = async (req, res) => {
@@ -25,10 +26,46 @@ exports.getAllCategories = async (req, res) => {
 // Tạo danh mục mới
 exports.createCategory = async (req, res) => {
   try {
-    const category = await Category.create(req.body);
+    const {
+      name,
+      slug,
+      description = "",
+      specs = [],
+      parent = null,
+    } = req.body;
+
+    // Làm sạch attributes
+    let attributes = [];
+    if (Array.isArray(req.body.attributes)) {
+      attributes = req.body.attributes
+        .map((item) => {
+          if (typeof item === "object" && item !== null && item._id) {
+            return item._id;
+          }
+          if (typeof item === "string") {
+            return item;
+          }
+          return null;
+        })
+        .filter((id) => mongoose.Types.ObjectId.isValid(id));
+    }
+
+    const category = await Category.create({
+      name,
+      slug,
+      description,
+      specs,
+      parent,
+      attributes,
+    });
+
     res.status(201).json(category);
   } catch (err) {
-    res.status(400).json({ message: "Tạo danh mục thất bại", error: err });
+    console.error("Lỗi tạo danh mục:", err);
+    res.status(400).json({
+      message: "Tạo danh mục thất bại",
+      error: err.message || err,
+    });
   }
 };
 
@@ -150,12 +187,10 @@ exports.assignAttributes = async (req, res) => {
 
     await category.save();
 
-    res
-      .status(200)
-      .json({
-        message: "Gán thuộc tính thành công",
-        attributes: mergedAttributes,
-      });
+    res.status(200).json({
+      message: "Gán thuộc tính thành công",
+      attributes: mergedAttributes,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Lỗi server khi gán thuộc tính" });

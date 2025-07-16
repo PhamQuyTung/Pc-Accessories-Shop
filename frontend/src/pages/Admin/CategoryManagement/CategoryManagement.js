@@ -18,7 +18,8 @@ function CategoryManagement() {
     const [categories, setCategories] = useState([]);
     const [filteredCategories, setFilteredCategories] = useState([]);
 
-    const [newCategory, setNewCategory] = useState({ name: '', slug: '', description: '', schema: [] });
+    const [newCategory, setNewCategory] = useState({ name: '', slug: '', description: '', schema: [], attributes: [] });
+
     const [editingCategory, setEditingCategory] = useState(null);
     const [loading, setLoading] = useState(false);
 
@@ -87,12 +88,28 @@ function CategoryManagement() {
     const handleCreateCategory = async () => {
         setLoading(true);
         try {
-            await axios.post('http://localhost:5000/api/categories', newCategory);
+            console.log('Gửi dữ liệu tạo category:', {
+                ...newCategory,
+                attributes: Array.isArray(newCategory.attributes)
+                    ? newCategory.attributes
+                          .map((attr) => (typeof attr === 'object' && attr !== null ? attr._id : attr))
+                          .filter((id) => typeof id === 'string' && id.length > 10)
+                    : [],
+            }); // ⚠️ kiểm tra trước khi gửi
+            await axios.post('http://localhost:5000/api/categories', {
+                ...newCategory,
+                attributes: Array.isArray(newCategory.attributes)
+                    ? newCategory.attributes
+                          .map((attr) => (typeof attr === 'object' && attr !== null ? attr._id : attr))
+                          .filter((id) => typeof id === 'string' && id.length > 10)
+                    : [],
+            });
             toast('Tạo danh mục thành công!', 'success');
-            setNewCategory({ name: '', slug: '', description: '', schema: [] });
+            setNewCategory({ name: '', slug: '', description: '', schema: [], attributes: [] });
             await fetchCategories();
         } catch (err) {
-            toast('Lỗi khi tạo danh mục!', 'error');
+            console.error('Tạo lỗi:', err.response?.data || err.message);
+            toast(err.response?.data?.message || 'Lỗi khi tạo danh mục!', 'error');
         } finally {
             setLoading(false);
         }
