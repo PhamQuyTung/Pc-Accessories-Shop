@@ -279,6 +279,45 @@ class ProductController {
       res.status(500).json({ error: "Lỗi khi khôi phục sản phẩm" });
     }
   }
+
+  // Tìm kiếm sản phẩm
+  async searchProducts(req, res) {
+    const { query } = req.query;
+
+    if (!query || query.trim() === "") {
+      return res.status(400).json({ error: "Query không được để trống" });
+    }
+
+    try {
+      const products = await Product.find({
+        name: { $regex: query, $options: "i" },
+        deleted: { $ne: true },
+      })
+        .limit(10)
+        .lean();
+
+      const enrichedProducts = products.map((product) => {
+        const reviews = product.reviews || [];
+        const reviewCount = reviews.length;
+        const averageRating = reviewCount
+          ? reviews.reduce((acc, cur) => acc + cur.rating, 0) / reviewCount
+          : 0;
+
+        return {
+          ...product,
+          averageRating: Number(
+            (Math.round(averageRating * 10) / 10).toFixed(1)
+          ),
+          reviewCount,
+        };
+      });
+
+      res.json(enrichedProducts);
+    } catch (err) {
+      console.error("Lỗi khi tìm kiếm sản phẩm:", err);
+      res.status(500).json({ error: "Lỗi server" });
+    }
+  }
 }
 
 module.exports = new ProductController();

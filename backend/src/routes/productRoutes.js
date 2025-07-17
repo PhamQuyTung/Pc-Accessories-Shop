@@ -43,6 +43,9 @@ router.delete("/force/:id", ProductController.forceDeleteProduct); // Xóa vĩnh
 // [PATCH] /api/products/restore/:id => Khôi phục sản phẩm đã xóa tạm thời
 router.patch("/restore/:id", ProductController.restoreProduct);
 
+// [GET] /api/products/search => Tìm kiếm sản phẩm
+router.get("/search", ProductController.searchProducts);
+
 // [GET] /api/products/:slug => Chi tiết theo slug
 router.get("/:slug", ProductController.getBySlug);
 

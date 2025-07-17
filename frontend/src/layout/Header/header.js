@@ -12,6 +12,8 @@ import { faPenToSquare } from '@fortawesome/free-regular-svg-icons';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import axios from 'axios';
+import { debounce } from 'lodash';
+import { formatCurrency } from '~/utils/formatCurrency'; // Giả sử bạn có hàm này để định dạng tiền tệ
 
 const cx = classNames.bind(styles);
 
@@ -19,6 +21,24 @@ const MySwal = withReactContent(Swal);
 
 function Header() {
     const [menus, setMenus] = useState([]);
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+
+    const fetchSearchResults = debounce(async (query) => {
+        if (!query) return setSearchResults([]);
+
+        try {
+            const res = await axios.get(`http://localhost:5000/api/products/search?query=${query}`);
+            setSearchResults(res.data);
+        } catch (error) {
+            console.error('Lỗi tìm kiếm:', error);
+        }
+    }, 300);
+
+    useEffect(() => {
+        fetchSearchResults(searchTerm);
+    }, [searchTerm]);
 
     const navigate = useNavigate();
     const [user, setUser] = useState(() => {
@@ -145,12 +165,75 @@ function Header() {
                         <img src={Logo} alt="Logo" />
                     </Link>
 
-                    <form action="#" className={cx('header__search')}>
-                        <input type="text" placeholder="Tìm kiếm sản phẩm..." required />
-                        <button type="submit" className={cx('header__search-icon')}>
-                            <FontAwesomeIcon icon={faMagnifyingGlass} />
-                        </button>
-                    </form>
+                    <div className={cx('search-wrapper')}>
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm sản phẩm..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <FontAwesomeIcon icon={faMagnifyingGlass} className={cx('search-icon')} />
+
+                        {searchResults.length > 0 && (
+                            <div className={cx('search-dropdown')}>
+                                <ul className={cx('search-product-list')}>
+                                    {searchResults.map((item) => (
+                                        <li
+                                            key={item._id}
+                                            onClick={() => {
+                                                navigate(`/products/${item.slug}`);
+                                                setSearchTerm('');
+                                                setSearchResults([]);
+                                            }}
+                                        >
+                                            <img src={item.images?.[0]} alt={item.name} />
+                                            <div className={cx('info')}>
+                                                <Link to={`/products/${item.slug}`} className={cx('link-product')}>
+                                                    {item.name}
+                                                </Link>
+                                                <span className={cx('price')}>
+                                                    {item.discountPrice ? (
+                                                        <>
+                                                            <span className={cx('discount')}>
+                                                                {formatCurrency(item.discountPrice)}
+                                                            </span>
+                                                            <span className={cx('original')}>
+                                                                {formatCurrency(item.price)}
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        <span>{formatCurrency(item.price)}</span>
+                                                    )}
+                                                </span>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                {searchTerm && (
+                                    <Link
+                                        to={`/search?query=${encodeURIComponent(searchTerm)}`}
+                                        className={cx('search-see-more')}
+                                        onClick={() => {
+                                            setSearchTerm('');
+                                            setSearchResults([]);
+                                        }}
+                                    >
+                                        🔍 Xem thêm kết quả cho “{searchTerm}”
+                                    </Link>
+                                )}
+
+                                <div className={cx('search-suggestions')}>
+                                    <p>Gợi ý nhanh:</p>
+                                    <div className={cx('tags')}>
+                                        <span>Laptop gaming</span>
+                                        <span>Chuột Logitech</span>
+                                        <span>Bàn phím cơ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Nếu có user thì hiển thị tên user không thì hiển thị button đăng kí/đăng nhập */}
                     {user ? (

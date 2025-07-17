@@ -22,6 +22,8 @@ import CategoryManagement from '~/pages/Admin/CategoryManagement/CategoryManagem
 import AdminMenuManagement from '~/pages/Admin/AdminMenuManagement/AdminMenuManagement';
 import AttributeManagement from '~/pages/Admin/AttributeManagement/AttributeManagement';
 import AssignAttributeToCategory from '~/pages/Admin/AssignAttributeToCategory/AssignAttributeToCategory'; // Gán thuộc tính cho danh mục
+import SearchResultPage from '~/components/SearchResultPage/SearchResultPage'; // Kiểm tra quyền admin
+
 
 const routes = [
     { path: '/', element: <Home />, layout: MainLayout },
@@ -36,6 +38,7 @@ const routes = [
 
     // --- Admin routes ---
     { path: '/admin/products', element: <ProductManagement />, layout: AdminLayout },
+
     // Route trang tạo sản phẩm
     {
         path: '/admin/products/create',
@@ -60,6 +63,9 @@ const routes = [
     { path: '/admin/menus', element: <AdminMenuManagement />, layout: AdminLayout },
     // { path: '/admin/widget', element: <AdminMenuManagement />, layout: AdminLayout },
     // { path: '/admin/appearance', element: <AdminMenuManagement />, layout: AdminLayout },
+
+    // -- Search theo kết quả tìm kiếm
+    { path: '/search', element: <SearchResultPage />, layout: MainLayout },
 
     // Trang profile người dùng
     { path: '/profile', element: <Profile />, layout: MainLayout },
