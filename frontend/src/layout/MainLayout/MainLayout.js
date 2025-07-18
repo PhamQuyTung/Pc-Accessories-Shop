@@ -12,7 +12,7 @@ function MainLayout({ children }) {
             <header className={cx('header-wrapper')}>
                 <Header />
             </header>
-            <main style={{ marginTop: '155px' }}>{children}</main>
+            <main style={{ marginTop: '177px' }}>{children}</main>
             <Footer />
         </div>
     );
