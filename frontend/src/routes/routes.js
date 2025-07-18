@@ -23,6 +23,7 @@ import AdminMenuManagement from '~/pages/Admin/AdminMenuManagement/AdminMenuMana
 import AttributeManagement from '~/pages/Admin/AttributeManagement/AttributeManagement';
 import AssignAttributeToCategory from '~/pages/Admin/AssignAttributeToCategory/AssignAttributeToCategory'; // Gán thuộc tính cho danh mục
 import SearchResultPage from '~/components/SearchResultPage/SearchResultPage'; // Kiểm tra quyền admin
+import NotFoundPage from '~/pages/NotFoundPage/NotFoundPage';
 
 
 const routes = [
@@ -66,6 +67,8 @@ const routes = [
 
     // -- Search theo kết quả tìm kiếm
     { path: '/search', element: <SearchResultPage />, layout: MainLayout },
+    // -- Not Found Page
+    { path: '/404', element: <NotFoundPage />, layout: MainLayout },
 
     // Trang profile người dùng
     { path: '/profile', element: <Profile />, layout: MainLayout },

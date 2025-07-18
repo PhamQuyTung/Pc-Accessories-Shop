@@ -510,3 +510,9 @@
         background-color: #f5f5f5;
     }
 }
+
+.custom-input::placeholder {
+    font-style: italic;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}

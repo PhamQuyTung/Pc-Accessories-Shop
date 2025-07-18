@@ -20,6 +20,10 @@ const cx = classNames.bind(styles);
 const MySwal = withReactContent(Swal);
 
 function Header() {
+    const [placeholderText] = useState('Bạn cần tìm gì?...');
+    const [displayText, setDisplayText] = useState('');
+    const [placeholderIndex, setPlaceholderIndex] = useState(0);
+    const [reverse, setReverse] = useState(false);
     const [menus, setMenus] = useState([]);
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -120,6 +124,39 @@ function Header() {
             .catch((err) => console.error('Lỗi khi lấy menu:', err));
     }, []);
 
+    useEffect(() => {
+        const typingSpeed = 150;
+        const pauseDuration = 1000; // Thời gian dừng lại khi gõ hoặc xóa xong
+
+        let timeout;
+
+        if (!reverse && placeholderIndex < placeholderText.length) {
+            // Đang gõ từng ký tự
+            timeout = setTimeout(() => {
+                setDisplayText(placeholderText.slice(0, placeholderIndex + 1));
+                setPlaceholderIndex((prev) => prev + 1);
+            }, typingSpeed);
+        } else if (!reverse && placeholderIndex === placeholderText.length) {
+            // Dừng lại 1s sau khi gõ xong
+            timeout = setTimeout(() => {
+                setReverse(true);
+            }, pauseDuration);
+        } else if (reverse && placeholderIndex > 0) {
+            // Đang xóa từng ký tự
+            timeout = setTimeout(() => {
+                setDisplayText(placeholderText.slice(0, placeholderIndex - 1));
+                setPlaceholderIndex((prev) => prev - 1);
+            }, typingSpeed);
+        } else if (reverse && placeholderIndex === 0) {
+            // Dừng lại 1s sau khi xóa xong, rồi bắt đầu lại
+            timeout = setTimeout(() => {
+                setReverse(false);
+            }, pauseDuration);
+        }
+
+        return () => clearTimeout(timeout);
+    }, [placeholderIndex, reverse, placeholderText]);
+
     const handleLogout = async () => {
         const result = await Swal.fire({
             title: 'Đăng xuất',
@@ -165,14 +202,34 @@ function Header() {
                         <img src={Logo} alt="Logo" />
                     </Link>
 
+                    {/* Search Component */}
                     <div className={cx('search-wrapper')}>
                         <input
+                            className={cx('custom-input')}
                             type="text"
-                            placeholder="Tìm kiếm sản phẩm..."
+                            placeholder={displayText || ' '}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && searchTerm.trim()) {
+                                    navigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
+                                    setSearchTerm('');
+                                    setSearchResults([]);
+                                }
+                            }}
                         />
-                        <FontAwesomeIcon icon={faMagnifyingGlass} className={cx('search-icon')} />
+
+                        <FontAwesomeIcon
+                            icon={faMagnifyingGlass}
+                            className={cx('search-icon')}
+                            onClick={() => {
+                                if (searchTerm.trim()) {
+                                    navigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
+                                    setSearchTerm('');
+                                    setSearchResults([]);
+                                }
+                            }}
+                        />
 
                         {searchResults.length > 0 && (
                             <div className={cx('search-dropdown')}>

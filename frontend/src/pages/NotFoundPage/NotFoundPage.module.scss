@@ -1,0 +1,51 @@
+.container {
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.title {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #222;
+}
+
+.content {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.image {
+    width: 100px;
+    margin-bottom: 20px;
+    opacity: 0.6;
+}
+
+.text {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: #555;
+}
+
+.keyword {
+    font-size: 20px;
+    color: red;
+    margin: 10px 0;
+    font-weight: bold;
+}
+
+.note {
+    font-size: 14px;
+    color: #777;
+    margin-bottom: 30px;
+}
+
+.home-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #d70018;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+}

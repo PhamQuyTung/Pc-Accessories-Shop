@@ -4,7 +4,7 @@ import styles from './InputField.module.scss';
 
 const cx = classNames.bind(styles);
 
-function InputField({ label, type = 'text', name, value, onChange, onBlur, error, placeholder }) {
+function InputField({ label, type = 'text', name, value, onChange, onBlur, error, placeholder, classNames }) {
     return (
         <div className={cx('form-group')}>
             <label htmlFor={name} className={cx('label')}>
@@ -20,6 +20,7 @@ function InputField({ label, type = 'text', name, value, onChange, onBlur, error
                 value={value}
                 onChange={onChange}
                 onBlur={onBlur}
+                classNames={classNames}
             />
             {error && <p className={cx('error')}>{error}</p>}
         </div>
