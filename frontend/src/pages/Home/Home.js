@@ -2,6 +2,7 @@ import ContainerFluid from './ContainerFluid/ContainerFluid';
 import LTG from './LTG/LTG';
 import PC from './PC/PC';
 import Chuot from './Chuot/Chuot';
+import BanPhim from './BanPhim/BanPhim';
 
 function Home() {
     return (
@@ -10,6 +11,7 @@ function Home() {
             <PC />
             <LTG />
             <Chuot />
+            <BanPhim />
         </div>
     );
 }
