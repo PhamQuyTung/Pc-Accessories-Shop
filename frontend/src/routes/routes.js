@@ -1,7 +1,7 @@
 import Home from '../pages/Home/Home';
 import About from '../pages/About';
 import Product from '../pages/Product/Product';
-import Cart from '../pages/Cart';
+import CartPage from '../pages/CartPage/CartPage';
 import Contact from '../pages/Contact';
 import Blog from '../pages/Blog';
 import Login from '../pages/Login/Login';
@@ -24,7 +24,6 @@ import AttributeManagement from '~/pages/Admin/AttributeManagement/AttributeMana
 import AssignAttributeToCategory from '~/pages/Admin/AssignAttributeToCategory/AssignAttributeToCategory'; // Gán thuộc tính cho danh mục
 import SearchResultPage from '~/components/SearchResultPage/SearchResultPage'; // Kiểm tra quyền admin
 import NotFoundPage from '~/pages/NotFoundPage/NotFoundPage';
-
 
 const routes = [
     { path: '/', element: <Home />, layout: MainLayout },
@@ -73,7 +72,7 @@ const routes = [
     // Trang profile người dùng
     { path: '/profile', element: <Profile />, layout: MainLayout },
 
-    { path: '/cart', element: <Cart />, layout: MainLayout },
+    { path: '/carts', element: <CartPage />, layout: MainLayout },
     { path: '/contact', element: <Contact />, layout: MainLayout },
     { path: '/blog', element: <Blog />, layout: MainLayout },
     { path: '/promotion', element: <Promotion />, layout: MainLayout },

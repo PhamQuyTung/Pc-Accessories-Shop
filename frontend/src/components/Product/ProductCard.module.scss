@@ -80,7 +80,7 @@
     a img {
         width: 100%;
         height: auto;
-        padding-top: 12px;
+        padding: 12px 0;
     }
 
     a {
@@ -190,8 +190,8 @@
 }
 
 .proloop-label--bottom {
-    // display: flex;
-    // align-items: center;
+    display: flex;
+    align-items: center;
     flex-wrap: nowrap;
     padding-bottom: 5px;
     height: 34px;

@@ -1,0 +1,180 @@
+.cart {
+    padding: 40px;
+    background: #f8f9fa;
+    font-family: 'Segoe UI', sans-serif;
+    color: #1e1e1e;
+
+    .container {
+        max-width: 1230px;
+        margin: 0 auto;
+
+        p {
+            font-size: 1.6rem;
+
+            strong {
+                color: #c8102e; // đỏ GearVN
+            }
+        }
+    }
+
+    h2 {
+        font-size: 28px;
+    }
+
+    .table {
+        font-size: 1.6rem;
+        margin-top: 20px;
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+
+        .header {
+            background-color: #e5e5e5;
+        }
+
+        .header,
+        .row {
+            display: grid;
+            grid-template-columns: 3fr 1fr 1fr 1fr 0.5fr;
+            padding: 15px;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+
+            &:last-child {
+                border-bottom: none;
+            }
+
+            .product {
+                display: flex;
+                align-items: center;
+
+                img {
+                    width: 60px;
+                    height: 60px;
+                    object-fit: cover;
+                    margin-right: 10px;
+                }
+
+                span {
+                    padding-right: 40px;
+                }
+            }
+
+            .quantity {
+                display: flex;
+                align-items: center;
+
+                button {
+                    background: #c8102e;
+                    color: white;
+                    border: none;
+                    padding: 5px 10px;
+                    border-radius: 50%;
+                    font-size: 16px;
+                    cursor: pointer;
+                    width: 30px;
+                    height: 30px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+
+                span {
+                    margin: 0 10px;
+                }
+            }
+
+            .remove {
+                color: #c8102e;
+                background: none;
+                border: none;
+                font-size: 18px;
+                cursor: pointer;
+            }
+        }
+    }
+
+    .summary {
+        margin-top: 30px;
+        text-align: right;
+
+        h3 {
+            font-size: 22px;
+        }
+
+        p {
+            font-size: 24px;
+            font-weight: bold;
+            color: #c8102e;
+        }
+
+        .checkout {
+            background-color: #c8102e;
+            color: white;
+            padding: 10px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    }
+}
+
+.price {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .original {
+        text-decoration: line-through;
+        color: #999;
+        font-size: 14px;
+    }
+
+    .final {
+        color: red;
+        font-weight: bold;
+        font-size: 16px;
+    }
+}
+
+.body {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.empty-cart {
+    text-align: center;
+    padding: 60px 20px;
+
+    h2 {
+        font-size: 28px;
+        margin-bottom: 12px;
+        color: #333;
+    }
+
+    p {
+        font-size: 16px;
+        color: #777;
+        margin-bottom: 24px;
+    }
+
+    .go-home-btn {
+        display: inline-block;
+        padding: 12px 24px;
+        font-size: 1.6rem;
+        background-color: #e5101d;
+        color: white;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: background-color 0.3s;
+
+        &:hover {
+            background-color: #c70013;
+        }
+    }
+}

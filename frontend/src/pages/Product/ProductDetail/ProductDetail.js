@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import axiosClient from '~/utils/axiosClient';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation } from 'swiper/modules';
 import 'swiper/css';
@@ -102,6 +103,87 @@ function ProductDetail() {
 
     const toggleFavorite = () => setIsFavorite((prev) => !prev);
 
+    const handleAddToCart = async () => {
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            toast('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng', 'warning');
+            return;
+        }
+
+        try {
+            const response = await axiosClient.post(
+                '/carts/add', // hoặc endpoint tương ứng với backend bạn đã khai báo
+                {
+                    product_id: product._id,
+                    quantity: quantity,
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                },
+            );
+
+            toast(response.data.message || 'Đã thêm vào giỏ hàng', 'success');
+        } catch (error) {
+            console.error('Lỗi khi thêm sản phẩm vào giỏ hàng:', error);
+            toast('Không thể thêm sản phẩm vào giỏ hàng', 'error');
+        }
+    };
+
+    const handleSubmitReview = async () => {
+        const token = localStorage.getItem('token');
+        console.log('Token:', token); // check log
+
+        if (!token) {
+            toast('Vui lòng đăng nhập để gửi đánh giá', 'warning');
+            return;
+        }
+
+        // ✅ Kiểm tra người dùng có nhập nội dung và chọn sao không
+        if (selectedStar === 0 || reviewText.trim() === '') {
+            toast('Vui lòng điền đánh giá', 'warning');
+            return;
+        }
+
+        try {
+            const response = await axios.post(
+                `http://localhost:5000/api/products/${product._id}/reviews`,
+                {
+                    rating: selectedStar,
+                    comment: reviewText,
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`, // <-- rất quan trọng
+                    },
+                },
+            );
+
+            toast('Gửi đánh giá thành công!', 'success');
+
+            // Cập nhật lại danh sách đánh giá
+            setReviewText('');
+            setSelectedStar(0);
+            setHoverStar(0);
+
+            // Gọi lại API để load đánh giá mới
+            const res = await axios.get(`http://localhost:5000/api/products/${product._id}/reviews`);
+            setReviews(res.data);
+
+            // 👉 Cập nhật lại trung bình sao
+            const totalStars = res.data.reduce((sum, r) => sum + r.rating, 0);
+            const avg = res.data.length > 0 ? totalStars / res.data.length : 0;
+            setAverageRating(avg);
+        } catch (error) {
+            console.error('Lỗi khi gửi đánh giá:', error);
+            toast('Không thể gửi đánh giá', 'error');
+        }
+    };
+
     const renderTabContent = () => {
         switch (activeTab) {
             case 'description':
@@ -187,57 +269,6 @@ function ProductDetail() {
                 );
             default:
                 return null;
-        }
-    };
-
-    const handleSubmitReview = async () => {
-        const token = localStorage.getItem('token');
-        console.log('Token:', token); // check log
-
-        if (!token) {
-            toast('Vui lòng đăng nhập để gửi đánh giá', 'warning');
-            return;
-        }
-
-        // ✅ Kiểm tra người dùng có nhập nội dung và chọn sao không
-        if (selectedStar === 0 || reviewText.trim() === '') {
-            toast('Vui lòng điền đánh giá', 'warning');
-            return;
-        }
-
-        try {
-            const response = await axios.post(
-                `http://localhost:5000/api/products/${product._id}/reviews`,
-                {
-                    rating: selectedStar,
-                    comment: reviewText,
-                },
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`, // <-- rất quan trọng
-                    },
-                },
-            );
-
-            toast('Gửi đánh giá thành công!', 'success');
-
-            // Cập nhật lại danh sách đánh giá
-            setReviewText('');
-            setSelectedStar(0);
-            setHoverStar(0);
-
-            // Gọi lại API để load đánh giá mới
-            const res = await axios.get(`http://localhost:5000/api/products/${product._id}/reviews`);
-            setReviews(res.data);
-
-            // 👉 Cập nhật lại trung bình sao
-            const totalStars = res.data.reduce((sum, r) => sum + r.rating, 0);
-            const avg = res.data.length > 0 ? totalStars / res.data.length : 0;
-            setAverageRating(avg);
-        } catch (error) {
-            console.error('Lỗi khi gửi đánh giá:', error);
-            toast('Không thể gửi đánh giá', 'error');
         }
     };
 
@@ -332,7 +363,7 @@ function ProductDetail() {
                                         <button onClick={() => setQuantity((prev) => prev + 1)}>+</button>
                                     </div>
 
-                                    <button className={cx('add-to-cart')}>
+                                    <button className={cx('add-to-cart')} onClick={handleAddToCart}>
                                         <FontAwesomeIcon icon={faShoppingCart} /> Thêm vào giỏ
                                     </button>
 

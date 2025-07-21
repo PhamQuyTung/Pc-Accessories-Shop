@@ -13,12 +13,16 @@ const authMiddleware = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("🧪 decoded token:", decoded); // 👈 Thêm dòng này để xem key là `id` hay `userId`
+
     const user = await Account.findById(decoded.id).select("-password");
+    console.log("✅ user tìm thấy:", user);
 
     if (!user)
       return res.status(401).json({ message: "Người dùng không tồn tại" });
 
-    req.user = user;
+    req.userId = user._id;
+    console.log("🚀 Gán req.userId thành công:", req.userId);
     next();
   } catch (err) {
     return res.status(401).json({ message: "Token không hợp lệ" });
