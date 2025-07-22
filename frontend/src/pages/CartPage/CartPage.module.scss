@@ -5,7 +5,7 @@
     color: #1e1e1e;
 
     .container {
-        max-width: 1230px;
+        max-width: 1280px;
         margin: 0 auto;
 
         p {
@@ -22,6 +22,7 @@
     }
 
     .table {
+        width: 880px;
         font-size: 1.6rem;
         margin-top: 20px;
         background: #fff;
@@ -38,6 +39,7 @@
             display: grid;
             grid-template-columns: 3fr 1fr 1fr 1fr 0.5fr;
             padding: 15px;
+            gap: 10px;
             align-items: center;
             border-bottom: 1px solid #eee;
 
@@ -52,12 +54,17 @@
                 img {
                     width: 60px;
                     height: 60px;
-                    object-fit: cover;
+                    object-fit: contain;
                     margin-right: 10px;
                 }
 
-                span {
-                    padding-right: 40px;
+                a {
+                    color: #1e1e1e;
+                    text-decoration: none;
+
+                    &:hover {
+                        color: #c70013;
+                    }
                 }
             }
 
@@ -96,28 +103,65 @@
     }
 
     .summary {
-        margin-top: 30px;
-        text-align: right;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.06);
+        width: 100%;
+        max-width: 350px;
+        margin-top: 24px;
+        margin-left: auto;
 
         h3 {
-            font-size: 22px;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
         }
 
-        p {
-            font-size: 24px;
-            font-weight: bold;
-            color: #c8102e;
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 15px;
+            color: #555;
+        }
+
+        .total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #ccc;
+
+            span {
+                font-weight: normal;
+            }
+
+            strong {
+                color: #c8102e;
+            }
         }
 
         .checkout {
-            background-color: #c8102e;
-            color: white;
-            padding: 10px 30px;
-            font-size: 16px;
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            background-color: #e30019;
+            color: #fff;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
-            margin-top: 10px;
+            transition: background-color 0.3s ease;
+
+            &:hover {
+                background-color: #c90016;
+            }
         }
     }
 }
@@ -143,12 +187,19 @@
 .body {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: baseline;
+    gap: 50px;
+    flex-wrap: wrap;
 }
 
 .empty-cart {
     text-align: center;
     padding: 60px 20px;
+
+    img {
+        width: 150px;
+        height: 150px;
+    }
 
     h2 {
         font-size: 28px;
@@ -177,4 +228,16 @@
             background-color: #c70013;
         }
     }
+}
+
+.product-name {
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Giới hạn 2 dòng */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 2rem;
+    max-height: calc(2rem * 2); // 2 dòng
+    padding: 0 12px;
+    word-break: break-word;
 }

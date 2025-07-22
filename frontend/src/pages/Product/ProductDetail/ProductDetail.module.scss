@@ -600,3 +600,8 @@
         font-weight: 600;
     }
 }
+
+.add-to-cart:disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}

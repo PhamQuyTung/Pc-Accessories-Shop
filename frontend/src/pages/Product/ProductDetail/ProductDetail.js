@@ -20,6 +20,7 @@ import { faHeart as solidHeart } from '@fortawesome/free-solid-svg-icons';
 import ProductCard from '~/components/Product/ProductCard';
 import SpinnerLoading from '~/components/SpinnerLoading/SpinnerLoading';
 import { useToast } from '~/components/ToastMessager';
+import cartEvent from '~/utils/cartEvent';
 
 const cx = classNames.bind(styles);
 
@@ -42,7 +43,11 @@ function ProductDetail() {
 
     const [averageRating, setAverageRating] = useState(0);
 
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
+
     const reviewSectionRef = useRef(null);
+
+    const toggleFavorite = () => setIsFavorite((prev) => !prev);
 
     const toast = useToast();
 
@@ -101,8 +106,7 @@ function ProductDetail() {
     if (error) return <div>{error}</div>;
     if (loading) return <SpinnerLoading />;
 
-    const toggleFavorite = () => setIsFavorite((prev) => !prev);
-
+    // Hàm xử lý thêm sản phẩm vào giỏ hàng
     const handleAddToCart = async () => {
         const token = localStorage.getItem('token');
 
@@ -111,9 +115,11 @@ function ProductDetail() {
             return;
         }
 
+        setIsAddingToCart(true);
+
         try {
             const response = await axiosClient.post(
-                '/carts/add', // hoặc endpoint tương ứng với backend bạn đã khai báo
+                '/carts/add',
                 {
                     product_id: product._id,
                     quantity: quantity,
@@ -126,13 +132,20 @@ function ProductDetail() {
                 },
             );
 
-            toast(response.data.message || 'Đã thêm vào giỏ hàng', 'success');
+            // Giữ trạng thái loading ít nhất 700ms để người dùng thấy rõ
+            setTimeout(() => {
+                toast(response.data.message || 'Đã thêm vào giỏ hàng', 'success');
+                cartEvent.emit('update-cart-count'); // ✅ Gọi để Header cập nhật cartCount ngay
+                setIsAddingToCart(false);
+            }, 700);
         } catch (error) {
             console.error('Lỗi khi thêm sản phẩm vào giỏ hàng:', error);
             toast('Không thể thêm sản phẩm vào giỏ hàng', 'error');
+            setIsAddingToCart(false); // vẫn phải tắt loading ngay nếu lỗi
         }
     };
 
+    // Hàm xử lý gửi bình luận 
     const handleSubmitReview = async () => {
         const token = localStorage.getItem('token');
         console.log('Token:', token); // check log
@@ -184,6 +197,7 @@ function ProductDetail() {
         }
     };
 
+    // Hàm hiển thị Tabcontent
     const renderTabContent = () => {
         switch (activeTab) {
             case 'description':
@@ -363,8 +377,13 @@ function ProductDetail() {
                                         <button onClick={() => setQuantity((prev) => prev + 1)}>+</button>
                                     </div>
 
-                                    <button className={cx('add-to-cart')} onClick={handleAddToCart}>
-                                        <FontAwesomeIcon icon={faShoppingCart} /> Thêm vào giỏ
+                                    <button
+                                        className={cx('add-to-cart')}
+                                        onClick={handleAddToCart}
+                                        disabled={isAddingToCart} // ✅ Disable khi loading
+                                    >
+                                        <FontAwesomeIcon icon={faShoppingCart} />
+                                        {isAddingToCart ? ' Đang thêm...' : ' Thêm vào giỏ'}
                                     </button>
 
                                     <button className={cx('favorite-btn')} onClick={toggleFavorite}>

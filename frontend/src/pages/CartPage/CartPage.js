@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import axiosClient from '~/utils/axiosClient';
 import styles from './CartPage.module.scss';
 import classNames from 'classnames/bind';
 import { FaTrashAlt } from 'react-icons/fa';
 import { useToast } from '~/components/ToastMessager';
+import EmptyCart from '~/assets/images/emptycart/emptyCart.49efd90ea75b10bede28.png';
+import cartEvent from '~/utils/cartEvent';
 
 const cx = classNames.bind(styles);
 
@@ -56,16 +59,12 @@ function CartPage() {
     };
 
     const removeFromCart = async (productId) => {
-        try {
-            await axiosClient.delete('/carts/remove', {
-                data: { product_id: productId },
-            });
-            toast('Đã xoá sản phẩm khỏi giỏ hàng!', 'success');
-            fetchCart();
-        } catch (error) {
-            console.error('Lỗi xoá sản phẩm:', error);
-            toast('Xoá sản phẩm thất bại!', 'error');
-        }
+        await axiosClient.delete('/carts/remove', {
+            data: { product_id: productId },
+        });
+        toast('Đã xoá sản phẩm khỏi giỏ hàng!', 'success');
+        fetchCart();
+        cartEvent.emit('update-cart-count'); // 🔔 Gửi tín hiệu update count
     };
 
     const totalPrice = cartItems.reduce((acc, item) => {
@@ -78,6 +77,7 @@ function CartPage() {
     if (cartItems.length === 0) {
         return (
             <div className={cx('empty-cart')}>
+                <img src={EmptyCart} alt="EmptyCart"></img>
                 <h2>Giỏ hàng của bạn đang trống</h2>
                 <p>Hãy khám phá thêm các sản phẩm hấp dẫn nhé!</p>
                 <a href="/" className={cx('go-home-btn')}>
@@ -121,7 +121,9 @@ function CartPage() {
                                             src={Array.isArray(product.images) ? product.images[0] : product.images}
                                             alt={product.name}
                                         />
-                                        <span>{product.name}</span>
+                                        <Link to={`/products/${product.slug}`} className={cx('product-name')}>
+                                            {product.name}
+                                        </Link>
                                     </div>
 
                                     <div className={cx('price')}>
@@ -150,9 +152,24 @@ function CartPage() {
                     </div>
 
                     <div className={cx('summary')}>
-                        <h3>Tổng cộng</h3>
-                        <p>{totalPrice.toLocaleString()}₫</p>
-                        <button className={cx('checkout')}>Thanh toán</button>
+                        <h3>Thông tin đơn hàng</h3>
+                        <div className={cx('summary-item')}>
+                            <span>Tạm tính</span>
+                            <span>{totalPrice.toLocaleString()}₫</span>
+                        </div>
+                        <div className={cx('summary-item')}>
+                            <span>Phí vận chuyển</span>
+                            <span>Miễn phí</span>
+                        </div>
+                        <div className={cx('summary-item')}>
+                            <span>Khuyến mãi</span>
+                            <span>- 0₫</span>
+                        </div>
+                        <div className={cx('total')}>
+                            <span>Tổng thanh toán</span>
+                            <strong>{totalPrice.toLocaleString()}₫</strong>
+                        </div>
+                        <button className={cx('checkout')}>Tiến hành đặt hàng</button>
                     </div>
                 </div>
             </div>

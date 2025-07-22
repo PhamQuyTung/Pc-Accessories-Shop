@@ -7,6 +7,8 @@ import Button from '~/components/Button';
 import SearchBar from './SearchBar/SearchBar';
 import UserMenu from './UserMenu/UserMenu';
 import { fetchMenus } from '~/services/menuService';
+import cartEvent from '~/utils/cartEvent';
+import axiosClient from '~/utils/axiosClient';
 
 const cx = classNames.bind(styles);
 
@@ -14,10 +16,34 @@ function Header() {
     const [menus, setMenus] = useState([]);
     const navigate = useNavigate();
 
+    const [cartCount, setCartCount] = useState(0);
+
     const [user, setUser] = useState(() => {
         const stored = localStorage.getItem('user');
         return stored ? JSON.parse(stored) : null;
     });
+
+    useEffect(() => {
+        const fetchCartCount = async () => {
+            try {
+                const res = await axiosClient.get('/carts/');
+                const items = Array.isArray(res.data) ? res.data : [];
+                setCartCount(items.length);
+            } catch (err) {
+                console.error('Lỗi lấy cart count:', err);
+            }
+        };
+
+        // Gọi ngay khi mount
+        fetchCartCount();
+
+        // Lắng nghe sự kiện cập nhật cart
+        cartEvent.on('update-cart-count', fetchCartCount);
+
+        return () => {
+            cartEvent.off('update-cart-count', fetchCartCount);
+        };
+    }, []);
 
     // Lắng nghe thay đổi localStorage (đa tab)
     useEffect(() => {
@@ -120,20 +146,26 @@ function Header() {
                 <div className={cx('header__nav')}>
                     {menus
                         .filter((m) => !m.parent)
-                        .map((menu) => (
-                            <div key={menu._id} className={cx('nav-item')}>
-                                <NavLink
-                                    to={menu.link}
-                                    className={({ isActive }) => cx('header__nav-link', { active: isActive })}
-                                    end // chỉ active khi URL khớp chính xác
-                                >
-                                    {menu.name}
-                                </NavLink>
+                        .map((menu) => {
+                            const isCartMenu = menu.link === '/carts';
+                            return (
+                                <div key={menu._id} className={cx('nav-item')}>
+                                    <NavLink
+                                        to={menu.link}
+                                        className={({ isActive }) => cx('header__nav-link', { active: isActive })}
+                                        end
+                                    >
+                                        {menu.name}
+                                        {isCartMenu && cartCount > 0 && (
+                                            <span className={cx('cart-badge')}>{cartCount}</span>
+                                        )}
+                                    </NavLink>
 
-                                {menus.some((m) => String(m.parent) === String(menu._id)) &&
-                                    renderMenuTree(menus, menu._id)}
-                            </div>
-                        ))}
+                                    {menus.some((m) => String(m.parent) === String(menu._id)) &&
+                                        renderMenuTree(menus, menu._id)}
+                                </div>
+                            );
+                        })}
                 </div>
             </div>
         </header>
