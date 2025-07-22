@@ -109,6 +109,7 @@ function ProductDetail() {
     // Hàm xử lý thêm sản phẩm vào giỏ hàng
     const handleAddToCart = async () => {
         const token = localStorage.getItem('token');
+        console.log('Token:', token);
 
         if (!token) {
             toast('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng', 'warning');
@@ -145,7 +146,7 @@ function ProductDetail() {
         }
     };
 
-    // Hàm xử lý gửi bình luận 
+    // Hàm xử lý gửi bình luận
     const handleSubmitReview = async () => {
         const token = localStorage.getItem('token');
         console.log('Token:', token); // check log
@@ -192,6 +193,7 @@ function ProductDetail() {
             const avg = res.data.length > 0 ? totalStars / res.data.length : 0;
             setAverageRating(avg);
         } catch (error) {
+            console.error('Chi tiết lỗi:', error?.response?.data || error.message);
             console.error('Lỗi khi gửi đánh giá:', error);
             toast('Không thể gửi đánh giá', 'error');
         }

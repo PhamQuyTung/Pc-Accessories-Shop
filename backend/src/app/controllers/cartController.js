@@ -3,37 +3,30 @@ const Product = require("../models/product"); // 👈 Đường dẫn chính xá
 const mongoose = require("mongoose");
 
 exports.addToCart = async (req, res) => {
-  const userId = req.userId;
-  const { product_id, quantity } = req.body;
-
   try {
-    const productIdObj = new mongoose.Types.ObjectId(product_id);
+    const { product_id, quantity } = req.body;
+    const userId = req.user.id; // ✅ Lấy user id từ middleware đã gán
 
-    let cartItem = await Cart.findOne({
-      user_id: userId,
-      product_id: productIdObj,
-    });
+    const existingItem = await Cart.findOne({ user_id: userId, product_id });
 
-    if (cartItem) {
-      cartItem.quantity += quantity;
-      await cartItem.save();
+    if (existingItem) {
+      // Nếu đã có thì cộng dồn số lượng
+      existingItem.quantity += quantity;
+      await existingItem.save();
     } else {
-      cartItem = new Cart({
-        user_id: userId,
-        product_id: productIdObj,
+      // Nếu chưa có thì thêm mới
+      const newItem = new Cart({
+        user_id: userId, // ✅ bắt buộc
+        product_id,
         quantity,
       });
-      await cartItem.save();
+      await newItem.save();
     }
-    console.log("✅ userId trong addToCart:", req.userId);
 
-    res.status(200).json({
-      message: "Sản phẩm đã được thêm vào giỏ hàng",
-      cartItem,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Lỗi khi thêm vào giỏ hàng" });
+    res.status(200).json({ message: "Thêm vào giỏ hàng thành công!" });
+  } catch (error) {
+    console.error("❌ Lỗi thêm vào giỏ hàng:", error);
+    res.status(500).json({ message: "Lỗi máy chủ khi thêm giỏ hàng." });
   }
 };
 

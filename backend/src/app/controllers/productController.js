@@ -162,6 +162,8 @@ class ProductController {
 
       product.reviews.push(newReview);
       await product.save();
+      console.log("Body:", req.body);
+      console.log("👤 User review:", req.user);
 
       res.status(201).json({ message: "Đã thêm đánh giá", review: newReview });
     } catch (err) {
