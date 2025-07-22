@@ -24,6 +24,7 @@ import AttributeManagement from '~/pages/Admin/AttributeManagement/AttributeMana
 import AssignAttributeToCategory from '~/pages/Admin/AssignAttributeToCategory/AssignAttributeToCategory'; // Gán thuộc tính cho danh mục
 import SearchResultPage from '~/components/SearchResultPage/SearchResultPage'; // Kiểm tra quyền admin
 import NotFoundPage from '~/pages/NotFoundPage/NotFoundPage';
+import CheckoutPage from '~/pages/CheckoutPage/CheckoutPage';
 
 const routes = [
     { path: '/', element: <Home />, layout: MainLayout },
@@ -71,6 +72,9 @@ const routes = [
 
     // Trang profile người dùng
     { path: '/profile', element: <Profile />, layout: MainLayout },
+
+    // Trang checkout form input address
+    { path: '/checkout', element: <CheckoutPage />, layout: MainLayout },
 
     { path: '/carts', element: <CartPage />, layout: MainLayout },
     { path: '/contact', element: <Contact />, layout: MainLayout },

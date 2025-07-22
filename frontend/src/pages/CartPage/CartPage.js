@@ -74,6 +74,26 @@ function CartPage() {
         return acc + finalPrice * quantity;
     }, 0);
 
+    // const handleCheckout = async () => {
+    //     try {
+    //         const shippingInfo = {
+    //             name: 'Nguyễn Văn A', // Tuỳ bạn: Có thể làm form nhập
+    //             phone: '0123456789',
+    //             address: 'Số 123, Hà Nội',
+    //         };
+
+    //         const res = await axiosClient.post('/orders/checkout', { shippingInfo });
+    //         toast('🛒 Đặt hàng thành công!', 'success');
+
+    //         // Xoá giỏ hàng local
+    //         setCartItems([]);
+    //         cartEvent.emit('update-cart-count');
+    //     } catch (error) {
+    //         console.error('❌ Lỗi đặt hàng:', error);
+    //         toast('Đặt hàng thất bại!', 'error');
+    //     }
+    // };
+
     if (cartItems.length === 0) {
         return (
             <div className={cx('empty-cart')}>
@@ -169,7 +189,9 @@ function CartPage() {
                             <span>Tổng thanh toán</span>
                             <strong>{totalPrice.toLocaleString()}₫</strong>
                         </div>
-                        <button className={cx('checkout')}>Tiến hành đặt hàng</button>
+                        <button className={cx('checkout')}>
+                            <Link to='/checkout'>Tiến hành đặt hàng</Link>
+                        </button>
                     </div>
                 </div>
             </div>
