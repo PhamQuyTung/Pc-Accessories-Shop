@@ -1,0 +1,71 @@
+// components/CheckoutStep/CheckoutStep.module.scss
+.step-container {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 0 10px;
+}
+
+.step-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0;
+    background-color: #f7cece;
+    border-radius: 8px;
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    position: relative;
+    color: #111;
+
+    .circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1px solid #535353;
+        background-color: transparent;
+        color: #535353;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &.active {
+            background-color: #e60012;
+            color: #fff;
+            border: none;
+        }
+
+        &.completed {
+            background-color: #e60012;
+            color: #fff;
+            border: none;
+        }
+    }
+
+    .label {
+        font-size: 16px;
+        margin-left: 5px;
+        color: #666;
+        text-align: center;
+
+        &.active,
+        &.completed {
+            color: #e60012;
+            font-weight: bold;
+        }
+    }
+
+    .line {
+        width: 60px;
+        height: 2px;
+        background-color: #535353;
+        margin: 0 12px;
+
+        &.completed {
+            background-color: #e60012;
+        }
+    }
+}

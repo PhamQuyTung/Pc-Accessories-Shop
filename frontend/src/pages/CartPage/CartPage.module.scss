@@ -17,8 +17,16 @@
         }
     }
 
-    h2 {
-        font-size: 28px;
+    .header {
+        padding-top: 40px;
+        h3 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #fff;
+            background-color: #e4002b;
+            padding: 10px 20px;
+        }
     }
 
     .table {
@@ -243,12 +251,12 @@
 }
 
 .checkout {
-    a {
-        text-decoration: none;
-        color: #fff;
+    text-decoration: none;
+    color: #fff;
+    display: block;
+    text-align: center;
 
-        &:hover {
-            text-decoration: none;
-        }
+    &:hover {
+        text-decoration: none;
     }
 }

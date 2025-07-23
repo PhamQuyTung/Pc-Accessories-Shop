@@ -1,5 +1,6 @@
 .checkout {
     background: #fff;
+    padding: 40px;
 
     .checkout-container {
         max-width: 1320px;
@@ -27,7 +28,7 @@
                 .form {
                     display: flex;
                     flex-direction: column;
-                    gap: 16px;
+                    gap: 8px;
                     padding: 40px;
 
                     .row {
@@ -37,6 +38,10 @@
                         input {
                             flex: 1;
                         }
+                    }
+
+                    input {
+                        margin-right: 10px;
                     }
 
                     input,
@@ -230,4 +235,54 @@
     color: red;
     font-size: 13px;
     margin-top: 4px;
+}
+
+.form-group.row {
+    display: flex;
+    gap: 20px;
+    @media (max-width: 600px) {
+        flex-direction: column;
+    }
+}
+
+.form-field {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+
+    label {
+        font-weight: 600;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+
+        span {
+            color: red;
+            margin-left: 3px;
+        }
+    }
+
+    input,
+    select {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-field__agree {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    margin-bottom: 15px;
+    background: #eee;
+    padding: 10px;
 }

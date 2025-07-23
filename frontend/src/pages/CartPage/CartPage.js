@@ -7,6 +7,7 @@ import { FaTrashAlt } from 'react-icons/fa';
 import { useToast } from '~/components/ToastMessager';
 import EmptyCart from '~/assets/images/emptycart/emptyCart.49efd90ea75b10bede28.png';
 import cartEvent from '~/utils/cartEvent';
+import CheckoutStep from '~/components/CheckoutStep/CheckoutStep';
 
 const cx = classNames.bind(styles);
 
@@ -109,9 +110,14 @@ function CartPage() {
 
     return (
         <div className={cx('cart')}>
+            {/* Cart Container */}
             <div className={cx('container')}>
+                {/* CheckOut Step List */}
+                <CheckoutStep currentStep={1}/>
+
+                {/* Main */}
                 <div className={cx('header')}>
-                    <h2>GIỎ HÀNG CỦA BẠN</h2>
+                    <h3>1. GIỎ HÀNG CỦA BẠN</h3>
                     <p>
                         Có <strong>{cartItems.length}</strong> sản phẩm trong giỏ hàng
                     </p>
@@ -189,9 +195,9 @@ function CartPage() {
                             <span>Tổng thanh toán</span>
                             <strong>{totalPrice.toLocaleString()}₫</strong>
                         </div>
-                        <button className={cx('checkout')}>
-                            <Link to='/checkout'>Tiến hành đặt hàng</Link>
-                        </button>
+                        <Link to="/checkout" className={cx('checkout')}>
+                            Tiến hành đặt hàng
+                        </Link>
                     </div>
                 </div>
             </div>
