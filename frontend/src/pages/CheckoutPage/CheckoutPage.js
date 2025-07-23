@@ -20,6 +20,7 @@ function CheckoutPage() {
         phone: '',
         email: '',
         deliveryMethod: 'standard',
+        installService: 'no', // ✅ mặc định người dùng tự lắp
     });
     const [cartItems, setCartItems] = useState([]);
     const [subtotal, setSubtotal] = useState(0);
@@ -29,6 +30,8 @@ function CheckoutPage() {
 
     const toast = useToast();
     const navigate = useNavigate();
+
+    const installFee = form.installService === 'yes' ? 200000 : 0;
 
     useEffect(() => {
         const fetchCart = async () => {
@@ -95,14 +98,14 @@ function CheckoutPage() {
         }
     };
 
-    const tax = subtotal * 0.15;
-    const total = subtotal + tax;
+    const tax = Math.round(subtotal * 0.15);
+    const total = subtotal + tax + installFee + (form.deliveryMethod === 'express' ? 40000 : 0);
 
     return (
         <div className={cx('checkout')}>
             {/* CheckOut Step List */}
-            <CheckoutStep currentStep={2}/>
-            
+            <CheckoutStep currentStep={2} />
+
             {/* CheckOut Container */}
             <div className={cx('checkout-container')}>
                 <div className={cx('form-section')}>
@@ -240,6 +243,32 @@ function CheckoutPage() {
                                 </div>
                             </div>
 
+                            <div className={cx('form-field')}>
+                                <label>Phí lắp đặt</label>
+                                <div className={cx('radio-group')}>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="installService"
+                                            value="no"
+                                            checked={form.installService === 'no'}
+                                            onChange={handleChange}
+                                        />
+                                        Không, tôi tự lắp (FREE)
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="installService"
+                                            value="yes"
+                                            checked={form.installService === 'yes'}
+                                            onChange={handleChange}
+                                        />
+                                        Có, tôi cần sự giúp đỡ (+200.000₫)
+                                    </label>
+                                </div>
+                            </div>
+
                             <div className={cx('form-field__agree', 'checkboxContainer')}>
                                 <input
                                     type="checkbox"
@@ -266,7 +295,7 @@ function CheckoutPage() {
                             )} */}
 
                             <button type="submit" className={cx('submit-btn')}>
-                                TIẾP TỤC THANH TOÁN
+                                ĐẶT HÀNG NGAY
                             </button>
                         </form>
                     </div>
@@ -275,29 +304,38 @@ function CheckoutPage() {
                 <div className={cx('summary-section')}>
                     <div className={cx('summary-section__sum')}>
                         <h3>Tóm tắt đơn hàng</h3>
+
                         <div className={cx('summary-section__details')}>
                             <div className={cx('summary-item')}>
                                 <span>Tổng phụ</span>
                                 <span>{subtotal.toLocaleString()}₫</span>
                             </div>
+
                             <div className={cx('summary-item')}>
                                 <span>Phí ship</span>
                                 <span>{form.deliveryMethod === 'express' ? '40.000₫' : 'FREE'}</span>
                             </div>
+
+                            <div className={cx('summary-item')}>
+                                <span>Phí lắp đặt</span>
+                                <span>{installFee > 0 ? `${installFee.toLocaleString()}₫` : 'FREE'}</span>
+                            </div>
+
                             <div className={cx('summary-item')}>
                                 <span>Thuế</span>
                                 <span>{tax.toLocaleString()}₫</span>
                             </div>
+
                             <div className={cx('summary-total')}>
                                 <strong>Tổng</strong>
-                                <strong style={{ color: '#e4002b' }}>
-                                    {(form.deliveryMethod === 'express' ? total + 40000 : total).toLocaleString()}₫
-                                </strong>
+                                <strong style={{ color: '#e4002b' }}>{total.toLocaleString()}₫</strong>
                             </div>
                         </div>
                     </div>
+                    
                     <div className={cx('cart-preview')}>
                         <h3>Giỏ hàng của bạn ({cartItems.length})</h3>
+
                         <div className={cx('cart-preview__wrap')}>
                             {cartItems.map((item) => (
                                 <div className={cx('cart-item')} key={item._id}>
@@ -323,7 +361,8 @@ function CheckoutPage() {
                                 </div>
                             ))}
                         </div>
-                        <Link to="/carts">Edit Cart</Link>
+
+                        <Link to="/carts">Chỉnh sửa giỏ hàng</Link>
                     </div>
                 </div>
             </div>

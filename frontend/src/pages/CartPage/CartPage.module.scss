@@ -22,7 +22,7 @@
         h3 {
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
             color: #fff;
             background-color: #e4002b;
             padding: 10px 20px;
@@ -32,7 +32,7 @@
     .table {
         width: 880px;
         font-size: 1.6rem;
-        margin-top: 20px;
+        // margin-top: 20px;
         background: #fff;
         border-radius: 10px;
         overflow: hidden;
@@ -111,14 +111,35 @@
     }
 
     .summary {
-        background-color: #fff;
-        padding: 20px;
+        // background-color: #fff;
+        // padding: 20px;
         border-radius: 12px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.06);
+        // box-shadow: 0 0 10px rgba(0, 0, 0, 0.06);
         width: 100%;
         max-width: 350px;
-        margin-top: 24px;
+        // margin-top: 20px;
         margin-left: auto;
+
+        .summary-wrap {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.06);
+            // width: 100%;
+            // max-width: 350px;
+            // margin-top: 20px;
+            // margin-left: auto;
+        }
+
+        a {
+            margin-top: 24px;
+            color: #e4002b;
+            font-size: 1.4rem;
+
+            &:hover {
+                color: #c00025;
+            }
+        }
 
         h3 {
             font-size: 18px;
@@ -169,6 +190,7 @@
 
             &:hover {
                 background-color: #c90016;
+                color: #fff;
             }
         }
     }
@@ -195,7 +217,7 @@
 .body {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
+    align-items: start;
     gap: 50px;
     flex-wrap: wrap;
 }

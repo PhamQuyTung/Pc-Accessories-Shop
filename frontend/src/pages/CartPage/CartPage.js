@@ -113,7 +113,7 @@ function CartPage() {
             {/* Cart Container */}
             <div className={cx('container')}>
                 {/* CheckOut Step List */}
-                <CheckoutStep currentStep={1}/>
+                <CheckoutStep currentStep={1} />
 
                 {/* Main */}
                 <div className={cx('header')}>
@@ -178,26 +178,31 @@ function CartPage() {
                     </div>
 
                     <div className={cx('summary')}>
-                        <h3>Thông tin đơn hàng</h3>
-                        <div className={cx('summary-item')}>
-                            <span>Tạm tính</span>
-                            <span>{totalPrice.toLocaleString()}₫</span>
+                        <div className={cx('summary-wrap')}>
+                            <h3>Thông tin đơn hàng</h3>
+
+                            <div className={cx('summary-item')}>
+                                <span>Tạm tính</span>
+                                <span>{totalPrice.toLocaleString()}₫</span>
+                            </div>
+                            <div className={cx('summary-item')}>
+                                <span>Phí vận chuyển</span>
+                                <span>Miễn phí</span>
+                            </div>
+                            <div className={cx('summary-item')}>
+                                <span>Khuyến mãi</span>
+                                <span>- 0₫</span>
+                            </div>
+                            <div className={cx('total')}>
+                                <span>Tổng thanh toán</span>
+                                <strong>{totalPrice.toLocaleString()}₫</strong>
+                            </div>
+                            <Link to="/checkout" className={cx('checkout')}>
+                                Tiến hành đặt hàng
+                            </Link>
                         </div>
-                        <div className={cx('summary-item')}>
-                            <span>Phí vận chuyển</span>
-                            <span>Miễn phí</span>
-                        </div>
-                        <div className={cx('summary-item')}>
-                            <span>Khuyến mãi</span>
-                            <span>- 0₫</span>
-                        </div>
-                        <div className={cx('total')}>
-                            <span>Tổng thanh toán</span>
-                            <strong>{totalPrice.toLocaleString()}₫</strong>
-                        </div>
-                        <Link to="/checkout" className={cx('checkout')}>
-                            Tiến hành đặt hàng
-                        </Link>
+                        
+                        <Link to="/">Mua thêm sản phẩm</Link>
                     </div>
                 </div>
             </div>
