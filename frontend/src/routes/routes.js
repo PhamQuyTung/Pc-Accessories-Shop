@@ -25,6 +25,9 @@ import AssignAttributeToCategory from '~/pages/Admin/AssignAttributeToCategory/A
 import SearchResultPage from '~/components/SearchResultPage/SearchResultPage'; // Kiểm tra quyền admin
 import NotFoundPage from '~/pages/NotFoundPage/NotFoundPage';
 import CheckoutPage from '~/pages/CheckoutPage/CheckoutPage';
+import PaymentPage from '~/pages/PaymentPage/PaymentPage';
+import OrdersSuccess from '~/pages/OrdersSuccess/OrdersSuccess';
+import OrdersPage from '~/pages/OrdersPage/OrdersPage';
 
 const routes = [
     { path: '/', element: <Home />, layout: MainLayout },
@@ -73,10 +76,21 @@ const routes = [
     // Trang profile người dùng
     { path: '/profile', element: <Profile />, layout: MainLayout },
 
-    // Trang checkout form input address
-    { path: '/checkout', element: <CheckoutPage />, layout: MainLayout },
-
+    // Trang giỏ hàng
     { path: '/carts', element: <CartPage />, layout: MainLayout },
+
+    // Trang checkout form input address
+    { path: '/checkout', element: <CheckoutPage />, layout: MainLayout },    
+    
+    // Trang PaymentPage.js
+    { path: '/payment', element: <PaymentPage />, layout: MainLayout },
+    
+    // Trang OrdersSuccess.js
+    { path: '/orders-success', element: <OrdersSuccess />, layout: MainLayout },
+
+    // Trang Order.js
+    { path: '/orders', element: <OrdersPage />, layout: MainLayout },
+    
     { path: '/contact', element: <Contact />, layout: MainLayout },
     { path: '/blog', element: <Blog />, layout: MainLayout },
     { path: '/promotion', element: <Promotion />, layout: MainLayout },

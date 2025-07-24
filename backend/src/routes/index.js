@@ -6,6 +6,7 @@ const categoryRoutes = require('./categoryRoutes'); // ✔️ Đảm bảo đún
 const menuRoutes = require('./menuRoutes'); // ✔️ Đảm bảo đúng tên file
 const attributeRoutes = require('./attributeRoutes'); // ✔️ Thêm route cho attribute
 const cartRoutes = require('./cartRoutes'); // ✔️ Thêm route cho carts
+const orderRoutes = require('./orderRoutes'); // ✔️ Thêm route cho orders
 const errorHandle = require('../helpers/error.handle');
 
 function route(app) {
@@ -22,6 +23,7 @@ function route(app) {
     app.use('/api/attributes', attributeRoutes); // 👈 Thêm route cho attribute
     app.use('/api/menus', menuRoutes); // 👈 Thêm route cho menu
     app.use('/api/carts', cartRoutes); // 👈 Thêm route cho carts
+    app.use('/api/orders', orderRoutes); // 👈 Thêm route cho orders
 
     // Middleware xử lý lỗi
     app.use(errorHandle);

@@ -1,0 +1,22 @@
+.address-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 15px;
+}
+
+.form-field {
+    display: flex;
+    align-items: baseline;
+    flex-direction: column;
+    gap: 10px;
+
+    label {
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    select {
+        width: 100%;
+    }
+}

@@ -7,6 +7,7 @@ const orderSchema = new mongoose.Schema(
       ref: "Account",
       required: true,
     },
+
     items: [
       {
         product_id: {
@@ -17,8 +18,15 @@ const orderSchema = new mongoose.Schema(
         price: Number, // Lưu lại giá tại thời điểm đặt hàng
       },
     ],
+
     totalAmount: { type: Number, required: true },
-    status: { type: String, default: "pending" }, // pending | confirmed | shipped | delivered
+
+    status: {
+      type: String,
+      enum: ["new", "processing", "shipping", "completed", "cancelled"],
+      default: "new",
+    },
+    
     shippingInfo: {
       name: String,
       phone: String,

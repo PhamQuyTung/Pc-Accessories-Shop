@@ -1,6 +1,14 @@
 .checkout {
     background: #fff;
     padding: 40px;
+    max-width: 1320px;
+    margin: 0 auto;
+
+    a {
+        margin-top: 40px;
+        font-size: 1.6rem;
+        text-decoration: none;
+    }
 
     .checkout-container {
         max-width: 1320px;

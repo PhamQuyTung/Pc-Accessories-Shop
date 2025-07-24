@@ -1,0 +1,19 @@
+.orders-page {
+    padding: 20px;
+    max-width: 1320px;
+    margin: 0 auto;
+
+    h2 {
+        margin-bottom: 16px;
+    }
+}
+
+.loading,
+.no-orders {
+    padding: 20px;
+    text-align: center;
+}
+
+strong {
+    color: #dc3545;
+}

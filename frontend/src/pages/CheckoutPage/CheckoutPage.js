@@ -5,6 +5,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from '~/components/ToastMessager';
 import axiosClient from '~/utils/axiosClient';
 import CheckoutStep from '~/components/CheckoutStep/CheckoutStep';
+import AddressSelector from '~/components/AddressSelector/AddressSelector';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faAngleLeft } from '@fortawesome/free-solid-svg-icons';
 
 const cx = classNames.bind(styles);
 
@@ -17,6 +20,8 @@ function CheckoutPage() {
         address2: '',
         city: '',
         province: '',
+        district: '',
+        ward: '',
         phone: '',
         email: '',
         deliveryMethod: 'standard',
@@ -74,28 +79,17 @@ function CheckoutPage() {
         }
 
         const shippingInfo = {
-            name: form.firstName + ' ' + form.lastName,
-            phone: form.phone,
-            address:
-                form.address1 +
-                (form.address2 ? ', ' + form.address2 : '') +
-                ', ' +
-                form.city +
-                ', ' +
-                form.province +
-                ', ' +
-                form.postalCode,
+            ...form,
+            fullName: form.firstName + ' ' + form.lastName,
+            address: `${form.address1}${form.address2 ? ', ' + form.address2 : ''}, ${form.ward}, ${form.district}, ${form.province}, ${form.postalCode}`,
+            subtotal,
+            tax,
+            deliveryFee: form.deliveryMethod === 'express' ? 40000 : 0,
+            installFee,
+            total,
         };
 
-        // ✅ Gọi API đặt hàng tại đây
-        try {
-            await axiosClient.post('/orders/checkout', { shippingInfo });
-            toast('🛒 Đặt hàng thành công!', 'success');
-            navigate('/orders');
-        } catch (error) {
-            console.error('Lỗi khi đặt hàng:', error);
-            toast('Đặt hàng thất bại!', 'error');
-        }
+        navigate('/payment', { state: shippingInfo }); // 👉 Gửi sang PaymentPage
     };
 
     const tax = Math.round(subtotal * 0.15);
@@ -105,6 +99,11 @@ function CheckoutPage() {
         <div className={cx('checkout')}>
             {/* CheckOut Step List */}
             <CheckoutStep currentStep={2} />
+
+            <Link to="/carts">
+                <FontAwesomeIcon icon={faAngleLeft} style={{ marginRight: '10px' }} />
+                Trở về
+            </Link>
 
             {/* CheckOut Container */}
             <div className={cx('checkout-container')}>
@@ -116,7 +115,7 @@ function CheckoutPage() {
                             <div className={cx('form-group', 'row')}>
                                 <div className={cx('form-field')}>
                                     <label htmlFor="firstName">
-                                        First Name<span>*</span>
+                                        Họ<span>*</span>
                                     </label>
                                     <input
                                         id="firstName"
@@ -128,7 +127,7 @@ function CheckoutPage() {
                                 </div>
                                 <div className={cx('form-field')}>
                                     <label htmlFor="lastName">
-                                        Last Name<span>*</span>
+                                        Tên<span>*</span>
                                     </label>
                                     <input
                                         id="lastName"
@@ -142,7 +141,7 @@ function CheckoutPage() {
 
                             <div className={cx('form-field')}>
                                 <label htmlFor="postalCode">
-                                    Postal Code<span>*</span>
+                                    Mã bưu điện<span>*</span>
                                 </label>
                                 <input
                                     id="postalCode"
@@ -153,9 +152,48 @@ function CheckoutPage() {
                                 />
                             </div>
 
+                            {/* <div className={cx('form-field')}>
+                                <label htmlFor="address2">Địa chỉ số 2 (Optional)</label>
+                                <input id="address2" name="address2" value={form.address2} onChange={handleChange} />
+                            </div> */}
+
+                            {/* <div className={cx('form-field')}>
+                                <label htmlFor="city">
+                                    Thành phố<span>*</span>
+                                </label>
+                                <input id="city" name="city" required value={form.city} onChange={handleChange} />
+                            </div> */}
+
+                            {/* <div className={cx('form-field')}>
+                                <label htmlFor="province">
+                                    Tỉnh<span>*</span>
+                                </label>
+                                <select
+                                    id="province"
+                                    name="province"
+                                    required
+                                    value={form.province}
+                                    onChange={handleChange}
+                                >
+                                    <option value="">Lựa chọn thành phố</option>
+                                    <option value="Ha Noi">Hà Nội</option>
+                                    <option value="Ho Chi Minh">Hồ Chí Minh</option>
+                                    <option value="Da Nang">Đà Nẵng</option>
+                                </select>
+                            </div> */}
+
+                            <AddressSelector
+                                value={{
+                                    province: form.province,
+                                    district: form.district,
+                                    ward: form.ward,
+                                }}
+                                onChange={(addr) => setForm((prev) => ({ ...prev, ...addr }))}
+                            />
+
                             <div className={cx('form-field')}>
                                 <label htmlFor="address1">
-                                    Address Line 1<span>*</span>
+                                    Số nhà / Ngõ / Đường<span>*</span>
                                 </label>
                                 <input
                                     id="address1"
@@ -167,38 +205,8 @@ function CheckoutPage() {
                             </div>
 
                             <div className={cx('form-field')}>
-                                <label htmlFor="address2">Address Line 2 (Optional)</label>
-                                <input id="address2" name="address2" value={form.address2} onChange={handleChange} />
-                            </div>
-
-                            <div className={cx('form-field')}>
-                                <label htmlFor="city">
-                                    Municipality<span>*</span>
-                                </label>
-                                <input id="city" name="city" required value={form.city} onChange={handleChange} />
-                            </div>
-
-                            <div className={cx('form-field')}>
-                                <label htmlFor="province">
-                                    Province<span>*</span>
-                                </label>
-                                <select
-                                    id="province"
-                                    name="province"
-                                    required
-                                    value={form.province}
-                                    onChange={handleChange}
-                                >
-                                    <option value="">Select a province</option>
-                                    <option value="Ha Noi">Hà Nội</option>
-                                    <option value="Ho Chi Minh">Hồ Chí Minh</option>
-                                    <option value="Da Nang">Đà Nẵng</option>
-                                </select>
-                            </div>
-
-                            <div className={cx('form-field')}>
                                 <label htmlFor="phone">
-                                    Shipping Phone<span>*</span>
+                                    Số điện thoại<span>*</span>
                                 </label>
                                 <input id="phone" name="phone" required value={form.phone} onChange={handleChange} />
                             </div>
@@ -218,7 +226,7 @@ function CheckoutPage() {
                             </div>
 
                             <div className={cx('form-field')}>
-                                <label>Delivery Method</label>
+                                <label>Phương thức giao hàng</label>
                                 <div className={cx('radio-group')}>
                                     <label>
                                         <input
@@ -228,7 +236,7 @@ function CheckoutPage() {
                                             checked={form.deliveryMethod === 'standard'}
                                             onChange={handleChange}
                                         />
-                                        Standard FREE
+                                        Tiêu chuẩn (FREE)
                                     </label>
                                     <label>
                                         <input
@@ -238,7 +246,7 @@ function CheckoutPage() {
                                             checked={form.deliveryMethod === 'express'}
                                             onChange={handleChange}
                                         />
-                                        Express +40.000₫
+                                        Hỏa tốc (+40.000₫)
                                     </label>
                                 </div>
                             </div>
@@ -332,7 +340,7 @@ function CheckoutPage() {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className={cx('cart-preview')}>
                         <h3>Giỏ hàng của bạn ({cartItems.length})</h3>
 
@@ -361,8 +369,6 @@ function CheckoutPage() {
                                 </div>
                             ))}
                         </div>
-
-                        <Link to="/carts">Chỉnh sửa giỏ hàng</Link>
                     </div>
                 </div>
             </div>

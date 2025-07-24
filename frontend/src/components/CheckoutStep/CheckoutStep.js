@@ -22,7 +22,7 @@ const CheckoutStep = ({ currentStep }) => {
                     const isCompleted = index + 1 < currentStep;
     
                     return (
-                        <div key={index} className={cx('step-item')}>
+                        <div key={index} className={cx('step-item')} style={{ animationDelay: `${index * 0.1}s` }}>
                             <div
                                 className={cx('circle', {
                                     active: isActive,
