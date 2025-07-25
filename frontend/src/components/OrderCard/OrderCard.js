@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import classNames from 'classnames/bind';
 import styles from './OrderCard.module.scss';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faChevronRight, faCopy, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const cx = classNames.bind(styles);
@@ -31,6 +31,7 @@ const transition = { duration: 0.3, ease: [0.4, 0, 0.2, 1] };
 
 function OrderCard({ order }) {
     const [open, setOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     const toggle = useCallback(() => setOpen((v) => !v), []);
 
@@ -38,11 +39,29 @@ function OrderCard({ order }) {
 
     const statusLabel = STATUS_LABELS[order.status] || order.status;
 
+    const handleCopy = async (e) => {
+        e.stopPropagation(); // tránh làm toggle accordion
+        try {
+            await navigator.clipboard.writeText(order._id);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+        } catch (err) {
+            // fallback
+            const textarea = document.createElement('textarea');
+            textarea.value = order._id;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+        }
+    };
+
     return (
         <div className={cx('order-card', { open })}>
             {/* HEADER */}
             <button className={cx('order-summary')} onClick={toggle} aria-expanded={open}>
-                {/* Chevron animate xoay */}
                 <motion.span className={cx('chevron')} animate={{ rotate: open ? 90 : 0 }} transition={transition}>
                     <FontAwesomeIcon icon={faChevronRight} />
                 </motion.span>
@@ -50,7 +69,18 @@ function OrderCard({ order }) {
                 <div className={cx('summary-main')}>
                     <div className={cx('row')}>
                         <span className={cx('label')}>Mã đơn:</span>
-                        <strong>{order._id}</strong>
+                        <span className={cx('order-id')}>
+                            <strong>{order._id}</strong>
+                            <button
+                                type="button"
+                                className={cx('copy-btn')}
+                                onClick={handleCopy}
+                                aria-label="Copy mã đơn hàng"
+                                title={copied ? 'Đã copy!' : 'Copy'}
+                            >
+                                <FontAwesomeIcon icon={copied ? faCheck : faCopy} />
+                            </button>
+                        </span>
                     </div>
                     <div className={cx('row')}>
                         <span className={cx('label')}>Ngày đặt:</span>
