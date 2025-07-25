@@ -1,101 +1,109 @@
-import Home from '../pages/Home/Home';
-import About from '../pages/About';
-import Product from '../pages/Product/Product';
-import CartPage from '../pages/CartPage/CartPage';
-import Contact from '../pages/Contact';
-import Blog from '../pages/Blog';
-import Login from '../pages/Login/Login';
-import Register from '../pages/Register/Register';
-import Promotion from '../pages/Promotion';
-import MainLayout from '../layout/MainLayout/MainLayout';
-import AuthLayout from '../layout/AuthLayout';
-import ProductDetail from '../pages/Product/ProductDetail/ProductDetail'; // 👈 Tạo trang này
-import CreateProduct from '../pages/CreateProduct/CreateProduct'; // tạo component này
-import ProductManagement from '../pages/Admin/ProductManagement/ProductManagement';
-import UserManagement from '../pages/Admin/AccountManagement/AccountManagement';
-import AdminLayout from '../layout/AdminLayout/AdminLayout'; // layout riêng cho admin
-import EditProduct from '../pages/EditProduct/EditProduct'; // Trang chỉnh sửa sản phẩm
-import Trash from '../pages/Trash/Trash'; // Trang chỉnh sửa sản phẩm
-import Profile from '~/pages/Profile/Profile';
-import RequireAdmin from '~/components/RequireAdmin/RequireAdmin'; // Kiểm tra quyền admin
-import CategoryManagement from '~/pages/Admin/CategoryManagement/CategoryManagement'; // Quản lý danh mục
-import AdminMenuManagement from '~/pages/Admin/AdminMenuManagement/AdminMenuManagement';
-import AttributeManagement from '~/pages/Admin/AttributeManagement/AttributeManagement';
-import AssignAttributeToCategory from '~/pages/Admin/AssignAttributeToCategory/AssignAttributeToCategory'; // Gán thuộc tính cho danh mục
-import SearchResultPage from '~/components/SearchResultPage/SearchResultPage'; // Kiểm tra quyền admin
-import NotFoundPage from '~/pages/NotFoundPage/NotFoundPage';
+import MainLayout from '~/layout/MainLayout/MainLayout';
+import AuthLayout from '~/layout/AuthLayout';
+import AdminLayout from '~/layout/AdminLayout/AdminLayout';
+import RequireAdmin from '~/components/RequireAdmin/RequireAdmin';
+
+import Home from '~/pages/Home/Home';
+import About from '~/pages/About';
+import Product from '~/pages/Product/Product';
+import ProductDetail from '~/pages/Product/ProductDetail/ProductDetail';
+import CartPage from '~/pages/CartPage/CartPage';
 import CheckoutPage from '~/pages/CheckoutPage/CheckoutPage';
 import PaymentPage from '~/pages/PaymentPage/PaymentPage';
 import OrdersSuccess from '~/pages/OrdersSuccess/OrdersSuccess';
 import OrdersPage from '~/pages/OrdersPage/OrdersPage';
+import SearchResultPage from '~/components/SearchResultPage/SearchResultPage';
+import NotFoundPage from '~/pages/NotFoundPage/NotFoundPage';
+import Promotion from '~/pages/Promotion';
+import Contact from '~/pages/Contact';
+import Blog from '~/pages/Blog';
+
+import Login from '~/pages/Login/Login';
+import Register from '~/pages/Register/Register';
+
+import ProductManagement from '~/pages/Admin/ProductManagement/ProductManagement';
+import CreateProduct from '~/pages/CreateProduct/CreateProduct';
+import EditProduct from '~/pages/EditProduct/EditProduct';
+import Trash from '~/pages/Trash/Trash';
+import UserManagement from '~/pages/Admin/AccountManagement/AccountManagement';
+import CategoryManagement from '~/pages/Admin/CategoryManagement/CategoryManagement';
+import AttributeManagement from '~/pages/Admin/AttributeManagement/AttributeManagement';
+import AssignAttributeToCategory from '~/pages/Admin/AssignAttributeToCategory/AssignAttributeToCategory';
+import AdminMenuManagement from '~/pages/Admin/AdminMenuManagement/AdminMenuManagement';
+
+import ProfileLayout from '~/pages/Profile/ProfileLayout';
+import ProfileInfo from '~/pages/Profile/tabs/ProfileInfo';
+import ProfileAddress from '~/pages/Profile/tabs/ProfileAddress';
+import ProfileOrders from '~/pages/Profile/tabs/ProfileOrders';
+import ProfileViewed from '~/pages/Profile/tabs/ProfileViewed';
 
 const routes = [
-    { path: '/', element: <Home />, layout: MainLayout },
-    { path: '/about', element: <About />, layout: MainLayout },
-    { path: '/product', element: <Product />, layout: MainLayout },
-
-    // Route chỉnh sửa sản phẩm theo ID
-    { path: '/products/edit/:id', element: <EditProduct />, layout: MainLayout },
-
-    // ✅ Route chi tiết sản phẩm PC theo slug
-    { path: '/products/:slug', element: <ProductDetail />, layout: MainLayout },
-
-    // --- Admin routes ---
-    { path: '/admin/products', element: <ProductManagement />, layout: AdminLayout },
-
-    // Route trang tạo sản phẩm
+    // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
     {
-        path: '/admin/products/create',
+        element: <MainLayout />,
+        children: [
+            { path: '/', element: <Home /> },
+            { path: '/about', element: <About /> },
+            { path: '/product', element: <Product /> },
+            { path: '/products/:slug', element: <ProductDetail /> },
+            { path: '/products/edit/:id', element: <EditProduct /> },
+            { path: '/carts', element: <CartPage /> },
+            { path: '/checkout', element: <CheckoutPage /> },
+            { path: '/payment', element: <PaymentPage /> },
+            { path: '/orders-success', element: <OrdersSuccess /> },
+            { path: '/orders', element: <OrdersPage /> },
+            { path: '/search', element: <SearchResultPage /> },
+            { path: '/promotion', element: <Promotion /> },
+            { path: '/contact', element: <Contact /> },
+            { path: '/blog', element: <Blog /> },
+
+            // Profile nested dưới MainLayout để vẫn có Header/Footer
+            {
+                path: '/profile',
+                element: <ProfileLayout />,
+                children: [
+                    { index: true, element: <ProfileInfo /> },
+                    { path: 'address', element: <ProfileAddress /> },
+                    { path: 'orders', element: <ProfileOrders /> },
+                    { path: 'viewed', element: <ProfileViewed /> },
+                ],
+            },
+
+            { path: '/404', element: <NotFoundPage /> },
+        ],
+    },
+
+    // ----- Auth -----
+    {
+        element: <AuthLayout />,
+        children: [
+            { path: '/login', element: <Login /> },
+            { path: '/register', element: <Register /> },
+        ],
+    },
+
+    // ----- Admin -----
+    {
+        path: '/admin',
         element: (
             <RequireAdmin>
-                <CreateProduct />
+                <AdminLayout />
             </RequireAdmin>
         ),
-        layout: AdminLayout,
+        children: [
+            { path: 'products', element: <ProductManagement /> },
+            { path: 'products/create', element: <CreateProduct /> },
+            { path: 'products/trash', element: <Trash /> },
+            { path: 'users', element: <UserManagement /> },
+            { path: 'categories', element: <CategoryManagement /> },
+            { path: 'attributes', element: <AttributeManagement /> },
+            { path: 'attributes/assign', element: <AssignAttributeToCategory /> },
+            { path: 'menus', element: <AdminMenuManagement /> },
+        ],
     },
-    { path: '/admin/users', element: <UserManagement />, layout: AdminLayout },
-    { path: '/admin/categories', element: <CategoryManagement />, layout: AdminLayout },
-    { path: '/admin/attributes', element: <AttributeManagement />, layout: AdminLayout },
 
-    // Trang thùng rác sản phẩm
-    { path: '/admin/products/trash', element: <Trash />, layout: AdminLayout },
-
-    // Route gán thuộc tính cho danh mục
-    { path: '/admin/attributes/assign', element: <AssignAttributeToCategory  />, layout: AdminLayout },
-
-    // --- Quản lý giao diện ---
-    { path: '/admin/menus', element: <AdminMenuManagement />, layout: AdminLayout },
-    // { path: '/admin/widget', element: <AdminMenuManagement />, layout: AdminLayout },
-    // { path: '/admin/appearance', element: <AdminMenuManagement />, layout: AdminLayout },
-
-    // -- Search theo kết quả tìm kiếm
-    { path: '/search', element: <SearchResultPage />, layout: MainLayout },
-    // -- Not Found Page
-    { path: '/404', element: <NotFoundPage />, layout: MainLayout },
-
-    // Trang profile người dùng
-    { path: '/profile', element: <Profile />, layout: MainLayout },
-
-    // Trang giỏ hàng
-    { path: '/carts', element: <CartPage />, layout: MainLayout },
-
-    // Trang checkout form input address
-    { path: '/checkout', element: <CheckoutPage />, layout: MainLayout },    
-    
-    // Trang PaymentPage.js
-    { path: '/payment', element: <PaymentPage />, layout: MainLayout },
-    
-    // Trang OrdersSuccess.js
-    { path: '/orders-success', element: <OrdersSuccess />, layout: MainLayout },
-
-    // Trang Order.js
-    { path: '/orders', element: <OrdersPage />, layout: MainLayout },
-    
-    { path: '/contact', element: <Contact />, layout: MainLayout },
-    { path: '/blog', element: <Blog />, layout: MainLayout },
-    { path: '/promotion', element: <Promotion />, layout: MainLayout },
-    { path: '/login', element: <Login />, layout: AuthLayout },
-    { path: '/register', element: <Register />, layout: AuthLayout },
+    // fallback
+    { path: '*', element: <NotFoundPage /> },
 ];
 
 export default routes;

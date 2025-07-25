@@ -43,7 +43,7 @@ function UserMenu({ user, onLogout }) {
                             <strong>Xin chào, {user.name}</strong>
                         </Link>
 
-                        <Link to="/orders" className={cx('dropdown__item')}>
+                        <Link to="/profile/orders" className={cx('dropdown__item')}>
                             <ListItemIcon />
                             <span>Đơn hàng của tôi</span>
                         </Link>

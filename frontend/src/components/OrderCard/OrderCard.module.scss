@@ -7,8 +7,7 @@
 
     &.open {
         .order-summary {
-            border-bottom: 1px solid #f1f1f1;
-            background: #fafafa;
+            background: #ffe6ee;
         }
     }
 }
@@ -23,6 +22,12 @@
     cursor: pointer;
     border: none;
     text-align: left;
+    transition: background 0.3s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    &:hover {
+        background: #ffe6ee;
+    }
 
     .chevron {
         flex: 0 0 auto;
@@ -90,7 +95,7 @@
             img {
                 width: 64px;
                 height: 64px;
-                object-fit: cover;
+                object-fit: contain;
                 border-radius: 4px;
             }
 

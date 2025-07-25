@@ -1,8 +1,6 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { Outlet } from 'react-router-dom';
-
 import Sidebar from '~/pages/Admin/AdminSidebar/AdminSidebar';
 import AdminHeader from '~/pages/Admin/AdminHeader/AdminHeader';
 import styles from './AdminLayout.module.scss';
@@ -11,7 +9,7 @@ import { Row, Col } from 'react-bootstrap';
 
 const cx = classNames.bind(styles);
 
-const AdminLayout = ({ children }) => {
+const AdminLayout = () => {
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -22,12 +20,11 @@ const AdminLayout = ({ children }) => {
                 title: 'Truy cập bị từ chối',
                 text: 'Chỉ có admin mới sử dụng chức năng này!',
             }).then(() => {
-                navigate('/'); // chuyển về trang chủ
+                navigate('/');
             });
         }
     }, [user, navigate]);
 
-    // Tránh render khi không phải admin
     if (!user || user.role !== 'admin') return null;
 
     return (
@@ -36,13 +33,13 @@ const AdminLayout = ({ children }) => {
                 <Col xs={12} className={cx('header')}>
                     <AdminHeader />
                 </Col>
-
                 <Col lg={2} md={3} xs={12} className={cx('sidebar')}>
                     <Sidebar />
                 </Col>
-
                 <Col lg={10} md={9} xs={12} className={cx('content')}>
-                    <main className={cx('admin-content')}>{children}</main>
+                    <main className={cx('admin-content')}>
+                        <Outlet /> {/* render child route */}
+                    </main>
                 </Col>
             </Row>
         </div>

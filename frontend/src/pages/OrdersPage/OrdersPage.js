@@ -32,7 +32,7 @@ function OrdersPage() {
 
     return (
         <div className={cx('orders-page')}>
-            <h2>Đơn hàng của tôi</h2>
+            {/* <h2>Đơn hàng của tôi</h2> */}
             {orders.map((order) => (
                 <OrderCard key={order._id} order={order} />
             ))}
