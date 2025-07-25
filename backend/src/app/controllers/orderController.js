@@ -56,3 +56,52 @@ exports.getUserOrders = async (req, res) => {
     res.status(500).json({ message: "Lỗi khi lấy danh sách đơn hàng" });
   }
 };
+
+exports.cancelOrder = async (req, res) => {
+  const orderId = req.params.id;
+  const userId = req.userId;
+
+  try {
+    const order = await Order.findOne({ _id: orderId, user_id: userId });
+    if (!order) {
+      return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
+    }
+    if (order.status === "cancelled") {
+      return res.status(400).json({ message: "Đơn hàng đã bị hủy trước đó!" });
+    }
+    if (order.status === "completed") {
+      return res
+        .status(400)
+        .json({ message: "Không thể hủy đơn hàng đã hoàn thành!" });
+    }
+    // Cập nhật trạng thái đơn hàng
+    order.status = "cancelled";
+    order.cancelReason = req.body.reason || "Không rõ lý do"; // Lưu lý do hủy nếu có
+    await order.save();
+    res
+      .status(200)
+      .json({ message: "Đơn hàng đã được hủy thành công!", order });
+  } catch (err) {
+    console.error("🔥 Lỗi hủy đơn hàng:", err);
+    res.status(500).json({ message: "Lỗi khi hủy đơn hàng" });
+  }
+};
+
+exports.deleteOrder = async (req, res) => {
+  const orderId = req.params.id;
+  const userId = req.userId;
+
+  try {
+    const order = await Order.findOneAndDelete({
+      _id: orderId,
+      user_id: userId,
+    });
+    if (!order) {
+      return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
+    }
+    res.status(200).json({ message: "Đơn hàng đã được xóa thành công!" });
+  } catch (err) {
+    console.error("🔥 Lỗi xóa đơn hàng:", err);
+    res.status(500).json({ message: "Lỗi khi xóa đơn hàng" });
+  }
+};

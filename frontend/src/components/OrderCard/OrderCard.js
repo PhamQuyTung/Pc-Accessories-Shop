@@ -1,37 +1,49 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './OrderCard.module.scss';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronRight, faCopy, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faChevronRight, faCopy, faCheck, faRedo, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
+import Swal from 'sweetalert2';
+import axiosClient from '~/utils/axiosClient';
+import { useToast } from '~/components/ToastMessager/ToastMessager';
+import ModalCancelOrder from '~/components/ModalCancelOrder/ModalCancelOrder';
+import { useNavigate } from 'react-router-dom';
+import cartEvent from '~/utils/cartEvent';
+
+// Định nghĩa nhãn trạng thái đơn hàng
+const STATUS_LABELS = {
+    new: 'Chờ xác nhận',
+    processing: 'Đang xử lý',
+    shipping: 'Đang giao',
+    completed: 'Hoàn thành',
+    cancelled: 'Đã hủy',
+    // Thêm các trạng thái khác nếu cần
+};
 
 const cx = classNames.bind(styles);
 
-const STATUS_LABELS = {
-    new: 'Mới',
-    processing: 'Đang xử lý',
-    shipping: 'Đang vận chuyển',
-    completed: 'Hoàn thành',
-    cancelled: 'Hủy',
+const transition = { duration: 0.3 };
+
+const collapseVariants = {
+    expanded: { height: 'auto', opacity: 1, overflow: 'visible', transition },
+    collapsed: { height: 0, opacity: 0, overflow: 'hidden', transition },
 };
 
-function getProductImage(p) {
-    if (!p) return '/images/no-image.png';
-    if (Array.isArray(p.images) && p.images.length > 0) return p.images[0];
-    if (typeof p.image === 'string') return p.image;
+// Hàm lấy ảnh sản phẩm, trả về đường dẫn ảnh hoặc ảnh mặc định nếu không có
+function getProductImage(product) {
+    if (product && product.images && product.images.length > 0) {
+        return product.images[0];
+    }
     return '/images/no-image.png';
 }
 
-const collapseVariants = {
-    collapsed: { height: 0, opacity: 0 },
-    expanded: { height: 'auto', opacity: 1 },
-};
-
-const transition = { duration: 0.3, ease: [0.4, 0, 0.2, 1] };
-
-function OrderCard({ order }) {
+function OrderCard({ order, onCancel }) {
     const [open, setOpen] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const toast = useToast();
+    const navigate = useNavigate();
 
     const toggle = useCallback(() => setOpen((v) => !v), []);
 
@@ -58,6 +70,62 @@ function OrderCard({ order }) {
         }
     };
 
+    const handleRepurchase = async (order) => {
+        try {
+            // Gọi API thêm từng sản phẩm vào giỏ hàng
+            for (const item of order.items) {
+                await axiosClient.post('/carts/add', {
+                    product_id: item.product_id._id || item.product_id, // tùy backend trả về
+                    quantity: item.quantity,
+                });
+            }
+            toast('Đã thêm lại sản phẩm vào giỏ hàng!', 'success');
+            cartEvent.emit('update-cart-count');
+            navigate('/carts');
+        } catch (err) {
+            toast('Có lỗi khi mua lại đơn hàng!', 'error');
+        }
+    };
+
+    const handleDeleteOrder = async (order) => {
+        const { isConfirmed } = await Swal.fire({
+            title: 'Xóa đơn hàng',
+            text: 'Bạn có chắc chắn muốn xóa đơn hàng này?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Không',
+        });
+        if (isConfirmed) {
+            await axiosClient.delete(`/orders/${order._id}`);
+            toast('Đơn hàng đã được xóa!', 'success');
+            if (onCancel) onCancel(); // Gọi lại fetchOrders để cập nhật danh sách
+        }
+    };
+
+    // Hàm xác nhận hủy đơn hàng sau khi chọn lý do
+    const handleConfirmCancel = async (reasons, otherReason) => {
+        setShowCancelModal(false);
+        const { isConfirmed } = await Swal.fire({
+            title: 'Bạn chắc chắn muốn hủy đơn hàng?',
+            text: 'Đơn hàng sẽ không thể khôi phục sau khi hủy.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Hủy đơn',
+            cancelButtonText: 'Suy nghĩ lại',
+        });
+        if (isConfirmed) {
+            await axiosClient.post(`/orders/${order._id}/cancel`, {
+                reason:
+                    reasons && reasons.length > 0
+                        ? reasons.join(', ') + (otherReason ? `, ${otherReason}` : '')
+                        : otherReason || 'Không rõ lý do',
+            });
+            toast('Hủy đơn hàng thành công!', 'success');
+            if (onCancel) onCancel(); // Gọi lại fetchOrders để reload danh sách
+        }
+    };
+
     return (
         <div className={cx('order-card', { open })}>
             {/* HEADER */}
@@ -71,15 +139,18 @@ function OrderCard({ order }) {
                         <span className={cx('label')}>Mã đơn:</span>
                         <span className={cx('order-id')}>
                             <strong>{order._id}</strong>
-                            <button
-                                type="button"
+                            <span
+                                role="button"
+                                tabIndex={0}
                                 className={cx('copy-btn')}
                                 onClick={handleCopy}
                                 aria-label="Copy mã đơn hàng"
                                 title={copied ? 'Đã copy!' : 'Copy'}
+                                onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleCopy(e)}
+                                style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}
                             >
                                 <FontAwesomeIcon icon={copied ? faCheck : faCopy} />
-                            </button>
+                            </span>
                         </span>
                     </div>
                     <div className={cx('row')}>
@@ -138,9 +209,58 @@ function OrderCard({ order }) {
                             </p>
                             <p>{order.shippingInfo?.address}</p>
                         </div>
+
+                        {/* CANCEL BUTTON */}
+                        {(order.status === 'new' || order.status === 'processing') && (
+                            <div className={cx('cancel-btn-wrapper')}>
+                                <button
+                                    className={cx('cancel-btn-text')}
+                                    onClick={() => setShowCancelModal(true)}
+                                    title="Hủy đơn hàng"
+                                >
+                                    Hủy đơn hàng
+                                </button>
+                            </div>
+                        )}
+
+                        {/* CANCEL REASON */}
+                        {order.status === 'cancelled' && (
+                            <div className={cx('cancel-reason')}>
+                                <strong>Lý do hủy:</strong> {order.cancelReason}
+                            </div>
+                        )}
+
+                        {/* CANCEL ACTIONS */}
+                        {order.status === 'cancelled' && (
+                            <div className={cx('cancel-actions')}>
+                                <button
+                                    className={cx('restore-btn')}
+                                    onClick={() => handleRepurchase(order)}
+                                    title="Mua lại đơn hàng"
+                                >
+                                    <FontAwesomeIcon icon={faRedo} style={{ marginRight: 6 }} />
+                                    Mua lại
+                                </button>
+                                <button
+                                    className={cx('delete-btn')}
+                                    onClick={() => handleDeleteOrder(order)}
+                                    title="Xóa đơn hàng"
+                                >
+                                    <FontAwesomeIcon icon={faTrash} style={{ marginRight: 6 }} />
+                                    Xóa đơn
+                                </button>
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* MODAL LÝ DO HỦY */}
+            <ModalCancelOrder
+                open={showCancelModal}
+                onClose={() => setShowCancelModal(false)}
+                onConfirm={handleConfirmCancel}
+            />
         </div>
     );
 }

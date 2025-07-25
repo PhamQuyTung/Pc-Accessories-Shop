@@ -31,7 +31,7 @@ function OrdersSuccess() {
                     <Link to="/" className={cx('btn', 'btn-primary')}>
                         Về trang chủ
                     </Link>
-                    <button onClick={() => navigate('/orders')} className={cx('btn', 'btn-secondary')}>
+                    <button onClick={() => navigate('/profile/orders')} className={cx('btn', 'btn-secondary')}>
                         Xem đơn hàng
                     </button>
                 </div>
