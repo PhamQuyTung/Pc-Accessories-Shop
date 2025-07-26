@@ -152,36 +152,6 @@ function CheckoutPage() {
                                 />
                             </div>
 
-                            {/* <div className={cx('form-field')}>
-                                <label htmlFor="address2">Địa chỉ số 2 (Optional)</label>
-                                <input id="address2" name="address2" value={form.address2} onChange={handleChange} />
-                            </div> */}
-
-                            {/* <div className={cx('form-field')}>
-                                <label htmlFor="city">
-                                    Thành phố<span>*</span>
-                                </label>
-                                <input id="city" name="city" required value={form.city} onChange={handleChange} />
-                            </div> */}
-
-                            {/* <div className={cx('form-field')}>
-                                <label htmlFor="province">
-                                    Tỉnh<span>*</span>
-                                </label>
-                                <select
-                                    id="province"
-                                    name="province"
-                                    required
-                                    value={form.province}
-                                    onChange={handleChange}
-                                >
-                                    <option value="">Lựa chọn thành phố</option>
-                                    <option value="Ha Noi">Hà Nội</option>
-                                    <option value="Ho Chi Minh">Hồ Chí Minh</option>
-                                    <option value="Da Nang">Đà Nẵng</option>
-                                </select>
-                            </div> */}
-
                             <AddressSelector
                                 value={{
                                     province: form.province,

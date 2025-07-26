@@ -329,3 +329,96 @@
         font-weight: 500;
     }
 }
+
+.address-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.address-item {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 16px 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: 0.2s ease;
+}
+
+.address-item:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.address-info {
+    font-size: 14px;
+    color: #333;
+    line-height: 1.5;
+
+    strong {
+        color: #d62828;
+        font-size: 15px;
+    }
+
+    .default-badge {
+        display: inline-block;
+        background: #f59e0b;
+        color: #fff;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 6px;
+        margin-left: 8px;
+    }
+
+    .email {
+        color: #555;
+    }
+    .postal {
+        color: #888;
+        font-style: italic;
+    }
+}
+
+.address-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.link-btn {
+    border: none;
+    background: #efefef;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s ease;
+}
+
+.link-btn:hover {
+    background: #e5e5e5;
+}
+
+.link-btn.danger {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.link-btn.danger:hover {
+    background: #fee2e2;
+}
+
+.default-badge {
+    display: inline-block;
+    background: #16a34a; /* xanh lá */
+    color: #fff;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-left: 8px;
+    font-weight: 500;
+}

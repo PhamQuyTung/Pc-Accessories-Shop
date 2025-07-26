@@ -1,97 +1,160 @@
 .modal-overlay {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.3);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.45);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 999;
+    z-index: 1000;
+    font-size: 14px; // Base font size
 }
 
 .modal {
     background: #fff;
-    padding: 32px 24px;
-    border-radius: 8px;
-    min-width: 350px;
-    max-width: 95vw;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.15);
-    font-size: 1.2rem; // Tăng font-size mặc định cho toàn modal
+    border-radius: 12px;
+    max-width: 600px;
+    width: 95%;
+    padding: 25px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    font-size: 15px; // tăng size trong modal
+}
+
+.modal-title {
+    text-align: center;
+    font-size: 2rem; // ~24px
+    font-weight: bold;
+    color: #d23f57;
+    margin-bottom: 20px;
 }
 
 .section-title {
+    font-size: 1.6rem; // ~16px
     font-weight: 600;
-    margin: 18px 0 8px 0;
-    font-size: 2rem; // Tăng tiêu đề section
+    color: #333;
+    margin: 18px 0 10px;
+    border-left: 4px solid #d23f57;
+    padding-left: 10px;
 }
 
-.form-group-col {
-    display: flex;
-    gap: 16px;
-    > div {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-}
-
+.form-group-col,
 .form-group-row {
     display: flex;
     gap: 16px;
-    margin-bottom: 8px;
+    margin-bottom: 14px;
+
     > div {
         flex: 1;
-        display: flex;
-        flex-direction: column;
+    }
+}
+
+.input-wrapper {
+    display: flex;
+    flex-direction: column;
+
+    label {
+        font-size: 14px;
+        margin-bottom: 4px;
+        color: #444;
+        font-weight: 500;
+    }
+
+    input,
+    select {
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 15px;
+        outline: none;
+        transition:
+            0.25s border,
+            0.25s box-shadow;
+
+        &:focus {
+            border-color: #d23f57;
+            box-shadow: 0 0 4px rgba(210, 63, 87, 0.5);
+        }
     }
 }
 
 .address-type-row {
     display: flex;
-    gap: 32px;
-    margin: 10px 0 18px 0;
+    gap: 14px;
+    margin-bottom: 14px;
+
     label {
+        font-size: 14px;
+        cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 6px;
-        font-weight: 500;
+        gap: 5px;
+    }
+
+    input[type='radio'] {
+        accent-color: #d23f57;
+    }
+}
+
+.checkbox {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    margin-bottom: 18px;
+    cursor: pointer;
+
+    input[type='checkbox'] {
+        margin-right: 6px;
+        accent-color: #d23f57;
     }
 }
 
 .modal-actions {
     display: flex;
-    gap: 12px;
     justify-content: flex-end;
-    margin-top: 16px;
-}
+    gap: 14px;
 
-.submit-btn {
-    background: #007bff;
-    color: #fff;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 1.1rem; // Tăng chữ trên nút
-    &:hover {
-        background: #0056b3;
+    .submit-btn {
+        background: #d23f57;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 18px;
+        font-size: 15px;
+        cursor: pointer;
+        transition: 0.3s;
+
+        &:hover {
+            background: #bb2e45;
+        }
+    }
+
+    .cancel-btn {
+        background: #f5f5f5;
+        color: #444;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 10px 18px;
+        font-size: 15px;
+        cursor: pointer;
+        transition: 0.3s;
+
+        &:hover {
+            background: #e2e2e2;
+        }
     }
 }
 
-.cancel-btn {
-    background: #eee;
-    color: #333;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 1.1rem; // Tăng chữ trên nút
-    &:hover {
-        background: #ccc;
+@media (max-width: 480px) {
+    .modal {
+        padding: 18px;
+        font-size: 14px;
     }
-}
-
-input, select, label {
-    font-size: 1.15rem; // Tăng chữ trong input, select, label
+    .form-group-col,
+    .form-group-row {
+        flex-direction: column;
+        gap: 12px;
+    }
 }
