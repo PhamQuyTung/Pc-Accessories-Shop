@@ -1,0 +1,176 @@
+.saved-address-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+
+    .address-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        .address-item {
+            background: #f8f8f8;
+            padding: 12px 14px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+
+            &:hover {
+                background: #f0f0f0;
+            }
+
+            &.active {
+                border: 2px solid #e4002b;
+                background: #fff5f7;
+            }
+
+            strong {
+                font-size: 15px;
+                color: #333;
+                display: block;
+                margin-bottom: 5px;
+            }
+
+            p {
+                font-size: 14px;
+                color: #555;
+                margin: 2px 0;
+            }
+
+            .default-badge {
+                background: #e4002b;
+                color: white;
+                font-size: 11px;
+                padding: 4px 6px;
+                border-radius: 4px;
+                font-weight: bold;
+                text-transform: uppercase;
+            }
+        }
+    }
+
+    .order-btn {
+        display: block;
+        width: 100%;
+        background: #e4002b;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        padding: 12px;
+        margin-top: 14px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s;
+
+        &:hover:not(:disabled) {
+            background: #c20022;
+        }
+
+        &:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    }
+}
+
+.address-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px 15px;
+    background: #fff;
+    cursor: pointer;
+    transition:
+        border-color 0.2s,
+        background 0.2s;
+
+    &:hover {
+        border-color: #e4002b;
+        background: #fdf2f4;
+    }
+
+    &.active {
+        border-color: #e4002b;
+        background: #fdf2f4;
+    }
+
+    .address-info {
+        flex: 1;
+
+        h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        p {
+            margin: 2px 0;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .default-label {
+            display: inline-block;
+            background: #e4002b;
+            color: #fff;
+            padding: 2px 6px;
+            font-size: 12px;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+    }
+
+    .address-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        button {
+            background: none;
+            border: none;
+            font-size: 13px;
+            color: #e4002b;
+            cursor: pointer;
+            padding: 0;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+}
+
+/* --- NÚT ĐẶT HÀNG NGAY --- */
+.order-btn {
+    background: #e4002b;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 15px;
+    font-weight: bold;
+    margin-top: 15px;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.2s ease-in-out;
+
+    &:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    &:not(:disabled):hover {
+        background: #c30024;
+    }
+}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styles from '../Profile.module.scss';
 import classNames from 'classnames/bind';
-import AddressModal from '../AddressModal/AddressModal';
+import AddressModal from '../../../components/AdressComponent/AddressModal/AddressModal';
 import axiosClient from '~/utils/axiosClient';
 import Swal from 'sweetalert2';
 import LoadingSpinner from '~/components/SpinnerLoading/SpinnerLoading';
