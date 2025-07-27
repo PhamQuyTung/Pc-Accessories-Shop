@@ -10,7 +10,7 @@ const cx = classNames.bind(styles);
 
 function Login() {
     const [formData, setFormData] = useState({
-        name: '',
+        email: '',
         password: '',
     });
 
@@ -34,13 +34,9 @@ function Login() {
             toast('Đăng nhập thành công!', 'success');
             setTimeout(() => navigate('/'), 1500);
         } catch (err) {
-            if (err.response && err.response.data && err.response.data.message) {
-                setServerError(err.response.data.message);
-                toast(err.response.data.message, 'error');
-            } else {
-                setServerError('Tên đăng nhập hoặc mật khẩu không chính xác.');
-                toast('Tên đăng nhập hoặc mật khẩu không chính xác.', 'error');
-            }
+            const message = err.response?.data?.message || 'Email hoặc mật khẩu không chính xác.';
+            setServerError(message);
+            toast(message, 'error');
         }
     };
 
@@ -50,12 +46,14 @@ function Login() {
                 <h2 className={cx('title')}>Đăng nhập</h2>
                 <form className={cx('form')} onSubmit={handleSubmit}>
                     <InputField
-                        label="Tên đăng nhập"
-                        name="name"
-                        value={formData.name}
+                        label="Email"
+                        type="email"
+                        name="email"
+                        value={formData.email}
                         onChange={handleChange}
-                        placeholder="Nhập tên đăng nhập..."
+                        placeholder="Nhập email..."
                     />
+
                     <InputField
                         label="Mật khẩu"
                         type="password"

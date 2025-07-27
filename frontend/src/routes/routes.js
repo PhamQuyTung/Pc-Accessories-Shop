@@ -32,7 +32,7 @@ import AssignAttributeToCategory from '~/pages/Admin/AssignAttributeToCategory/A
 import AdminMenuManagement from '~/pages/Admin/AdminMenuManagement/AdminMenuManagement';
 
 import ProfileLayout from '~/pages/Profile/ProfileLayout';
-import ProfileInfo from '~/pages/Profile/tabs/ProfileInfo';
+import ProfileInfo from '~/pages/Profile/tabs/ProfileInfo/ProfileInfo';
 import ProfileAddress from '~/pages/Profile/tabs/ProfileAddress';
 import ProfileOrders from '~/pages/Profile/tabs/ProfileOrders';
 import ProfileViewed from '~/pages/Profile/tabs/ProfileViewed';

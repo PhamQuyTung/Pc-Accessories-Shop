@@ -8,6 +8,13 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const connectDB = require("./config/db");
 
+// Tạo thư mục lưu ảnh & serve static
+const fs = require("fs");
+const uploadDir = path.join(__dirname, "public", "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 // 👇 NEW: import định tuyến chính
 const route = require("./routes");
 
@@ -16,12 +23,14 @@ dotenv.config();
 const app = express();
 
 // Kết nối MongoDB
-connectDB();  
+connectDB();
 
 // Middleware
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
+// Public folder uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(morgan("combined"));

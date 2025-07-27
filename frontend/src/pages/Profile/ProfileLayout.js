@@ -3,6 +3,8 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import styles from './Profile.module.scss';
 import classNames from 'classnames/bind';
 import Swal from 'sweetalert2';
+import axiosClient from '~/utils/axiosClient';
+import { getAvatarUrl } from '~/utils/avatar';
 
 // Icons
 import { FaUser, FaMapMarkerAlt, FaBox, FaHeart, FaSignOutAlt } from 'react-icons/fa';
@@ -11,14 +13,56 @@ const cx = classNames.bind(styles);
 
 export default function ProfileLayout() {
     const navigate = useNavigate();
-    const [user, setUser] = useState(() => {
-        const stored = localStorage.getItem('user');
-        return stored ? JSON.parse(stored) : {};
-    });
 
-    useEffect(() => {
+    const [user, _setUser] = useState(() => {
         const stored = localStorage.getItem('user');
-        if (stored) setUser(JSON.parse(stored));
+        return stored ? JSON.parse(stored) : null;
+    });
+    const [loading, setLoading] = useState(!user); // nếu chưa có user trong LS thì show loading
+    const [error, setError] = useState(null);
+
+    // wrap setUser để luôn sync localStorage
+    const setUserAndPersist = useCallback((u) => {
+        _setUser(u);
+        if (u) {
+            localStorage.setItem('user', JSON.stringify(u));
+        } else {
+            localStorage.removeItem('user');
+        }
+    }, []);
+
+    // fetch /accounts/me để làm tươi dữ liệu mỗi lần vào trang
+    useEffect(() => {
+        const fetchMe = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    setLoading(false);
+                    return; // chưa đăng nhập
+                }
+
+                const { data } = await axiosClient.get('/accounts/me');
+                setUserAndPersist(data);
+            } catch (err) {
+                console.error('fetch /accounts/me error', err);
+                if (err?.response?.status === 401) {
+                    // token hết hạn / không hợp lệ -> auto logout
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    navigate('/login');
+                } else {
+                    setError('Không thể tải thông tin tài khoản.');
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchMe();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleLogout = useCallback(async () => {
@@ -39,12 +83,55 @@ export default function ProfileLayout() {
         }
     }, [navigate]);
 
+    if (loading) {
+        return (
+            <div className={cx('profile-container')}>
+                <div className={cx('content')}>
+                    <p>Đang tải thông tin...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className={cx('profile-container')}>
+                <div className={cx('content')}>
+                    <p>Bạn chưa đăng nhập.</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className={cx('profile-container')}>
             <div className={cx('sidebar')}>
                 <div className={cx('avatar')}>
-                    <div className={cx('circle')}>{user.name ? user.name.slice(0, 2).toUpperCase() : 'U'}</div>
-                    <h2>{user.name || 'Tên người dùng'}</h2>
+                    {/* Nếu có link avatar thì show img, ko thì show circle initials */}
+                    {user.avatar ? (
+                        <img
+                            src={getAvatarUrl(user)}
+                            alt="avatar"
+                            style={{ width: 90, height: 90, borderRadius: '50%', objectFit: 'cover' }}
+                        />
+                    ) : (
+                        <div className={cx('circle')}>
+                            {(user.firstName || user.lastName || user.name || 'U')
+                                .toString()
+                                .trim()
+                                .split(' ')
+                                .map((s) => s[0])
+                                .join('')
+                                .slice(0, 2)
+                                .toUpperCase()}
+                        </div>
+                    )}
+
+                    <h2>
+                        {user.firstName || user.lastName
+                            ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                            : user.name || 'Tên người dùng'}
+                    </h2>
                 </div>
 
                 <ul className={cx('menu')}>
@@ -95,7 +182,8 @@ export default function ProfileLayout() {
             </div>
 
             <div className={cx('content')}>
-                <Outlet context={{ user, setUser }} />
+                {error && <p style={{ color: 'red', marginBottom: 12 }}>{error}</p>}
+                <Outlet context={{ user, setUser: setUserAndPersist }} />
             </div>
         </div>
     );
