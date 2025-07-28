@@ -35,7 +35,7 @@ import ProfileLayout from '~/pages/Profile/ProfileLayout';
 import ProfileInfo from '~/pages/Profile/tabs/ProfileInfo/ProfileInfo';
 import ProfileAddress from '~/pages/Profile/tabs/ProfileAddress';
 import ProfileOrders from '~/pages/Profile/tabs/ProfileOrders';
-import ProfileViewed from '~/pages/Profile/tabs/ProfileViewed';
+import ProfileViewed from '~/pages/Profile/tabs/ProfileViewed/ProfileViewed';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----

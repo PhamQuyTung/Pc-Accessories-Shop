@@ -34,6 +34,12 @@ function getToastIcon(type) {
                     <FontAwesomeIcon icon={faCircleXmark} className={cx('custom-icon__toast')} />
                 </span>
             ); // Dấu X
+        case 'info':
+            return (
+                <span style={{ marginRight: 8 }}>
+                    <FontAwesomeIcon icon={faCircleCheck} className={cx('custom-icon__toast')} />
+                </span>
+            ); // Biểu tượng thông tin
         default:
             return null;
     }

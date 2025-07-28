@@ -8,6 +8,7 @@ const attributeRoutes = require('./attributeRoutes'); // ✔️ Thêm route cho 
 const cartRoutes = require('./cartRoutes'); // ✔️ Thêm route cho carts
 const orderRoutes = require('./orderRoutes'); // ✔️ Thêm route cho orders
 const addressRoutes = require('./addressRoutes'); // ✔️ Thêm route cho address
+const favoriteRoutes = require('./favoriteRoutes'); // ✔️ Thêm route cho favorites
 const errorHandle = require('../helpers/error.handle');
 
 function route(app) {
@@ -26,6 +27,7 @@ function route(app) {
     app.use('/api/carts', cartRoutes); // 👈 Thêm route cho carts
     app.use('/api/orders', orderRoutes); // 👈 Thêm route cho orders
     app.use('/api/addresses', addressRoutes); // 👈 Thêm route cho address
+    app.use('/api/favorites', favoriteRoutes); // 👈 Thêm route cho favorites
 
     // Middleware xử lý lỗi
     app.use(errorHandle);

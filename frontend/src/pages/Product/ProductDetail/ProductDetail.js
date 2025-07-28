@@ -47,8 +47,6 @@ function ProductDetail() {
 
     const reviewSectionRef = useRef(null);
 
-    const toggleFavorite = () => setIsFavorite((prev) => !prev);
-
     const toast = useToast();
 
     const formatDate = (dateString) => {
@@ -101,6 +99,27 @@ function ProductDetail() {
                 })
                 .catch((err) => console.error('Lỗi khi lấy đánh giá:', err));
         }
+    }, [product]);
+
+    // Kiểm tra trạng thái yêu thích của sản phẩm
+    useEffect(() => {
+        const checkFavorite = async () => {
+            const token = localStorage.getItem('token');
+            if (token && product?._id) {
+                try {
+                    const res = await axiosClient.get(`/favorites/${product._id}`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+                    setIsFavorite(res.data.isFavorite);
+                } catch (error) {
+                    console.error('Không thể kiểm tra trạng thái yêu thích:', error);
+                }
+            }
+        };
+
+        checkFavorite();
     }, [product]);
 
     if (error) return <div>{error}</div>;
@@ -196,6 +215,44 @@ function ProductDetail() {
             console.error('Chi tiết lỗi:', error?.response?.data || error.message);
             console.error('Lỗi khi gửi đánh giá:', error);
             toast('Không thể gửi đánh giá', 'error');
+        }
+    };
+
+    // Hàm toggle yêu thích
+    const toggleFavorite = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast('Vui lòng đăng nhập để sử dụng tính năng yêu thích', 'warning');
+            return;
+        }
+
+        try {
+            if (isFavorite) {
+                // ✅ Bỏ thích
+                await axiosClient.delete(`/favorites/${product._id}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                setIsFavorite(false);
+                toast('Đã xóa khỏi mục yêu thích', 'info');
+            } else {
+                // ✅ Thêm vào yêu thích
+                await axiosClient.post(
+                    `/favorites`,
+                    { product_id: product._id },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    },
+                );
+                setIsFavorite(true);
+                toast('Đã thêm vào mục yêu thích', 'success');
+            }
+        } catch (error) {
+            console.error('Lỗi khi cập nhật yêu thích:', error);
+            toast('Đã xảy ra lỗi, vui lòng thử lại sau', 'error');
         }
     };
 
