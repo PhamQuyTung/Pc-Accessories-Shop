@@ -32,8 +32,13 @@ function CreateProduct() {
 
     useEffect(() => {
         axios
-            .get('http://localhost:5000/api/products')
-            .then((res) => setExistingProducts(res.data))
+            .get('http://localhost:5000/api/products', {
+                params: { isAdmin: true, limit: 1000 }, // 👈 tránh phân trang để lấy đủ
+            })
+            .then((res) => {
+                const products = res.data.products || []; // ✅ lấy đúng mảng
+                setExistingProducts(products);
+            })
             .catch(() => setExistingProducts([]));
     }, []);
 

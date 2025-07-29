@@ -7,46 +7,104 @@ class ProductController {
   // Lấy tất cả sản phẩm
   async getAll(req, res) {
     try {
-      const { category, isAdmin } = req.query;
+      const {
+        isAdmin,
+        search,
+        category,
+        visible,
+        sort,
+        page = 1,
+        limit = 10,
+      } = req.query;
 
-      let filter = {
-        deleted: { $ne: true }, // luôn lọc sản phẩm chưa xóa
-      };
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const skip = (pageNum - 1) * limitNum;
 
-      if (!isAdmin) {
-        filter.visible = true; // Chỉ khi KHÔNG phải admin thì mới lọc theo visible
+      let match = { deleted: { $ne: true } };
+
+      if (search) {
+        match.name = { $regex: search, $options: "i" };
       }
 
+      // Nếu có category, tìm _id của category đó
+      // Giả sử category là slug, nếu là _id thì không cần tìm
       if (category) {
-        const foundCategory = await Category.findOne({ slug: category });
-        if (!foundCategory) return res.json([]);
-        filter.category = foundCategory._id;
+        // Nếu category là slug, có thể cần join hoặc truy vấn riêng để tìm _id
+        const cat = await Category.findOne({ slug: category });
+        if (cat) {
+          match.category = cat._id;
+        }
       }
 
-      const products = await Product.find(filter)
-        .populate("category", "name")
-        .lean();
+      if (visible !== undefined && visible !== "") {
+        match.visible = visible === "true";
+      }
 
-      const enrichedProducts = products.map((product) => {
-        const reviews = product.reviews || [];
-        const reviewCount = reviews.length;
-        const averageRating = reviewCount
-          ? reviews.reduce((acc, cur) => acc + cur.rating, 0) / reviewCount
-          : 0;
+      if (isAdmin !== "true") {
+        match.visible = true;
+      }
 
-        return {
-          ...product,
-          averageRating: Number(
-            (Math.round(averageRating * 10) / 10).toFixed(1)
-          ),
-          reviewCount,
-        };
+      // Bắt đầu pipeline
+      let pipeline = [
+        { $match: match },
+        {
+          $lookup: {
+            from: "categories",
+            localField: "category",
+            foreignField: "_id",
+            as: "category",
+          },
+        },
+        { $unwind: "$category" },
+      ];
+
+      // Nếu sort theo giá thì thêm field sortPrice
+      if (sort && sort.startsWith("price")) {
+        pipeline.push({
+          $addFields: {
+            sortPrice: {
+              $cond: {
+                if: { $gt: ["$salePrice", 0] },
+                then: "$salePrice",
+                else: "$price",
+              },
+            },
+          },
+        });
+      }
+
+      // Sort
+      if (sort) {
+        const [field, order] = sort.split("_");
+        const sortValue = order === "asc" ? 1 : -1;
+
+        const sortField = field === "price" ? "sortPrice" : field;
+        pipeline.push({ $sort: { [sortField]: sortValue } });
+      } else {
+        pipeline.push({ $sort: { createdAt: -1 } }); // Default sort
+      }
+
+      // Đếm tổng số
+      const countPipeline = [...pipeline];
+      countPipeline.push({ $count: "total" });
+      const countResult = await Product.aggregate(countPipeline);
+      const totalCount = countResult[0]?.total || 0;
+
+      // Phân trang
+      pipeline.push({ $skip: skip }, { $limit: limitNum });
+
+      const products = await Product.aggregate(pipeline);
+
+      res.status(200).json({
+        products,
+        totalCount,
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalCount / limitNum),
       });
-
-      res.json(enrichedProducts);
     } catch (err) {
-      console.error("Lỗi khi lấy sản phẩm:", err);
-      res.status(500).json({ error: "Lỗi server" });
+      console.log("Lỗi getAll:", err);   // <--- nên log ra
+      res.status(500).json({ message: "Lỗi server", error: err });
     }
   }
 

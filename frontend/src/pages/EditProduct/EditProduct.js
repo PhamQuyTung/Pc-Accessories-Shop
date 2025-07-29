@@ -26,7 +26,10 @@ function EditProduct() {
 
         axios
             .get('http://localhost:5000/api/products')
-            .then((res) => setExistingProducts(res.data))
+            .then((res) => {
+                console.log('Fetched products:', res.data); // 👈 kiểm tra ở đây
+                setExistingProducts(res.data);
+            })
             .catch(() => {});
     }, []);
 

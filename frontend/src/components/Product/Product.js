@@ -1,7 +1,7 @@
 // src/pages/Home.jsx
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import axiosClient from '~/utils/axiosClient';
 import styles from './ProductCard.module.scss';
 import classNames from 'classnames/bind';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -17,15 +17,40 @@ const cx = classNames.bind(styles);
 
 function Product({ category }) {
     const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        axios
-            .get(`http://localhost:5000/api/products?category=${category}`)
-            .then((res) => {
-                console.log('Kết quả trả về:', res.data);
-                setProducts(res.data);
-            })
-            .catch((err) => console.log('Lỗi gọi API:', err));
+        const fetchProducts = async () => {
+            setLoading(true);
+            try {
+                const params = {
+                    category, // slug như 'pc-gvn', 'laptop', etc.
+                    limit: 8, // hoặc số bạn muốn hiển thị
+                    status: true,
+                };
+
+                console.log('📦 Gửi request với params:', params); // 👉 thêm dòng này
+
+                const res = await axiosClient.get('/products', {
+                    params,
+                });
+
+                const data = res.data;
+
+                if (Array.isArray(data.products)) {
+                    setProducts(data.products);
+                } else {
+                    setProducts([]);
+                }
+            } catch (error) {
+                console.error('❌ Lỗi khi fetch sản phẩm:', error);
+                setProducts([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProducts();
     }, [category]);
 
     return (
