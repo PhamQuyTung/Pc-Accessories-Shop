@@ -119,3 +119,21 @@
         justify-content: center;
     }
 }
+
+.toggle-btn {
+    padding: 4px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+
+    &.active {
+        background-color: #e0ffe5;
+        color: #006400;
+    }
+
+    &.inactive {
+        background-color: #ffe6e6;
+        color: #a00;
+    }
+}

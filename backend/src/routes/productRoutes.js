@@ -46,6 +46,9 @@ router.patch("/restore/:id", ProductController.restoreProduct);
 // [GET] /api/products/search => Tìm kiếm sản phẩm
 router.get("/search", ProductController.searchProducts);
 
+// [PATCH] /api/products/toggle-visible/:id => Chuyển đổi trạng thái hiển thị
+router.patch("/toggle-visible/:id", ProductController.toggleVisible);
+
 // [GET] /api/products/:slug => Chi tiết theo slug
 router.get("/:slug", ProductController.getBySlug);
 

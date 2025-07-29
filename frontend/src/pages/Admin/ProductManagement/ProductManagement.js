@@ -15,7 +15,7 @@ const ProductManagement = () => {
     // Đưa fetchProducts ra ngoài useEffect
     const fetchProducts = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/products');
+            const res = await axios.get('http://localhost:5000/api/products?isAdmin=true');
             setProducts(res.data);
         } catch (err) {
             console.error('Lỗi khi tải sản phẩm:', err);
@@ -52,6 +52,16 @@ const ProductManagement = () => {
             } catch (err) {
                 toast('Lỗi khi xóa sản phẩm!', 'error');
             }
+        }
+    };
+
+    const handleToggleVisible = async (id) => {
+        try {
+            const res = await axios.patch(`http://localhost:5000/api/products/toggle-visible/${id}`);
+            toast(res.data.message, 'success');
+            fetchProducts(); // reload danh sách
+        } catch (err) {
+            toast('Lỗi khi cập nhật trạng thái hiển thị', 'error');
         }
     };
 
@@ -98,7 +108,14 @@ const ProductManagement = () => {
                             <td>{formatCurrency(product.discountPrice)}</td>
                             <td>{product.category?.name || 'Không có danh mục'}</td>
                             <td>{product.status?.includes('đang nhập hàng') ? 'Đang nhập hàng' : product.quantity}</td>
-                            <td>{product.status ? 'Hiển thị' : 'Ẩn'}</td>
+                            <td>
+                                <button
+                                    className={cx('toggle-btn', product.visible ? 'active' : 'inactive')}
+                                    onClick={() => handleToggleVisible(product._id)}
+                                >
+                                    {product.visible ? '👁️ Hiển thị' : '🙈 Đang ẩn'}
+                                </button>
+                            </td>
                             <td>{formatDate(product.createdAt)}</td>
                             <td>
                                 <div className={cx('action-buttons')}>

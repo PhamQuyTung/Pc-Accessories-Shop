@@ -52,11 +52,21 @@ exports.getFavorites = async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id;
 
-    const favorites = await Favorite.find({ user_id: userId }).populate(
-      "product_id"
-    );
+    const favorites = await Favorite.find({
+      user_id: userId,
+    }).populate({
+      path: "product_id",
+      match: {
+        deleted: { $ne: true }, // Chỉ lấy sản phẩm chưa xóa
+        visible: true, // Chỉ lấy sản phẩm đang hiển thị
+      },
+    });
 
-    const products = favorites.map((fav) => fav.product_id);
+    // ⚠️ do .populate match có thể trả về null nếu product bị ẩn => cần lọc null ra
+    const products = favorites
+      .filter((fav) => fav.product_id) // bỏ những product null (do không match)
+      .map((fav) => fav.product_id); // trả về danh sách sản phẩm
+
     res.status(200).json(products);
   } catch (error) {
     console.error("getFavorites error:", error);

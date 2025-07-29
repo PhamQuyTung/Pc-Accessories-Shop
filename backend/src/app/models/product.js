@@ -1,5 +1,5 @@
 // models/product.js
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const slugify = require("slugify");
 
 const reviewSchema = new mongoose.Schema(
@@ -13,20 +13,25 @@ const reviewSchema = new mongoose.Schema(
 );
 
 const ProductSchema = new mongoose.Schema({
-    name: String,
-    slug: String, 
-    images: [String],
-    price: Number,
-    discountPrice: Number,
-    quantity: { type: Number, default: 0 },
-    status: [String],
-    specs: { type: Object, default: {} }, // specs linh hoạt
-    category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
-    description: String,
-    reviews: [reviewSchema],
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now },
-    deleted: { type: Boolean, default: false }, // Thêm trường này
+  name: String,
+  slug: String,
+  images: [String],
+  price: Number,
+  discountPrice: Number,
+  quantity: { type: Number, default: 0 },
+  status: [String],
+  visible: { type: Boolean, default: true }, // true = hiển thị, false = ẩn
+  specs: { type: Object, default: {} }, // specs linh hoạt
+  category: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Category",
+    required: true,
+  },
+  description: String,
+  reviews: [reviewSchema],
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+  deleted: { type: Boolean, default: false }, // Thêm trường này
 });
 
 // Tạo slug trước khi lưu vào DB
@@ -37,5 +42,4 @@ ProductSchema.pre("save", function (next) {
   next();
 });
 
-module.exports = mongoose.model('Product', ProductSchema);
-
+module.exports = mongoose.model("Product", ProductSchema);

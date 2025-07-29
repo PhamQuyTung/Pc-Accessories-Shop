@@ -7,21 +7,24 @@ class ProductController {
   // Lấy tất cả sản phẩm
   async getAll(req, res) {
     try {
-      const { category } = req.query;
+      const { category, isAdmin } = req.query;
 
-      let filter = { deleted: { $ne: true } };
+      let filter = {
+        deleted: { $ne: true }, // luôn lọc sản phẩm chưa xóa
+      };
 
-      // Nếu có truyền ?category=slug thì lọc theo slug
+      if (!isAdmin) {
+        filter.visible = true; // Chỉ khi KHÔNG phải admin thì mới lọc theo visible
+      }
+
       if (category) {
         const foundCategory = await Category.findOne({ slug: category });
-        if (!foundCategory) {
-          return res.json([]); // Không tìm thấy category => trả về mảng rỗng
-        }
-        filter.category = foundCategory._id; // Gán _id vào filter
+        if (!foundCategory) return res.json([]);
+        filter.category = foundCategory._id;
       }
 
       const products = await Product.find(filter)
-        .populate("category", "name") // Lấy thêm tên danh mục nếu cần
+        .populate("category", "name")
         .lean();
 
       const enrichedProducts = products.map((product) => {
@@ -50,7 +53,11 @@ class ProductController {
   // Lấy chi tiết sản phẩm theo slug
   async getBySlug(req, res) {
     try {
-      const product = await Product.findOne({ slug: req.params.slug }).lean();
+      const product = await Product.findOne({
+        slug: req.params.slug,
+        deleted: { $ne: true }, // Chỉ lấy sản phẩm chưa xóa
+        visible: true, // Chỉ lấy sản phẩm đang hiển thị
+      }).lean();
 
       if (!product)
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
@@ -118,6 +125,8 @@ class ProductController {
       const related = await Product.find({
         category,
         _id: { $ne: exclude },
+        deleted: { $ne: true }, // Chỉ lấy sản phẩm chưa xóa
+        visible: true, // Chỉ lấy sản phẩm đang hiển thị
       })
         .limit(7)
         .lean(); // Thêm .lean() để hiệu suất tốt hơn
@@ -294,6 +303,7 @@ class ProductController {
       const products = await Product.find({
         name: { $regex: query, $options: "i" },
         deleted: { $ne: true },
+        visible: true, // Chỉ lấy sản phẩm đang hiển thị
       })
         .limit(10)
         .lean();
@@ -317,6 +327,25 @@ class ProductController {
       res.json(enrichedProducts);
     } catch (err) {
       console.error("Lỗi khi tìm kiếm sản phẩm:", err);
+      res.status(500).json({ error: "Lỗi server" });
+    }
+  }
+
+  // PATCH /api/products/toggle-visible/:id
+  async toggleVisible(req, res) {
+    try {
+      const product = await Product.findById(req.params.id);
+      if (!product)
+        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+
+      product.visible = !product.visible;
+      await product.save();
+
+      res.json({
+        message: `Sản phẩm đã được ${product.visible ? "hiển thị" : "ẩn"}`,
+        visible: product.visible,
+      });
+    } catch (err) {
       res.status(500).json({ error: "Lỗi server" });
     }
   }
