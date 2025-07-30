@@ -1,6 +1,7 @@
 // app/controllers/productController.js
 const Product = require("../models/product");
 const Category = require("../models/category");
+const Review = require("../models/review");
 const mongoose = require("mongoose");
 
 class ProductController {
@@ -27,10 +28,7 @@ class ProductController {
         match.name = { $regex: search, $options: "i" };
       }
 
-      // Nếu có category, tìm _id của category đó
-      // Giả sử category là slug, nếu là _id thì không cần tìm
       if (category) {
-        // Nếu category là slug, có thể cần join hoặc truy vấn riêng để tìm _id
         const cat = await Category.findOne({ slug: category });
         if (cat) {
           match.category = cat._id;
@@ -45,7 +43,6 @@ class ProductController {
         match.visible = true;
       }
 
-      // Bắt đầu pipeline
       let pipeline = [
         { $match: match },
         {
@@ -57,9 +54,33 @@ class ProductController {
           },
         },
         { $unwind: "$category" },
+
+        // ✅ THÊM ĐÂY:
+        {
+          $lookup: {
+            from: "reviews",
+            localField: "_id",
+            foreignField: "product",
+            as: "reviews",
+          },
+        },
+        {
+          $addFields: {
+            averageRating: {
+              $cond: [
+                { $gt: [{ $size: "$reviews" }, 0] },
+                { $avg: "$reviews.rating" },
+                0,
+              ],
+            },
+            reviewCount: { $size: "$reviews" },
+          },
+        },
+
+        // 👇 Phần sort & phân trang giữ nguyên
       ];
 
-      // Nếu sort theo giá thì thêm field sortPrice
+      // 👉 Nếu sort theo giá thì thêm field
       if (sort && sort.startsWith("price")) {
         pipeline.push({
           $addFields: {
@@ -74,24 +95,23 @@ class ProductController {
         });
       }
 
-      // Sort
+      // 👉 Sort logic
       if (sort) {
         const [field, order] = sort.split("_");
         const sortValue = order === "asc" ? 1 : -1;
-
         const sortField = field === "price" ? "sortPrice" : field;
         pipeline.push({ $sort: { [sortField]: sortValue } });
       } else {
-        pipeline.push({ $sort: { createdAt: -1 } }); // Default sort
+        pipeline.push({ $sort: { createdAt: -1 } });
       }
 
-      // Đếm tổng số
+      // 👉 Đếm tổng
       const countPipeline = [...pipeline];
       countPipeline.push({ $count: "total" });
       const countResult = await Product.aggregate(countPipeline);
       const totalCount = countResult[0]?.total || 0;
 
-      // Phân trang
+      // 👉 Phân trang
       pipeline.push({ $skip: skip }, { $limit: limitNum });
 
       const products = await Product.aggregate(pipeline);
@@ -103,7 +123,7 @@ class ProductController {
         totalPages: Math.ceil(totalCount / limitNum),
       });
     } catch (err) {
-      console.log("Lỗi getAll:", err); // <--- nên log ra
+      console.log("Lỗi getAll:", err);
       res.status(500).json({ message: "Lỗi server", error: err });
     }
   }
@@ -214,23 +234,23 @@ class ProductController {
 
   // Thêm đánh giá cho sản phẩm
   async addReview(req, res) {
-    const { rating, comment } = req.body;
-
     try {
-      const product = await Product.findById(req.params.id);
+      const { rating, comment } = req.body;
+      const productId = req.params.id;
+
+      const product = await Product.findById(productId);
       if (!product)
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
 
-      const newReview = {
-        name: req.user.name, // ✅ Lấy từ middleware
-        rating: Number(rating),
+      const newReview = new Review({
+        product: productId,
+        user: req.user._id,
+        name: req.user.name,
+        rating,
         comment,
-      };
+      });
 
-      product.reviews.push(newReview);
-      await product.save();
-      console.log("Body:", req.body);
-      console.log("👤 User review:", req.user);
+      await newReview.save();
 
       res.status(201).json({ message: "Đã thêm đánh giá", review: newReview });
     } catch (err) {

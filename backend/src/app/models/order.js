@@ -19,7 +19,14 @@ const orderSchema = new mongoose.Schema(
       },
     ],
 
-    totalAmount: { type: Number, required: true },
+    subtotal: Number,
+    tax: Number,
+    discount: Number,
+    shippingFee: Number,
+    serviceFee: Number,
+    totalAmount: Number,
+    finalAmount: Number,
+    paymentMethod: { type: String, enum: ["cod", "bank"], required: false },
 
     status: {
       type: String,
@@ -27,7 +34,7 @@ const orderSchema = new mongoose.Schema(
       default: "new",
     },
     cancelReason: { type: String, default: "" },
-    
+
     shippingInfo: {
       name: String,
       phone: String,

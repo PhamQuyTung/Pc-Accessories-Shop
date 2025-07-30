@@ -21,6 +21,7 @@ import ProductCard from '~/components/Product/ProductCard';
 import SpinnerLoading from '~/components/SpinnerLoading/SpinnerLoading';
 import { useToast } from '~/components/ToastMessager';
 import cartEvent from '~/utils/cartEvent';
+import ReviewList from '~/components/ReviewList/ReviewList';
 
 const cx = classNames.bind(styles);
 
@@ -89,7 +90,7 @@ function ProductDetail() {
     useEffect(() => {
         if (product?._id) {
             axios
-                .get(`http://localhost:5000/api/products/${product._id}/reviews`)
+                .get(`http://localhost:5000/api/reviews/product/${product._id}`)
                 .then((res) => {
                     setReviews(res.data);
 
@@ -168,52 +169,49 @@ function ProductDetail() {
     // Hàm xử lý gửi bình luận
     const handleSubmitReview = async () => {
         const token = localStorage.getItem('token');
-        console.log('Token:', token); // check log
 
         if (!token) {
             toast('Vui lòng đăng nhập để gửi đánh giá', 'warning');
             return;
         }
 
-        // ✅ Kiểm tra người dùng có nhập nội dung và chọn sao không
         if (selectedStar === 0 || reviewText.trim() === '') {
             toast('Vui lòng điền đánh giá', 'warning');
             return;
         }
 
         try {
-            const response = await axios.post(
-                `http://localhost:5000/api/products/${product._id}/reviews`,
+            await axios.post(
+                `http://localhost:5000/api/reviews/product/${product._id}`,
                 {
+                    productId: product._id,
                     rating: selectedStar,
                     comment: reviewText,
                 },
                 {
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`, // <-- rất quan trọng
+                        Authorization: `Bearer ${token}`,
                     },
                 },
             );
 
             toast('Gửi đánh giá thành công!', 'success');
 
-            // Cập nhật lại danh sách đánh giá
+            // Reset form
             setReviewText('');
             setSelectedStar(0);
             setHoverStar(0);
 
-            // Gọi lại API để load đánh giá mới
-            const res = await axios.get(`http://localhost:5000/api/products/${product._id}/reviews`);
+            // Reload lại đánh giá
+            const res = await axios.get(`http://localhost:5000/api/reviews/product/${product._id}`);
             setReviews(res.data);
 
-            // 👉 Cập nhật lại trung bình sao
             const totalStars = res.data.reduce((sum, r) => sum + r.rating, 0);
             const avg = res.data.length > 0 ? totalStars / res.data.length : 0;
             setAverageRating(avg);
         } catch (error) {
             console.error('Chi tiết lỗi:', error?.response?.data || error.message);
-            console.error('Lỗi khi gửi đánh giá:', error);
             toast('Không thể gửi đánh giá', 'error');
         }
     };
@@ -284,25 +282,7 @@ function ProductDetail() {
                         <h3>Đánh giá của khách hàng</h3>
 
                         {/* --- ✅ Hiển thị danh sách đánh giá --- */}
-                        {reviews.length === 0 ? (
-                            <p>Chưa có đánh giá nào</p>
-                        ) : (
-                            reviews.map((review, index) => (
-                                <div key={index} className={cx('review-item')}>
-                                    <p>
-                                        <strong>{review.name}</strong> ({formatDate(review.createdAt)})
-                                    </p>
-                                    <p>
-                                        {Array.from({ length: review.rating }).map((_, i) => (
-                                            <span key={i} style={{ color: '#ffcc00', fontSize: '18px' }}>
-                                                ★
-                                            </span>
-                                        ))}
-                                    </p>
-                                    <p>{review.comment}</p>
-                                </div>
-                            ))
-                        )}
+                        <ReviewList reviews={reviews} />
 
                         <br />
 

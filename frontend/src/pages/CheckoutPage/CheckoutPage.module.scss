@@ -140,7 +140,7 @@
 
     .checkboxContainer {
         display: flex;
-        align-items: baseline; 
+        align-items: baseline;
         gap: 8px;
         font-size: 14px;
         margin-top: 25px;
@@ -293,5 +293,25 @@
                 text-decoration: underline;
             }
         }
+    }
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+
+    label {
+        font-weight: 400;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    input[type='radio'] {
+        accent-color: #e4002b;
+        transform: scale(1.1);
     }
 }

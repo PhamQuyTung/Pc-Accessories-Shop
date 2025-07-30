@@ -43,16 +43,18 @@ function PaymentPage() {
                     phone: state.phone,
                     address: state.address,
                 },
+                subtotal: state.subtotal,
+                tax: state.tax,
+                shippingFee: state.deliveryFee ? 40000 : 0,
+                serviceFee: state.installFee ? 200000 : 0,
+                discount: discountAmount,
+                total: finalTotal,
+                paymentMethod,
             });
 
-            cartEvent.emit('update-cart-count'); // 🔔 yêu cầu Header refetch
-
-            console.log('Đơn hàng mới:', res.data);
+            cartEvent.emit('update-cart-count');
             showToast('Thanh toán thành công!', 'success', 1200);
-
-            setTimeout(() => {
-                navigate('/orders-success');
-            }, 1200);
+            setTimeout(() => navigate('/orders-success'), 1200);
         } catch (err) {
             console.error('Lỗi khi tạo đơn hàng:', err);
             showToast('Không thể tạo đơn hàng', 'error');

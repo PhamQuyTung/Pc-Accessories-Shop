@@ -93,6 +93,7 @@ function CheckoutPage() {
 
     const handleOrder = () => {
         if (!selectedAddressId) return;
+
         const address = savedAddresses.find((addr) => addr._id === selectedAddressId);
         if (!address) return;
 
@@ -307,6 +308,61 @@ function CheckoutPage() {
                                     </form>
                                 )}
                             </div>
+
+                            {/* UI chọn phương thức giao hàng và dịch vụ lắp đặt tại đây */}
+                            {/** BẮT ĐẦU THÊM */}
+                            <div className={cx('form-field')}>
+                                <label>Phương thức giao hàng:</label>
+                                <div className={cx('radio-group')}>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="deliveryMethod"
+                                            value="standard"
+                                            checked={form.deliveryMethod === 'standard'}
+                                            onChange={handleChange}
+                                        />
+                                        Giao tiêu chuẩn (FREE)
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="deliveryMethod"
+                                            value="express"
+                                            checked={form.deliveryMethod === 'express'}
+                                            onChange={handleChange}
+                                        />
+                                        Giao nhanh (40.000₫)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className={cx('form-field')}>
+                                <label>Dịch vụ lắp đặt:</label>
+                                <div className={cx('radio-group')}>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="installService"
+                                            value="no"
+                                            checked={form.installService === 'no'}
+                                            onChange={handleChange}
+                                        />
+                                        Tự lắp đặt (FREE)
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="installService"
+                                            value="yes"
+                                            checked={form.installService === 'yes'}
+                                            onChange={handleChange}
+                                        />
+                                        Nhờ TECHVN lắp đặt (200.000₫)
+                                    </label>
+                                </div>
+                            </div>
+                            {/** KẾT THÚC THÊM */}
                         </div>
                     </div>
 

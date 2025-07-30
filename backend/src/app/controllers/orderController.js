@@ -3,45 +3,126 @@ const Cart = require("../models/cart");
 
 exports.checkoutOrder = async (req, res) => {
   const userId = req.userId;
+  console.log("📦 Body nhận được:", req.body);
 
   try {
-    const cartItems = await Cart.find({ user_id: userId }).populate(
-      "product_id"
+    // 1. Populate cart => cartItems
+    const cartItems = await Cart.find({ user_id: userId }).populate({
+      path: "product_id",
+      select: "name deleted status price discountPrice",
+    });
+
+    console.log(
+      "🔍 Cart items sau populate:",
+      cartItems.map((item) => ({
+        product_id: item.product_id?._id,
+        name: item.product_id?.name,
+        deleted: item.product_id?.deleted,
+        status: item.product_id?.status,
+        price: item.product_id?.price,
+        discountPrice: item.product_id?.discountPrice,
+      }))
     );
 
     if (!cartItems.length) {
       return res.status(400).json({ message: "Giỏ hàng đang trống!" });
     }
 
-    const orderItems = cartItems.map((item) => ({
-      product_id: item.product_id._id,
-      quantity: item.quantity,
-      price:
-        item.product_id.discountPrice > 0
-          ? item.product_id.discountPrice
-          : item.product_id.price,
-    }));
+    // 2. Lọc các sản phẩm hợp lệ: chưa xóa & đang hiển thị
+    const validCartItems = cartItems.filter((item) => {
+      const p = item.product_id;
+      return (
+        p &&
+        !p.deleted &&
+        Array.isArray(p.status) &&
+        !p.status.includes("đã thu hồi")
+      );
+    });
 
+    if (!validCartItems.length) {
+      return res.status(400).json({
+        message:
+          "Tất cả sản phẩm trong giỏ hàng đã bị thu hồi hoặc không hợp lệ!",
+      });
+    }
+
+    // 3. Chuẩn bị danh sách sản phẩm đặt hàng
+    const orderItems = validCartItems
+      .filter((item) => {
+        const p = item.product_id;
+        return p && (p.price || p.discountPrice);
+      })
+      .map((item) => {
+        const p = item.product_id;
+        return {
+          product_id: p._id,
+          quantity: item.quantity,
+          price: p.discountPrice > 0 ? p.discountPrice : p.price,
+        };
+      });
+
+    if (!orderItems.length) {
+      return res
+        .status(400)
+        .json({ message: "Không có sản phẩm hợp lệ để tạo đơn hàng!" });
+    }
+
+    console.log("✅ orderItems chuẩn bị tạo:", orderItems);
+
+    // 4. Tính toán các khoản chi phí
     const totalAmount = orderItems.reduce(
-      (acc, item) => acc + item.quantity * item.price,
+      (sum, item) => sum + item.quantity * item.price,
       0
     );
+    const tax = Math.round(totalAmount * 0.15); // 15% VAT
+    const discount = Math.round(totalAmount * 0.1); // 10% giảm giá
+    const finalAmount = totalAmount + tax - discount;
 
+    // Kiểm tra các trường bắt buộc
+    if (!req.body.paymentMethod) {
+      return res
+        .status(400)
+        .json({ message: "Vui lòng chọn phương thức thanh toán!" });
+    }
+
+    // 5. Tạo đơn hàng mới (sử dụng dữ liệu từ frontend gửi lên)
     const newOrder = new Order({
       user_id: userId,
       items: orderItems,
-      totalAmount,
-      shippingInfo: req.body.shippingInfo, // 👈 Nhận từ frontend
+      subtotal: req.body.subtotal,
+      tax: req.body.tax,
+      discount: req.body.discount,
+      shippingFee: req.body.shippingFee,
+      serviceFee: req.body.serviceFee,
+      totalAmount:
+        req.body.total ||
+        totalAmount +
+          req.body.tax +
+          req.body.shippingFee +
+          req.body.serviceFee -
+          req.body.discount,
+      finalAmount:
+        req.body.total ||
+        totalAmount +
+          req.body.tax +
+          req.body.shippingFee +
+          req.body.serviceFee -
+          req.body.discount,
+      shippingInfo: req.body.shippingInfo,
+      paymentMethod: req.body.paymentMethod,
     });
 
     await newOrder.save();
 
-    // Xoá giỏ hàng sau khi đặt
+    // 6. Xóa giỏ hàng sau khi đặt hàng thành công
     await Cart.deleteMany({ user_id: userId });
 
-    res.status(200).json({ message: "Đặt hàng thành công!", order: newOrder });
+    res.status(200).json({
+      message: "Đặt hàng thành công!",
+      order: newOrder,
+    });
   } catch (err) {
-    console.error("🔥 Lỗi checkout:", err);
+    console.error("🔥 Lỗi khi đặt hàng:", err);
     res.status(500).json({ message: "Lỗi khi đặt hàng" });
   }
 };
