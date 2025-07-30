@@ -65,9 +65,9 @@ class ProductController {
           $addFields: {
             sortPrice: {
               $cond: {
-                if: { $gt: ["$salePrice", 0] },
-                then: "$salePrice",
-                else: "$price",
+                if: { $gt: [{ $toDouble: "$discountPrice" }, 0] },
+                then: { $toDouble: "$discountPrice" },
+                else: { $toDouble: "$price" },
               },
             },
           },
@@ -103,7 +103,7 @@ class ProductController {
         totalPages: Math.ceil(totalCount / limitNum),
       });
     } catch (err) {
-      console.log("Lỗi getAll:", err);   // <--- nên log ra
+      console.log("Lỗi getAll:", err); // <--- nên log ra
       res.status(500).json({ message: "Lỗi server", error: err });
     }
   }

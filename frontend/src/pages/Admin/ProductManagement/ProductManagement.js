@@ -21,7 +21,7 @@ const ProductManagement = () => {
 
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const limit = 5; // Số sản phẩm mỗi trang
+    const limit = 20; // Số sản phẩm mỗi trang
 
     const toast = useToast();
 
