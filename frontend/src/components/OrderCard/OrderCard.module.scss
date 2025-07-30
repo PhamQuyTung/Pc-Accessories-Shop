@@ -217,7 +217,9 @@
         cursor: pointer;
         display: flex;
         align-items: center;
-        transition: background 0.2s, color 0.2s;
+        transition:
+            background 0.2s,
+            color 0.2s;
         &:hover {
             background: #bbdefb;
             color: #0d47a1;
@@ -234,7 +236,9 @@
         cursor: pointer;
         display: flex;
         align-items: center;
-        transition: background 0.2s, color 0.2s;
+        transition:
+            background 0.2s,
+            color 0.2s;
         &:hover {
             background: #ffcdd2;
             color: #b71c1c;
@@ -255,4 +259,24 @@
         color: #999;
         font-style: italic;
     }
+}
+
+.order-item.withdrawn {
+    background-color: #fff7f7;
+    border: 1px solid #f5c6cb;
+}
+
+.withdrawn-label {
+    color: #d9534f;
+    font-weight: bold;
+}
+
+.refund-note {
+    font-style: italic;
+    color: #999;
+}
+
+.withdrawn-image {
+    filter: grayscale(100%);
+    opacity: 0.6;
 }

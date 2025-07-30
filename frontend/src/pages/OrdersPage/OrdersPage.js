@@ -22,13 +22,23 @@ function OrdersPage() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('new');
     const [search, setSearch] = useState('');
-    
+
     const showToast = useToast();
 
     const fetchOrders = async () => {
         try {
             const res = await axiosClient.get('/orders');
-            setOrders(res.data);
+            const data = res.data;
+
+            // Nếu data không phải mảng, fallback về []
+            if (Array.isArray(data)) {
+                setOrders(data);
+            } else if (Array.isArray(data.orders)) {
+                setOrders(data.orders);
+            } else {
+                setOrders([]);
+                console.error('Dữ liệu trả về không hợp lệ:', data);
+            }
         } catch (err) {
             console.error('Lỗi lấy đơn hàng:', err);
             showToast('Không thể lấy danh sách đơn hàng', 'error');
@@ -42,15 +52,39 @@ function OrdersPage() {
         fetchOrders();
     }, []);
 
+    useEffect(() => {
+        const checkForWithdrawnProducts = async () => {
+            if (!orders.length) return;
+
+            for (const order of orders) {
+                for (const item of order.items) {
+                    const product = item.product_id;
+
+                    // Nếu sản phẩm bị thu hồi (đã xóa, ẩn hoặc null)
+                    if (!product || product.deleted || product.status === false) {
+                        await Swal.fire({
+                            icon: 'warning',
+                            title: `Sản phẩm "${product?.name || 'không xác định'}" đã bị thu hồi`,
+                            text: 'Do sự cố không mong muốn, sản phẩm này sẽ bị thu hồi và hoàn lại tiền cho quý khách.',
+                            confirmButtonText: 'Tôi đã hiểu',
+                        });
+
+                        // TODO: Gọi API cập nhật đơn hàng hoặc thêm logic tiếp theo tùy trạng thái thanh toán
+                    }
+                }
+            }
+        };
+
+        checkForWithdrawnProducts();
+    }, [orders]);
+
     // Lọc đơn theo tab và search
     const filteredOrders = useMemo(() => {
         let filtered = orders;
 
         if (search.trim()) {
             // Nếu có search, chỉ lọc theo mã đơn hàng, KHÔNG lọc theo tab
-            filtered = filtered.filter((o) =>
-                String(o._id).toLowerCase().includes(search.trim().toLowerCase())
-            );
+            filtered = filtered.filter((o) => String(o._id).toLowerCase().includes(search.trim().toLowerCase()));
         } else if (activeTab !== 'all') {
             // Nếu không search, lọc theo tab như bình thường
             filtered = filtered.filter((o) => o.status === activeTab);
@@ -70,10 +104,9 @@ function OrdersPage() {
                         <button
                             key={tab.key}
                             className={cx('tab', {
-                                active:
-                                    search.trim()
-                                        ? tab.key === 'all' // Khi search, chỉ tab "Tất cả" active
-                                        : activeTab === tab.key // Khi không search, tab nào chọn thì active
+                                active: search.trim()
+                                    ? tab.key === 'all' // Khi search, chỉ tab "Tất cả" active
+                                    : activeTab === tab.key, // Khi không search, tab nào chọn thì active
                             })}
                             onClick={() => setActiveTab(tab.key)}
                             disabled={!!search.trim()} // Có thể disable chuyển tab khi đang search (tùy UX)
@@ -87,16 +120,14 @@ function OrdersPage() {
                     type="text"
                     placeholder="Tìm theo mã đơn hàng..."
                     value={search}
-                    onChange={e => setSearch(e.target.value)}
+                    onChange={(e) => setSearch(e.target.value)}
                 />
             </div>
             <div className={cx('orders-list')}>
                 {filteredOrders.length === 0 ? (
                     <div className={cx('no-orders')}>Không tìm thấy đơn hàng phù hợp.</div>
                 ) : (
-                    filteredOrders.map((order) => (
-                        <OrderCard key={order._id} order={order} onCancel={fetchOrders} />
-                    ))
+                    filteredOrders.map((order) => <OrderCard key={order._id} order={order} onCancel={fetchOrders} />)
                 )}
             </div>
         </div>

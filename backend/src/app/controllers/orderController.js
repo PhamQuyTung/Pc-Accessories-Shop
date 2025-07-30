@@ -48,12 +48,41 @@ exports.checkoutOrder = async (req, res) => {
 
 exports.getUserOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ user_id: req.userId }).populate(
-      "items.product_id"
-    );
-    res.status(200).json(orders);
-  } catch (err) {
-    res.status(500).json({ message: "Lỗi khi lấy danh sách đơn hàng" });
+    const userId = req.user.id;
+
+    const orders = await Order.find({ user_id: userId })
+      .populate("items.product_id") // ✅ Lấy chi tiết sản phẩm trong đơn
+      .sort({ createdAt: -1 })
+      .lean(); // Dùng lean để làm việc dễ hơn
+
+    for (const order of orders) {
+      for (const item of order.items) {
+        const product = item.product_id;
+
+        if (!product || product.deleted || product.status === false) {
+          item.recalled = true;
+          item.recallMessage = `Sản phẩm đã bị thu hồi khỏi hệ thống`;
+        } else {
+          item.recalled = false;
+        }
+      }
+
+      const allRecalled = order.items.every((item) => item.recalled);
+      if (allRecalled && order.status === "new") {
+        order.status = "cancelled";
+        order.cancelReason =
+          "Tất cả sản phẩm trong đơn đã bị thu hồi khỏi hệ thống";
+        await Order.findByIdAndUpdate(order._id, {
+          status: order.status,
+          cancelReason: order.cancelReason,
+        });
+      }
+    }
+
+    res.status(200).json({ success: true, orders });
+  } catch (error) {
+    console.error("Lỗi getUserOrders:", error);
+    res.status(500).json({ success: false, message: "Lỗi khi lấy đơn hàng" });
   }
 };
 

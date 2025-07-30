@@ -146,7 +146,7 @@ function OrderCard({ order, onCancel }) {
                                 onClick={handleCopy}
                                 aria-label="Copy mã đơn hàng"
                                 title={copied ? 'Đã copy!' : 'Copy'}
-                                onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleCopy(e)}
+                                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleCopy(e)}
                                 style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}
                             >
                                 <FontAwesomeIcon icon={copied ? faCheck : faCopy} />
@@ -181,22 +181,46 @@ function OrderCard({ order, onCancel }) {
                         <div className={cx('order-items')}>
                             {order.items.map((item, idx) => {
                                 const product = item.product_id;
+                                const isWithdrawn = !product || product.deleted || product.status === false;
                                 const imageUrl = getProductImage(product);
 
                                 return (
-                                    <div key={idx} className={cx('order-item')}>
-                                        <img
-                                            src={imageUrl}
-                                            alt={product?.name || 'Sản phẩm'}
-                                            onError={(e) => (e.currentTarget.src = '/images/no-image.png')}
-                                        />
-                                        <div className={cx('item-info')}>
-                                            <p className={cx('name')}>{product?.name}</p>
-                                            <p>Số lượng: {item.quantity}</p>
-                                            <p>
-                                                Giá: <strong>{item.price.toLocaleString()}₫</strong>
-                                            </p>
-                                        </div>
+                                    <div key={idx} className={cx('order-item', { withdrawn: isWithdrawn })}>
+                                        {isWithdrawn ? (
+                                            <>
+                                                <img
+                                                    src="/images/no-image.png"
+                                                    alt="Sản phẩm đã thu hồi"
+                                                    className={cx('withdrawn-image')}
+                                                />
+                                                <div className={cx('item-info')}>
+                                                    <p className={cx('withdrawn-label')}>⚠️ Sản phẩm đã bị thu hồi</p>
+                                                    <p className={cx('name')}>{product?.name || 'Không xác định'}</p>
+                                                    <p>Số lượng: {item.quantity}</p>
+                                                    <p>
+                                                        Giá: <strong>{item.price.toLocaleString()}₫</strong>
+                                                    </p>
+                                                    <p className={cx('refund-note')}>
+                                                        Hệ thống sẽ hoàn lại tiền cho sản phẩm này.
+                                                    </p>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <img
+                                                    src={imageUrl}
+                                                    alt={product?.name || 'Sản phẩm'}
+                                                    onError={(e) => (e.currentTarget.src = '/images/no-image.png')}
+                                                />
+                                                <div className={cx('item-info')}>
+                                                    <p className={cx('name')}>{product?.name}</p>
+                                                    <p>Số lượng: {item.quantity}</p>
+                                                    <p>
+                                                        Giá: <strong>{item.price.toLocaleString()}₫</strong>
+                                                    </p>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 );
                             })}
