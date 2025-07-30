@@ -10,6 +10,8 @@ import Pagination from '~/components/Pagination/Pagination';
 const cx = classNames.bind(styles);
 
 const ProductManagement = () => {
+    const [totalCount, setTotalCount] = useState(0);
+
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
 
@@ -21,7 +23,7 @@ const ProductManagement = () => {
 
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const limit = 20; // Số sản phẩm mỗi trang
+    const limit = 10; // Số sản phẩm mỗi trang
 
     const toast = useToast();
 
@@ -41,9 +43,14 @@ const ProductManagement = () => {
             const res = await axios.get(`http://localhost:5000/api/products?${query.toString()}`);
             console.log(query.toString());
 
+            setTotalCount(res.data.totalCount);
             setProducts(res.data.products);
             setTotalPages(res.data.totalPages);
             setCurrentPage(res.data.currentPage);
+            console.log('Sản phẩm:', res.data.products);
+            console.log('Tổng số sản phẩm:', res.data.totalCount);
+            console.log('Tổng số trang:', res.data.totalPages);
+            console.log('Trang hiện tại:', res.data.currentPage);
         } catch (err) {
             console.error('Lỗi khi tải sản phẩm:', err);
         }
@@ -67,6 +74,10 @@ const ProductManagement = () => {
     useEffect(() => {
         fetchCategories();
     }, []);
+
+    useEffect(() => {
+        console.log('Dữ liệu products:', products);
+    }, [products]);
 
     const handleSearchChange = (value) => {
         setSearch(value);
@@ -133,7 +144,7 @@ const ProductManagement = () => {
         <div className={cx('product-management')}>
             <div className={cx('header')}>
                 <h2>
-                    Quản lý sản phẩm <span className={cx('product-count')}>({products.length})</span>
+                    Quản lý sản phẩm <span className={cx('product-count')}>({totalCount})</span>
                 </h2>
                 <Link to="/admin/products/create" className={cx('btn-add')}>
                     + Thêm sản phẩm mới
@@ -209,7 +220,7 @@ const ProductManagement = () => {
                         onChange={(e) => {
                             setSort(e.target.value);
                             setCurrentPage(1); // ✅ Reset về trang đầu mỗi khi sắp xếp
-                        }}  
+                        }}
                         className={cx('select')}
                     >
                         <option value="">Mặc định</option>
@@ -244,8 +255,7 @@ const ProductManagement = () => {
                 <tbody>
                     {products.map((product, index) => (
                         <tr key={product._id}>
-                            <td>{index + 1}</td>
-
+                            <td>{(currentPage - 1) * limit + index + 1}</td>
                             <td>
                                 <img
                                     src={product.images?.[0] || '/placeholder.jpg'}
@@ -253,17 +263,28 @@ const ProductManagement = () => {
                                     className={cx('product-thumb')}
                                 />
                             </td>
-
                             <td>{product.name}</td>
-
                             <td>{product.price != null ? formatCurrency(product.price) : 'N/A'}</td>
                             <td>{product.discountPrice != null ? formatCurrency(product.discountPrice) : 'N/A'}</td>
-                            <td>{formatCurrency(product.discountPrice > 0 ? product.discountPrice : product.price)}</td>
-
-                            <td>{product.category?.name || 'Không có danh mục'}</td>
-
-                            <td>{product.status?.includes('đang nhập hàng') ? 'Đang nhập hàng' : product.quantity}</td>
-
+                            <td>
+                                {formatCurrency(
+                                    typeof product.discountPrice === 'number' && product.discountPrice > 0
+                                        ? product.discountPrice
+                                        : product.price,
+                                )}
+                            </td>
+                            <td>
+                                {typeof product.category === 'object' && product.category?.name
+                                    ? product.category.name
+                                    : 'Không có danh mục'}
+                            </td>
+                            <td>
+                                {typeof product.status === 'string' && product.status.includes('đang nhập hàng')
+                                    ? 'Đang nhập hàng'
+                                    : typeof product.quantity === 'number'
+                                      ? product.quantity
+                                      : 'N/A'}
+                            </td>
                             <td>
                                 <button
                                     className={cx('toggle-btn', product.visible ? 'active' : 'inactive')}
@@ -272,9 +293,7 @@ const ProductManagement = () => {
                                     {product.visible ? '👁️ Hiển thị' : '🙈 Đang ẩn'}
                                 </button>
                             </td>
-
                             <td>{formatDate(product.createdAt)}</td>
-
                             <td>
                                 <div className={cx('action-buttons')}>
                                     <Link to={`/products/edit/${product._id}`} className={cx('btn-edit-link')}>
@@ -289,6 +308,7 @@ const ProductManagement = () => {
                     ))}
                 </tbody>
             </table>
+
             {totalPages > 1 && (
                 <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
             )}
