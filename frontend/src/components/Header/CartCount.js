@@ -15,13 +15,12 @@ export default function CartCount() {
     };
 
     useEffect(() => {
-        fetchCartCount(); // Lấy lần đầu
+        fetchCartCount(); // Gọi lần đầu
 
-        // Lắng nghe sự kiện cartChanged để cập nhật lại cartCount
-        cartEvent.on('cartChanged', fetchCartCount);
+        // 👇 Đổi sự kiện đúng tên
+        cartEvent.on('update-cart-count', fetchCartCount);
 
-        // Cleanup khi component unmount
-        return () => cartEvent.off('cartChanged', fetchCartCount);
+        return () => cartEvent.off('update-cart-count', fetchCartCount);
     }, []);
 
     return <span>{cartCount}</span>;

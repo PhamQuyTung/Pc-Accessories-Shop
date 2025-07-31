@@ -27,7 +27,7 @@ function Header() {
         const fetchCartCount = async () => {
             try {
                 const res = await axiosClient.get('/carts/');
-                const items = Array.isArray(res.data) ? res.data : [];
+                const items = res.data.items || []; // ✅ Lấy đúng field
                 setCartCount(items.length);
             } catch (err) {
                 console.error('Lỗi lấy cart count:', err);

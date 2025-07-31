@@ -33,19 +33,66 @@ exports.addToCart = async (req, res) => {
 exports.getCart = async (req, res) => {
   try {
     const userId = req.userId;
-    console.log("👉 userId từ token:", userId); // debug log
 
-    // Lấy toàn bộ sản phẩm giỏ hàng của người dùng đó
-    const items = await Cart.find({ user_id: userId }).populate("product_id");
+    // 1. Lấy giỏ hàng + populate thông tin sản phẩm
+    const items = await Cart.find({ user_id: userId }).populate({
+      path: "product_id",
+      select: "name price discountPrice images slug deleted visible",
+    });
 
-    if (!items) {
-      return res.status(200).json({ items: [] }); // Không có giỏ hàng vẫn trả về mảng rỗng
+    // 2. Trường hợp giỏ hàng rỗng
+    if (!items || items.length === 0) {
+      return res.status(200).json({ items: [], removed: [] });
     }
 
-    res.status(200).json(items);
+    // 3. Tách sản phẩm hợp lệ và sản phẩm bị thu hồi
+    const validItems = [];
+    const removed = [];
+
+    for (const item of items) {
+      const product = item.product_id;
+      console.log("product trong cart là:", item.product_id);
+      console.log("🔍 Kiểm tra sản phẩm:", product?.name);
+      console.log("   ➤ Deleted:", product?.deleted);
+      console.log("   ➤ Visible:", product?.visible);
+
+      if (!product || product.deleted || product.visible === false) {
+        console.log("❌ Sản phẩm không hợp lệ, xóa khỏi giỏ");
+        removed.push({
+          _id: item._id,
+          name: product?.name || "Không xác định",
+        });
+        console.log("🧾 product:", product);
+        console.log(
+          "🧾 deleted:",
+          product?.deleted,
+          "visible:",
+          product?.visible
+        );
+
+        // Xóa item không hợp lệ khỏi DB
+        await Cart.deleteOne({ _id: item._id });
+      } else {
+        validItems.push(item);
+      }
+    }
+
+    // 4. Trả kết quả về client
+    return res.status(200).json({ items: validItems, removed });
   } catch (error) {
-    console.error("🔥 Lỗi khi lấy giỏ hàng:", error); // ghi ra lỗi chi tiết
-    res.status(500).json({ message: "Lỗi server khi lấy giỏ hàng" });
+    console.error("🔥 Lỗi khi lấy giỏ hàng:", error);
+    return res.status(500).json({ message: "Lỗi server khi lấy giỏ hàng" });
+  }
+};
+
+exports.getCartCount = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const count = await Cart.countDocuments({ user_id: userId });
+    res.status(200).json({ count });
+  } catch (err) {
+    console.error("🔥 Lỗi lấy cart count:", err);
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
 

@@ -4,6 +4,7 @@ import axiosClient from '~/utils/axiosClient';
 import styles from './CartPage.module.scss';
 import classNames from 'classnames/bind';
 import { FaTrashAlt } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 import { useToast } from '~/components/ToastMessager';
 import EmptyCart from '~/assets/images/emptycart/emptyCart.49efd90ea75b10bede28.png';
 import cartEvent from '~/utils/cartEvent';
@@ -14,28 +15,56 @@ const cx = classNames.bind(styles);
 function CartPage() {
     const [cartItems, setCartItems] = useState([]);
     const [quantities, setQuantities] = useState({});
+    const [total, setTotal] = useState(0);
+    const [removedItems, setRemovedItems] = useState([]);
+    const [removedHandled, setRemovedHandled] = useState(false); // ✅ chặn thông báo nhiều lần
 
     const toast = useToast();
 
     const fetchCart = async () => {
         try {
-            const res = await axiosClient.get('/carts/');
-            const items = Array.isArray(res.data) ? res.data : [];
-            setCartItems(items);
+            const res = await axiosClient.get('/carts');
+            const items = res.data.items || [];
+            const removed = res.data.removed || [];
 
-            const quantitiesMap = {};
-            items.forEach((item) => {
-                quantitiesMap[item.product_id._id] = item.quantity;
-            });
-            setQuantities(quantitiesMap);
-        } catch (error) {
-            console.error('Lỗi khi lấy giỏ hàng:', error);
+            console.log('✅ items:', items);
+            console.log('⚠️ removed:', removed);
+
+            setCartItems(items);
+            setRemovedItems(removed); // ✅ chuyển vào state để xử lý sau
+            setRemovedHandled(false); // 🟢 RESET để SweetAlert có thể hiển thị lại
+
+            const total = items.reduce((sum, item) => {
+                const price = item.product_id?.discountPrice ?? item.product_id?.price ?? 0;
+                return sum + price * item.quantity;
+            }, 0);
+            setTotal(total);
+
+            cartEvent.emit('update-cart-count');
+        } catch (err) {
+            console.error('❌ Lỗi fetchCart:', err);
         }
     };
 
     useEffect(() => {
         fetchCart();
     }, []);
+
+    useEffect(() => {
+        if (!removedHandled && removedItems.length > 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Một số sản phẩm đã bị thu hồi',
+                html: `
+                <p>Các sản phẩm sau không còn khả dụng và đã bị xóa khỏi giỏ hàng:</p>
+                <ul style="text-align: left;">
+                  ${removedItems.map((p) => `<li>${p.name}</li>`).join('')}
+                </ul>`,
+                confirmButtonText: 'Đã hiểu',
+            });
+            setRemovedHandled(true); // ✅ Đánh dấu đã xử lý
+        }
+    }, [removedItems, removedHandled]);
 
     const updateQuantity = async (productId, delta) => {
         const currentQty = quantities[productId] || 1;
@@ -74,26 +103,6 @@ function CartPage() {
         const quantity = quantities[product._id] || item.quantity;
         return acc + finalPrice * quantity;
     }, 0);
-
-    // const handleCheckout = async () => {
-    //     try {
-    //         const shippingInfo = {
-    //             name: 'Nguyễn Văn A', // Tuỳ bạn: Có thể làm form nhập
-    //             phone: '0123456789',
-    //             address: 'Số 123, Hà Nội',
-    //         };
-
-    //         const res = await axiosClient.post('/orders/checkout', { shippingInfo });
-    //         toast('🛒 Đặt hàng thành công!', 'success');
-
-    //         // Xoá giỏ hàng local
-    //         setCartItems([]);
-    //         cartEvent.emit('update-cart-count');
-    //     } catch (error) {
-    //         console.error('❌ Lỗi đặt hàng:', error);
-    //         toast('Đặt hàng thất bại!', 'error');
-    //     }
-    // };
 
     if (cartItems.length === 0) {
         return (
@@ -201,7 +210,7 @@ function CartPage() {
                                 Tiến hành đặt hàng
                             </Link>
                         </div>
-                        
+
                         <Link to="/">Mua thêm sản phẩm</Link>
                     </div>
                 </div>
