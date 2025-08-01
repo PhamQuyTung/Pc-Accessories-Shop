@@ -170,7 +170,7 @@ function CartPage() {
 
                                     <div className={cx('quantity')}>
                                         <button onClick={() => updateQuantity(productId, -1)}>-</button>
-                                        <span>{quantities[productId]}</span>
+                                        <span>{quantities[productId] ?? item.quantity}</span>
                                         <button onClick={() => updateQuantity(productId, 1)}>+</button>
                                     </div>
 
