@@ -51,7 +51,12 @@ function CheckoutPage() {
         const fetchCart = async () => {
             try {
                 const res = await axiosClient.get('/carts/');
-                const items = Array.isArray(res.data) ? res.data : [];
+                console.log('✅ Cấu trúc response object:', res);
+                console.log('✅ Lấy giỏ hàng thành công:', res.data);
+                console.log('Tổng số sản phẩm:', res.data.items.length);
+                console.log('Chi tiết sản phẩm đầu tiên:', res.data.items[0]);
+
+                const items = Array.isArray(res.data.items) ? res.data.items : [];
                 setCartItems(items);
 
                 const total = items.reduce((acc, item) => {

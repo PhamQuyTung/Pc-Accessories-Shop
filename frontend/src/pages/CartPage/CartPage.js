@@ -149,6 +149,14 @@ function CartPage() {
                             const finalPrice = product.discountPrice > 0 ? product.discountPrice : product.price;
                             const totalItemPrice = finalPrice * quantity;
 
+                            console.log('✅ item.product_id:', item.product_id);
+
+                            if (!item.product_id || typeof item.product_id !== 'object') return null;
+                            if (!item.product_id.name || !item.product_id.images || !item.product_id.slug) {
+                                console.warn('⚠️ product_id thiếu dữ liệu:', item.product_id);
+                                return null;
+                            }
+
                             return (
                                 <div className={cx('row')} key={item._id}>
                                     <div className={cx('product')}>
