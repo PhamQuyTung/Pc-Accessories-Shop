@@ -38,7 +38,7 @@ export default function ProfileViewed() {
                     <div key={product._id} className={cx('card')}>
                         <img src={product.images?.[0]} alt={product.name} className={cx('image')} />
                         <Link to={`/products/${product.slug}`}>{product.name}</Link>
-                        <p className={cx('price')}>{product.price.toLocaleString()}₫</p>
+                        <p className={cx('price')}>{(product.discountPrice ?? product.price).toLocaleString()}₫</p>
                     </div>
                 ))}
             </div>
