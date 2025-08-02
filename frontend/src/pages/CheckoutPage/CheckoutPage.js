@@ -115,7 +115,16 @@ function CheckoutPage() {
             total,
         };
 
-        navigate('/payment', { state: shippingInfo });
+        const payload = {
+            ...shippingInfo,
+            products: cartItems,
+        };
+
+        sessionStorage.setItem('checkoutData', JSON.stringify(payload));
+
+        navigate('/payment', {
+            state: payload,
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -140,7 +149,16 @@ function CheckoutPage() {
             total,
         };
 
-        navigate('/payment', { state: shippingInfo });
+        const payload = {
+            ...shippingInfo,
+            products: cartItems,
+        };
+
+        sessionStorage.setItem('checkoutData', JSON.stringify(payload));
+
+        navigate('/payment', {
+            state: payload,
+        });
     };
 
     return (

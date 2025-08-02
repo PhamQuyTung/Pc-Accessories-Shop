@@ -3,7 +3,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import styles from './PaymentPage.module.scss';
 import classNames from 'classnames/bind';
 import CheckoutStep from '~/components/CheckoutStep/CheckoutStep';
-import { useToast } from '~/components/ToastMessager/ToastMessager'; // <-- NEW
+import { useToast } from '~/components/ToastMessager/ToastMessager';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleLeft } from '@fortawesome/free-solid-svg-icons';
 import axiosClient from '~/utils/axiosClient';
@@ -12,9 +12,15 @@ import cartEvent from '~/utils/cartEvent';
 const cx = classNames.bind(styles);
 
 function PaymentPage() {
-    const { state } = useLocation();
+    const location = useLocation();
+    const state = location.state || JSON.parse(sessionStorage.getItem('checkoutData'));
     const navigate = useNavigate();
     const showToast = useToast();
+
+    // Save state to sessionStorage if it exists
+    if (location.state) {
+        sessionStorage.setItem('checkoutData', JSON.stringify(location.state));
+    }
 
     const [paymentMethod, setPaymentMethod] = useState('cod');
     const [discountCode, setDiscountCode] = useState('');
@@ -37,7 +43,7 @@ function PaymentPage() {
 
     const handleConfirmPayment = async () => {
         try {
-            const res = await axiosClient.post('/orders/checkout', {
+            await axiosClient.post('/orders/checkout', {
                 shippingInfo: {
                     name: state.fullName,
                     phone: state.phone,
@@ -61,7 +67,13 @@ function PaymentPage() {
         }
     };
 
-    if (!state) return <div className={cx('textCenter')}>Không có dữ liệu đơn hàng</div>;
+    if (!state) {
+        return (
+            <div className={cx('textCenter')}>
+                Không tìm thấy đơn hàng, vui lòng quay lại <Link to="/cart">giỏ hàng</Link>.
+            </div>
+        );
+    }
 
     return (
         <div className={cx('payment')}>
@@ -77,20 +89,31 @@ function PaymentPage() {
 
                 <div className={cx('wrapper-section')}>
                     <div className={cx('section')}>
-                        <h3 className={cx('heading')}>Thông tin đặt hàng</h3>
-                        <ul className={cx('list')}>
-                            <li>
-                                <span className={cx('label')}>Họ tên:</span> {state.fullName}
-                            </li>
-                            <li>
-                                <span className={cx('label')}>Số điện thoại:</span> {state.phone}
-                            </li>
-                            <li>
-                                <span className={cx('label')}>Email:</span> {state.email}
-                            </li>
-                            <li>
-                                <span className={cx('label')}>Địa chỉ:</span> {state.address}
-                            </li>
+                        <h3 className={cx('heading')}>Thông tin sản phẩm</h3>
+                        <ul className={cx('productList')}>
+                            {state.products?.map((item) => {
+                                const product = item.product_id;
+                                const price = product.discountPrice > 0 ? product.discountPrice : product.price;
+                                const total = price * item.quantity;
+
+                                return (
+                                    <li key={item._id} className={cx('productItem')}>
+                                        <img
+                                            src={Array.isArray(product.images) ? product.images[0] : product.images}
+                                            alt={product.name}
+                                            className={cx('productImage')}
+                                        />
+                                        <div className={cx('productInfo')}>
+                                            <p className={cx('productName')}>{product.name}</p>
+                                            <p className={cx('productDetail')}>Số lượng: {item.quantity}</p>
+                                            <p className={cx('productDetail')}>
+                                                Giá: {price.toLocaleString()}₫ × {item.quantity}
+                                            </p>
+                                            <p className={cx('productTotal')}>Thành tiền: {total.toLocaleString()}₫</p>
+                                        </div>
+                                    </li>
+                                );
+                            })}
                         </ul>
                     </div>
 
