@@ -1,27 +1,35 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import axios from 'axios';
-import styles from './Breadcrumb.module.scss';
+import { Link, useParams, useLocation } from 'react-router-dom';
 import classNames from 'classnames/bind';
+import axiosClient from '~/utils/axiosClient';
+import styles from './Breadcrumb.module.scss';
 
 const cx = classNames.bind(styles);
 
-const Breadcrumb = () => {
+const Breadcrumb = ({ categorySlug }) => {
     const { slug } = useParams();
+    const location = useLocation();
     const [breadcrumbData, setBreadcrumbData] = useState([]);
 
     useEffect(() => {
         const fetchBreadcrumb = async () => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/products/breadcrumb/${slug}`);
-                setBreadcrumbData(res.data);
+                if (location.pathname.includes('/collections')) {
+                    // Trang danh mục
+                    const res = await axiosClient.get(`/products/breadcrumb/category/${categorySlug || slug}`);
+                    setBreadcrumbData(res.data);
+                } else if (location.pathname.includes('/products')) {
+                    // Trang chi tiết sản phẩm
+                    const res = await axiosClient.get(`/products/breadcrumb/${slug}`);
+                    setBreadcrumbData(res.data);
+                }
             } catch (err) {
                 console.error('Lỗi khi lấy breadcrumb:', err);
             }
         };
 
         fetchBreadcrumb();
-    }, [slug]);
+    }, [slug, categorySlug, location.pathname]);
 
     return (
         <nav className={cx('breadcrumb')}>

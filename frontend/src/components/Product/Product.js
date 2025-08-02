@@ -168,7 +168,7 @@ function Product({ category }) {
                                 {/* Rating Star */}
                                 <div className={cx('rating')}>
                                     <BasicRating value={product.averageRating || 0} />
-                                    {console.log('⭐ Rating:', product.averageRating)};
+                                    {console.log('⭐ Rating:', product.averageRating)}
                                     <span className={cx('rating-count')}>({product.reviewCount || 0} đánh giá)</span>
                                 </div>
                             </div>

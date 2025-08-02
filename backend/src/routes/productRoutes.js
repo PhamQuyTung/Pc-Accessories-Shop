@@ -1,55 +1,46 @@
 const express = require("express");
 const router = express.Router();
 const ProductController = require("../app/controllers/productController");
-const authMiddleware = require("../app/middlewares/authMiddleware"); // 👈 Thêm dòng này
-console.log(
-  "🛠️ ProductController.createProduct:",
-  ProductController.createProduct
-);
+const authMiddleware = require("../app/middlewares/authMiddleware");
 
-// [GET] /api/products => Lấy danh sách
-router.get("/", ProductController.getAll);
-// [GET] /api/products/create => Trang create (render handlebars)
-router.get("/create", ProductController.createProduct);
-// [GET] /api/breadcrumb/:slug — phải đặt trước /:slug
+// 📌 Debug log (có thể bỏ khi production)
+console.log("🛠️ ProductController.createProduct:", ProductController.createProduct);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🔖 Breadcrumb
 router.get("/breadcrumb/:slug", ProductController.getBreadcrumb);
-// [GET] /api/products/related?category=abc&exclude=123
-router.get("/related", ProductController.getRelatedProducts);
-// [POST] /api/products => Thêm sản phẩm mới
-router.post("/", ProductController.createProduct);
+router.get("/breadcrumb/category/:slug", ProductController.getCategoryBreadcrumb);
 
-// [GET] /api/products/:id => Lấy chi tiết sản phẩm theo id (JSON)
-router.get("/id/:id", ProductController.getById);
-// [PUT] /api/products/:id => Cập nhật sản phẩm
-router.put("/:id", ProductController.updateProduct);
+// ─────────────────────────────────────────────────────────────────────────────
+// 📦 Product Listing, Search, Filtering
+router.get("/", ProductController.getAll);                           // Danh sách sản phẩm
+router.get("/search", ProductController.searchProducts);             // Tìm kiếm
+router.get("/related", ProductController.getRelatedProducts);        // Sản phẩm liên quan
+router.get("/category/:slug", ProductController.getByCategorySlug);  // Theo danh mục
 
-// [GET] /api/products/:id/reviews => Lấy danh sách đánh giá
+// ─────────────────────────────────────────────────────────────────────────────
+// 📋 Product Detail
+router.get("/id/:id", ProductController.getById);        // Lấy theo ID
+router.get("/:slug", ProductController.getBySlug);       // Lấy theo slug (đặt cuối cùng!)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ➕ Create, 🖊️ Update, 🗑️ Delete
+router.post("/", ProductController.createProduct);                // Tạo sản phẩm
+router.put("/:id", ProductController.updateProduct);              // Cập nhật
+router.delete("/soft/:id", ProductController.softDeleteProduct);  // Xóa tạm
+router.delete("/force/:id", ProductController.forceDeleteProduct);// Xóa vĩnh viễn
+router.patch("/restore/:id", ProductController.restoreProduct);   // Khôi phục
+router.patch("/toggle-visible/:id", ProductController.toggleVisible); // Toggle hiển thị
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ✍️ Reviews
 router.get("/:id/reviews", ProductController.getReviews);
-// [POST] /api/products/:id/reviews => Thêm đánh giá
 router.post("/:id/reviews", authMiddleware, ProductController.addReview);
 
-// [GET] /:id/edit => Trang edit 
-router.get("/edit/:id", ProductController.editProduct);
-
-// [DELETE] /api/products/:id => Xóa sản phẩm
-router.delete("/soft/:id", ProductController.softDeleteProduct); // Xóa tạm thời
-
-// [GET] /api/products/trash => Lấy danh sách sản phẩm đã xóa tạm thời
-router.get("/trash", ProductController.getTrash); // Lấy danh sách thùng rác
-
-// [GET] /api/products/trash/:id => Lấy chi tiết sản phẩm đã xóa tạm thời
-router.delete("/force/:id", ProductController.forceDeleteProduct); // Xóa vĩnh viễn
-
-// [PATCH] /api/products/restore/:id => Khôi phục sản phẩm đã xóa tạm thời
-router.patch("/restore/:id", ProductController.restoreProduct);
-
-// [GET] /api/products/search => Tìm kiếm sản phẩm
-router.get("/search", ProductController.searchProducts);
-
-// [PATCH] /api/products/toggle-visible/:id => Chuyển đổi trạng thái hiển thị
-router.patch("/toggle-visible/:id", ProductController.toggleVisible);
-
-// [GET] /api/products/:slug => Chi tiết theo slug
-router.get("/:slug", ProductController.getBySlug);
+// ─────────────────────────────────────────────────────────────────────────────
+// 🛠️ Handlebars Pages (admin CMS views)
+router.get("/create", ProductController.createProduct); // Trang tạo
+router.get("/edit/:id", ProductController.editProduct); // Trang sửa
+router.get("/trash", ProductController.getTrash);       // Danh sách sản phẩm đã xóa
 
 module.exports = router;

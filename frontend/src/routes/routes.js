@@ -14,6 +14,7 @@ import OrdersSuccess from '~/pages/OrdersSuccess/OrdersSuccess';
 import OrdersPage from '~/pages/OrdersPage/OrdersPage';
 import SearchResultPage from '~/components/SearchResultPage/SearchResultPage';
 import NotFoundPage from '~/pages/NotFoundPage/NotFoundPage';
+import CollectionsPage from '~/pages/CollectionsPage/CollectionsPage';
 import Promotion from '~/pages/Promotion';
 import Contact from '~/pages/Contact';
 import Blog from '~/pages/Blog';
@@ -53,6 +54,7 @@ const routes = [
             { path: '/orders-success', element: <OrdersSuccess /> },
             { path: '/orders', element: <OrdersPage /> },
             { path: '/search', element: <SearchResultPage /> },
+            { path: '/collections/:slug', element: <CollectionsPage /> },
             { path: '/promotion', element: <Promotion /> },
             { path: '/contact', element: <Contact /> },
             { path: '/blog', element: <Blog /> },

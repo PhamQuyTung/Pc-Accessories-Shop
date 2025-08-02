@@ -130,6 +130,12 @@ function ProductDetail() {
         checkFavorite();
     }, [product]);
 
+    useEffect(() => {
+        if (product) {
+            console.log('✅ product loaded:', product);
+        }
+    }, [product]);
+
     if (error) return <div>{error}</div>;
     if (loading) return <SpinnerLoading />;
 

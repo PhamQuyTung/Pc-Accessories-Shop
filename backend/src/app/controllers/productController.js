@@ -182,6 +182,28 @@ class ProductController {
     }
   }
 
+  // Lấy theo danh mục (category)
+  async getCategoryBreadcrumb(req, res) {
+    try {
+      const category = await Category.findOne({ slug: req.params.slug });
+      if (!category) {
+        return res.status(404).json({ error: "Không tìm thấy danh mục" });
+      }
+
+      const breadcrumb = [
+        { label: "Trang chủ", path: "/" },
+        {
+          label: category.name,
+          path: `/collections/${category.slug}`,
+        },
+      ];
+
+      res.json(breadcrumb);
+    } catch (err) {
+      res.status(500).json({ error: "Lỗi server" });
+    }
+  }
+
   // API tạo sản phẩm từ React (POST /api/products)
   async createProduct(req, res) {
     try {
@@ -424,6 +446,43 @@ class ProductController {
         visible: product.visible,
       });
     } catch (err) {
+      res.status(500).json({ error: "Lỗi server" });
+    }
+  }
+
+  // Lấy sản phẩm theo danh mục slug
+  async getByCategorySlug(req, res) {
+    try {
+      const category = await Category.findOne({ slug: req.params.slug });
+      if (!category) {
+        return res.status(404).json({ error: "Không tìm thấy danh mục" });
+      }
+
+      const products = await Product.find({
+        category: category._id,
+        deleted: { $ne: true }, // Chỉ lấy sản phẩm chưa xóa
+        visible: true, // Chỉ lấy sản phẩm đang hiển thị
+      }).lean();
+
+      const enrichedProducts = products.map((product) => {
+        const reviews = product.reviews || [];
+        const reviewCount = reviews.length;
+        const averageRating = reviewCount
+          ? reviews.reduce((acc, cur) => acc + cur.rating, 0) / reviewCount
+          : 0;
+
+        return {
+          ...product,
+          averageRating: Number(
+            (Math.round(averageRating * 10) / 10).toFixed(1)
+          ),
+          reviewCount,
+        };
+      });
+
+      res.json(enrichedProducts);
+    } catch (err) {
+      console.error("Lỗi khi lấy sản phẩm theo danh mục:", err);
       res.status(500).json({ error: "Lỗi server" });
     }
   }
