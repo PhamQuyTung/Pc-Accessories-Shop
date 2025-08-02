@@ -75,8 +75,15 @@ function ProductDetail() {
             .get(`http://localhost:5000/api/products/${slug}`)
             .then((res) => {
                 setTimeout(() => {
+                    // ✅ Fix lỗi .map bằng cách đảm bảo status là mảng
+                    res.data.status = Array.isArray(res.data.status)
+                        ? res.data.status
+                        : res.data.status
+                          ? [res.data.status]
+                          : [];
+
                     setProduct(res.data);
-                    setLoading(false); // ✅ Dừng loading
+                    setLoading(false);
                 }, 1500);
             })
             .catch((err) => {

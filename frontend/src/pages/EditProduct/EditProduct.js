@@ -115,9 +115,12 @@ function EditProduct() {
         if (!formData || !formData.name) return;
 
         // Check tên trùng
-        const isDuplicateName = existingProducts.some(
-            (p) => p.name.trim().toLowerCase() === formData.name.trim().toLowerCase() && p._id !== id,
-        );
+        const isDuplicateName =
+            Array.isArray(existingProducts) &&
+            existingProducts.some(
+                (p) => p.name.trim().toLowerCase() === formData.name.trim().toLowerCase() && p._id !== id,
+            );
+
         if (isDuplicateName) {
             toast('Tên sản phẩm đã tồn tại!', 'error');
             return;
