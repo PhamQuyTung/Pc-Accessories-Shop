@@ -228,6 +228,11 @@ function EditProduct() {
                 </div>
 
                 <div className={cx('group')}>
+                    <label>Thương hiệu</label>
+                    <input type="text" name="brand" value={formData.brand} onChange={handleChange} required />
+                </div>
+
+                <div className={cx('group')}>
                     <label>Danh mục</label>
                     <select name="category" value={formData.category} onChange={handleChange} required>
                         <option value="">-- Chọn danh mục --</option>

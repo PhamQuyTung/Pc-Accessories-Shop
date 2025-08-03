@@ -16,6 +16,7 @@ function CreateProduct() {
         status: '',
         category: '',
         specs: {},
+        brand: '',
         description: '',
         rating: '',
         quantity: '',
@@ -166,6 +167,7 @@ function CreateProduct() {
         try {
             const payload = {
                 ...formData,
+                brand: formData.brand.trim(),
                 quantity: formData.importing ? 0 : Number(formData.quantity),
                 status: statusArr,
                 price: Number(formData.price),
@@ -225,6 +227,15 @@ function CreateProduct() {
 
                 <label>Mô tả sản phẩm</label>
                 <textarea name="description" value={formData.description} onChange={handleChange} rows={4} />
+
+                <label>Thương hiệu</label>
+                <input
+                    name="brand"
+                    value={formData.brand}
+                    onChange={handleChange}
+                    placeholder="VD: ASUS, Acer, Lenovo..."
+                    required
+                />
 
                 <label>Danh mục</label>
                 <select name="category" value={formData.category} onChange={handleChange} required>

@@ -242,6 +242,7 @@ const ProductManagement = () => {
                         <th>ID</th>
                         <th>Hình ảnh</th>
                         <th>Tên sản phẩm</th>
+                        <th>Thương hiệu</th>
                         <th>Giá</th>
                         <th>Giá khuyến mãi</th>
                         <th>Giá thực tế</th>
@@ -264,6 +265,14 @@ const ProductManagement = () => {
                                 />
                             </td>
                             <td>{product.name}</td>
+                            <td>
+                                {typeof product.brand === 'object' && product.brand?.name
+                                    ? product.brand.name
+                                    : typeof product.brand === 'string'
+                                      ? product.brand
+                                      : 'Không có thương hiệu'}
+                            </td>
+
                             <td>{product.price != null ? formatCurrency(product.price) : 'N/A'}</td>
                             <td>{product.discountPrice != null ? formatCurrency(product.discountPrice) : 'N/A'}</td>
                             <td>

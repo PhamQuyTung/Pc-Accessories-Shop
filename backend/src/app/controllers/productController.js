@@ -434,19 +434,29 @@ class ProductController {
   // PATCH /api/products/toggle-visible/:id
   async toggleVisible(req, res) {
     try {
-      const product = await Product.findById(req.params.id);
-      if (!product)
-        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      const { id } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "ID không hợp lệ" });
+      }
 
-      product.visible = !product.visible;
-      await product.save();
+      const product = await Product.findById(id);
+      if (!product) {
+        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      }
+
+      const updatedProduct = await Product.findByIdAndUpdate(
+        id,
+        { visible: !product.visible },
+        { new: true, runValidators: false } // Bỏ qua check brand
+      );
 
       res.json({
-        message: `Sản phẩm đã được ${product.visible ? "hiển thị" : "ẩn"}`,
-        visible: product.visible,
+        message: `Sản phẩm đã được ${updatedProduct.visible ? "hiển thị" : "ẩn"}`,
+        visible: updatedProduct.visible,
       });
     } catch (err) {
-      res.status(500).json({ error: "Lỗi server" });
+      console.error("Lỗi toggleVisible:", err);
+      res.status(500).json({ error: "Lỗi server", details: err.message });
     }
   }
 

@@ -27,6 +27,7 @@ const ProductSchema = new mongoose.Schema({
     ref: "Category",
     required: true,
   },
+  brand: { type: String, required: true }, // ✅ Thêm dòng này
   description: String,
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
