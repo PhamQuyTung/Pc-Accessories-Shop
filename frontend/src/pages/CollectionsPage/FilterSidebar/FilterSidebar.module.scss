@@ -1,0 +1,56 @@
+.filter-sidebar {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 16px;
+    background-color: #fff;
+    border-radius: 8px;
+    border: 1px solid #e5e5e5;
+
+    .filter-group {
+        flex: 1 1 200px; // Chiều rộng mỗi bộ lọc ~1 cột trên responsive
+        min-width: 150px;
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #333;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+            color: #333;
+            transition: border-color 0.2s;
+            font-size: 14px;
+
+            &:focus {
+                border-color: #f60; // GearVN cam
+                background-color: #fff;
+                outline: none;
+            }
+        }
+    }
+}
+
+.filter-option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    cursor: pointer;
+
+    input {
+        margin-right: 8px;
+        accent-color: #f60;
+    }
+
+    label {
+        cursor: pointer;
+        user-select: none;
+    }
+}

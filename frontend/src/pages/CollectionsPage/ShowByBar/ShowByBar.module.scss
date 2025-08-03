@@ -1,0 +1,44 @@
+.showby-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 10px 20px;
+    background-color: #f5f5f5;
+
+    .btn-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-right: 20px;
+        margin-left: 10px;
+
+        button {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            margin-right: 8px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+
+            svg {
+                font-size: 18px;
+            }
+
+            &.active {
+                background-color: #e4002b;
+                color: white;
+                border-color: #e4002b;
+            }
+        }
+    }
+
+    .pagination-info {
+        font-size: 14px;
+        color: #555;
+    }
+}

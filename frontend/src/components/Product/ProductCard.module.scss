@@ -53,15 +53,17 @@
     text-align: start;
     background-color: #fff;
     // height: 468px;
-    transition: box-shadow 0.25s, transform 0.2s;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition:
+        box-shadow 0.25s,
+        transform 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     border-radius: 8px;
     background: #fff;
     cursor: pointer;
-    margin: 10px 0;
+    margin: 5px 0;
 
     &:hover {
-        box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
         transform: translateY(-6px);
         // transform: translateY(-6px) scale(1.03);
         z-index: 2;
@@ -73,8 +75,27 @@
         flex-direction: column;
 
         a {
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            text-align: start;
             margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2; /* Giới hạn 2 dòng */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.4;
+            // margin: 8px 0;
         }
+    }
+
+    a {
+        text-decoration: none;
+        display: contents;
+        width: 100%;
+        text-align: center;
     }
 
     a img {
@@ -83,21 +104,6 @@
         object-fit: contain;
         height: auto;
         padding: 12px 0;
-    }
-
-    a {
-        text-decoration: none;
-        font-size: 16px;
-        font-weight: 600;
-        color: #333;
-        text-align: start;
-        display: -webkit-box;
-        -webkit-line-clamp: 2; /* Giới hạn 2 dòng */
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        line-height: 1.4;
-        // margin: 8px 0;
     }
 
     .price {
@@ -201,6 +207,15 @@
     // margin-top: -40px;
 }
 
+.product-card__info {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    justify-content: center;
+    height: 100%;
+    text-align: start;
+}
+
 .new-tag {
     display: inline-block;
     text-align: start;
@@ -283,5 +298,30 @@
         font-size: 14px;
         color: #6d6e72;
         margin-left: 4px;
+    }
+}
+
+.product-card {
+    &.grid-mode {
+        display: flex;
+        flex-direction: column;
+        align-items: start;
+    }
+
+    &.list-mode {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 20px;
+
+        img {
+            width: 200px;
+            height: auto;
+        }
+
+        .product-card__des {
+            flex: 1;
+            text-align: left;
+        }
     }
 }

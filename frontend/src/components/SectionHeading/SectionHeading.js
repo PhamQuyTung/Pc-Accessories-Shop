@@ -19,7 +19,7 @@ function SectionHeading({ title = title, shTitle = shTitle, link = link }) {
                 </div>
             </div>
             <div className={cx('PC-heading__watchAll')}>
-                <Link to="">Xem tất cả</Link>
+                <Link to={link}>Xem tất cả</Link>
             </div>
         </div>
     );

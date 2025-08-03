@@ -376,7 +376,14 @@ export const WarningIcon = ({ width = '20px', height = '13px', className }) => (
 
 // Error Search No Result
 export const SearchNoResults = ({ width = '132px', height = '170px', className }) => (
-    <svg width={width} height={height} viewBox="0 0 132 170" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <svg
+        width={width}
+        height={height}
+        viewBox="0 0 132 170"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={className}
+    >
         <g clip-path="url(#clip0_6133_13905)">
             <path
                 d="M125.486 120.371H113.585V91.6562H132V113.845C132 117.451 129.086 120.371 125.486 120.371Z"
@@ -432,5 +439,43 @@ export const SearchNoResults = ({ width = '132px', height = '170px', className }
                 <rect width="132" height="170" fill="white"></rect>
             </clipPath>
         </defs>
+    </svg>
+);
+
+export const Grid4Icons = ({ width = '132px', height = '170px', className }) => (
+    <svg
+        stroke="currentColor"
+        fill="currentColor"
+        stroke-width="0"
+        version="1.1"
+        viewBox="0 0 17 17"
+        height="1em"
+        width="1em"
+        xmlns="http://www.w3.org/2000/svg"
+    >
+        <g></g>
+        <path d="M1 1h3v3h-3v-3zM5 4h3v-3h-3v3zM9 4h3v-3h-3v3zM13 1v3h3v-3h-3zM1 8h3v-3h-3v3zM5 8h3v-3h-3v3zM9 8h3v-3h-3v3zM13 8h3v-3h-3v3zM1 12h3v-3h-3v3zM5 12h3v-3h-3v3zM9 12h3v-3h-3v3zM13 12h3v-3h-3v3zM1 16h3v-3h-3v3zM5 16h3v-3h-3v3zM9 16h3v-3h-3v3zM13 16h3v-3h-3v3z"></path>
+    </svg>
+);
+
+export const Grid3Icons = ({ width = '132px', height = '170px', className }) => (
+    <svg
+        stroke="currentColor"
+        fill="none"
+        stroke-width="0"
+        viewBox="0 0 24 24"
+        height="1em"
+        width="1em"
+        xmlns="http://www.w3.org/2000/svg"
+    >
+        <path d="M4 4H8V8H4V4Z" fill="currentColor"></path>
+        <path d="M4 10H8V14H4V10Z" fill="currentColor"></path>
+        <path d="M8 16H4V20H8V16Z" fill="currentColor"></path>
+        <path d="M10 4H14V8H10V4Z" fill="currentColor"></path>
+        <path d="M14 10H10V14H14V10Z" fill="currentColor"></path>
+        <path d="M10 16H14V20H10V16Z" fill="currentColor"></path>
+        <path d="M20 4H16V8H20V4Z" fill="currentColor"></path>
+        <path d="M16 10H20V14H16V10Z" fill="currentColor"></path>
+        <path d="M20 16H16V20H20V16Z" fill="currentColor"></path>
     </svg>
 );

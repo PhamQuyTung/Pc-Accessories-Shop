@@ -4,8 +4,11 @@ import Breadcrumb from '~/components/Breadcrumb/Breadcrumb';
 import axiosClient from '~/utils/axiosClient';
 import styles from './CollectionsPage.module.scss';
 import classNames from 'classnames/bind';
-import ProductCard from '~/components/Product/ProductCard';
 import BannerLaptop from '~/assets/images/Banner/collections/laptop/laptop-banner.jpg';
+import Container from '~/pages/CollectionsPage/Container/Container';
+import FilterSidebar from '~/pages/CollectionsPage/FilterSidebar/FilterSidebar';
+import ShowByBar from './ShowByBar/ShowByBar';
+import Pagination from '~/components/Pagination/Pagination';
 
 const cx = classNames.bind(styles);
 
@@ -14,11 +17,30 @@ export default function CollectionsPage() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const [filters, setFilters] = useState({ brands: [], rams: [], cpus: [] });
+    const [filteredProducts, setFilteredProducts] = useState([]);
+
+    const [viewMode, setViewMode] = useState('grid4');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 8;
+
+    const totalPages = Math.ceil(products.length / itemsPerPage);
+
+    const extractFilters = (products) => {
+        const brands = [...new Set(products.map((p) => p.brand))].filter(Boolean);
+        const rams = [...new Set(products.map((p) => p.ram))].filter(Boolean);
+        const cpus = [...new Set(products.map((p) => p.cpu))].filter(Boolean);
+        return { brands, rams, cpus };
+    };
+
     useEffect(() => {
+        setCurrentPage(1); // Reset về trang 1
         const fetchProductsByCategory = async () => {
             try {
                 const res = await axiosClient.get(`/products/category/${slug}`);
                 setProducts(res.data);
+                setFilteredProducts(res.data);
+                setFilters(extractFilters(res.data));
             } catch (err) {
                 console.error('Lỗi lấy sản phẩm theo danh mục:', err);
             } finally {
@@ -29,41 +51,76 @@ export default function CollectionsPage() {
         fetchProductsByCategory();
     }, [slug]);
 
-    return (
-        <div className={cx('collections-page')}>
-            {/* Banner */}
-            <div className={cx('banner')}>
-                <img src={BannerLaptop} alt="BannerLaptop" />
-            </div>
+    const handleFilterChange = (selectedFilters) => {
+        let filtered = [...products];
 
+        if (selectedFilters.price) {
+            const [min, max] = selectedFilters.price.split('-').map(Number);
+            filtered = filtered.filter((p) => p.price >= min && p.price <= max);
+        }
+
+        if (selectedFilters.brand) {
+            filtered = filtered.filter((p) => p.brand === selectedFilters.brand);
+        }
+
+        if (selectedFilters.ram) {
+            filtered = filtered.filter((p) => p.ram === selectedFilters.ram);
+        }
+
+        if (selectedFilters.cpu) {
+            filtered = filtered.filter((p) => p.cpu === selectedFilters.cpu);
+        }
+
+        setFilteredProducts(filtered);
+    };
+
+    return (
+        <div className={cx('collections-page-wrapper')}>
             {/* Breadcrumb */}
             <Breadcrumb categorySlug={slug} />
 
-            <div className={cx('content')}>
-                {/* Bộ lọc */}
-                <aside className={cx('filter')}>
-                    {/* Bạn có thể tạo component FilterSidebar.js riêng */}
-                    <h3>Bộ lọc</h3>
-                    {/* Các filter theo giá, hãng, RAM, CPU... */}
-                </aside>
+            <div className={cx('collections-page')}>
+                {/* Banner */}
+                <div className={cx('banner')}>
+                    <img src={BannerLaptop} alt="BannerLaptop" />
+                </div>
 
-                {/* Danh sách sản phẩm */}
-                <section className={cx('product-list')}>
-                    {loading ? (
-                        <p>Đang tải sản phẩm...</p>
-                    ) : products.length === 0 ? (
-                        <div className={cx('not-found')}>
-                            <img src="/images/not-found.png" alt="Không tìm thấy" />
-                            <p>Rất tiếc, không tìm thấy sản phẩm nào trong danh mục này.</p>
-                        </div>
-                    ) : (
-                        <div className={cx('grid')}>
-                            {products.map((product) => (
-                                <ProductCard key={product._id} product={product} />
-                            ))}
-                        </div>
-                    )}
-                </section>
+                <div className={cx('content')}>
+                    {/* Bộ lọc */}
+                    <aside className={cx('filter')}>
+                        <FilterSidebar filters={filters} onChange={handleFilterChange} />
+                    </aside>
+
+                    {/* Danh sách sản phẩm */}
+                    <div className={cx('product-list')}>
+                        {/* ShowByBar */}
+                        <ShowByBar
+                            viewMode={viewMode}
+                            setViewMode={setViewMode}
+                            totalProducts={products.length}
+                            currentPage={currentPage}
+                            itemsPerPage={itemsPerPage}
+                        />
+
+                        {/* Container danh sách sản phẩm */}
+                        <Container
+                            products={filteredProducts}
+                            loading={loading}
+                            viewMode={viewMode}
+                            currentPage={currentPage}
+                            itemsPerPage={itemsPerPage}
+                        />
+                        
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={(page) => setCurrentPage(page)}
+                            />
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );
