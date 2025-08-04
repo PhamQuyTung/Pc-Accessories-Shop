@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import styles from './Trash.module.scss';
 import classNames from 'classnames/bind';
 import { useToast } from '~/components/ToastMessager';
 import Swal from 'sweetalert2';
+import axiosClient from '~/utils/axiosClient';
 
 const cx = classNames.bind(styles);
 
@@ -15,7 +15,7 @@ function Trash() {
     const fetchTrash = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('http://localhost:5000/api/products/trash');
+            const res = await axiosClient.get('/products/trash');
             setProducts(res.data);
         } catch (err) {
             toast('Lỗi khi lấy danh sách thùng rác!', 'error');
@@ -38,7 +38,7 @@ function Trash() {
 
         if (result.isConfirmed) {
             try {
-                await axios.delete(`http://localhost:5000/api/products/force/${id}`);
+                await axiosClient.delete(`/products/force/${id}`);
                 setProducts(products.filter((p) => p._id !== id));
                 toast('Đã xóa vĩnh viễn sản phẩm!', 'success');
             } catch (err) {
@@ -58,7 +58,7 @@ function Trash() {
 
         if (result.isConfirmed) {
             try {
-                await axios.patch(`http://localhost:5000/api/products/restore/${id}`);
+                await axiosClient.patch(`/products/restore/${id}`);
                 setProducts(products.filter((p) => p._id !== id));
                 toast('Đã khôi phục sản phẩm!', 'success');
             } catch (err) {
@@ -92,21 +92,13 @@ function Trash() {
                                 <td>{product.category}</td>
                                 <td>{product.price?.toLocaleString()}₫</td>
                                 <td>
-                                    {product.discountPrice
-                                        ? product.discountPrice.toLocaleString() + '₫'
-                                        : 'Không có'}
+                                    {product.discountPrice ? product.discountPrice.toLocaleString() + '₫' : 'Không có'}
                                 </td>
                                 <td>
-                                    <button
-                                        className={cx('btn-edit')}
-                                        onClick={() => handleRestore(product._id)}
-                                    >
+                                    <button className={cx('btn-edit')} onClick={() => handleRestore(product._id)}>
                                         Khôi phục
                                     </button>
-                                    <button
-                                        className={cx('btn-delete')}
-                                        onClick={() => handleForceDelete(product._id)}
-                                    >
+                                    <button className={cx('btn-delete')} onClick={() => handleForceDelete(product._id)}>
                                         Xóa vĩnh viễn
                                     </button>
                                 </td>

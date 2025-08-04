@@ -26,13 +26,48 @@ export default function CollectionsPage() {
 
     const totalPages = Math.ceil(products.length / itemsPerPage);
 
+    // 👉 Hàm làm tròn lên theo bước
+    const roundUpTo = (value, step) => Math.ceil(value / step) * step;
+
+    // 👉 Format tiền tệ
+    function formatCurrency(number) {
+        return number.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+    }
+
+    // 👉 Trích xuất bộ lọc từ danh sách sản phẩm
     const extractFilters = (products) => {
         const brands = [...new Set(products.map((p) => p.brand))].filter(Boolean);
         const rams = [...new Set(products.map((p) => p.ram))].filter(Boolean);
         const cpus = [...new Set(products.map((p) => p.cpu))].filter(Boolean);
-        return { brands, rams, cpus };
+
+        const prices = products.map((p) => p.discountPrice || p.price).sort((a, b) => a - b);
+        const rawMin = prices[0] || 0;
+        const rawMax = prices[prices.length - 1] || 0;
+
+        const minPrice = roundUpTo(rawMin, 100000); // tròn 100.000
+        const maxPrice = roundUpTo(rawMax, 100000);
+        const rangeSize = Math.ceil((maxPrice - minPrice) / 3);
+        const priceRanges = [];
+
+        if (rangeSize > 0) {
+            priceRanges.push({
+                label: `Dưới ${formatCurrency(minPrice + rangeSize)}`,
+                value: `${minPrice}-${minPrice + rangeSize}`,
+            });
+            priceRanges.push({
+                label: `${formatCurrency(minPrice + rangeSize)} – ${formatCurrency(minPrice + rangeSize * 2)}`,
+                value: `${minPrice + rangeSize}-${minPrice + rangeSize * 2}`,
+            });
+            priceRanges.push({
+                label: `Trên ${formatCurrency(minPrice + rangeSize * 2)}`,
+                value: `${minPrice + rangeSize * 2}-999999999`,
+            });
+        }
+
+        return { brands, rams, cpus, priceRanges };
     };
 
+    // 👉 Gọi API khi thay đổi danh mục
     useEffect(() => {
         setCurrentPage(1); // Reset về trang 1
         const fetchProductsByCategory = async () => {
@@ -51,12 +86,16 @@ export default function CollectionsPage() {
         fetchProductsByCategory();
     }, [slug]);
 
+    // 👉 Hàm xử lý lọc sản phẩm
     const handleFilterChange = (selectedFilters) => {
         let filtered = [...products];
 
         if (selectedFilters.price) {
             const [min, max] = selectedFilters.price.split('-').map(Number);
-            filtered = filtered.filter((p) => p.price >= min && p.price <= max);
+            filtered = filtered.filter((p) => {
+                const realPrice = p.discountPrice > 0 ? p.discountPrice : p.price;
+                return realPrice >= min && realPrice <= max;
+            });
         }
 
         if (selectedFilters.brand) {
@@ -110,7 +149,7 @@ export default function CollectionsPage() {
                             currentPage={currentPage}
                             itemsPerPage={itemsPerPage}
                         />
-                        
+
                         {/* Pagination */}
                         {totalPages > 1 && (
                             <Pagination

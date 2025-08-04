@@ -45,9 +45,9 @@ export const CATEGORY_LIST = [
     "slug": "ban-phim"
   },
   {
-    "key": "chuotlotchuot",
-    "name": "Chuột + Lót chuột",
-    "slug": "chuot-lot-chuot"
+    "key": "chuotmaytinh",
+    "name": "Chuột máy tính",
+    "slug": "chuot-may-tinh"
   },
   {
     "key": "tainghe",

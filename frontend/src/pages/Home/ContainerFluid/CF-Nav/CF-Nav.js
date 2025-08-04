@@ -16,6 +16,7 @@ import {
     RAMIcon,
     ScreenIcon,
     RightIcon,
+    MousePadIcon,
 } from '~/components/Icons';
 import classNames from 'classnames/bind';
 import styles from './CF-Nav.module.scss';
@@ -34,8 +35,10 @@ function getCategoryIcon(slug) {
             return <PCGVNIcon />;
         case 'ban-phim':
             return <KeyBoardIcon />;
-        case 'chuot-lot':
+        case 'chuot-may-tinh':
             return <MouseIcon />;
+        case 'lot-chuot':
+            return <MousePadIcon />;
         case 'man-hinh':
             return <ScreenIcon />;
         case 'tai-nghe':

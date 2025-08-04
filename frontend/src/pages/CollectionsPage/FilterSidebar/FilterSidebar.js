@@ -26,9 +26,11 @@ export default function FilterSidebar({ filters, onChange }) {
                 <label>Giá:</label>
                 <select name="price" value={selected.price} onChange={handleChange}>
                     <option value="">Tất cả</option>
-                    <option value="0-10000000">Dưới 10 triệu</option>
-                    <option value="10000000-20000000">10–20 triệu</option>
-                    <option value="20000000-999999999">Trên 20 triệu</option>
+                    {filters.priceRanges?.map((range, index) => (
+                        <option key={index} value={range.value}>
+                            {range.label}
+                        </option>
+                    ))}
                 </select>
             </div>
 
@@ -44,29 +46,33 @@ export default function FilterSidebar({ filters, onChange }) {
                 </select>
             </div>
 
-            <div className={cx('filter-group')}>
-                <label>RAM:</label>
-                <select name="ram" value={selected.ram} onChange={handleChange}>
-                    <option value="">Tất cả</option>
-                    {filters.rams.map((ram) => (
-                        <option key={ram} value={ram}>
-                            {ram}
-                        </option>
-                    ))}
-                </select>
-            </div>
+            {filters.rams.length > 0 && (
+                <div className={cx('filter-group')}>
+                    <label>RAM:</label>
+                    <select name="ram" value={selected.ram} onChange={handleChange}>
+                        <option value="">Tất cả</option>
+                        {filters.rams.map((ram) => (
+                            <option key={ram} value={ram}>
+                                {ram}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
-            <div className={cx('filter-group')}>
-                <label>CPU:</label>
-                <select name="cpu" value={selected.cpu} onChange={handleChange}>
-                    <option value="">Tất cả</option>
-                    {filters.cpus.map((cpu) => (
-                        <option key={cpu} value={cpu}>
-                            {cpu}
-                        </option>
-                    ))}
-                </select>
-            </div>
+            {filters.cpus.length > 0 && (
+                <div className={cx('filter-group')}>
+                    <label>CPU:</label>
+                    <select name="cpu" value={selected.cpu} onChange={handleChange}>
+                        <option value="">Tất cả</option>
+                        {filters.cpus.map((cpu) => (
+                            <option key={cpu} value={cpu}>
+                                {cpu}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
         </div>
     );
 }

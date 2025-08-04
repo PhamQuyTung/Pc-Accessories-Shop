@@ -19,11 +19,6 @@ router.get("/related", ProductController.getRelatedProducts);        // Sản ph
 router.get("/category/:slug", ProductController.getByCategorySlug);  // Theo danh mục
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 📋 Product Detail
-router.get("/id/:id", ProductController.getById);        // Lấy theo ID
-router.get("/:slug", ProductController.getBySlug);       // Lấy theo slug (đặt cuối cùng!)
-
-// ─────────────────────────────────────────────────────────────────────────────
 // ➕ Create, 🖊️ Update, 🗑️ Delete
 router.post("/", ProductController.createProduct);                // Tạo sản phẩm
 router.put("/:id", ProductController.updateProduct);              // Cập nhật
@@ -42,5 +37,10 @@ router.post("/:id/reviews", authMiddleware, ProductController.addReview);
 router.get("/create", ProductController.createProduct); // Trang tạo
 router.get("/edit/:id", ProductController.editProduct); // Trang sửa
 router.get("/trash", ProductController.getTrash);       // Danh sách sản phẩm đã xóa
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 📋 Product Detail
+router.get("/id/:id", ProductController.getById);        // Lấy theo ID
+router.get("/:slug", ProductController.getBySlug);       // Lấy theo slug (đặt cuối cùng!)
 
 module.exports = router;
