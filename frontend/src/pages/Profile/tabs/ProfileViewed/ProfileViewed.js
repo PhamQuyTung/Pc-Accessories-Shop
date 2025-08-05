@@ -16,6 +16,7 @@ export default function ProfileViewed() {
             try {
                 const res = await axiosClient.get('/favorites');
                 setFavorites(res.data);
+                console.log('Giá sản phẩm: ', res.data);
             } catch (error) {
                 console.error('Lỗi khi lấy sản phẩm yêu thích:', error);
             } finally {
@@ -38,7 +39,16 @@ export default function ProfileViewed() {
                     <div key={product._id} className={cx('card')}>
                         <img src={product.images?.[0]} alt={product.name} className={cx('image')} />
                         <Link to={`/products/${product.slug}`}>{product.name}</Link>
-                        <p className={cx('price')}>{(product.discountPrice ?? product.price).toLocaleString()}₫</p>
+                        {(() => {
+                            const price =
+                                typeof product.discountPrice === 'number' && product.discountPrice > 0
+                                    ? product.discountPrice
+                                    : typeof product.price === 'number' && product.price > 0
+                                      ? product.price
+                                      : null;
+
+                            return <p className={cx('price')}>{price ? `${price.toLocaleString()}₫` : 'Liên hệ'}</p>;
+                        })()}
                     </div>
                 ))}
             </div>
