@@ -403,7 +403,7 @@ export const SearchNoResults = ({ width = '132px', height = '170px', className }
         xmlns="http://www.w3.org/2000/svg"
         className={className}
     >
-        <g clip-path="url(#clip0_6133_13905)">
+        <g clipPath="url(#clip0_6133_13905)">
             <path
                 d="M125.486 120.371H113.585V91.6562H132V113.845C132 117.451 129.086 120.371 125.486 120.371Z"
                 fill="#A1AAAF"

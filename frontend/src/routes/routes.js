@@ -30,6 +30,7 @@ import UserManagement from '~/pages/Admin/AccountManagement/AccountManagement';
 import CategoryManagement from '~/pages/Admin/CategoryManagement/CategoryManagement';
 import AttributeManagement from '~/pages/Admin/AttributeManagement/AttributeManagement';
 import AssignAttributeToCategory from '~/pages/Admin/AssignAttributeToCategory/AssignAttributeToCategory';
+import AttributeTermPage from '~/pages/Admin/AttributeTermPage/AttributeTermPage';
 import AdminMenuManagement from '~/pages/Admin/AdminMenuManagement/AdminMenuManagement';
 
 import ProfileLayout from '~/pages/Profile/ProfileLayout';
@@ -99,6 +100,7 @@ const routes = [
             { path: 'users', element: <UserManagement /> },
             { path: 'categories', element: <CategoryManagement /> },
             { path: 'attributes', element: <AttributeManagement /> },
+            { path: 'attributes/:attributeId/terms', element: <AttributeTermPage /> },
             { path: 'attributes/assign', element: <AssignAttributeToCategory /> },
             { path: 'menus', element: <AdminMenuManagement /> },
         ],

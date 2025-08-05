@@ -116,3 +116,18 @@
 .deleteBtn:hover {
     background-color: #a60000;
 }
+
+.variantBtn {
+    background-color: #0073aa;
+    color: white;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    margin-left: 5px;
+    text-decoration: none;
+    font-size: 0.9rem;
+
+    &:hover {
+        background-color: #005f8d;
+    }
+}

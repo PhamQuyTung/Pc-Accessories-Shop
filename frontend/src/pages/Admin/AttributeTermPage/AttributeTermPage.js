@@ -1,0 +1,114 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
+import AttributeTermsForm from './AttributeTermForm/AttributeTermForm';
+import AttributeTermsTable from './AttributeTermTable/AttributeTermTable';
+import EditTermPopup from './EditTermPopup/EditTermPopup';
+import axiosClient from '~/utils/axiosClient';
+import { useToast } from '~/components/ToastMessager/ToastMessager';
+
+export default function AttributeTermsPage() {
+    const { attributeId } = useParams();
+    const toast = useToast();
+    const [terms, setTerms] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [editTerm, setEditTerm] = useState(null); // term được chỉnh sửa
+    const [resetTrigger, setResetTrigger] = useState(0);
+
+    const location = useLocation();
+    const searchParams = new URLSearchParams(location.search);
+    const name = searchParams.get('name');
+
+    // Lấy danh sách chủng loại
+    const fetchTerms = async () => {
+        try {
+            setLoading(true);
+            const res = await axiosClient.get(`/attribute-terms/${attributeId}`);
+            setTerms(res.data);
+        } catch (err) {
+            toast('Lỗi khi tải danh sách chủng loại', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchTerms();
+    }, [attributeId]);
+
+    // Tạo mới
+    const handleCreate = async (value) => {
+        try {
+            console.log('Giá trị value gửi lên:', value, typeof value);
+            const res = await axiosClient.post(`/attribute-terms/${attributeId}`, {
+                name: value.name,
+            });
+            setTerms((prev) => [res.data, ...prev]);
+            toast('Đã thêm chủng loại thành công', 'success');
+
+            // 👉 Tăng resetTrigger để reset form
+            setResetTrigger((prev) => prev + 1);
+        } catch (err) {
+            if (err.response?.status === 409) {
+                toast('Chủng loại đã tồn tại', 'error');
+            } else {
+                toast('Lỗi khi thêm chủng loại', 'error');
+            }
+        }
+    };
+
+    // Xoá
+    const handleDelete = async (id) => {
+        try {
+            await axiosClient.delete(`/attribute-terms/${id}`);
+            setTerms((prev) => prev.filter((t) => t._id !== id));
+            toast('Đã xóa thành công', 'success');
+        } catch {
+            toast('Lỗi khi xóa', 'error');
+        }
+    };
+
+    // Cập nhật
+    const handleUpdate = async (updatedTerm) => {
+        const { _id: id, name, slug } = updatedTerm;
+        console.log('Term gửi lên để cập nhật:', updatedTerm);
+
+        try {
+            const payload = {
+                name: name.trim(),
+                slug: slug.trim().toLowerCase().replace(/\s+/g, '-'),
+            };
+
+            const res = await axiosClient.put(`/attribute-terms/${id}`, payload);
+            setTerms((prev) => prev.map((t) => (t._id === id ? res.data : t)));
+            toast('Đã cập nhật thành công', 'success');
+        } catch (err) {
+            toast('Lỗi khi cập nhật chủng loại', 'error');
+        }
+    };
+
+    return (
+        <div className="container">
+            <h2>
+                Chủng loại của thuộc tính: <strong>{name}</strong>
+            </h2>
+
+            <AttributeTermsForm onSubmit={handleCreate} loading={loading} resetTrigger={resetTrigger} />
+            <AttributeTermsTable
+                terms={terms}
+                onDelete={handleDelete}
+                onEdit={(term) => setEditTerm(term)}
+                loading={loading}
+            />
+            {editTerm && (
+                <EditTermPopup
+                    term={editTerm}
+                    onClose={() => setEditTerm(null)}
+                    onSave={async (updatedTerm) => {
+                        await handleUpdate(updatedTerm);
+                        setEditTerm(null); // 👉 Đóng modal tại đây
+                    }}
+                />
+            )}
+        </div>
+    );
+}

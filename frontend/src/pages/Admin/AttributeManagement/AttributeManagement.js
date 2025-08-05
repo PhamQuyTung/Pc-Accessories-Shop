@@ -132,6 +132,16 @@ function AttributeManagement() {
                                 <button className={cx('deleteBtn')} onClick={() => handleDelete(attr._id)}>
                                     Xóa
                                 </button>
+
+                                {/* Nếu là loại select thì hiện nút "Chủng loại" */}
+                                {attr.type === 'select' && (
+                                    <Link
+                                        to={`/admin/attributes/${attr._id}/terms?name=${encodeURIComponent(attr.name)}`}
+                                        className={cx('variantBtn')}
+                                    >
+                                        Chủng loại
+                                    </Link>
+                                )}
                             </td>
                         </tr>
                     ))}
