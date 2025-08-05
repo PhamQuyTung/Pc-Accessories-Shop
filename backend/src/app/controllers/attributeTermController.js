@@ -4,9 +4,11 @@ const slugify = require("slugify");
 const mongoose = require("mongoose");
 
 const createAttributeTerm = async (req, res) => {
+  console.log("📦 Request body:", req.body);
+
   try {
     const { attributeId } = req.params;
-    const { name } = req.body;
+    const { name, color, image } = req.body;
 
     if (typeof name !== "string" || !name.trim()) {
       return res.status(400).json({
@@ -15,6 +17,7 @@ const createAttributeTerm = async (req, res) => {
     }
 
     const slug = slugify(name.trim(), { lower: true });
+
     const existing = await AttributeTerm.findOne({
       slug,
       attribute: attributeId,
@@ -24,11 +27,31 @@ const createAttributeTerm = async (req, res) => {
       return res.status(409).json({ message: "Chủng loại đã tồn tại." });
     }
 
-    const newTerm = await AttributeTerm.create({
+    const attribute = await Attribute.findById(attributeId);
+    if (!attribute) {
+      return res.status(404).json({ message: "Không tìm thấy thuộc tính." });
+    }
+
+    const termData = {
       attribute: attributeId,
       name: name.trim(),
       slug,
-    });
+    };
+
+    console.log("🧩 Term data trước khi tạo:", termData);
+
+    console.log("📛 attribute.type:", attribute.type);
+    console.log("🎨 color input:", color);
+
+    if (attribute.type === "color" && color) {
+      termData.color = color;
+    }
+
+    if (attribute.type === "image" && image) {
+      termData.image = image;
+    }
+
+    const newTerm = await AttributeTerm.create(termData);
 
     res.status(201).json(newTerm);
   } catch (error) {

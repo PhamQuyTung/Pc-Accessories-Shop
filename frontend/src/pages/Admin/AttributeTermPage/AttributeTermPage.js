@@ -13,6 +13,14 @@ export default function AttributeTermsPage() {
     const [loading, setLoading] = useState(true);
     const [editTerm, setEditTerm] = useState(null); // term được chỉnh sửa
     const [resetTrigger, setResetTrigger] = useState(0);
+    const [attribute, setAttribute] = useState(null);
+
+    // useEffect lấy attribute từ API (nếu đang ở trang tạo mới)
+    useEffect(() => {
+        axiosClient.get(`/attributes/${attributeId}`).then((res) => {
+            setAttribute(res.data);
+        });
+    }, []);
 
     const location = useLocation();
     const searchParams = new URLSearchParams(location.search);
@@ -38,21 +46,25 @@ export default function AttributeTermsPage() {
     // Tạo mới
     const handleCreate = async (value) => {
         try {
-            console.log('Giá trị value gửi lên:', value, typeof value);
-            const res = await axiosClient.post(`/attribute-terms/${attributeId}`, {
+            const payload = {
                 name: value.name,
-            });
+                slug: value.slug,
+            };
+
+            if (attribute?.type === 'color') {
+                payload.color = value.color;
+            }
+
+            if (attribute?.type === 'image') {
+                payload.image = value.image;
+            }
+
+            const res = await axiosClient.post(`/attribute-terms/${attributeId}`, payload);
             setTerms((prev) => [res.data, ...prev]);
             toast('Đã thêm chủng loại thành công', 'success');
-
-            // 👉 Tăng resetTrigger để reset form
             setResetTrigger((prev) => prev + 1);
         } catch (err) {
-            if (err.response?.status === 409) {
-                toast('Chủng loại đã tồn tại', 'error');
-            } else {
-                toast('Lỗi khi thêm chủng loại', 'error');
-            }
+            toast('Lỗi khi thêm chủng loại', 'error');
         }
     };
 
@@ -92,13 +104,21 @@ export default function AttributeTermsPage() {
                 Chủng loại của thuộc tính: <strong>{name}</strong>
             </h2>
 
-            <AttributeTermsForm onSubmit={handleCreate} loading={loading} resetTrigger={resetTrigger} />
+            <AttributeTermsForm
+                onSubmit={handleCreate}
+                loading={loading}
+                resetTrigger={resetTrigger}
+                attributeType={attribute?.type}
+            />
+
             <AttributeTermsTable
                 terms={terms}
                 onDelete={handleDelete}
                 onEdit={(term) => setEditTerm(term)}
                 loading={loading}
+                attribute={attribute}
             />
+
             {editTerm && (
                 <EditTermPopup
                     term={editTerm}

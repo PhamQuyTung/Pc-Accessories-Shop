@@ -10,6 +10,18 @@ exports.getAll = async (req, res) => {
     }
 };
 
+exports.getAttributeById = async (req, res) => {
+    try {
+        const attribute = await Attribute.findById(req.params.id);
+        if (!attribute) {
+            return res.status(404).json({ message: 'Attribute not found' });
+        }
+        res.json(attribute);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 exports.create = async (req, res) => {
     try {
         const item = await Attribute.create(req.body);

@@ -8,6 +8,14 @@ import { useToast } from '~/components/ToastMessager/ToastMessager'; // hook toa
 
 const cx = classNames.bind(styles);
 
+const ATTRIBUTE_TYPES = [
+    { value: 'text', label: 'Text' },
+    { value: 'select', label: 'Select' },
+    { value: 'button', label: 'Button' },
+    { value: 'color', label: 'Color' },
+    { value: 'image', label: 'Image' },
+];
+
 function AttributeManagement() {
     const [attributes, setAttributes] = useState([]);
     const [form, setForm] = useState({ name: '', key: '', type: 'text' });
@@ -101,10 +109,13 @@ function AttributeManagement() {
                     value={form.type}
                     onChange={(e) => setForm({ ...form, type: e.target.value })}
                 >
-                    <option value="text">Text</option>
-                    <option value="number">Number</option>
-                    <option value="select">Select</option>
+                    {ATTRIBUTE_TYPES.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
                 </select>
+
                 <button type="submit" className={cx('submitBtn')}>
                     {editingId ? 'Cập nhật' : 'Thêm mới'}
                 </button>
@@ -134,7 +145,7 @@ function AttributeManagement() {
                                 </button>
 
                                 {/* Nếu là loại select thì hiện nút "Chủng loại" */}
-                                {attr.type === 'select' && (
+                                {['select', 'button', 'color', 'image'].includes(attr.type) && (
                                     <Link
                                         to={`/admin/attributes/${attr._id}/terms?name=${encodeURIComponent(attr.name)}`}
                                         className={cx('variantBtn')}
