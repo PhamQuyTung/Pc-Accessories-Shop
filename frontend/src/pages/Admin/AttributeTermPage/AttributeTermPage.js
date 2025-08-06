@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import AttributeTermsForm from './AttributeTermForm/AttributeTermForm';
 import AttributeTermsTable from './AttributeTermTable/AttributeTermTable';
 import EditTermPopup from './EditTermPopup/EditTermPopup';
 import axiosClient from '~/utils/axiosClient';
 import { useToast } from '~/components/ToastMessager/ToastMessager';
+import styles from './AttributeTermPage.module.scss';
+import classNames from 'classnames/bind';
+
+const cx = classNames.bind(styles);
+
 
 export default function AttributeTermsPage() {
     const { attributeId } = useParams();
@@ -107,25 +112,31 @@ export default function AttributeTermsPage() {
     };
 
     return (
-        <div className="container">
-            <h2>
-                Chủng loại của thuộc tính: <strong>{name}</strong>
-            </h2>
+        <div className={cx("container")}>
+            <div className={cx("header")}>
+                <h2>
+                    Chủng loại của thuộc tính: <strong>{name}</strong>
+                </h2>
 
-            <AttributeTermsForm
-                onSubmit={handleCreate}
-                loading={loading}
-                resetTrigger={resetTrigger}
-                attributeType={attribute?.type}
-            />
+                <Link to='/admin/attributes'>Trở lại</Link>
+            </div>
 
-            <AttributeTermsTable
-                terms={terms}
-                onDelete={handleDelete}
-                onEdit={(term) => setEditTerm(term)}
-                loading={loading}
-                attribute={attribute}
-            />
+            <div className={cx("wrapper-content")}>
+                <AttributeTermsForm
+                    onSubmit={handleCreate}
+                    loading={loading}
+                    resetTrigger={resetTrigger}
+                    attributeType={attribute?.type}
+                />
+    
+                <AttributeTermsTable
+                    terms={terms}
+                    onDelete={handleDelete}
+                    onEdit={(term) => setEditTerm(term)}
+                    loading={loading}
+                    attribute={attribute}
+                />
+            </div>
 
             {editTerm && (
                 <EditTermPopup

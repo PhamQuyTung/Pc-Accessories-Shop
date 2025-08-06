@@ -10,6 +10,12 @@
     }
 }
 
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
 .tableWrapper {
     flex: 2;
     min-width: 300px;
@@ -86,3 +92,9 @@
         }
     }
 }
+
+.wrapper-content {
+    display: flex;
+    gap: 20px;
+}
+

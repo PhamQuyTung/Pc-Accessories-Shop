@@ -89,75 +89,78 @@ function AttributeManagement() {
                     + Thêm thuộc tính vào danh mục
                 </Link>
             </div>
-            <form className={cx('form')} onSubmit={handleSubmit}>
-                <input
-                    className={cx('input')}
-                    placeholder="Tên hiển thị (VD: RAM)"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    required
-                />
-                <input
-                    className={cx('input')}
-                    placeholder="Tên khóa (vd: ram)"
-                    value={form.key}
-                    onChange={(e) => setForm({ ...form, key: e.target.value })}
-                    required
-                />
-                <select
-                    className={cx('select')}
-                    value={form.type}
-                    onChange={(e) => setForm({ ...form, type: e.target.value })}
-                >
-                    {ATTRIBUTE_TYPES.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                        </option>
-                    ))}
-                </select>
 
-                <button type="submit" className={cx('submitBtn')}>
-                    {editingId ? 'Cập nhật' : 'Thêm mới'}
-                </button>
-            </form>
-
-            <table className={cx('table')}>
-                <thead>
-                    <tr>
-                        <th>Tên</th>
-                        <th>Key</th>
-                        <th>Loại</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {attributes.map((attr) => (
-                        <tr key={attr._id}>
-                            <td>{attr.name}</td>
-                            <td>{attr.key}</td>
-                            <td>{attr.type}</td>
-                            <td>
-                                <button className={cx('editBtn')} onClick={() => handleEdit(attr)}>
-                                    Sửa
-                                </button>
-                                <button className={cx('deleteBtn')} onClick={() => handleDelete(attr._id)}>
-                                    Xóa
-                                </button>
-
-                                {/* Nếu là loại select thì hiện nút "Chủng loại" */}
-                                {['select', 'button', 'color', 'image'].includes(attr.type) && (
-                                    <Link
-                                        to={`/admin/attributes/${attr._id}/terms?name=${encodeURIComponent(attr.name)}`}
-                                        className={cx('variantBtn')}
-                                    >
-                                        Chủng loại
-                                    </Link>
-                                )}
-                            </td>
+            <div className={cx('wrapper-container')}>
+                <form className={cx('form')} onSubmit={handleSubmit}>
+                    <input
+                        className={cx('input')}
+                        placeholder="Tên hiển thị (VD: RAM)"
+                        value={form.name}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        required
+                    />
+                    <input
+                        className={cx('input')}
+                        placeholder="Tên khóa (vd: ram)"
+                        value={form.key}
+                        onChange={(e) => setForm({ ...form, key: e.target.value })}
+                        required
+                    />
+                    <select
+                        className={cx('select')}
+                        value={form.type}
+                        onChange={(e) => setForm({ ...form, type: e.target.value })}
+                    >
+                        {ATTRIBUTE_TYPES.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                            </option>
+                        ))}
+                    </select>
+    
+                    <button type="submit" className={cx('submitBtn')}>
+                        {editingId ? 'Cập nhật' : 'Thêm mới'}
+                    </button>
+                </form>
+    
+                <table className={cx('table')}>
+                    <thead>
+                        <tr>
+                            <th>Tên</th>
+                            <th>Key</th>
+                            <th>Loại</th>
+                            <th>Thao tác</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {attributes.map((attr) => (
+                            <tr key={attr._id}>
+                                <td>{attr.name}</td>
+                                <td>{attr.key}</td>
+                                <td>{attr.type}</td>
+                                <td className={cx('custom')}>
+                                    <button className={cx('editBtn')} onClick={() => handleEdit(attr)}>
+                                        Sửa
+                                    </button>
+                                    <button className={cx('deleteBtn')} onClick={() => handleDelete(attr._id)}>
+                                        Xóa
+                                    </button>
+    
+                                    {/* Nếu là loại select thì hiện nút "Chủng loại" */}
+                                    {['select', 'button', 'color', 'image'].includes(attr.type) && (
+                                        <Link
+                                            to={`/admin/attributes/${attr._id}/terms?name=${encodeURIComponent(attr.name)}`}
+                                            className={cx('variantBtn')}
+                                        >
+                                            Chủng loại
+                                        </Link>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }

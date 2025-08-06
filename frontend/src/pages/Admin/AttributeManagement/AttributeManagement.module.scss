@@ -27,12 +27,12 @@
 
 .title {
     font-size: 24px;
-    margin-bottom: 20px;
     color: #1d1d1f;
 }
 
 .form {
     display: flex;
+    flex-direction: column;
     flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 20px;
@@ -65,7 +65,6 @@
 .table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
     font-size: 14px;
 }
 
@@ -117,17 +116,49 @@
     background-color: #a60000;
 }
 
+.custom {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .variantBtn {
     background-color: #0073aa;
     color: white;
-    padding: 4px 8px;
+    padding: 6px 10px;
+    font-size: 13px;
     border: none;
     border-radius: 4px;
     margin-left: 5px;
     text-decoration: none;
-    font-size: 0.9rem;
+    display: block;
 
     &:hover {
         background-color: #005f8d;
     }
+}
+
+.wrapper-container {
+    display: grid;
+    grid-template-columns: 1fr 2fr; // Form 1 phần, table 2 phần
+    gap: 20px;
+    align-items: start;
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr; // Dưới 768px thì xếp dọc
+    }
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #f9f9f9;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.table {
+    width: 100%;
+    overflow-x: auto; // Tránh vỡ layout trên mobile
 }
