@@ -5,19 +5,32 @@ import { FaTimes } from 'react-icons/fa';
 
 const cx = classNames.bind(styles);
 
-export default function EditTermPopup({ term, onClose, onSave }) {
+export default function EditTermPopup({ term, onClose, onSave, attributeType }) {
     const [name, setName] = useState(term.name);
     const [slug, setSlug] = useState(term.slug);
+    const [color, setColor] = useState(term.color || '#000000');
 
     useEffect(() => {
         setName(term.name);
         setSlug(term.slug);
+        setColor(term.color || '#000000'); // 🟢 thêm dòng này
     }, [term]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!name.trim()) return;
-        onSave({ ...term, name: name.trim(), slug: slug.trim() });
+
+        const payload = {
+            ...term,
+            name: name.trim(),
+            slug: slug.trim(),
+        };
+
+        if (attributeType === 'color') {
+            payload.color = color;
+        }
+
+        onSave(payload);
     };
 
     return (
@@ -32,10 +45,19 @@ export default function EditTermPopup({ term, onClose, onSave }) {
                         <label>Tên *</label>
                         <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
                     </div>
+
                     <div className={cx('formGroup')}>
                         <label>Slug</label>
                         <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} />
                     </div>
+
+                    {attributeType === 'color' && (
+                        <div className={cx('formGroup')}>
+                            <label>Màu sắc</label>
+                            <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
+                        </div>
+                    )}
+
                     <div className={cx('actions')}>
                         <button type="submit" className={cx('saveBtn')}>
                             Lưu

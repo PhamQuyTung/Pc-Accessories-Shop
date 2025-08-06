@@ -88,7 +88,7 @@ const deleteAttributeTerm = async (req, res) => {
 const updateAttributeTerm = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, slug } = req.body;
+    const { name, slug, color, image } = req.body; // ✅ thêm color, image
 
     if (!name || typeof name !== "string") {
       return res.status(400).json({ message: "Tên không hợp lệ." });
@@ -99,6 +99,8 @@ const updateAttributeTerm = async (req, res) => {
       {
         name: name.trim(),
         slug: slug?.trim()?.toLowerCase() || slugify(name, { lower: true }),
+        ...(color && { color }), // ✅ nếu có color thì cập nhật
+        ...(image && { image }), // nếu có image cũng cập nhật
       },
       { new: true }
     );

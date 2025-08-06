@@ -23,8 +23,8 @@ import Login from '~/pages/Login/Login';
 import Register from '~/pages/Register/Register';
 
 import ProductManagement from '~/pages/Admin/ProductManagement/ProductManagement';
-import CreateProduct from '~/pages/CreateProduct/CreateProduct';
-import EditProduct from '~/pages/EditProduct/EditProduct';
+import CreateProduct from '~/pages/Admin/CreateProduct/CreateProduct';
+import EditProduct from '~/pages/Admin/EditProduct/EditProduct';
 import Trash from '~/pages/Trash/Trash';
 import UserManagement from '~/pages/Admin/AccountManagement/AccountManagement';
 import CategoryManagement from '~/pages/Admin/CategoryManagement/CategoryManagement';

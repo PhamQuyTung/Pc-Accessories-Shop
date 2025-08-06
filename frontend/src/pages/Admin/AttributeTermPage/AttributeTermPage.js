@@ -81,7 +81,7 @@ export default function AttributeTermsPage() {
 
     // Cập nhật
     const handleUpdate = async (updatedTerm) => {
-        const { _id: id, name, slug } = updatedTerm;
+        const { _id: id, name, slug, color, image } = updatedTerm;
         console.log('Term gửi lên để cập nhật:', updatedTerm);
 
         try {
@@ -89,6 +89,14 @@ export default function AttributeTermsPage() {
                 name: name.trim(),
                 slug: slug.trim().toLowerCase().replace(/\s+/g, '-'),
             };
+
+            if (attribute?.type === 'color') {
+                payload.color = color;
+            }
+
+            if (attribute?.type === 'image') {
+                payload.image = image;
+            }
 
             const res = await axiosClient.put(`/attribute-terms/${id}`, payload);
             setTerms((prev) => prev.map((t) => (t._id === id ? res.data : t)));
@@ -127,6 +135,7 @@ export default function AttributeTermsPage() {
                         await handleUpdate(updatedTerm);
                         setEditTerm(null); // 👉 Đóng modal tại đây
                     }}
+                    attributeType={attribute?.type}
                 />
             )}
         </div>
