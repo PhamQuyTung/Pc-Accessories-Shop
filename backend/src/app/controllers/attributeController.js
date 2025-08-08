@@ -1,5 +1,7 @@
 // backend/src/app/controllers/attributeController.js
 const Attribute = require('../models/attribute');
+const AttributeTerm = require('../models/attributeTerm');
+
 
 exports.getAll = async (req, res) => {
     try {
@@ -48,3 +50,25 @@ exports.remove = async (req, res) => {
         res.status(400).json({ message: 'Xóa thất bại' });
     }
 };
+
+// GET /api/attributes/with-terms
+exports.getAttributesWithTerms = async (req, res) => {
+    try {
+        const terms = await AttributeTerm.find().populate('attribute');
+        const attributeMap = new Map();
+
+        terms.forEach((term) => {
+            const attr = term.attribute;
+            if (attr && !attributeMap.has(attr._id.toString())) {
+                attributeMap.set(attr._id.toString(), attr);
+            }
+        });
+
+        const result = Array.from(attributeMap.values());
+        res.json(result);
+    } catch (err) {
+        console.error('Lỗi khi lấy attributes có term:', err);
+        res.status(500).json({ message: 'Lỗi server khi lấy attributes có term' });
+    }
+};
+

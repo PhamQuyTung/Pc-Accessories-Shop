@@ -116,9 +116,28 @@ const updateAttributeTerm = async (req, res) => {
   }
 };
 
+const getByAttributeId = async (req, res) => {
+  try {
+    const { attributeId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(attributeId)) {
+      return res.status(400).json({ message: "ID không hợp lệ" });
+    }
+
+    const terms = await AttributeTerm.find({ attribute: attributeId }).sort({
+      createdAt: -1,
+    });
+
+    res.status(200).json(terms);
+  } catch (error) {
+    console.error("Lỗi lấy terms theo attribute:", error);
+    res.status(500).json({ message: "Lỗi server", error });
+  }
+};
+
 module.exports = {
   createAttributeTerm,
   getAttributeTerms,
   deleteAttributeTerm,
   updateAttributeTerm,
+  getByAttributeId,
 };

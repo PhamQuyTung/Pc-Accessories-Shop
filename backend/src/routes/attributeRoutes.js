@@ -4,9 +4,16 @@ const router = express.Router();
 const attributeController = require('../app/controllers/attributeController');
 
 router.get('/', attributeController.getAll);
+
+// GET /api/attributes/with-terms
+router.get('/with-terms', attributeController.getAttributesWithTerms);
+
 router.get('/:id', attributeController.getAttributeById);
+
 router.post('/', attributeController.create);
+
 router.put('/:id', attributeController.update);
-router.delete('/:id', attributeController.remove);
+
+router.delete('/:id', attributeController.remove);  
 
 module.exports = router;

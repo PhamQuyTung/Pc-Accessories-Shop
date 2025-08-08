@@ -28,6 +28,16 @@ function CreateProduct() {
 
     const [existingProducts, setExistingProducts] = useState([]);
 
+    // Quản lý state biến thể
+    const [hasVariants, setHasVariants] = useState(false);
+    const [variantAttributes, setVariantAttributes] = useState([]); // các thuộc tính có term
+    const [selectedVariantAttributes, setSelectedVariantAttributes] = useState([]); // user chọn
+
+    // chi tiết attributeTerm
+    const [attributeTermsMap, setAttributeTermsMap] = useState({}); // { attributeId: [terms] }
+    console.log(attributeTermsMap);
+    const [variantCombinations, setVariantCombinations] = useState([]); // [{ key, attributes: [{attrId, term}], price, ... }]
+
     const navigate = useNavigate();
     const toast = useToast();
 
@@ -130,6 +140,7 @@ function CreateProduct() {
         }));
     };
 
+    // Gửi về backend khi submit
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -144,6 +155,11 @@ function CreateProduct() {
 
         if (formData.importing && Number(formData.quantity) !== 0) {
             toast('Khi đã chọn đang nhập hàng, số lượng phải bằng 0', 'error');
+            return;
+        }
+
+        if (hasVariants && selectedVariantAttributes.length === 0) {
+            toast('Bạn cần chọn ít nhất một thuộc tính cho biến thể', 'error');
             return;
         }
 
@@ -172,7 +188,20 @@ function CreateProduct() {
                 status: statusArr,
                 price: Number(formData.price),
                 discountPrice: Number(formData.discountPrice),
+                variantAttributes: hasVariants ? selectedVariantAttributes : [],
             };
+
+            if (hasVariants) {
+                payload.variants = variantCombinations.map((variant) => ({
+                    attributes: variant.attributes.map((a) => ({
+                        attribute: a.attributeId,
+                        term: a.term._id,
+                    })),
+                    price: Number(variant.price),
+                    discountPrice: Number(variant.discountPrice),
+                    quantity: Number(variant.quantity),
+                }));
+            }
 
             await axios.post('http://localhost:5000/api/products', payload);
             toast('Thêm sản phẩm thành công!', 'success');
@@ -181,6 +210,83 @@ function CreateProduct() {
             console.error('Lỗi tạo sản phẩm:', err);
             toast('Lỗi khi tạo sản phẩm!', 'error');
         }
+    };
+
+    // Gọi API lấy danh sách Attribute có Term
+    const fetchVariantAttributes = async () => {
+        try {
+            const res = await axios.get('http://localhost:5000/api/attributes/with-terms');
+            // API này bạn cần tạo riêng trong backend (phía dưới mình gợi ý)
+            setVariantAttributes(res.data || []);
+        } catch (err) {
+            console.error('Lỗi tải thuộc tính biến thể:', err);
+        }
+    };
+
+    const handleSelectVariantAttribute = async (attributeId, checked) => {
+        console.log('Selected attribute:', attributeId, 'Checked:', checked);
+        if (checked) {
+            // Add
+            setSelectedVariantAttributes((prev) => [...prev, attributeId]);
+
+            const res = await axios.get(`http://localhost:5000/api/attribute-terms/by-attribute/${attributeId}`);
+            console.log('Fetched terms for', attributeId, res.data);
+
+            const terms = res.data || [];
+
+            setAttributeTermsMap((prev) => ({
+                ...prev,
+                [attributeId]: terms,
+            }));
+        } else {
+            // Remove
+            setSelectedVariantAttributes((prev) => prev.filter((id) => id !== attributeId));
+            setAttributeTermsMap((prev) => {
+                const newMap = { ...prev };
+                delete newMap[attributeId];
+                return newMap;
+            });
+        }
+    };
+
+    // Sinh tổ hợp biến thể
+    function cartesianProduct(arrays) {
+        return arrays.reduce((a, b) => a.flatMap((d) => b.map((e) => [...d, e])), [[]]);
+    }
+
+    useEffect(() => {
+        if (Object.keys(attributeTermsMap).length === 0) {
+            setVariantCombinations([]);
+            return;
+        }
+
+        const allTerms = selectedVariantAttributes.map((attrId) => {
+            return attributeTermsMap[attrId].map((term) => ({
+                attributeId: attrId,
+                term,
+            }));
+        });
+
+        const combos = cartesianProduct(allTerms).map((combo, index) => ({
+            key: `variant-${index}`,
+            attributes: combo,
+            price: '',
+            discountPrice: '',
+            quantity: '',
+        }));
+
+        setVariantCombinations(combos);
+    }, [attributeTermsMap]);
+
+    const handleVariantChange = (index, field, value) => {
+        setVariantCombinations((prev) => {
+            const updated = [...prev];
+            updated[index] = {
+                ...updated[index],
+                [field]: value,
+            };
+            return updated;
+        });
     };
 
     return (
@@ -260,6 +366,94 @@ function CreateProduct() {
                         </div>
                     ))}
                 </div>
+
+                {/* Khi checkbox sản phẩm có biến thể thay đổi */}
+                <div className={cx('checkbox-wrapper')}>
+                    <input
+                        type="checkbox"
+                        id="hasVariants"
+                        checked={hasVariants}
+                        onChange={(e) => {
+                            const checked = e.target.checked;
+                            setHasVariants(checked);
+
+                            if (checked) {
+                                fetchVariantAttributes(); // Gọi API để lấy danh sách attribute có term
+                            } else {
+                                setSelectedVariantAttributes([]);
+                                setAttributeTermsMap({});
+                                setVariantCombinations([]);
+                            }
+                        }}
+                    />
+                    <label htmlFor="hasVariants">Sản phẩm có biến thể</label>
+                </div>
+
+                {/* Hiển thị form chọn các thuộc tính */}
+                {hasVariants && (
+                    <div className={cx('variant-attributes')}>
+                        <h4>Chọn các thuộc tính áp dụng cho biến thể:</h4>
+                        {variantAttributes.map((attr) => (
+                            <div key={attr._id} className={cx('variant-option')}>
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedVariantAttributes.includes(attr._id)}
+                                        onChange={(e) => handleSelectVariantAttribute(attr._id, e.target.checked)}
+                                    />
+                                    {attr.name} ({attr.type})
+                                </label>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Render bảng nhập giá */}
+                {variantCombinations.length > 0 && (
+                    <table className={cx('variant-table')}>
+                        <thead>
+                            <tr>
+                                {selectedVariantAttributes.map((attrId) => {
+                                    const attr = variantAttributes.find((a) => a._id === attrId);
+                                    return <th key={attrId}>{attr?.name}</th>;
+                                })}
+                                <th>Giá</th>
+                                <th>Giá KM</th>
+                                <th>Số lượng</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {variantCombinations.map((variant, idx) => (
+                                <tr key={variant.key}>
+                                    {variant.attributes.map((attr) => (
+                                        <td key={attr.term._id}>{attr.term.name}</td>
+                                    ))}
+                                    <td>
+                                        <input
+                                            type="number"
+                                            value={variant.price}
+                                            onChange={(e) => handleVariantChange(idx, 'price', e.target.value)}
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="number"
+                                            value={variant.discountPrice}
+                                            onChange={(e) => handleVariantChange(idx, 'discountPrice', e.target.value)}
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="number"
+                                            value={variant.quantity}
+                                            onChange={(e) => handleVariantChange(idx, 'quantity', e.target.value)}
+                                        />
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
 
                 <div className={cx('input-group')}>
                     <label className={cx('label')}>Số lượng</label>

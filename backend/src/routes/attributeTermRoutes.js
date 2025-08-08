@@ -9,6 +9,9 @@ router.get("/:attributeId", attributeTermController.getAttributeTerms);
 // Thêm chủng loại
 router.post("/:attributeId", authMiddleware, attributeTermController.createAttributeTerm);
 
+// Lấy các term theo attribute (cho biến thể)
+router.get('/by-attribute/:attributeId', attributeTermController.getByAttributeId);
+
 // Xoá một chủng loại
 router.delete("/:id", authMiddleware, attributeTermController.deleteAttributeTerm);
 
