@@ -61,11 +61,19 @@ const createAttributeTerm = async (req, res) => {
 };
 
 const getAttributeTerms = async (req, res) => {
+  console.log("🔥 Request params:", req.params);
   try {
     const { attributeId } = req.params;
-    const terms = await AttributeTerm.find({ attribute: attributeId }).sort({
-      createdAt: -1,
+    console.log("attributeId from request:", attributeId);
+
+    const allTerms = await AttributeTerm.find();
+    console.log("All terms in DB:", allTerms);
+
+    const terms = await AttributeTerm.find({
+      attribute: new mongoose.Types.ObjectId(attributeId),
     });
+    console.log("Terms found for this attribute:", terms);
+
     res.status(200).json(terms);
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error });
