@@ -53,28 +53,7 @@ export default function CreateProduct() {
     const [selectedColors, setSelectedColors] = useState([]);
     const [selectedSizes, setSelectedSizes] = useState([]);
 
-    const [attributes, setAttributes] = useState([]);
-
-    const handleSelectColor = (color) => {
-        setSelectedColors((prev) => (prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]));
-    };
-
-    const handleSelectSize = (size) => {
-        setSelectedSizes((prev) => (prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]));
-    };
-
-    const fetchTermsByAttribute = async (attribute) => {
-        try {
-            const res = await fetch(`/api/attribute-terms/by-attribute/${attribute._id}`);
-            if (!res.ok) throw new Error('Không thể lấy terms');
-            return await res.json();
-        } catch (err) {
-            console.error('Lỗi lấy terms:', err);
-            return [];
-        }
-    };
-
-    // Vấn đề đang fix
+    // Lấy API của attribute và terms
     useEffect(() => {
         const fetchAttributesAndTerms = async () => {
             try {
@@ -153,6 +132,9 @@ export default function CreateProduct() {
 
                 setAttributeTermsMap(termsMap);
                 setProductAttributes(attributesWithTerms);
+
+                // setAllAttributes(attributesWithTerms); // để render danh sách chọn
+                // setProductAttributes([]); // ban đầu rỗng
 
                 console.log('🎯 Kết quả cuối:', attributesWithTerms);
             } catch (error) {
@@ -353,47 +335,6 @@ export default function CreateProduct() {
         setVariants(newVariants);
     };
 
-    const handleVariantFieldChange = (index, field, value) => {
-        setVariants((prev) => {
-            const clone = [...prev];
-            clone[index] = { ...clone[index], [field]: value };
-            return clone;
-        });
-    };
-
-    const handleTermSelect = (attrId, termId) => {
-        setProductAttributes((prev) =>
-            prev.map((attr) =>
-                attr.attrId === attrId
-                    ? {
-                          ...attr,
-                          terms: attr.terms.includes(termId)
-                              ? attr.terms.filter((id) => id !== termId) // bỏ chọn
-                              : [...attr.terms, termId], // thêm chọn
-                      }
-                    : attr,
-            ),
-        );
-    };
-
-    const handleAddAttribute = async (attribute) => {
-        const terms = await fetchTermsByAttribute(attribute);
-
-        setProductAttributes((prev) => [
-            ...prev,
-            {
-                attrId: attribute._id,
-                name: attribute.name,
-                type: attribute.type,
-                useForVariations: true,
-                terms: terms.map((t) => t._id), // chỉ lấy ID hoặc để nguyên object nếu muốn
-            },
-        ]);
-    };
-
-    const removeVariant = (index) => setVariants((prev) => prev.filter((_, i) => i !== index));
-
-    // ---------- Submit ----------
     const validateAndBuildPayload = () => {
         // duplicate name
         const isDuplicate = existingProducts.some(
@@ -617,72 +558,121 @@ export default function CreateProduct() {
                             <section className={cx('metabox')}>
                                 <h3 className={cx('title')}>Thuộc tính (Attributes)</h3>
                                 <div className={cx('attr-pick')}>
-                                    <label>Thêm thuộc tính có sẵn</label>
+                                    <button type="button" className={cx('btn')}>
+                                        Thuộc tính (có chủng loại) đã có sẵn
+                                    </button>
+
                                     <div className={cx('attr-list')}>
-                                        {allAttributes.map((a) => (
-                                            <button
-                                                key={a._id}
-                                                type="button"
-                                                className={cx('chip')}
-                                                onClick={() => addAttributeToProduct(a._id)}
-                                            >
-                                                {a.name}
-                                            </button>
-                                        ))}
+                                        {allAttributes
+                                            // Chỉ render thuộc tính có terms vs đk attributeTermsMap[a._id] tồn tại
+                                            // và mảng terms này có độ dài > 0
+                                            .filter(
+                                                (a) =>
+                                                    Array.isArray(attributeTermsMap[a._id]) &&
+                                                    attributeTermsMap[a._id].length > 0,
+                                            )
+                                            .map((a) => (
+                                                <button
+                                                    key={a._id}
+                                                    type="button"
+                                                    className={cx('chip')}
+                                                    onClick={() => addAttributeToProduct(a._id)}
+                                                >
+                                                    {a.name}
+                                                </button>
+                                            ))}
                                     </div>
 
                                     <div className={cx('product-attributes')}>
-                                        {productAttributes.map((attr) => (
-                                            <div key={attr.attrId} className={cx('attr-card')}>
-                                                <div className={cx('attr-header')}>
-                                                    <strong>{attr.name}</strong>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeProductAttribute(attr.attrId)}
-                                                    >
-                                                        X
-                                                    </button>
-                                                </div>
-                                                <div className={cx('attr-body')}>
-                                                    <label>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={attr.useForVariations}
-                                                            onChange={(e) =>
-                                                                toggleUseForVariations(attr.attrId, e.target.checked)
-                                                            }
-                                                        />
-                                                        Dùng cho biến thể
-                                                    </label>
-
-                                                    <div className={cx('terms')}>
-                                                        {(attributeTermsMap[attr.attrId] || []).map((t) => {
-                                                            const isChecked =
-                                                                Array.isArray(attr.terms) &&
-                                                                attr.terms.some(
-                                                                    (termId) => String(termId) === String(t._id),
-                                                                );
-                                                            return (
-                                                                <label key={t._id} className={cx('term')}>
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={isChecked}
-                                                                        onChange={(e) =>
-                                                                            toggleTermForAttribute(
-                                                                                attr.attrId,
-                                                                                t._id,
-                                                                                e.target.checked,
-                                                                            )
+                                        {productAttributes.length === 0 ? (
+                                            <p className={cx('no-attributes')}>
+                                                Chưa có thuộc tính nào, vui lòng thêm thuộc tính
+                                            </p>
+                                        ) : (
+                                            <AnimatePresence>
+                                                {productAttributes
+                                                    .filter(
+                                                        (attr) =>
+                                                            Array.isArray(attributeTermsMap[attr.attrId]) &&
+                                                            attributeTermsMap[attr.attrId].length > 0,
+                                                    )
+                                                    .map((attr) => (
+                                                        <motion.div
+                                                            key={attr.attrId}
+                                                            className={cx('attr-card')}
+                                                            initial={{ opacity: 0, y: -10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            exit={{ opacity: 0, y: 10 }}
+                                                            transition={{ duration: 0.25 }}
+                                                        >
+                                                            <div key={attr.attrId} className={cx('attr-card')}>
+                                                                <div className={cx('attr-header')}>
+                                                                    <strong>{attr.name}</strong>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            removeProductAttribute(attr.attrId)
                                                                         }
-                                                                    />
-                                                                    {t.name}
-                                                                </label>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                                                    >
+                                                                        X
+                                                                    </button>
+                                                                </div>
+                                                                <div className={cx('attr-body')}>
+                                                                    <label className={cx('term', 'dp-flex')}>
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={attr.useForVariations}
+                                                                            onChange={(e) =>
+                                                                                toggleUseForVariations(
+                                                                                    attr.attrId,
+                                                                                    e.target.checked,
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                        Dùng cho biến thể
+                                                                    </label>
+
+                                                                    <div className={cx('terms')}>
+                                                                        {(attributeTermsMap[attr.attrId] || []).map(
+                                                                            (t) => {
+                                                                                const isChecked =
+                                                                                    Array.isArray(attr.terms) &&
+                                                                                    attr.terms.some(
+                                                                                        (termId) =>
+                                                                                            String(termId) ===
+                                                                                            String(t._id),
+                                                                                    );
+                                                                                return (
+                                                                                    <label
+                                                                                        key={t._id}
+                                                                                        className={cx(
+                                                                                            'term',
+                                                                                            'dp-flex',
+                                                                                        )}
+                                                                                    >
+                                                                                        <input
+                                                                                            type="checkbox"
+                                                                                            checked={isChecked}
+                                                                                            onChange={(e) =>
+                                                                                                toggleTermForAttribute(
+                                                                                                    attr.attrId,
+                                                                                                    t._id,
+                                                                                                    e.target.checked,
+                                                                                                )
+                                                                                            }
+                                                                                        />
+                                                                                        {t.name}
+                                                                                    </label>
+                                                                                );
+                                                                            },
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </motion.div>
+                                                    ))}
+                                            </AnimatePresence>
+                                        )}
                                     </div>
 
                                     <div className={cx('attr-actions')}>
