@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '~/components/ToastMessager';
 import Swal from 'sweetalert2';
 import { motion, AnimatePresence } from 'framer-motion';
+import VariantImage from '~/components/VariantImage/VariantImage';
 
 const cx = classNames.bind(styles);
 
@@ -472,7 +473,7 @@ export default function CreateProduct() {
                         </div>
 
                         <div className={cx('field')}>
-                            <label>Mô tả</label>
+                            <label>Mô tả dài</label>
                             <textarea
                                 name="description"
                                 value={form.description}
@@ -741,37 +742,60 @@ export default function CreateProduct() {
                                                             transition={{ duration: 0.3 }}
                                                         >
                                                             <div className={cx('variant-body')}>
-                                                                <div className={cx('form-row')}>
-                                                                    <label>Giá thường</label>
-                                                                    <input
-                                                                        type="number"
-                                                                        value={v.price}
-                                                                        onChange={(e) =>
-                                                                            handleVariantChange(
-                                                                                i,
-                                                                                'price',
-                                                                                e.target.value,
-                                                                            )
-                                                                        }
-                                                                    />
+                                                                {/* Dòng 1: Ảnh & SKU */}
+                                                                <div className={cx('form-row', 'row-1')}>
+                                                                    <VariantImage v={v} i={i} handleVariantChange={handleVariantChange} />
+                                                                    
+                                                                    <div className={cx('form-col', 'sku')}>
+                                                                        <label>SKU</label>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={v.sku}
+                                                                            onChange={(e) =>
+                                                                                handleVariantChange(
+                                                                                    i,
+                                                                                    'sku',
+                                                                                    e.target.value,
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                    </div>
                                                                 </div>
 
-                                                                <div className={cx('form-row')}>
-                                                                    <label>Giá khuyến mãi</label>
-                                                                    <input
-                                                                        type="number"
-                                                                        value={v.discountPrice}
-                                                                        onChange={(e) =>
-                                                                            handleVariantChange(
-                                                                                i,
-                                                                                'discountPrice',
-                                                                                e.target.value,
-                                                                            )
-                                                                        }
-                                                                    />
+                                                                {/* Dòng 2: Giá & Giá khuyến mãi */}
+                                                                <div className={cx('form-row', 'row-2')}>
+                                                                    <div className={cx('form-col', 'price')}>
+                                                                        <label>Giá thường</label>
+                                                                        <input
+                                                                            type="number"
+                                                                            value={v.price}
+                                                                            onChange={(e) =>
+                                                                                handleVariantChange(
+                                                                                    i,
+                                                                                    'price',
+                                                                                    e.target.value,
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                    </div>
+                                                                    <div className={cx('form-col', 'discountPrice')}>
+                                                                        <label>Giá khuyến mãi</label>
+                                                                        <input
+                                                                            type="number"
+                                                                            value={v.discountPrice}
+                                                                            onChange={(e) =>
+                                                                                handleVariantChange(
+                                                                                    i,
+                                                                                    'discountPrice',
+                                                                                    e.target.value,
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                    </div>
                                                                 </div>
 
-                                                                <div className={cx('form-row')}>
+                                                                {/* Dòng 3: Số lượng */}
+                                                                <div className={cx('form-row', 'row-3', 'column')}>
                                                                     <label>Số lượng</label>
                                                                     <input
                                                                         type="number"
@@ -786,30 +810,75 @@ export default function CreateProduct() {
                                                                     />
                                                                 </div>
 
-                                                                <div className={cx('form-row')}>
-                                                                    <label>SKU</label>
-                                                                    <input
-                                                                        type="text"
-                                                                        value={v.sku}
-                                                                        onChange={(e) =>
-                                                                            handleVariantChange(
-                                                                                i,
-                                                                                'sku',
-                                                                                e.target.value,
-                                                                            )
-                                                                        }
-                                                                    />
+                                                                {/* Dòng 4: Cân nặng & Kích thước */}
+                                                                <div className={cx('form-row', 'row-4')}>
+                                                                    <div className={cx('form-col', 'weight')}>
+                                                                        <label>Cân nặng (kg)</label>
+                                                                        <input
+                                                                            type="number"
+                                                                            value={v.weight || 0}
+                                                                            onChange={(e) =>
+                                                                                handleVariantChange(
+                                                                                    i,
+                                                                                    'weight',
+                                                                                    e.target.value,
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                    </div>
+                                                                    <div className={cx('form-col', 'dimensions')}>
+                                                                        <label>Kích thước (D x R x C) cm</label>
+                                                                        <div className={cx('dimensions-inputs')}>
+                                                                            <input
+                                                                                type="number"
+                                                                                placeholder="Dài"
+                                                                                value={v.dimensions?.length || 0}
+                                                                                onChange={(e) =>
+                                                                                    handleVariantChange(
+                                                                                        i,
+                                                                                        'dimensions.length',
+                                                                                        e.target.value,
+                                                                                    )
+                                                                                }
+                                                                            />
+                                                                            <input
+                                                                                type="number"
+                                                                                placeholder="Rộng"
+                                                                                value={v.dimensions?.width || 0}
+                                                                                onChange={(e) =>
+                                                                                    handleVariantChange(
+                                                                                        i,
+                                                                                        'dimensions.width',
+                                                                                        e.target.value,
+                                                                                    )
+                                                                                }
+                                                                            />
+                                                                            <input
+                                                                                type="number"
+                                                                                placeholder="Cao"
+                                                                                value={v.dimensions?.height || 0}
+                                                                                onChange={(e) =>
+                                                                                    handleVariantChange(
+                                                                                        i,
+                                                                                        'dimensions.height',
+                                                                                        e.target.value,
+                                                                                    )
+                                                                                }
+                                                                            />
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
 
-                                                                <div className={cx('form-row')}>
-                                                                    <label>Hình ảnh</label>
-                                                                    <input
-                                                                        type="file"
+                                                                {/* Dòng 5: Mô tả sản phẩm ngắn */}
+                                                                <div className={cx('form-row', 'row-5', 'column')}>
+                                                                    <label>Mô tả ngắn</label>
+                                                                    <textarea
+                                                                        value={v.shortDescription || ''}
                                                                         onChange={(e) =>
                                                                             handleVariantChange(
                                                                                 i,
-                                                                                'image',
-                                                                                e.target.files[0],
+                                                                                'shortDescription',
+                                                                                e.target.value,
                                                                             )
                                                                         }
                                                                     />

@@ -207,7 +207,57 @@ class ProductController {
   // API tạo sản phẩm từ React (POST /api/products)
   async createProduct(req, res) {
     try {
-      const product = new Product(req.body); // Tự động tạo slug bằng middleware
+      const {
+        name,
+        images,
+        price,
+        discountPrice,
+        quantity,
+        status,
+        visible,
+        specs,
+        category,
+        brand,
+        description,
+        dimensions,
+        weight,
+        variations,
+      } = req.body;
+
+      const product = new Product({
+        name,
+        images,
+        price,
+        discountPrice,
+        quantity,
+        status,
+        visible,
+        specs,
+        category,
+        brand,
+        description,
+        dimensions: {
+          length: dimensions?.length || 0,
+          width: dimensions?.width || 0,
+          height: dimensions?.height || 0,
+          unit: dimensions?.unit || "cm",
+        },
+        weight: {
+          value: weight?.value || 0,
+          unit: weight?.unit || "kg",
+        },
+        variations: Array.isArray(variations)
+          ? variations.map((v) => ({
+              attributes: v.attributes || [],
+              price: v.price,
+              discountPrice: v.discountPrice,
+              quantity: v.quantity,
+              sku: v.sku,
+              images: v.images || [],
+            }))
+          : [],
+      });
+
       await product.save();
       res.status(201).json(product);
     } catch (err) {
@@ -326,14 +376,48 @@ class ProductController {
   // Cập nhật sản phẩm
   async updateProduct(req, res) {
     try {
-      const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      const data = { ...req.body };
+
+      if (data.dimensions) {
+        data.dimensions = {
+          length: data.dimensions.length || 0,
+          width: data.dimensions.width || 0,
+          height: data.dimensions.height || 0,
+          unit: data.dimensions.unit || "cm",
+        };
+      }
+
+      if (data.weight) {
+        data.weight = {
+          value: data.weight.value || 0,
+          unit: data.weight.unit || "kg",
+        };
+      }
+
+      if (Array.isArray(data.variations)) {
+        data.variations = data.variations.map((v) => ({
+          attributes: v.attributes || [],
+          price: v.price,
+          discountPrice: v.discountPrice,
+          quantity: v.quantity,
+          sku: v.sku,
+          images: v.images || [],
+        }));
+      }
+
+      const updated = await Product.findByIdAndUpdate(req.params.id, data, {
         new: true,
       });
-      if (!updated)
+
+      if (!updated) {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      }
+
       res.json(updated);
     } catch (err) {
-      res.status(500).json({ error: "Lỗi khi cập nhật sản phẩm" });
+      res
+        .status(500)
+        .json({ error: "Lỗi khi cập nhật sản phẩm", details: err.message });
     }
   }
 

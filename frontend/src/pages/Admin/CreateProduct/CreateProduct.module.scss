@@ -515,34 +515,102 @@
 
 /* body */
 .variant-body {
-    padding: 12px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 10px;
-    align-items: start;
-}
-
-.form-row {
     display: flex;
     flex-direction: column;
-}
-.form-row label {
-    font-size: 13px;
-    margin-bottom: 6px;
-    color: #333;
-}
-.form-row input[type='text'],
-.form-row input[type='number'],
-.form-row input[type='file'] {
-    padding: 8px 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 13px;
+    gap: 12px;
+
+    .form-row {
+        display: flex;
+        gap: 16px;
+
+        &.row-1,
+        &.row-2,
+        &.row-4 {
+            .form-col {
+                flex: 1;
+            }
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .dimensions-inputs {
+            display: flex;
+            gap: 8px;
+            input {
+                flex: 1;
+            }
+        }
+    }
 }
 
-.dp-flex {
+.column {
     display: flex;
-    align-items: center;
-    gap: 5px;
+    flex-direction: column;
+    gap: 2px !important;
 }
 
+.image-upload {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+
+    input[type='file'] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .image-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-size: 12px;
+        color: #777;
+    }
+
+    .image-preview {
+        position: relative;
+        height: 100%;
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .remove-image {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 12px;
+            line-height: 1;
+            cursor: pointer;
+            &:hover {
+                background: #f00;
+                color: #fff;
+            }
+        }
+    }
+}
