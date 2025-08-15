@@ -16,7 +16,7 @@ function ProductCard({ product, viewMode }) {
     return (
         <div className={cx('product-card', viewMode === 'list' ? 'list-mode' : 'grid-mode')}>
             <div className={cx('proloop-label--bottom')}>
-                {product.status.includes('quà tặng') && (
+                {typeof product.status === 'string' && product.status.includes('quà tặng') && (
                     <span className={cx('gift-tag')}>
                         <div className={cx('gift-tag__hot')}>
                             <FireIcon className={cx('icon-fire')} />
@@ -48,18 +48,21 @@ function ProductCard({ product, viewMode }) {
                 <div className={cx('product-card__des')}>
                     <Link to={`/products/${product.slug}`}>{product.name}</Link>
 
-                    {product.specs && Object.values(product.specs).some((value) => value?.trim()) && (
-                        <div className={cx('specs')}>
-                            {Object.values(product.specs)
-                                .filter((value) => value?.trim())
-                                .map((value, index, array) => (
-                                    <span key={index}>
-                                        {value}
-                                        {index < array.length - 1 && ' | '}
-                                    </span>
-                                ))}
-                        </div>
-                    )}
+                    {typeof product.specs === 'object' &&
+                        Object.values(product.specs || {}).some(
+                            (value) => typeof value === 'string' && value.trim(),
+                        ) && (
+                            <div className={cx('specs')}>
+                                {Object.values(product.specs || {})
+                                    .filter((value) => typeof value === 'string' && value.trim())
+                                    .map((value, index, array) => (
+                                        <span key={index}>
+                                            {value}
+                                            {index < array.length - 1 && <span className={cx('separator')}> | </span>}
+                                        </span>
+                                    ))}
+                            </div>
+                        )}
 
                     <div className={cx('price')}>
                         {product.discountPrice && product.discountPrice < product.price ? (

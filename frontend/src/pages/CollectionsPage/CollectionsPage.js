@@ -40,24 +40,33 @@ export default function CollectionsPage() {
         const rams = [...new Set(products.map((p) => p.ram))].filter(Boolean);
         const cpus = [...new Set(products.map((p) => p.cpu))].filter(Boolean);
 
-        const prices = products.map((p) => p.discountPrice || p.price).sort((a, b) => a - b);
-        const rawMin = prices[0] || 0;
-        const rawMax = prices[prices.length - 1] || 0;
+        // Lấy giá thực (ưu tiên discountPrice nếu > 0)
+        const prices = products
+            .map((p) => Number(p.discountPrice > 0 ? p.discountPrice : p.price))
+            .filter((price) => !isNaN(price))
+            .sort((a, b) => a - b);
 
-        const minPrice = roundUpTo(rawMin, 100000); // tròn 100.000
-        const maxPrice = roundUpTo(rawMax, 100000);
+        if (prices.length === 0) {
+            return { brands, rams, cpus, priceRanges: [] };
+        }
+
+        const minPrice = prices[0];
+        const maxPrice = prices[prices.length - 1];
         const rangeSize = Math.ceil((maxPrice - minPrice) / 3);
-        const priceRanges = [];
 
+        const priceRanges = [];
         if (rangeSize > 0) {
+            // Nhóm 1: Dưới X
             priceRanges.push({
                 label: `Dưới ${formatCurrency(minPrice + rangeSize)}`,
-                value: `${minPrice}-${minPrice + rangeSize}`,
+                value: `${0}-${minPrice + rangeSize - 1}`,
             });
+            // Nhóm 2: X – Y
             priceRanges.push({
                 label: `${formatCurrency(minPrice + rangeSize)} – ${formatCurrency(minPrice + rangeSize * 2)}`,
                 value: `${minPrice + rangeSize}-${minPrice + rangeSize * 2}`,
             });
+            // Nhóm 3: Trên Z
             priceRanges.push({
                 label: `Trên ${formatCurrency(minPrice + rangeSize * 2)}`,
                 value: `${minPrice + rangeSize * 2}-999999999`,
@@ -86,15 +95,21 @@ export default function CollectionsPage() {
         fetchProductsByCategory();
     }, [slug]);
 
-    // 👉 Hàm xử lý lọc sản phẩm
+    // 👉 Hàm xử lý lọc sản phẩm (đã fix)
     const handleFilterChange = (selectedFilters) => {
         let filtered = [...products];
 
-        if (selectedFilters.price) {
-            const [min, max] = selectedFilters.price.split('-').map(Number);
+        // Xử lý nhiều khoảng giá
+        if (selectedFilters.price.length > 0) {
             filtered = filtered.filter((p) => {
-                const realPrice = p.discountPrice > 0 ? p.discountPrice : p.price;
-                return realPrice >= min && realPrice <= max;
+                const realPrice = Number(p.discountPrice > 0 ? p.discountPrice : p.price);
+                return selectedFilters.price.some((range) => {
+                    const [min, max] = range.split('-').map(Number);
+                    if (max >= 999999999) {
+                        return realPrice > min;
+                    }
+                    return realPrice >= min && realPrice <= max;
+                });
             });
         }
 

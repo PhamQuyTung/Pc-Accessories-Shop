@@ -59,7 +59,7 @@ const productSchema = new mongoose.Schema({
   quantity: { type: Number, default: 0 },
   status: [String],
   visible: { type: Boolean, default: true },
-  specs: [{ key: String, value: String }],
+  specs: { type: Map, of: String },
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Category",

@@ -7,36 +7,51 @@ const cx = classNames.bind(styles);
 
 export default function FilterSidebar({ filters, onChange }) {
     const [selected, setSelected] = useState({
-        price: '',
+        price: [],
         brand: '',
         ram: '',
         cpu: '',
     });
 
-    const handleChange = (e) => {
+    const handlePriceChange = (value) => {
+        let newPrices = [...selected.price];
+        if (newPrices.includes(value)) {
+            newPrices = newPrices.filter((p) => p !== value);
+        } else {
+            newPrices.push(value);
+        }
+        const newSelected = { ...selected, price: newPrices };
+        setSelected(newSelected);
+        onChange(newSelected);
+    };
+
+    const handleOtherChange = (e) => {
         const { name, value } = e.target;
         const newSelected = { ...selected, [name]: value };
         setSelected(newSelected);
-        onChange(newSelected); // gọi hàm cha
+        onChange(newSelected);
     };
 
     return (
         <div className={cx('filter-sidebar')}>
             <div className={cx('filter-group')}>
                 <label>Giá:</label>
-                <select name="price" value={selected.price} onChange={handleChange}>
-                    <option value="">Tất cả</option>
-                    {filters.priceRanges?.map((range, index) => (
-                        <option key={index} value={range.value}>
-                            {range.label}
-                        </option>
-                    ))}
-                </select>
+                {filters.priceRanges?.map((range, index) => (
+                    <div key={index} className={cx('checkbox-item')}>
+                        <input
+                            type="checkbox"
+                            id={`price-${index}`}
+                            checked={selected.price.includes(range.value)}
+                            onChange={() => handlePriceChange(range.value)}
+                        />
+                        <label htmlFor={`price-${index}`}>{range.label}</label>
+                    </div>
+                ))}
             </div>
 
             <div className={cx('filter-group')}>
                 <label>Hãng:</label>
-                <select name="brand" value={selected.brand} onChange={handleChange}>
+                <select name="brand" value={selected.brand} onChange={handleOtherChange}>
                     <option value="">Tất cả</option>
                     {filters.brands.map((brand) => (
                         <option key={brand} value={brand}>
@@ -49,7 +64,7 @@ export default function FilterSidebar({ filters, onChange }) {
             {filters.rams.length > 0 && (
                 <div className={cx('filter-group')}>
                     <label>RAM:</label>
-                    <select name="ram" value={selected.ram} onChange={handleChange}>
+                    <select name="ram" value={selected.ram} onChange={handleOtherChange}>
                         <option value="">Tất cả</option>
                         {filters.rams.map((ram) => (
                             <option key={ram} value={ram}>
@@ -63,7 +78,7 @@ export default function FilterSidebar({ filters, onChange }) {
             {filters.cpus.length > 0 && (
                 <div className={cx('filter-group')}>
                     <label>CPU:</label>
-                    <select name="cpu" value={selected.cpu} onChange={handleChange}>
+                    <select name="cpu" value={selected.cpu} onChange={handleOtherChange}>
                         <option value="">Tất cả</option>
                         {filters.cpus.map((cpu) => (
                             <option key={cpu} value={cpu}>

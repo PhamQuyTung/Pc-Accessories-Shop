@@ -267,6 +267,18 @@ function ProductDetail() {
         }
     };
 
+    let specsData = {};
+
+    if (Array.isArray(product.specs)) {
+        product.specs.forEach((item) => {
+            if (item.key && item.value) {
+                specsData[item.key] = item.value;
+            }
+        });
+    } else if (typeof product.specs === 'object' && product.specs !== null) {
+        specsData = product.specs;
+    }
+
     // Hàm hiển thị Tabcontent
     const renderTabContent = () => {
         switch (activeTab) {
@@ -277,13 +289,12 @@ function ProductDetail() {
                     <>
                         <table className={cx('specs-table')}>
                             <tbody>
-                                {product.specs &&
-                                    Object.entries(product.specs).map(([key, value]) => (
-                                        <tr key={key}>
-                                            <td className={cx('specs-key')}>{key}</td>
-                                            <td className={cx('specs-value')}>{value}</td>
-                                        </tr>
-                                    ))}
+                                {Object.entries(specsData).map(([key, value]) => (
+                                    <tr key={key}>
+                                        <td className={cx('specs-key')}>{key}</td>
+                                        <td className={cx('specs-value')}>{value}</td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </>

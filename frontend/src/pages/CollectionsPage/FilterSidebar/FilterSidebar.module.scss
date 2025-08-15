@@ -1,56 +1,86 @@
 .filter-sidebar {
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
+    background: #fff;
     padding: 16px;
-    background-color: #fff;
     border-radius: 8px;
-    border: 1px solid #e5e5e5;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
     .filter-group {
-        flex: 1 1 200px; // Chiều rộng mỗi bộ lọc ~1 cột trên responsive
-        min-width: 150px;
+        margin-bottom: 20px;
 
         label {
             display: block;
-            font-weight: 500;
-            margin-bottom: 6px;
+            font-weight: 600;
+            margin-bottom: 8px;
             color: #333;
+            font-size: 1.6rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            cursor: pointer;
+
+            input[type='checkbox'] {
+                appearance: none;
+                width: 18px;
+                height: 18px;
+                border: 2px solid #ccc;
+                border-radius: 4px;
+                margin-right: 8px;
+                cursor: pointer;
+                position: relative;
+                transition: all 0.2s ease;
+
+                &:checked {
+                    border-color: #d70018; /* đỏ GearVN */
+                    background-color: #d70018;
+                }
+
+                &:checked::after {
+                    content: '';
+                    position: absolute;
+                    left: 4px;
+                    top: 0px;
+                    width: 5px;
+                    height: 10px;
+                    border: solid white;
+                    border-width: 0 2px 2px 0;
+                    transform: rotate(45deg);
+                }
+
+                &:hover {
+                    border-color: #d70018;
+                }
+            }
+
+            label {
+                font-size: 14px;
+                color: #555;
+                cursor: pointer;
+                transition: color 0.2s ease;
+                margin: 0;
+
+                &:hover {
+                    color: #d70018;
+                }
+            }
         }
 
         select {
             width: 100%;
-            padding: 8px 12px;
+            padding: 6px 8px;
+            border-radius: 4px;
             border: 1px solid #ccc;
-            border-radius: 6px;
-            background-color: #f9f9f9;
-            color: #333;
-            transition: border-color 0.2s;
+            outline: none;
             font-size: 14px;
+            color: #333;
+            transition: border-color 0.2s ease;
 
+            &:hover,
             &:focus {
-                border-color: #f60; // GearVN cam
-                background-color: #fff;
-                outline: none;
+                border-color: #d70018;
             }
         }
-    }
-}
-
-.filter-option {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-    cursor: pointer;
-
-    input {
-        margin-right: 8px;
-        accent-color: #f60;
-    }
-
-    label {
-        cursor: pointer;
-        user-select: none;
     }
 }
