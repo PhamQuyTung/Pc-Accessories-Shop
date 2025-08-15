@@ -1,0 +1,77 @@
+.wrap {
+    background: #fff;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.form .row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+    label {
+        font-weight: 600;
+    }
+    input,
+    select {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+    }
+}
+
+.grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.rowCheck {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.products .header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.products .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.card {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.card.active {
+    border-color: #d70018;
+    box-shadow: 0 0 0 2px rgba(215, 0, 24, 0.15);
+}
+
+.footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+    .primary {
+        background: #d70018;
+        color: #fff;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+}

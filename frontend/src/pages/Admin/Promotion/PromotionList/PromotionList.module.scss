@@ -1,0 +1,73 @@
+.wrap {
+    background: #fff;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    .actions {
+        display: flex;
+        gap: 8px;
+        input {
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        .primary {
+            background: #d70018;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+    }
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    button {
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: #f7f7f7;
+        cursor: pointer;
+    }
+    .active {
+        background: #d70018;
+        color: #fff;
+        border-color: #d70018;
+    }
+    .endedToggle {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    th,
+    td {
+        border-bottom: 1px solid #eee;
+        padding: 10px;
+        text-align: left;
+    }
+    .actions a {
+        margin-right: 8px;
+        color: #0366d6;
+    }
+    .empty {
+        text-align: center;
+        color: #666;
+    }
+}

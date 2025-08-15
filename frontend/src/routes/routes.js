@@ -32,12 +32,15 @@ import AttributeManagement from '~/pages/Admin/AttributeManagement/AttributeMana
 import AssignAttributeToCategory from '~/pages/Admin/AssignAttributeToCategory/AssignAttributeToCategory';
 import AttributeTermPage from '~/pages/Admin/AttributeTermPage/AttributeTermPage';
 import AdminMenuManagement from '~/pages/Admin/AdminMenuManagement/AdminMenuManagement';
+import PromotionManagement from '~/pages/Admin/Promotion/PromotionList/PromotionList';
+import CreatePromotion from '~/pages/Admin/Promotion/PromotionForm/PromotionForm';
 
 import ProfileLayout from '~/pages/Profile/ProfileLayout';
 import ProfileInfo from '~/pages/Profile/tabs/ProfileInfo/ProfileInfo';
 import ProfileAddress from '~/pages/Profile/tabs/ProfileAddress';
 import ProfileOrders from '~/pages/Profile/tabs/ProfileOrders';
 import ProfileViewed from '~/pages/Profile/tabs/ProfileViewed/ProfileViewed';
+
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -103,6 +106,11 @@ const routes = [
             { path: 'attributes/:attributeId/terms', element: <AttributeTermPage /> },
             { path: 'attributes/assign', element: <AssignAttributeToCategory /> },
             { path: 'menus', element: <AdminMenuManagement /> },
+
+            // 🎯 Chương trình khuyến mãi
+            { path: 'promotions', element: <PromotionManagement /> }, // Danh sách + Xem chi tiết
+            { path: 'promotions/new', element: <CreatePromotion /> }, // Thêm mới
+            // { path: 'promotions/:id/edit', element: <EditPromotion /> }, // Sửa
         ],
     },
 

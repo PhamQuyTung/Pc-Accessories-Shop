@@ -80,6 +80,12 @@ const AdminSidebar = () => {
                                 Thêm mới sản phẩm
                             </NavLink>
                             <NavLink
+                                to="/admin/products/trash"
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
+                                Thùng rác sản phẩm
+                            </NavLink>
+                            <NavLink
                                 to="/admin/categories"
                                 className={({ isActive }) => cx('link', { active: isActive })}
                             >
@@ -95,10 +101,10 @@ const AdminSidebar = () => {
                                 Các thuộc tính
                             </NavLink>
                             <NavLink
-                                to="/admin/products/trash"
+                                to="/admin/promotions"
                                 className={({ isActive }) => cx('link', { active: isActive })}
                             >
-                                Thùng rác sản phẩm
+                                Chương trình khuyến mãi
                             </NavLink>
                         </motion.div>
                     )}

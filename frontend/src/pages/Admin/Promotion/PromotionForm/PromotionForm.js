@@ -1,0 +1,234 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import axiosClient from '~/utils/axiosClient';
+import styles from './PromotionForm.module.scss';
+import classNames from 'classnames/bind';
+import { useNavigate, useParams } from 'react-router-dom';
+
+const cx = classNames.bind(styles);
+const ELIGIBLE_STATUSES = ['còn hàng', 'nhiều hàng', 'sản phẩm mới']; // tuỳ hệ thống bạn
+
+export default function PromotionForm() {
+    const { id } = useParams(); // nếu có id => edit
+    const isEdit = Boolean(id);
+    const [form, setForm] = useState({
+        name: '',
+        percent: 10,
+        type: 'once',
+        once: { startAt: '', endAt: '' },
+        daily: { startDate: '', endDate: '', startTime: '09:00', endTime: '18:00' },
+        hideWhenEnded: true,
+    });
+    const [products, setProducts] = useState([]);
+    const [selectedIds, setSelectedIds] = useState([]);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        (async () => {
+            try {
+                // Lấy sản phẩm đủ điều kiện từ API
+                const { data } = await axiosClient.get('/promotions/available-products');
+                console.log('API available products:', data);
+
+                const productList = Array.isArray(data.products) ? data.products : [];
+                console.log(
+                    'Statuses from API:',
+                    productList.map((p) => p.status),
+                );
+
+                setProducts(productList);
+
+                if (isEdit) {
+                    const { data: promo } = await axiosClient.get(`/admin/promotions/${id}`);
+                    setForm({
+                        name: promo.name,
+                        percent: promo.percent,
+                        type: promo.type,
+                        once: promo.once || { startAt: '', endAt: '' },
+                        daily: promo.daily || { startDate: '', endDate: '', startTime: '09:00', endTime: '18:00' },
+                        hideWhenEnded: promo.hideWhenEnded ?? true,
+                    });
+                    setSelectedIds(promo.assignedProducts.map((pp) => pp.product?._id || pp.product));
+                }
+            } catch (err) {
+                console.error('Error fetching products or promotion:', err);
+            }
+        })();
+        // eslint-disable-next-line
+    }, [id]);
+
+    const onChange = (e) => {
+        const { name, value, type } = e.target;
+        if (name.startsWith('once.') || name.startsWith('daily.')) {
+            const [group, key] = name.split('.');
+            setForm((prev) => ({ ...prev, [group]: { ...prev[group], [key]: value } }));
+        } else if (type === 'checkbox') {
+            setForm((prev) => ({ ...prev, [name]: e.target.checked }));
+        } else {
+            setForm((prev) => ({ ...prev, [name]: value }));
+        }
+    };
+
+    const toggleSelect = (id) => {
+        setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    };
+
+    const submit = async () => {
+        const payload = { ...form };
+        if (payload.type === 'once') delete payload.daily;
+        else delete payload.once;
+        let promo;
+        if (isEdit) {
+            promo = await axiosClient.patch(`/admin/promotions/${id}`, payload);
+        } else {
+            promo = await axiosClient.post('/promotions', payload);
+        }
+        if (selectedIds.length > 0) {
+            await axiosClient.post(`/promotions/${promo.data?._id || promo.data.id}/assign-products`, {
+                productIds: selectedIds,
+            });
+        }
+        navigate('/admin/promotions');
+    };
+
+    return (
+        <div className={cx('wrap')}>
+            <h2>{isEdit ? 'Sửa CTKM' : 'Tạo CTKM'}</h2>
+
+            <div className={cx('form')}>
+                <div className={cx('row')}>
+                    <label>Tên chương trình</label>
+                    <input name="name" value={form.name} onChange={onChange} placeholder="Ví dụ: Back To School 2025" />
+                </div>
+
+                <div className={cx('row')}>
+                    <label>Giảm giá (%)</label>
+                    <input type="number" name="percent" min={1} max={90} value={form.percent} onChange={onChange} />
+                </div>
+
+                <div className={cx('row')}>
+                    <label>Kiểu lịch</label>
+                    <select name="type" value={form.type} onChange={onChange}>
+                        <option value="once">Một lần</option>
+                        <option value="daily">Lặp hằng ngày</option>
+                    </select>
+                </div>
+
+                {form.type === 'once' ? (
+                    <div className={cx('grid2')}>
+                        <div className={cx('row')}>
+                            <label>Bắt đầu</label>
+                            <input
+                                type="datetime-local"
+                                name="once.startAt"
+                                value={form.once.startAt}
+                                onChange={onChange}
+                            />
+                        </div>
+                        <div className={cx('row')}>
+                            <label>Kết thúc</label>
+                            <input
+                                type="datetime-local"
+                                name="once.endAt"
+                                value={form.once.endAt}
+                                onChange={onChange}
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <div className={cx('grid2')}>
+                            <div className={cx('row')}>
+                                <label>Ngày bắt đầu</label>
+                                <input
+                                    type="date"
+                                    name="daily.startDate"
+                                    value={form.daily.startDate}
+                                    onChange={onChange}
+                                />
+                            </div>
+                            <div className={cx('row')}>
+                                <label>Ngày kết thúc (tuỳ chọn)</label>
+                                <input
+                                    type="date"
+                                    name="daily.endDate"
+                                    value={form.daily.endDate || ''}
+                                    onChange={onChange}
+                                />
+                            </div>
+                        </div>
+                        <div className={cx('grid2')}>
+                            <div className={cx('row')}>
+                                <label>Giờ bắt đầu</label>
+                                <input
+                                    type="time"
+                                    name="daily.startTime"
+                                    value={form.daily.startTime}
+                                    onChange={onChange}
+                                />
+                            </div>
+                            <div className={cx('row')}>
+                                <label>Giờ kết thúc</label>
+                                <input
+                                    type="time"
+                                    name="daily.endTime"
+                                    value={form.daily.endTime}
+                                    onChange={onChange}
+                                />
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                <div className={cx('rowCheck')}>
+                    <input
+                        type="checkbox"
+                        id="hideEnded"
+                        name="hideWhenEnded"
+                        checked={form.hideWhenEnded}
+                        onChange={onChange}
+                    />
+                    <label htmlFor="hideEnded">Tự ẩn CTKM khi kết thúc (không xoá DB)</label>
+                </div>
+            </div>
+
+            <div className={cx('products')}>
+                <div className={cx('header')}>
+                    <h3>Chọn sản phẩm áp dụng</h3>
+                    <span>(Chỉ hiện SP trạng thái đủ điều kiện)</span>
+                </div>
+
+                <div className={cx('grid')}>
+                    {products.map((p) => {
+                        const isEligible = ELIGIBLE_STATUSES.includes(String(p.status || '').toLowerCase());
+                        return (
+                            <label
+                                key={p._id}
+                                className={cx('card', { active: selectedIds.includes(p._id), eligible: isEligible })}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={selectedIds.includes(p._id)}
+                                    disabled={!isEligible} // nếu muốn không chọn được SP không đủ điều kiện
+                                    onChange={() => toggleSelect(p._id)}
+                                />
+                                <div className={cx('name')}>{p.name}</div>
+                                <div className={cx('sku')}>{p.sku}</div>
+                                <div className={cx('price')}>
+                                    {(p.discountPrice > 0 ? p.discountPrice : p.price).toLocaleString('vi-VN')} đ
+                                </div>
+                                <div className={cx('status')}>{p.status}</div>
+                            </label>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <div className={cx('footer')}>
+                <button onClick={() => navigate('/admin/promotions')}>Hủy</button>
+                <button className={cx('primary')} onClick={submit}>
+                    {isEdit ? 'Lưu thay đổi' : 'Tạo CTKM'}
+                </button>
+            </div>
+        </div>
+    );
+}

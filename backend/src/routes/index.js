@@ -11,6 +11,7 @@ const addressRoutes = require('./addressRoutes'); // ✔️ Thêm route cho addr
 const favoriteRoutes = require('./favoriteRoutes'); // ✔️ Thêm route cho favorites
 const reviewRoutes = require("./reviewRoutes");
 const attributeTermRoutes = require("./attributeTermRoutes");
+const promotionsRoutes = require("./promotionsRoutes");
 const errorHandle = require('../helpers/error.handle');
 
 function route(app) {
@@ -31,6 +32,7 @@ function route(app) {
     app.use('/api/addresses', addressRoutes); // 👈 Thêm route cho address
     app.use('/api/favorites', favoriteRoutes); // 👈 Thêm route cho favorites
     app.use('/api/reviews', reviewRoutes); // 👈 Thêm route cho reviews
+    app.use('/api/promotions', promotionsRoutes); // 👈 Thêm route cho promotions
     app.use('/api/attribute-terms', attributeTermRoutes); // 👈 Thêm route cho reviews
 
     // Middleware xử lý lỗi

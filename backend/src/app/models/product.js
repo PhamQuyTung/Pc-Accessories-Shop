@@ -1,5 +1,6 @@
 // models/product.js
 const mongoose = require("mongoose");
+const { Schema, model } = require("mongoose");
 const slugify = require("slugify");
 
 // ================= Review Schema =================
@@ -89,6 +90,17 @@ const productSchema = new mongoose.Schema({
   weight: {
     value: { type: Number, default: 0 },
     unit: { type: String, default: "kg" },
+  },
+
+  lockPromotionId: {
+    type: Schema.Types.ObjectId,
+    ref: "Promotion",
+    default: null,
+  }, // đang bị khóa bởi CTKM nào
+  promotionApplied: {
+    promoId: { type: Schema.Types.ObjectId, ref: "Promotion", default: null },
+    percent: { type: Number, default: 0 },
+    appliedAt: { type: Date, default: null },
   },
 
   variations: [variationSchema],

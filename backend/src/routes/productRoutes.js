@@ -1,7 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const ProductController = require("../app/controllers/productController");
+const PromotionsController = require("../app/controllers/promotionsController");
 const authMiddleware = require("../app/middlewares/authMiddleware");
+
+// routes/products.js (ví dụ)
+const checkProductLocked = require('../app/middlewares/checkProductLocked');
 
 // 📌 Debug log (có thể bỏ khi production)
 console.log("🛠️ ProductController.createProduct:", ProductController.createProduct);
@@ -37,6 +41,11 @@ router.post("/:id/reviews", authMiddleware, ProductController.addReview);
 router.get("/create", ProductController.createProduct); // Trang tạo
 router.get("/edit/:id", ProductController.editProduct); // Trang sửa
 router.get("/trash", ProductController.getTrash);       // Danh sách sản phẩm đã xóa
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Chặn cập nhật Product
+router.put('/:id', authMiddleware, checkProductLocked, PromotionsController.update);
+router.patch('/:id', authMiddleware, checkProductLocked, PromotionsController.partialUpdate);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 📋 Product Detail
