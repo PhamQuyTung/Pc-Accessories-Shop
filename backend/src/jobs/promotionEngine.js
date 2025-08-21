@@ -1,8 +1,8 @@
 // jobs/promotionEngine.js
 // Engine áp/huỷ khuyến mãi (cron)
 const cron = require("node-cron");
-const Promotion = require("../models/Promotion");
-const Product = require("../models/Product");
+const Promotion = require("../app/models/promotion");
+const Product = require("../app/models/product");
 const { isActiveNow } = require("../utils/promotionTime");
 
 async function applyPromotionToProduct(promo, pp) {

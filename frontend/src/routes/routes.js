@@ -34,6 +34,7 @@ import AttributeTermPage from '~/pages/Admin/AttributeTermPage/AttributeTermPage
 import AdminMenuManagement from '~/pages/Admin/AdminMenuManagement/AdminMenuManagement';
 import PromotionManagement from '~/pages/Admin/Promotion/PromotionList/PromotionList';
 import CreatePromotion from '~/pages/Admin/Promotion/PromotionForm/PromotionForm';
+import PromotionDetail from '~/pages/Admin/Promotion/PromotionDetail/PromotionDetail';
 
 import ProfileLayout from '~/pages/Profile/ProfileLayout';
 import ProfileInfo from '~/pages/Profile/tabs/ProfileInfo/ProfileInfo';
@@ -110,7 +111,8 @@ const routes = [
             // 🎯 Chương trình khuyến mãi
             { path: 'promotions', element: <PromotionManagement /> }, // Danh sách + Xem chi tiết
             { path: 'promotions/new', element: <CreatePromotion /> }, // Thêm mới
-            // { path: 'promotions/:id/edit', element: <EditPromotion /> }, // Sửa
+            { path: 'promotions/:id', element: <PromotionDetail /> }, // Chi tiết CTKM
+            // { path: 'promotions/:id/edit', element: <PromotionDetail /> }, // Sửa
         ],
     },
 

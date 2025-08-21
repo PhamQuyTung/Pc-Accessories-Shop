@@ -1,0 +1,105 @@
+.card {
+    border-radius: 6px;
+    overflow: hidden;
+    background: #fff;
+    width: 240px;
+}
+
+.card-header {
+    background: #0046d5;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px;
+    padding-bottom: 0;
+}
+
+.card-image {
+    position: relative;
+    text-align: center;
+    background: #fff;
+    padding: 10px;
+    border: 7px solid #0046d5;
+
+    // tạo góc xiên xanh
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        width: 60px;
+        height: 0px;
+        border-top: 10px solid #0046d5;
+        border-right: 10px solid transparent;
+        left: 0;
+    }
+
+    &::before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        width: 10px;
+        height: 0px;
+        border-left: 20px solid transparent;
+        border-bottom: 20px solid #0046d5;
+        right: 0;
+    }
+
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+.card-body {
+    padding: 8px;
+
+    .name {
+        font-size: 14px;
+        margin: 6px 0;
+    }
+
+    .price-box {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        .old-price {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .new-price {
+            color: red;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .discount {
+            background: #fff;
+            border: 1px solid red;
+            color: red;
+            font-size: 12px;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+    }
+
+    .rating {
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .sold {
+        margin-top: 6px;
+        background: #ff4d4f;
+        color: #fff;
+        display: inline-block;
+        padding: 2px 6px;
+        font-size: 12px;
+        border-radius: 12px;
+    }
+}

@@ -8,7 +8,7 @@ export default function PromotionDetail() {
 
     useEffect(() => {
         (async () => {
-            const { data } = await axiosClient.get(`/admin/promotions/${id}`);
+            const { data } = await axiosClient.get(`/promotions/${id}`);
             setPromo(data);
         })();
     }, [id]);

@@ -3,6 +3,7 @@ import axiosClient from '~/utils/axiosClient';
 import styles from './PromotionForm.module.scss';
 import classNames from 'classnames/bind';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useToast } from '~/components/ToastMessager/ToastMessager';
 
 const cx = classNames.bind(styles);
 const ELIGIBLE_STATUSES = ['còn hàng', 'nhiều hàng', 'sản phẩm mới']; // tuỳ hệ thống bạn
@@ -17,10 +18,13 @@ export default function PromotionForm() {
         once: { startAt: '', endAt: '' },
         daily: { startDate: '', endDate: '', startTime: '09:00', endTime: '18:00' },
         hideWhenEnded: true,
+        assignedProducts: [],
     });
     const [products, setProducts] = useState([]);
     const [selectedIds, setSelectedIds] = useState([]);
+
     const navigate = useNavigate();
+    const showToast = useToast();
 
     useEffect(() => {
         (async () => {
@@ -73,21 +77,60 @@ export default function PromotionForm() {
     };
 
     const submit = async () => {
-        const payload = { ...form };
+        const payload = { ...form, assignedProducts: selectedIds };
+
         if (payload.type === 'once') delete payload.daily;
         else delete payload.once;
-        let promo;
-        if (isEdit) {
-            promo = await axiosClient.patch(`/admin/promotions/${id}`, payload);
-        } else {
-            promo = await axiosClient.post('/promotions', payload);
+
+        // ✅ Validate trước khi call API
+        if (!payload.name.trim()) {
+            showToast('Vui lòng nhập tên chương trình!', 'warning');
+            return;
         }
-        if (selectedIds.length > 0) {
-            await axiosClient.post(`/promotions/${promo.data?._id || promo.data.id}/assign-products`, {
-                productIds: selectedIds,
-            });
+
+        if (!payload.percent || payload.percent < 1 || payload.percent > 90) {
+            showToast('Phần trăm giảm không hợp lệ (1-90).', 'error');
+            return;
         }
-        navigate('/admin/promotions');
+
+        if (!payload.name.trim()) {
+            showToast('Vui lòng nhập tên chương trình!', 'warning');
+            return;
+        }
+
+        if (selectedIds.length === 0) {
+            showToast('Hãy chọn ít nhất 1 sản phẩm!', 'warning');
+            return;
+        }
+
+        try {
+            let promo;
+            if (isEdit) {
+                promo = await axiosClient.patch(`/promotions/${id}`, payload);
+            } else {
+                promo = await axiosClient.post('/promotions', payload);
+            }
+
+            // ✅ Gán sản phẩm
+            if (selectedIds.length > 0) {
+                await axiosClient.post(`/promotions/${promo.data?._id || promo.data.id}/assign-products`, {
+                    productIds: selectedIds,
+                });
+
+                // fetch lại để thấy assignedProducts đã update
+                const updated = await axiosClient.get(`/promotions/${promo.data?._id || promo.data.id}`);
+                console.log('✅ After assign:', updated.data);
+            }
+
+            // ✅ Thành công
+            showToast(isEdit ? 'Cập nhật CTKM thành công!' : 'Tạo CTKM thành công!', 'success');
+            navigate('/admin/promotions');
+        } catch (err) {
+            console.error('❌ Error submit:', err);
+            // nếu backend trả message thì show ra
+            const msg = err.response?.data?.message || 'Có lỗi xảy ra khi lưu CTKM!';
+            showToast(msg, 'error');
+        }
     };
 
     return (

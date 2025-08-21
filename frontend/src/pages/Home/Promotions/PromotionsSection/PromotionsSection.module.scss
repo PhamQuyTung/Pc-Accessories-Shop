@@ -1,0 +1,126 @@
+.section {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    max-width: 1320px;
+    margin: 32px auto;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 16px 16px;
+    background-color: #003bb8;
+    border-top-right-radius: 12px;
+    border-top-left-radius: 12px;
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        flex-direction: row-reverse;
+        gap: 10px;
+
+        .title {
+            font-size: 30px;
+            font-weight: 900;
+            color: #ffee12;
+            font-style: italic;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+        }
+
+        .icon {
+            margin-right: 8px;
+            font-size: 22px;
+        }
+
+        .countdown {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .timeBox {
+            background: #fff; // đỏ kiểu flash sale
+            color: #000;
+            border-radius: 6px;
+            padding: 4px 6px;
+            text-align: center;
+            min-width: 40px;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            .number {
+                font-size: 16px;
+                font-weight: 700;
+                line-height: 1.2;
+            }
+
+            .label {
+                font-size: 10px;
+                text-transform: uppercase;
+                margin-top: 2px;
+            }
+        }
+
+        // Nếu muốn style tách biệt cho chữ “Ngày/Giờ/Phút/Giây”
+        .timeBox:not(:last-child)::after {
+            content: ':';
+            color: #ff3b30;
+            font-weight: bold;
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+    }
+
+    .detail-link {
+        font-size: 14px;
+        color: #fff;
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}
+
+.content {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 16px;
+    padding: 16px;
+
+    .banner {
+        position: relative;
+        display: block;
+        border-radius: 8px;
+        overflow: hidden;
+
+        img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+    }
+
+    .carousel {
+        .swiper {
+            padding-bottom: 16px;
+        }
+    }
+}
+
+.bg {
+    min-height: 410px;
+    background-image: url('../../../../assets/images/Promotions/thang_04_layout_web_-12.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}

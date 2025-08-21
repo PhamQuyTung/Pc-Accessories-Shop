@@ -5,11 +5,13 @@ import Chuot from './Chuot/Chuot';
 import BanPhim from './BanPhim/BanPhim';
 import LT from './LT/LT';
 import Screen from './Screen/Screen';
+import Promotions from './Promotions/PromotionsWrapper';
 
 function Home() {
     return (
         <div>
             <ContainerFluid />
+            <Promotions />
             <PC />
             <LT />
             <LTG />

@@ -54,20 +54,25 @@ exports.detail = async (req, res, next) => {
     const promo = await Promotion.findById(req.params.id)
       .populate(
         "assignedProducts.product",
-        "name price discountPrice status sku stock"
+        "name price discountPrice status sku stock quantity"
       )
       .lean(); // trả về object JS để dễ thao tác
 
-    if (!promo)
+    if (!promo) {
       return res.status(404).json({ message: "Không tìm thấy CTKM." });
+    }
 
-    // Lọc sản phẩm còn hàng
-    promo.assignedProducts = promo.assignedProducts.filter((ap) => {
-      return ap.product && ap.product.stock > 0;
-    });
+    console.log("Before filter:", promo.assignedProducts);
 
-    // Số lượng sản phẩm bị loại bỏ
-    const removedCount = promo.assignedProducts.length - filtered.length;
+    // Lọc bỏ sản phẩm hết hàng hoặc bị null
+    const beforeCount = promo.assignedProducts.length;
+
+    promo.assignedProducts = promo.assignedProducts.filter(
+      (ap) => ap.product && (ap.product.quantity > 0 || ap.product.stock > 0)
+    );
+
+    const removedCount = beforeCount - promo.assignedProducts.length;
+
     console.log(
       `[Promotion ${promo._id}] Đã loại ${removedCount} sản phẩm hết hàng.`
     );
@@ -78,8 +83,28 @@ exports.detail = async (req, res, next) => {
   }
 };
 
+exports.active = async (req, res, next) => {
+  try {
+    const now = new Date();
+    const promos = await Promotion.find({
+      $or: [
+        { status: "active" }, // luôn show CTKM đang chạy
+        { status: "ended", hideWhenEnded: false }, // chỉ show ended nếu ko ẩn
+      ],
+    })
+      .populate("assignedProducts.product") // lấy thông tin SP
+      .sort({ createdAt: -1 })
+      .limit(3); // tuỳ bạn muốn show bao nhiêu block CTKM
+
+    res.json(promos);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 exports.create = async (req, res, next) => {
   try {
+    console.log(req.body);
     validatePayload(req.body);
     const promo = await Promotion.create({
       name: req.body.name.trim(),
@@ -89,10 +114,14 @@ exports.create = async (req, res, next) => {
       daily: req.body.daily || undefined,
       hideWhenEnded: req.body.hideWhenEnded !== false,
       status: "scheduled",
+      assignedProducts: Array.isArray(req.body.assignedProducts)
+        ? req.body.assignedProducts.map((pid) => ({ product: pid }))
+        : [],
       createdBy: req.user?._id,
     });
-    res.status(201).json(promo);
+    res.status(201).json(promo.toObject());
   } catch (e) {
+    console.error("❌ Lỗi tạo CTKM:", e);
     next(e);
   }
 };
@@ -162,6 +191,17 @@ exports.assignProducts = async (req, res, next) => {
       "status lockPromotionId price discountPrice discountPercent"
     );
 
+    console.log(
+      "products:",
+      products.map((p) => ({
+        id: p._id,
+        status: p.status,
+        lockPromotionId: p.lockPromotionId,
+      }))
+    );
+    console.log("ELIGIBLE_STATUSES:", ELIGIBLE_STATUSES);
+    console.log("promoId:", promo._id);
+
     // Chỉ chọn sp đủ điều kiện + chưa bị CTKM khác khoá
     const eligible = products.filter(
       (p) =>
@@ -187,7 +227,7 @@ exports.assignProducts = async (req, res, next) => {
     if (isActiveNow(promo)) {
       for (const pp of promo.assignedProducts) {
         if (productIds.includes(String(pp.product))) {
-          await require("../jobs/promotionEngine").tick(); // đơn giản gọi tick để áp ngay
+          await require("../../jobs/promotionEngine").tick(); // đơn giản gọi tick để áp ngay
           break;
         }
       }
@@ -218,10 +258,12 @@ exports.unassignProduct = async (req, res, next) => {
         .json({ message: "Sản phẩm không nằm trong CTKM." });
 
     // Nếu đang active -> gỡ trước
-    const { removePromotionFromProduct } = require("../jobs/promotionEngine"); // nếu tách export
+    const {
+      removePromotionFromProduct,
+    } = require("../../jobs/promotionEngine"); // nếu tách export
     if (isActiveNow(promo)) {
       // gọi tick để đảm bảo sync
-      await require("../jobs/promotionEngine").tick();
+      await require("../../jobs/promotionEngine").tick();
     }
 
     promo.assignedProducts.splice(idx, 1);
@@ -248,7 +290,7 @@ exports.remove = async (req, res, next) => {
 
     // Nếu còn sản phẩm gán -> khôi phục trước rồi xoá
     if (promo.assignedProducts.length > 0) {
-      await require("../jobs/promotionEngine").tick();
+      await require("../../jobs/promotionEngine").tick();
       // sau tick, nếu không active nữa, xoá an toàn
     }
 

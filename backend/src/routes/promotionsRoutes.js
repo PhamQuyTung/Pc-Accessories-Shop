@@ -5,6 +5,7 @@ const authMiddleware = require("../app/middlewares/authMiddleware");
 
 router.get("/", authMiddleware, PromotionsController.list);
 router.get("/available-products", authMiddleware, PromotionsController.getAvailableProducts);
+router.get('/active', PromotionsController.active);
 router.get("/:id", authMiddleware, PromotionsController.detail);
 router.post("/", authMiddleware, PromotionsController.create);
 router.patch("/:id", authMiddleware, PromotionsController.update);
