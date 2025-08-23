@@ -6,14 +6,21 @@ import 'swiper/css/navigation';
 import classNames from 'classnames/bind';
 import styles from './PromotionsSection.module.scss';
 
+import { normalizeImageUrl } from '~/utils/normalizeImageUrl';
 import ProductCard from '../ProductCard/PromoCard';
 
 const cx = classNames.bind(styles);
 
-export default function PromotionsSection({ title, icon, endTime, detailHref, banner, products }) {
-    const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+export default function PromotionsSection({ title, icon, endTime, detailHref, bannerImg, products = [] }) {
+    const [timeLeft, setTimeLeft] = useState({
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+    });
 
     useEffect(() => {
+        if (!endTime) return;
         const interval = setInterval(() => {
             const diff = new Date(endTime) - new Date();
             if (diff <= 0) {
@@ -40,55 +47,79 @@ export default function PromotionsSection({ title, icon, endTime, detailHref, ba
                     <h2 className={cx('title')}>
                         {icon && <span className={cx('icon')}>{icon}</span>} {title}
                     </h2>
-                    <div className={cx('countdown')}>
-                        {timeLeft.days > 0 && (
+
+                    {endTime && (
+                        <div className={cx('countdown')}>
+                            {timeLeft.days > 0 && (
+                                <div className={cx('timeBox')}>
+                                    <span className={cx('number')}>{timeLeft.days}</span>
+                                    <span className={cx('label')}>Ngày</span>
+                                </div>
+                            )}
                             <div className={cx('timeBox')}>
-                                <span className={cx('number')}>{timeLeft.days}</span>
-                                <span className={cx('label')}>Ngày</span>
+                                <span className={cx('number')}>{String(timeLeft.hours).padStart(2, '0')}</span>
+                                <span className={cx('label')}>Giờ</span>
                             </div>
-                        )}
-                        <div className={cx('timeBox')}>
-                            <span className={cx('number')}>{String(timeLeft.hours).padStart(2, '0')}</span>
-                            <span className={cx('label')}>Giờ</span>
+                            <div className={cx('timeBox')}>
+                                <span className={cx('number')}>{String(timeLeft.minutes).padStart(2, '0')}</span>
+                                <span className={cx('label')}>Phút</span>
+                            </div>
+                            <div className={cx('timeBox')}>
+                                <span className={cx('number')}>{String(timeLeft.seconds).padStart(2, '0')}</span>
+                                <span className={cx('label')}>Giây</span>
+                            </div>
                         </div>
-                        <div className={cx('timeBox')}>
-                            <span className={cx('number')}>{String(timeLeft.minutes).padStart(2, '0')}</span>
-                            <span className={cx('label')}>Phút</span>
-                        </div>
-                        <div className={cx('timeBox')}>
-                            <span className={cx('number')}>{String(timeLeft.seconds).padStart(2, '0')}</span>
-                            <span className={cx('label')}>Giây</span>
-                        </div>
-                    </div>
+                    )}
                 </div>
-                <a href={detailHref} className={cx('detail-link')}>
-                    Xem chi tiết →
-                </a>
+                {detailHref && (
+                    <a href={detailHref} className={cx('detail-link')}>
+                        Xem chi tiết →
+                    </a>
+                )}
             </div>
 
             <div className={cx('bg')}>
                 <div className={cx('content')}>
                     {/* Banner trái */}
-                    <a href={banner.href} className={cx('banner')}>
-                        <img src={banner.img} alt={banner.alt} />
-                    </a>
-    
+                    {bannerImg &&
+                        (typeof bannerImg === 'string' ? (
+                            <div className={cx('banner')}>
+                                <img
+                                    src={normalizeImageUrl(bannerImg)}
+                                    alt="Promotion banner"
+                                    onError={(e) => (e.target.src = '/default-banner.jpg')}
+                                />
+                            </div>
+                        ) : (
+                            <a href={bannerImg.href || '#'} className={cx('banner')}>
+                                <img
+                                    src={normalizeImageUrl(bannerImg.img)}
+                                    alt={bannerImg.alt || 'Promotion banner'}
+                                    onError={(e) => (e.target.src = '/default-banner.jpg')}
+                                />
+                            </a>
+                        ))}
+
                     {/* Carousel phải */}
                     <div className={cx('carousel')}>
-                        <Swiper
-                            slidesPerView={4}
-                            spaceBetween={16}
-                            loop
-                            navigation
-                            autoplay={{ delay: 3000 }}
-                            modules={[Autoplay, Navigation]}
-                        >
-                            {products.map((p) => (
-                                <SwiperSlide key={p.id}>
-                                    <ProductCard product={p} />
-                                </SwiperSlide>
-                            ))}
-                        </Swiper>
+                        {products.length > 0 ? (
+                            <Swiper
+                                slidesPerView={4}
+                                spaceBetween={16}
+                                loop
+                                navigation
+                                autoplay={{ delay: 3000 }}
+                                modules={[Autoplay, Navigation]}
+                            >
+                                {products.map((p) => (
+                                    <SwiperSlide key={p._id || p.id}>
+                                        <ProductCard product={p} />
+                                    </SwiperSlide>
+                                ))}
+                            </Swiper>
+                        ) : (
+                            <p className={cx('empty-text')}>Chưa có sản phẩm khuyến mãi</p>
+                        )}
                     </div>
                 </div>
             </div>

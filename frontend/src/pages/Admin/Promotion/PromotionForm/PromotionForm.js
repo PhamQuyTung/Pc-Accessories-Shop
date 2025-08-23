@@ -19,6 +19,7 @@ export default function PromotionForm() {
         daily: { startDate: '', endDate: '', startTime: '09:00', endTime: '18:00' },
         hideWhenEnded: true,
         assignedProducts: [],
+        bannerImg: '',
     });
     const [products, setProducts] = useState([]);
     const [selectedIds, setSelectedIds] = useState([]);
@@ -39,18 +40,26 @@ export default function PromotionForm() {
                     productList.map((p) => p.status),
                 );
 
-                setProducts(productList);
+                // Loại sản phẩm có giá gạch
+                const filteredList = productList.filter((p) => !p.discountPrice || p.discountPrice <= 0);
+
+                setProducts(filteredList);
 
                 if (isEdit) {
                     const { data: promo } = await axiosClient.get(`/admin/promotions/${id}`);
-                    setForm({
+                    console.log('promo data:', promo);
+
+                    setForm((prev) => ({
+                        ...prev,
                         name: promo.name,
                         percent: promo.percent,
                         type: promo.type,
                         once: promo.once || { startAt: '', endAt: '' },
                         daily: promo.daily || { startDate: '', endDate: '', startTime: '09:00', endTime: '18:00' },
                         hideWhenEnded: promo.hideWhenEnded ?? true,
-                    });
+                        bannerImg: promo.bannerImg || prev.bannerImg, // ✅ giữ lại hoặc gán từ API
+                    }));
+
                     setSelectedIds(promo.assignedProducts.map((pp) => pp.product?._id || pp.product));
                 }
             } catch (err) {
@@ -93,8 +102,8 @@ export default function PromotionForm() {
             return;
         }
 
-        if (!payload.name.trim()) {
-            showToast('Vui lòng nhập tên chương trình!', 'warning');
+        if (!form.bannerImg || form.bannerImg.trim() === '') {
+            showToast('Vui lòng chọn ảnh cho chương trình!', 'warning');
             return;
         }
 
@@ -127,7 +136,6 @@ export default function PromotionForm() {
             navigate('/admin/promotions');
         } catch (err) {
             console.error('❌ Error submit:', err);
-            // nếu backend trả message thì show ra
             const msg = err.response?.data?.message || 'Có lỗi xảy ra khi lưu CTKM!';
             showToast(msg, 'error');
         }
@@ -138,16 +146,50 @@ export default function PromotionForm() {
             <h2>{isEdit ? 'Sửa CTKM' : 'Tạo CTKM'}</h2>
 
             <div className={cx('form')}>
+                {/* Tên chương trình */}
                 <div className={cx('row')}>
                     <label>Tên chương trình</label>
                     <input name="name" value={form.name} onChange={onChange} placeholder="Ví dụ: Back To School 2025" />
                 </div>
 
+                {/* Ảnh chương trình */}
+                <div className={cx('row')}>
+                    <label>Ảnh banner</label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+
+                            // Upload lên server
+                            const formData = new FormData();
+                            formData.append('file', file);
+
+                            try {
+                                const res = await axiosClient.post('/upload', formData, {
+                                    headers: { 'Content-Type': 'multipart/form-data' },
+                                });
+                                const url = res.data.url; // server trả URL ảnh
+                                console.log('Ảnh đã upload:', url);
+                                setForm((prev) => ({ ...prev, bannerImg: url }));
+                            } catch (err) {
+                                console.error('Upload error', err);
+                            }
+                        }}
+                    />
+                    {form.bannerImg && (
+                        <img src={form.bannerImg} alt="preview" style={{ maxWidth: 200, marginTop: 8 }} />
+                    )}
+                </div>
+
+                {/* Giảm giá chương trình */}
                 <div className={cx('row')}>
                     <label>Giảm giá (%)</label>
                     <input type="number" name="percent" min={1} max={90} value={form.percent} onChange={onChange} />
                 </div>
 
+                {/* Kiểu lịch chương trình */}
                 <div className={cx('row')}>
                     <label>Kiểu lịch</label>
                     <select name="type" value={form.type} onChange={onChange}>
@@ -156,6 +198,7 @@ export default function PromotionForm() {
                     </select>
                 </div>
 
+                {/* Chình thời gian */}
                 {form.type === 'once' ? (
                     <div className={cx('grid2')}>
                         <div className={cx('row')}>
@@ -222,6 +265,7 @@ export default function PromotionForm() {
                     </>
                 )}
 
+                {/* Tự ẩn CTKM khi kết thúc (không xoá DB) */}
                 <div className={cx('rowCheck')}>
                     <input
                         type="checkbox"
@@ -234,6 +278,7 @@ export default function PromotionForm() {
                 </div>
             </div>
 
+            {/* Lựa chọn sản phẩm áp dụng (chỉ cho phép sản phẩm không có giá gạch) */}
             <div className={cx('products')}>
                 <div className={cx('header')}>
                     <h3>Chọn sản phẩm áp dụng</h3>

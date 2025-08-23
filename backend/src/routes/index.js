@@ -12,6 +12,7 @@ const favoriteRoutes = require('./favoriteRoutes'); // ✔️ Thêm route cho fa
 const reviewRoutes = require("./reviewRoutes");
 const attributeTermRoutes = require("./attributeTermRoutes");
 const promotionsRoutes = require("./promotionsRoutes");
+const uploadRoutes = require("./uploadRoutes");
 const errorHandle = require('../helpers/error.handle');
 
 function route(app) {
@@ -21,6 +22,7 @@ function route(app) {
     });
 
     // Route chính
+    app.use('/api/upload', uploadRoutes);
     app.use('/api/auth', authRoutes);
     app.use('/api/products', productRoutes);
     app.use('/api/accounts', accountRoutes);

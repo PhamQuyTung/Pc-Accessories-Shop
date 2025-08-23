@@ -24,6 +24,18 @@ export default function PromotionDetail() {
                 Trạng thái: <b>{promo.status}</b> {promo.currentlyActive ? '✅' : '—'}
             </p>
             <p>Kiểu: {promo.type === 'once' ? 'Một lần' : 'Hàng ngày'}</p>
+
+            {/* ✅ Hiển thị ảnh chi tiết */}
+            {promo.bannerImg && (
+                <div style={{ margin: '16px 0' }}>
+                    <img
+                        src={promo.bannerImg}
+                        alt={promo.name}
+                        style={{ maxWidth: '100%', borderRadius: 8, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}
+                    />
+                </div>
+            )}
+
             {promo.type === 'once' ? (
                 <p>
                     Thời gian: {new Date(promo.once.startAt).toLocaleString()} →{' '}

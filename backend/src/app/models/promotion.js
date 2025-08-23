@@ -15,6 +15,8 @@ const PromotionProductSchema = new Schema(
 const PromotionSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
+    bannerImg: { type: String }, // URL ảnh banner
+
     percent: { type: Number, required: true, min: 1, max: 90 },
 
     // Kiểu lịch: once (1 lần), daily (lặp hằng ngày)

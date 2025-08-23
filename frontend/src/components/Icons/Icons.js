@@ -382,7 +382,7 @@ export const FireIcon = ({ width = '20px', height = '13px', className }) => (
 
 export const WarningIcon = ({ width = '20px', height = '13px', className }) => (
     <svg
-        class="MuiSvgIcon-root MuiSvgIcon-fontSizeInherit css-1cw4hi4"
+        // class="MuiSvgIcon-root MuiSvgIcon-fontSizeInherit css-1cw4hi4"
         className={className}
         focusable="false"
         aria-hidden="true"

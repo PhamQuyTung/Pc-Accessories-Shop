@@ -1,17 +1,41 @@
+// src/components/Promotions/PromotionsWrapper.js
 import React, { useEffect, useState } from 'react';
 import axiosClient from '~/utils/axiosClient';
 import PromotionsSection from './PromotionsSection/PromotionsSection';
 
 export default function PromotionsWrapper() {
     const [promotions, setPromotions] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        (async () => {
-            const { data } = await axiosClient.get('/promotions/active');
-            console.log(data);
-            setPromotions(data);
-        })();
+        const fetchPromotions = async () => {
+            try {
+                const { data } = await axiosClient.get('/promotions/active');
+                // Đảm bảo dữ liệu hợp lệ
+                const validPromotions = (data || []).map((promo) => ({
+                    ...promo,
+                    assignedProducts: (promo.assignedProducts || [])
+                        .map((ap) => ap.product) // lấy product gốc
+                        .filter(
+                            (p) =>
+                                p &&
+                                p.isVisible !== false && // không lấy sp ẩn
+                                (!p.discountPrice || p.discountPrice === 0), // loại bỏ sp đã có sẵn giá gạch
+                        ),
+                }));
+                setPromotions(validPromotions);
+            } catch (err) {
+                console.error('❌ Error fetching promotions:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchPromotions();
     }, []);
+
+    if (loading) return <p>Đang tải khuyến mãi...</p>;
+
+    if (promotions.length === 0) return null; // không có CTKM thì ẩn luôn
 
     return (
         <>
@@ -19,14 +43,15 @@ export default function PromotionsWrapper() {
                 <PromotionsSection
                     key={promo._id}
                     title={promo.name}
-                    endTime={promo.once?.endAt || promo.daily?.endDate}
-                    detailHref={`/promotions/${promo._id}`} // hoặc slug
+                    // Ưu tiên once.endAt, fallback daily.endDate
+                    endTime={promo.once?.endAt || promo.daily?.endDate || null}
+                    detailHref={`/promotions/${promo.slug || promo._id}`}
                     banner={{
-                        href: `/promotions/${promo._id}`,
+                        href: `/promotions/${promo.slug || promo._id}`,
                         img: promo.bannerImg || '/default-banner.jpg',
                         alt: promo.name,
                     }}
-                    products={promo.assignedProducts.map((ap) => ap.product)}
+                    products={promo.assignedProducts}
                 />
             ))}
         </>

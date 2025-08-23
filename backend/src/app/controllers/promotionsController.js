@@ -132,6 +132,7 @@ exports.create = async (req, res, next) => {
     validatePayload(req.body);
     const promo = await Promotion.create({
       name: req.body.name.trim(),
+      bannerImg: req.body.bannerImg || "",
       percent: req.body.percent,
       type: req.body.type,
       once: req.body.once || undefined,
@@ -164,6 +165,8 @@ exports.update = async (req, res, next) => {
         message: "Không thể đổi % khi CTKM đang hoạt động. Hãy dừng rồi sửa.",
       });
     }
+
+    if (req.body.bannerImg) promo.bannerImg = req.body.bannerImg;
 
     if (req.body.name) promo.name = req.body.name.trim();
     if (req.body.percent) promo.percent = req.body.percent;
@@ -297,6 +300,7 @@ exports.remove = async (req, res, next) => {
   }
 };
 
+// Lấy sản phẩm để áp dụng CTKM
 exports.getAvailableProducts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -306,6 +310,12 @@ exports.getAvailableProducts = async (req, res) => {
     const match = {
       deleted: false,
       $or: [{ quantity: { $gt: 0 } }, { "variations.quantity": { $gt: 0 } }],
+      // ✅ chỉ lấy sản phẩm chưa có giá gạch
+      $or: [
+        { discountPrice: { $exists: false } },
+        { discountPrice: 0 },
+        { discountPrice: null },
+      ],
     };
 
     const totalCount = await Product.countDocuments(match);
