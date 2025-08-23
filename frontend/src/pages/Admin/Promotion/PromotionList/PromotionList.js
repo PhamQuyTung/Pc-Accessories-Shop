@@ -14,17 +14,32 @@ export default function PromotionList() {
     const navigate = useNavigate();
 
     const load = async () => {
-        const params = { status: tab };
-        if (showEnded) params.includeEnded = true;
+        const params = {};
         if (q) params.q = q;
+
         const { data } = await axiosClient.get('/promotions', { params });
-        // Ẩn ended nếu hideWhenEnded=true và showEnded=false
-        const filtered = data.filter((p) => showEnded || p.status !== 'ended' || !p.hideWhenEnded);
+
+        let filtered = data;
+
+        if (tab === 'active') {
+            filtered = data.filter((p) => p.status === 'active');
+        } else if (tab === 'scheduled') {
+            filtered = data.filter((p) => p.status === 'scheduled');
+        } else if (tab === 'ended') {
+            filtered = data.filter((p) => p.status === 'ended');
+        }
+
+        // Nếu có checkbox "hiện CTKM đã kết thúc"
+        if (!showEnded && tab !== 'ended') {
+            filtered = filtered.filter((p) => p.status !== 'ended');
+        }
+
         setPromos(filtered);
     };
 
     useEffect(() => {
-        load(); /* eslint-disable-next-line */
+        load();
+        // eslint-disable-next-line
     }, [tab, showEnded]);
 
     return (

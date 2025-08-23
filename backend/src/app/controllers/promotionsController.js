@@ -3,7 +3,7 @@ const Product = require("../models/product");
 const { isActiveNow } = require("../../utils/promotionTime");
 
 // Chỉ cho phép gán sản phẩm đang "còn hàng trở lên"
-const ELIGIBLE_STATUSES = ["còn hàng", "nhiều hàng", "sản phẩm mới"]; // tuỳ hệ thống bạn
+const ELIGIBLE_STATUSES = ["còn hàng", "nhiều hàng", "sản phẩm mới"];
 
 function validatePayload(body) {
   if (!body.name) throw new Error("Thiếu tên chương trình.");
@@ -12,6 +12,7 @@ function validatePayload(body) {
 
   if (!body.type || !["once", "daily"].includes(body.type))
     throw new Error("Kiểu lịch không hợp lệ.");
+
   if (body.type === "once") {
     if (!body.once?.startAt || !body.once?.endAt)
       throw new Error("Cần startAt và endAt cho lịch 1 lần.");
@@ -21,82 +22,106 @@ function validatePayload(body) {
     const d = body.daily || {};
     if (!d.startDate || !d.startTime || !d.endTime)
       throw new Error("daily cần startDate, startTime, endTime.");
-    // endDate optional; nếu có, phải >= startDate
     if (d.endDate && new Date(d.endDate) < new Date(d.startDate))
       throw new Error("endDate phải >= startDate.");
   }
 }
 
-exports.list = async (req, res, next) => {
+function computeStatus(promo) {
+  const now = new Date();
+
+  if (promo.type === "once") {
+    const start = new Date(promo.once.startAt);
+    const end = new Date(promo.once.endAt);
+
+    if (now < start)
+      return {
+        ...promo.toObject(),
+        status: "scheduled",
+        currentlyActive: false,
+      };
+    if (now > end)
+      return { ...promo.toObject(), status: "ended", currentlyActive: false };
+    return { ...promo.toObject(), status: "active", currentlyActive: true };
+  }
+
+  if (promo.type === "daily") {
+    const startDate = new Date(promo.daily.startDate);
+    const endDate = promo.daily.endDate
+      ? new Date(promo.daily.endDate).setHours(23, 59, 59, 999)
+      : null;
+
+    if (endDate && now > endDate)
+      return { ...promo.toObject(), status: "ended", currentlyActive: false };
+    if (now < startDate)
+      return {
+        ...promo.toObject(),
+        status: "scheduled",
+        currentlyActive: false,
+      };
+
+    const active = isActiveNow(promo);
+    return {
+      ...promo.toObject(),
+      status: active ? "active" : "scheduled",
+      currentlyActive: active,
+    };
+  }
+
+  return { ...promo.toObject(), status: "scheduled", currentlyActive: false };
+}
+
+// ===== Controllers =====
+
+exports.list = async (req, res) => {
   try {
-    const { status, includeEnded, q } = req.query;
+    const { status } = req.query;
+    let query = {};
 
-    const filter = {};
-    if (status) filter.status = status;
-    if (!includeEnded || includeEnded === "false")
-      filter.status = { $ne: "ended" };
-    if (q) filter.name = { $regex: q, $options: "i" };
+    if (status === "running") {
+      query.startDate = { $lte: new Date() };
+      query.endDate = { $gte: new Date() };
+    } else if (status === "scheduled") {
+      query.startDate = { $gt: new Date() };
+    } else if (status === "ended") {
+      query.endDate = { $lt: new Date() };
+    }
 
-    const promos = await Promotion.find(filter)
-      .sort({ createdAt: -1 })
-      .select(
-        "name percent type status currentlyActive once daily assignedProducts hideWhenEnded createdAt"
-      );
-
-    res.json(promos);
-  } catch (e) {
-    next(e);
+    const promotions = await Promotion.find(query).sort({ startDate: -1 });
+    res.json(promotions);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
-exports.detail = async (req, res, next) => {
+exports.detail = async (req, res) => {
   try {
-    const promo = await Promotion.findById(req.params.id)
-      .populate(
-        "assignedProducts.product",
-        "name price discountPrice status sku stock quantity"
-      )
-      .lean(); // trả về object JS để dễ thao tác
+    const promo = await Promotion.findById(req.params.id).populate(
+      "assignedProducts.product",
+      "name price discountPrice status sku stock quantity"
+    );
+    if (!promo) return res.status(404).json({ message: "Không tìm thấy CTKM" });
 
-    if (!promo) {
-      return res.status(404).json({ message: "Không tìm thấy CTKM." });
-    }
-
-    console.log("Before filter:", promo.assignedProducts);
-
-    // Lọc bỏ sản phẩm hết hàng hoặc bị null
-    const beforeCount = promo.assignedProducts.length;
-
+    // Lọc sản phẩm hết hàng
     promo.assignedProducts = promo.assignedProducts.filter(
       (ap) => ap.product && (ap.product.quantity > 0 || ap.product.stock > 0)
     );
 
-    const removedCount = beforeCount - promo.assignedProducts.length;
-
-    console.log(
-      `[Promotion ${promo._id}] Đã loại ${removedCount} sản phẩm hết hàng.`
-    );
-
-    res.json(promo);
-  } catch (e) {
-    next(e);
+    res.json(computeStatus(promo));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
-exports.active = async (req, res, next) => {
+exports.active = async (req, res) => {
   try {
-    const now = new Date();
-    const promos = await Promotion.find({
-      $or: [
-        { status: "active" }, // luôn show CTKM đang chạy
-        { status: "ended", hideWhenEnded: false }, // chỉ show ended nếu ko ẩn
-      ],
-    })
-      .populate("assignedProducts.product") // lấy thông tin SP
-      .sort({ createdAt: -1 })
-      .limit(3); // tuỳ bạn muốn show bao nhiêu block CTKM
-
-    res.json(promos);
+    const promos = await Promotion.find()
+      .populate("assignedProducts.product")
+      .sort({ createdAt: -1 });
+    const activePromos = promos
+      .map(computeStatus)
+      .filter((p) => p.status === "active");
+    res.json(activePromos);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -104,7 +129,6 @@ exports.active = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
-    console.log(req.body);
     validatePayload(req.body);
     const promo = await Promotion.create({
       name: req.body.name.trim(),
@@ -113,15 +137,13 @@ exports.create = async (req, res, next) => {
       once: req.body.once || undefined,
       daily: req.body.daily || undefined,
       hideWhenEnded: req.body.hideWhenEnded !== false,
-      status: "scheduled",
       assignedProducts: Array.isArray(req.body.assignedProducts)
         ? req.body.assignedProducts.map((pid) => ({ product: pid }))
         : [],
       createdBy: req.user?._id,
     });
-    res.status(201).json(promo.toObject());
+    res.status(201).json(computeStatus(promo));
   } catch (e) {
-    console.error("❌ Lỗi tạo CTKM:", e);
     next(e);
   }
 };
@@ -132,9 +154,9 @@ exports.update = async (req, res, next) => {
     if (!promo)
       return res.status(404).json({ message: "Không tìm thấy CTKM." });
 
-    // Không cho đổi percent khi đang active để tránh nhấp nháy giá (có thể cho phép nếu bạn muốn)
+    const current = computeStatus(promo);
     if (
-      promo.currentlyActive &&
+      current.currentlyActive &&
       req.body.percent &&
       req.body.percent !== promo.percent
     ) {
@@ -143,7 +165,6 @@ exports.update = async (req, res, next) => {
       });
     }
 
-    // Cập nhật các trường an toàn
     if (req.body.name) promo.name = req.body.name.trim();
     if (req.body.percent) promo.percent = req.body.percent;
     if (req.body.type) promo.type = req.body.type;
@@ -153,7 +174,7 @@ exports.update = async (req, res, next) => {
       promo.hideWhenEnded = req.body.hideWhenEnded;
 
     await promo.save();
-    res.json(promo);
+    res.json(computeStatus(promo));
   } catch (e) {
     next(e);
   }
@@ -165,10 +186,10 @@ exports.partialUpdate = async (req, res, next) => {
     if (!promo)
       return res.status(404).json({ message: "Không tìm thấy CTKM." });
 
-    Object.assign(promo, req.body); // chỉ cập nhật field gửi lên
+    Object.assign(promo, req.body);
     await promo.save();
 
-    res.json(promo);
+    res.json(computeStatus(promo));
   } catch (e) {
     next(e);
   }
@@ -191,18 +212,6 @@ exports.assignProducts = async (req, res, next) => {
       "status lockPromotionId price discountPrice discountPercent"
     );
 
-    console.log(
-      "products:",
-      products.map((p) => ({
-        id: p._id,
-        status: p.status,
-        lockPromotionId: p.lockPromotionId,
-      }))
-    );
-    console.log("ELIGIBLE_STATUSES:", ELIGIBLE_STATUSES);
-    console.log("promoId:", promo._id);
-
-    // Chỉ chọn sp đủ điều kiện + chưa bị CTKM khác khoá
     const eligible = products.filter(
       (p) =>
         ELIGIBLE_STATUSES.includes(p.status) &&
@@ -223,14 +232,8 @@ exports.assignProducts = async (req, res, next) => {
     }
     await promo.save();
 
-    // Nếu đang active -> áp ngay
     if (isActiveNow(promo)) {
-      for (const pp of promo.assignedProducts) {
-        if (productIds.includes(String(pp.product))) {
-          await require("../../jobs/promotionEngine").tick(); // đơn giản gọi tick để áp ngay
-          break;
-        }
-      }
+      await require("../../jobs/promotionEngine").tick();
     }
 
     res.json({
@@ -257,12 +260,7 @@ exports.unassignProduct = async (req, res, next) => {
         .status(404)
         .json({ message: "Sản phẩm không nằm trong CTKM." });
 
-    // Nếu đang active -> gỡ trước
-    const {
-      removePromotionFromProduct,
-    } = require("../../jobs/promotionEngine"); // nếu tách export
     if (isActiveNow(promo)) {
-      // gọi tick để đảm bảo sync
       await require("../../jobs/promotionEngine").tick();
     }
 
@@ -280,18 +278,16 @@ exports.remove = async (req, res, next) => {
     if (!promo)
       return res.status(404).json({ message: "Không tìm thấy CTKM." });
 
-    // An toàn: nếu đang active -> yêu cầu dừng (đợi engine gỡ) rồi xoá
-    if (promo.currentlyActive) {
+    const current = computeStatus(promo);
+    if (current.currentlyActive) {
       return res.status(409).json({
         message:
           "CTKM đang hoạt động. Hãy chờ hết/đổi lịch hoặc gỡ sản phẩm trước khi xoá.",
       });
     }
 
-    // Nếu còn sản phẩm gán -> khôi phục trước rồi xoá
     if (promo.assignedProducts.length > 0) {
       await require("../../jobs/promotionEngine").tick();
-      // sau tick, nếu không active nữa, xoá an toàn
     }
 
     await Promotion.deleteOne({ _id: promo._id });
@@ -301,7 +297,6 @@ exports.remove = async (req, res, next) => {
   }
 };
 
-// Lấy sản phẩm đủ điều kiện gán vào khuyến mãi
 exports.getAvailableProducts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -314,7 +309,6 @@ exports.getAvailableProducts = async (req, res) => {
     };
 
     const totalCount = await Product.countDocuments(match);
-
     const products = await Product.find(match).skip(skip).limit(limit).lean();
 
     res.json({

@@ -58,39 +58,38 @@ async function removePromotionFromProduct(promo, pp) {
 async function tick() {
   const promotions = await Promotion.find({ status: { $ne: "ended" } });
 
+  const now = new Date();
+
   for (const promo of promotions) {
     const shouldActive = isActiveNow(promo);
-
-    // Cập nhật trạng thái top-level
     let newStatus = promo.status;
+
     if (promo.type === "once") {
-      const now = new Date();
       if (now < new Date(promo.once.startAt)) newStatus = "scheduled";
       else if (now >= new Date(promo.once.endAt)) newStatus = "ended";
       else newStatus = "active";
     } else {
-      // daily: active nếu đang nằm trong khung giờ; nếu đã hết endDate -> ended; nếu chưa tới startDate -> scheduled; còn lại scheduled/active tuỳ giờ
-      const today = new Date();
-      if (
-        promo.daily.endDate &&
-        today > new Date(promo.daily.endDate).setHours(23, 59, 59, 999)
-      ) {
+      // daily
+      const startDate = new Date(promo.daily.startDate);
+      const endDate = promo.daily.endDate
+        ? new Date(promo.daily.endDate).setHours(23, 59, 59, 999)
+        : null;
+
+      if (endDate && now > endDate) {
         newStatus = "ended";
-      } else if (!shouldActive) {
-        // Chưa tới giờ hoặc ngoài giờ
-        newStatus =
-          promo.daily.startDate && today < new Date(promo.daily.startDate)
-            ? "scheduled"
-            : "scheduled";
+      } else if (now < startDate) {
+        newStatus = "scheduled";
       } else {
-        newStatus = "active";
+        newStatus = shouldActive ? "active" : "scheduled";
       }
     }
 
-    const transitionedToActive = shouldActive && !promo.currentlyActive;
-    const transitionedToInactive = !shouldActive && promo.currentlyActive;
+    const transitionedToActive =
+      newStatus === "active" && promo.currentlyActive === false;
+    const transitionedToInactive =
+      newStatus !== "active" && promo.currentlyActive === true;
 
-    // Áp hoặc gỡ trên sản phẩm
+    // Nếu chuyển sang active → áp CTKM
     if (transitionedToActive) {
       for (const pp of promo.assignedProducts) {
         try {
@@ -100,7 +99,9 @@ async function tick() {
         }
       }
     }
-    if (transitionedToInactive) {
+
+    // Nếu chuyển sang inactive/ended → gỡ CTKM
+    if (transitionedToInactive || newStatus === "ended") {
       for (const pp of promo.assignedProducts) {
         try {
           await removePromotionFromProduct(promo, pp);
@@ -110,8 +111,8 @@ async function tick() {
       }
     }
 
-    // Cập nhật flags
-    promo.currentlyActive = shouldActive;
+    // Luôn cập nhật cờ để đồng bộ
+    promo.currentlyActive = newStatus === "active";
     promo.status = newStatus;
     await promo.save();
   }
@@ -122,5 +123,8 @@ function startPromotionEngine() {
   cron.schedule("* * * * *", tick, { timezone: "Asia/Ho_Chi_Minh" });
   console.log("✅ Promotion Engine started (every minute).");
 }
+
+// 🚀 Gọi ngay khi file được require
+startPromotionEngine();
 
 module.exports = { startPromotionEngine, tick };
