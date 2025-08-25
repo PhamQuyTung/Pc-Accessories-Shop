@@ -1,0 +1,121 @@
+.wrapper {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.percent {
+    color: #e53935;
+    font-weight: 500;
+}
+
+.status {
+    margin-bottom: 4px;
+    font-size: 15px;
+    .active {
+        color: #2e7d32;
+        font-weight: 600;
+    }
+}
+
+.type,
+.time {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 6px;
+}
+
+.banner {
+    margin: 20px 0;
+    text-align: center;
+    display: flex;
+
+    img {
+        max-width: 25%;
+        height: auto;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        object-fit: contain;
+    }
+}
+
+.bannerImg {
+    width: 100%;
+    border-radius: 12px;
+    object-fit: cover;
+    margin-bottom: 16px;
+}
+
+.cardImg {
+    width: 200px; // nhỏ gọn hơn banner
+    height: auto;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.subtitle {
+    font-size: 18px;
+    margin: 16px 0 8px;
+    span {
+        font-weight: 400;
+        color: #666;
+    }
+}
+
+.tableWrapper {
+    overflow-x: auto;
+}
+
+.productTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+
+    th,
+    td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+    }
+
+    th {
+        background: #fafafa;
+        font-weight: 600;
+    }
+
+    tr:hover {
+        background: #f9f9f9;
+    }
+}
+
+.actions {
+    margin-top: 16px;
+
+    .editBtn {
+        display: inline-block;
+        background: #1976d2;
+        color: #fff;
+        padding: 8px 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: 0.2s;
+
+        &:hover {
+            background: #1565c0;
+        }
+    }
+}
+
+.loading {
+    padding: 20px;
+    text-align: center;
+}

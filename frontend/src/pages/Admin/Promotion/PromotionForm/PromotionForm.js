@@ -20,6 +20,7 @@ export default function PromotionForm() {
         hideWhenEnded: true,
         assignedProducts: [],
         bannerImg: '',
+        promotionCardImg: '',
     });
     const [products, setProducts] = useState([]);
     const [selectedIds, setSelectedIds] = useState([]);
@@ -58,6 +59,7 @@ export default function PromotionForm() {
                         daily: promo.daily || { startDate: '', endDate: '', startTime: '09:00', endTime: '18:00' },
                         hideWhenEnded: promo.hideWhenEnded ?? true,
                         bannerImg: promo.bannerImg || prev.bannerImg, // ✅ giữ lại hoặc gán từ API
+                        promotionCardImg: promo.promotionCardImg || prev.promotionCardImg,
                     }));
 
                     setSelectedIds(promo.assignedProducts.map((pp) => pp.product?._id || pp.product));
@@ -104,6 +106,14 @@ export default function PromotionForm() {
 
         if (!form.bannerImg || form.bannerImg.trim() === '') {
             showToast('Vui lòng chọn ảnh cho chương trình!', 'warning');
+            return;
+        }
+
+        if (payload.type === 'once') delete payload.daily;
+        else delete payload.once;
+
+        if (!payload.promotionCardImg || payload.promotionCardImg.trim() === '') {
+            showToast('Vui lòng chọn ảnh viền card sản phẩm!', 'warning');
             return;
         }
 
@@ -180,6 +190,34 @@ export default function PromotionForm() {
                     />
                     {form.bannerImg && (
                         <img src={form.bannerImg} alt="preview" style={{ maxWidth: 200, marginTop: 8 }} />
+                    )}
+                </div>
+
+                {/* Ảnh viền Card sản phẩm */}
+                <div className={cx('row')}>
+                    <label>Ảnh viền card sản phẩm</label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            const formData = new FormData();
+                            formData.append('file', file);
+
+                            try {
+                                const res = await axiosClient.post('/upload', formData, {
+                                    headers: { 'Content-Type': 'multipart/form-data' },
+                                });
+                                const url = res.data.url;
+                                setForm((prev) => ({ ...prev, promotionCardImg: url }));
+                            } catch (err) {
+                                console.error('Upload error', err);
+                            }
+                        }}
+                    />
+                    {form.promotionCardImg && (
+                        <img src={form.promotionCardImg} alt="preview-card" style={{ maxWidth: 200, marginTop: 8 }} />
                     )}
                 </div>
 

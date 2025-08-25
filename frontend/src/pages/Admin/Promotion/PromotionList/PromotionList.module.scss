@@ -56,16 +56,70 @@
 .table {
     width: 100%;
     border-collapse: collapse;
+
     th,
     td {
         border-bottom: 1px solid #eee;
         padding: 10px;
         text-align: left;
     }
-    .actions a {
-        margin-right: 8px;
-        color: #0366d6;
+
+    .actions {
+        display: flex;
+        gap: 6px;
+
+        a,
+        button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease-in-out;
+        }
+
+        a {
+            background: #f1f5f9;
+            color: #0366d6;
+            border: 1px solid #d1d5db;
+
+            &:hover {
+                background: #e2e8f0;
+            }
+        }
+
+        .danger {
+            background: #f87171;
+            color: #fff;
+
+            &:hover {
+                background: #ef4444;
+            }
+        }
+
+        .edit {
+            background: #60a5fa;
+            color: #fff;
+
+            &:hover {
+                background: #3b82f6;
+            }
+        }
+
+        .view {
+            background: #a78bfa;
+            color: #fff;
+
+            &:hover {
+                background: #8b5cf6;
+            }
+        }
     }
+
     .empty {
         text-align: center;
         color: #666;

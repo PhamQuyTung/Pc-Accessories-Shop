@@ -1,9 +1,56 @@
 const Promotion = require("../models/promotion");
 const Product = require("../models/product");
 const { isActiveNow } = require("../../utils/promotionTime");
+const { rollbackPromotion } = require("../../utils/promotionUtils");
 
 // Chỉ cho phép gán sản phẩm đang "còn hàng trở lên"
 const ELIGIBLE_STATUSES = ["còn hàng", "nhiều hàng", "sản phẩm mới"];
+
+// ===== Helper =====
+async function applyPromotionImmediately(promo) {
+  if (!promo.assignedProducts || promo.assignedProducts.length === 0) return;
+
+  for (let i = 0; i < promo.assignedProducts.length; i++) {
+    const pp = promo.assignedProducts[i];
+    const product = await Product.findById(pp.product);
+    if (!product) continue;
+
+    if (
+      product.lockPromotionId &&
+      String(product.lockPromotionId) !== String(promo._id)
+    ) {
+      continue;
+    }
+
+    // ✅ Lưu backup nếu chưa có
+    if (pp.backupDiscountPrice == null) {
+      pp.backupDiscountPrice = Number(product.discountPrice || 0);
+    }
+    if (pp.backupDiscountPercent == null) {
+      pp.backupDiscountPercent = Number(product.discountPercent || 0);
+    }
+
+    // ✅ Tính giá sau giảm
+    const price = Number(product.price);
+    const percent = Number(promo.percent);
+    const discounted = Math.round(price * (1 - percent / 100));
+
+    product.discountPrice = discounted;
+    product.discountPercent = percent;
+    product.lockPromotionId = promo._id;
+    product.promotionApplied = {
+      promoId: promo._id,
+      percent,
+      appliedAt: new Date(),
+    };
+
+    await product.save();
+  }
+
+  // 🔑 báo cho mongoose biết mảng đã thay đổi
+  promo.markModified("assignedProducts");
+  await promo.save();
+}
 
 function validatePayload(body) {
   if (!body.name) throw new Error("Thiếu tên chương trình.");
@@ -75,20 +122,25 @@ function computeStatus(promo) {
 
 exports.list = async (req, res) => {
   try {
-    const { status } = req.query;
-    let query = {};
+    const { q } = req.query;
 
-    if (status === "running") {
-      query.startDate = { $lte: new Date() };
-      query.endDate = { $gte: new Date() };
-    } else if (status === "scheduled") {
-      query.startDate = { $gt: new Date() };
-    } else if (status === "ended") {
-      query.endDate = { $lt: new Date() };
+    // Lấy tất cả CTKM
+    let promotions = await Promotion.find().populate(
+      "assignedProducts.product"
+    );
+
+    // Nếu có query q, filter theo tên
+    if (q) {
+      const keyword = q.toLowerCase();
+      promotions = promotions.filter((p) =>
+        p.name.toLowerCase().includes(keyword)
+      );
     }
 
-    const promotions = await Promotion.find(query).sort({ startDate: -1 });
-    res.json(promotions);
+    // ✅ Tính trạng thái realtime cho từng CTKM
+    const result = promotions.map(computeStatus);
+
+    res.json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -130,9 +182,11 @@ exports.active = async (req, res) => {
 exports.create = async (req, res, next) => {
   try {
     validatePayload(req.body);
-    const promo = await Promotion.create({
+
+    const created = await Promotion.create({
       name: req.body.name.trim(),
       bannerImg: req.body.bannerImg || "",
+      promotionCardImg: req.body.promotionCardImg || "",
       percent: req.body.percent,
       type: req.body.type,
       once: req.body.once || undefined,
@@ -143,6 +197,14 @@ exports.create = async (req, res, next) => {
         : [],
       createdBy: req.user?._id,
     });
+
+    // 🔁 reload lại doc đầy đủ
+    const promo = await Promotion.findById(created._id);
+
+    if (isActiveNow(promo)) {
+      await applyPromotionImmediately(promo);
+    }
+
     res.status(201).json(computeStatus(promo));
   } catch (e) {
     next(e);
@@ -166,9 +228,10 @@ exports.update = async (req, res, next) => {
       });
     }
 
-    if (req.body.bannerImg) promo.bannerImg = req.body.bannerImg;
-
     if (req.body.name) promo.name = req.body.name.trim();
+    if (req.body.bannerImg) promo.bannerImg = req.body.bannerImg;
+    if (req.body.promotionCardImg)
+      promo.promotionCardImg = req.body.promotionCardImg;
     if (req.body.percent) promo.percent = req.body.percent;
     if (req.body.type) promo.type = req.body.type;
     if (req.body.once) promo.once = req.body.once;
@@ -198,54 +261,30 @@ exports.partialUpdate = async (req, res, next) => {
   }
 };
 
-exports.assignProducts = async (req, res, next) => {
-  try {
-    const promo = await Promotion.findById(req.params.id);
-    if (!promo)
-      return res.status(404).json({ message: "Không tìm thấy CTKM." });
+exports.assignProducts = async (req, res) => {
+  const { id } = req.params;
+  const { productIds } = req.body;
 
-    let { productIds } = req.body;
-    if (!Array.isArray(productIds) || productIds.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Danh sách sản phẩm không hợp lệ." });
-    }
+  const promo = await Promotion.findById(id).populate(
+    "assignedProducts.product"
+  );
+  if (!promo) return res.status(404).json({ message: "Promotion not found" });
 
-    const products = await Product.find({ _id: { $in: productIds } }).select(
-      "status lockPromotionId price discountPrice discountPercent"
-    );
+  promo.assignedProducts = productIds.map((pid) => ({
+    product: pid,
+    backupDiscountPrice: null,
+    backupDiscountPercent: null,
+  }));
 
-    const eligible = products.filter(
-      (p) =>
-        ELIGIBLE_STATUSES.includes(p.status) &&
-        (!p.lockPromotionId || String(p.lockPromotionId) === String(promo._id))
-    );
+  await promo.save();
 
-    const already = new Set(
-      promo.assignedProducts.map((x) => String(x.product))
-    );
-    for (const p of eligible) {
-      if (!already.has(String(p._id))) {
-        promo.assignedProducts.push({
-          product: p._id,
-          backupDiscountPrice: Number(p.discountPrice || 0),
-          backupDiscountPercent: Number(p.discountPercent || 0),
-        });
-      }
-    }
-    await promo.save();
-
-    if (isActiveNow(promo)) {
-      await require("../../jobs/promotionEngine").tick();
-    }
-
-    res.json({
-      message: "Đã gán sản phẩm.",
-      assignedCount: promo.assignedProducts.length,
-    });
-  } catch (e) {
-    next(e);
+  // ✅ Nếu CTKM đang active thì apply luôn
+  const current = computeStatus(promo);
+  if (current.currentlyActive) {
+    await applyPromotionImmediately(promo);
   }
+
+  res.json(computeStatus(promo));
 };
 
 exports.unassignProduct = async (req, res, next) => {
@@ -278,23 +317,17 @@ exports.unassignProduct = async (req, res, next) => {
 exports.remove = async (req, res, next) => {
   try {
     const promo = await Promotion.findById(req.params.id);
-    if (!promo)
+    if (!promo) {
       return res.status(404).json({ message: "Không tìm thấy CTKM." });
-
-    const current = computeStatus(promo);
-    if (current.currentlyActive) {
-      return res.status(409).json({
-        message:
-          "CTKM đang hoạt động. Hãy chờ hết/đổi lịch hoặc gỡ sản phẩm trước khi xoá.",
-      });
     }
 
-    if (promo.assignedProducts.length > 0) {
-      await require("../../jobs/promotionEngine").tick();
-    }
+    // ✅ Rollback bằng utils
+    await rollbackPromotion(promo);
 
-    await Promotion.deleteOne({ _id: promo._id });
-    res.json({ message: "Đã xoá CTKM." });
+    // ✅ Xoá CTKM
+    await promo.deleteOne();
+
+    res.json({ message: "Đã xoá CTKM và rollback sản phẩm thành công." });
   } catch (e) {
     next(e);
   }

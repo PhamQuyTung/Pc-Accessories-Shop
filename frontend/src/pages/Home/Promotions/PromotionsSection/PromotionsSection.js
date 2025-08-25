@@ -11,7 +11,7 @@ import ProductCard from '../ProductCard/PromoCard';
 
 const cx = classNames.bind(styles);
 
-export default function PromotionsSection({ title, icon, endTime, detailHref, bannerImg, products = [] }) {
+export default function PromotionsSection({ title, endTime, detailHref, banner, products = [] }) {
     const [timeLeft, setTimeLeft] = useState({
         days: 0,
         hours: 0,
@@ -45,7 +45,8 @@ export default function PromotionsSection({ title, icon, endTime, detailHref, ba
             <div className={cx('header')}>
                 <div className={cx('header-right')}>
                     <h2 className={cx('title')}>
-                        {icon && <span className={cx('icon')}>{icon}</span>} {title}
+                        <span className={cx('icon')}>🔥</span>
+                        {title}
                     </h2>
 
                     {endTime && (
@@ -81,22 +82,14 @@ export default function PromotionsSection({ title, icon, endTime, detailHref, ba
             <div className={cx('bg')}>
                 <div className={cx('content')}>
                     {/* Banner trái */}
-                    {bannerImg &&
-                        (typeof bannerImg === 'string' ? (
+                    {banner &&
+                        (typeof banner === 'string' ? (
                             <div className={cx('banner')}>
-                                <img
-                                    src={normalizeImageUrl(bannerImg)}
-                                    alt="Promotion banner"
-                                    onError={(e) => (e.target.src = '/default-banner.jpg')}
-                                />
+                                <img src={normalizeImageUrl(banner)} alt="Promotion banner" />
                             </div>
                         ) : (
-                            <a href={bannerImg.href || '#'} className={cx('banner')}>
-                                <img
-                                    src={normalizeImageUrl(bannerImg.img)}
-                                    alt={bannerImg.alt || 'Promotion banner'}
-                                    onError={(e) => (e.target.src = '/default-banner.jpg')}
-                                />
+                            <a href={banner.href || '#'} className={cx('banner')}>
+                                <img src={normalizeImageUrl(banner.img)} alt={banner.alt || 'Promotion banner'} />
                             </a>
                         ))}
 

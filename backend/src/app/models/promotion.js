@@ -15,7 +15,8 @@ const PromotionProductSchema = new Schema(
 const PromotionSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
-    bannerImg: { type: String }, // URL ảnh banner
+    bannerImg: { type: String }, // URL ảnh banner (dùng cho header / section lớn)
+    promotionCardImg: { type: String }, // URL ảnh hiển thị cho card nhỏ
 
     percent: { type: Number, required: true, min: 1, max: 90 },
 

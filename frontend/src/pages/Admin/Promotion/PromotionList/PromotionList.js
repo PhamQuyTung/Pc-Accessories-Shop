@@ -3,6 +3,7 @@ import axiosClient from '~/utils/axiosClient';
 import styles from './PromotionList.module.scss';
 import classNames from 'classnames/bind';
 import { Link, useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 const cx = classNames.bind(styles);
 
@@ -41,6 +42,41 @@ export default function PromotionList() {
         load();
         // eslint-disable-next-line
     }, [tab, showEnded]);
+
+    // ✅ Hàm xoá CTKM với SweetAlert2
+    const handleDelete = async (id) => {
+        Swal.fire({
+            title: 'Bạn có chắc chắn?',
+            text: 'Xoá CTKM này sẽ rollback giá sản phẩm về ban đầu!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Xoá ngay',
+            cancelButtonText: 'Huỷ',
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await axiosClient.delete(`/promotions/${id}`);
+                    setPromos((prev) => prev.filter((p) => p._id !== id));
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Đã xoá!',
+                        text: 'Chương trình khuyến mãi đã được xoá và rollback thành công.',
+                        timer: 1800,
+                        showConfirmButton: false,
+                    });
+                } catch (err) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi!',
+                        text: err.response?.data?.message || 'Không thể xoá CTKM.',
+                    });
+                }
+            }
+        });
+    };
 
     return (
         <div className={cx('wrap')}>
@@ -91,6 +127,9 @@ export default function PromotionList() {
                             <td className={cx('actions')}>
                                 <Link to={`/admin/promotions/${p._id}`}>Xem</Link>
                                 <Link to={`/admin/promotions/${p._id}/edit`}>Sửa</Link>
+                                <button className={cx('danger')} onClick={() => handleDelete(p._id)}>
+                                    Xoá
+                                </button>
                             </td>
                         </tr>
                     ))}

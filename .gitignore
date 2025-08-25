@@ -10,3 +10,7 @@ logs/
 
 # IDE (VS Code)
 .vscode/
+
+# Bỏ qua thư mục upload ảnh trong backend
+backend/src/uploads/
+
