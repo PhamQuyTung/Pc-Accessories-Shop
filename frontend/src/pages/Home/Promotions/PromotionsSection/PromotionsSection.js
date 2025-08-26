@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Autoplay, Navigation } from 'swiper/modules';
+import { Autoplay, Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 import classNames from 'classnames/bind';
 import styles from './PromotionsSection.module.scss';
+import { Row, Col } from 'react-bootstrap';
 
 import { normalizeImageUrl } from '~/utils/normalizeImageUrl';
 import ProductCard from '../ProductCard/PromoCard';
 
 const cx = classNames.bind(styles);
 
-export default function PromotionsSection({ title, endTime, detailHref, banner, products = [] }) {
+export default function PromotionsSection({ title, endTime, detailHref, banner, products = [], promotionCardImg }) {
     const [timeLeft, setTimeLeft] = useState({
         days: 0,
         hours: 0,
@@ -81,39 +83,45 @@ export default function PromotionsSection({ title, endTime, detailHref, banner, 
 
             <div className={cx('bg')}>
                 <div className={cx('content')}>
-                    {/* Banner trái */}
-                    {banner &&
-                        (typeof banner === 'string' ? (
-                            <div className={cx('banner')}>
-                                <img src={normalizeImageUrl(banner)} alt="Promotion banner" />
-                            </div>
-                        ) : (
-                            <a href={banner.href || '#'} className={cx('banner')}>
-                                <img src={normalizeImageUrl(banner.img)} alt={banner.alt || 'Promotion banner'} />
-                            </a>
-                        ))}
-
-                    {/* Carousel phải */}
-                    <div className={cx('carousel')}>
-                        {products.length > 0 ? (
-                            <Swiper
-                                slidesPerView={4}
-                                spaceBetween={16}
-                                loop
-                                navigation
-                                autoplay={{ delay: 3000 }}
-                                modules={[Autoplay, Navigation]}
-                            >
-                                {products.map((p) => (
-                                    <SwiperSlide key={p._id || p.id}>
-                                        <ProductCard product={p} />
-                                    </SwiperSlide>
+                    <Row>
+                        <Col xs={12} md={4}>
+                            {/* Banner trái */}
+                            {banner &&
+                                (typeof banner === 'string' ? (
+                                    <div className={cx('banner')}>
+                                        <img src={normalizeImageUrl(banner)} alt="Promotion banner" />
+                                    </div>
+                                ) : (
+                                    <a href={banner.href || '#'} className={cx('banner')}>
+                                        <img src={normalizeImageUrl(banner.img)} alt={banner.alt || 'Promotion banner'} />
+                                    </a>
                                 ))}
-                            </Swiper>
-                        ) : (
-                            <p className={cx('empty-text')}>Chưa có sản phẩm khuyến mãi</p>
-                        )}
-                    </div>
+                        </Col>
+                        <Col xs={12} md={8}>
+                            {/* Carousel phải */}
+                            <div className={cx('carousel')}>
+                                {products.length > 0 ? (
+                                    <Swiper
+                                        slidesPerView={4}
+                                        spaceBetween={10}
+                                        loop
+                                        // navigation // Hiện nút next/prev
+                                        // pagination={{ clickable: true }} // Hiện dấu chấm tròn ở dưới
+                                        autoplay={{ delay: 3000 }}
+                                        modules={[Autoplay, Navigation, Pagination]}
+                                    >
+                                        {products.map((p) => (
+                                            <SwiperSlide key={p._id || p.id}>
+                                                <ProductCard product={p} promotionCardImg={promotionCardImg} />
+                                            </SwiperSlide>
+                                        ))}
+                                    </Swiper>
+                                ) : (
+                                    <p className={cx('empty-text')}>Chưa có sản phẩm khuyến mãi</p>
+                                )}
+                            </div>
+                        </Col>
+                    </Row>
                 </div>
             </div>
         </section>

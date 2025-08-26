@@ -1,105 +1,116 @@
-.card {
-    border-radius: 6px;
-    overflow: hidden;
-    background: #fff;
-    width: 240px;
-}
-
-.card-header {
-    background: #0046d5;
-    color: #fff;
-    font-size: 12px;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 7px;
-    padding-bottom: 0;
-}
-
-.card-image {
+.promo-card {
     position: relative;
-    text-align: center;
-    background: #fff;
-    padding: 10px;
-    border: 7px solid #0046d5;
+    width: 221px; // nhỏ hơn để gọn gàng
+    max-width: 100%;
+    min-width: 0;
 
-    // tạo góc xiên xanh
-    &::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        width: 60px;
-        height: 0px;
-        border-top: 10px solid #0046d5;
-        border-right: 10px solid transparent;
-        left: 0;
-    }
+    .frame-wrapper {
+        position: relative;
+        background: #fff;
+        overflow: hidden;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
 
-    &::before {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        width: 10px;
-        height: 0px;
-        border-left: 20px solid transparent;
-        border-bottom: 20px solid #0046d5;
-        right: 0;
-    }
+        .frame-bg {
+            width: 100%;
+            display: block;
+        }
 
-    img {
-        max-width: 100%;
-        height: auto;
-    }
-}
+        .product-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60%;
+            height: 60%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
-.card-body {
-    padding: 8px;
+            .product-image {
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+                display: block;
+            }
+        }
 
-    .name {
-        font-size: 14px;
-        margin: 6px 0;
-    }
-
-    .price-box {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-
-        .old-price {
-            text-decoration: line-through;
-            color: #999;
+        .badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #e53935;
+            color: white;
             font-size: 13px;
-        }
-
-        .new-price {
-            color: red;
-            font-size: 15px;
             font-weight: bold;
-        }
-
-        .discount {
-            background: #fff;
-            border: 1px solid red;
-            color: red;
-            font-size: 12px;
-            padding: 2px 4px;
-            border-radius: 2px;
+            padding: 4px 6px;
+            border-radius: 6px;
         }
     }
 
-    .rating {
-        font-size: 12px;
-        margin-top: 4px;
-    }
+    .info {
+        padding: 6px;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
 
-    .sold {
-        margin-top: 6px;
-        background: #ff4d4f;
-        color: #fff;
-        display: inline-block;
-        padding: 2px 6px;
-        font-size: 12px;
-        border-radius: 12px;
+        .name {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 4px 0;
+            color: #000;
+            line-height: 1.4;
+            height: 36px; // giữ chiều cao đồng đều
+            overflow: hidden;
+        }
+
+        .price-wrapper {
+            display: flex;
+            justify-content: start;
+            align-items: end;
+            gap: 6px;
+            flex-wrap: wrap;
+
+            .prices {
+                display: flex;
+                flex-direction: column-reverse;
+                gap: 2px;
+            }
+
+            .price-sale {
+                color: #e53935;
+                font-weight: bold;
+                font-size: 15px;
+            }
+
+            .price-original {
+                text-decoration: line-through;
+                color: #888;
+                font-size: 13px;
+            }
+
+            .discount-badge {
+                background: #e53935;
+                color: #fff;
+                font-size: 12px;
+                font-weight: bold;
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+        }
+
+        .rating {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            margin-bottom: 4px;
+
+            .rating-value {
+                margin-left: 6px;
+                font-size: 13px;
+                color: #888;
+            }
+        }
     }
 }

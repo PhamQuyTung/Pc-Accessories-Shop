@@ -17,12 +17,12 @@ export default function PromotionsWrapper() {
                     assignedProducts: (promo.assignedProducts || [])
                         .map((ap) => ap.product) // lấy product gốc
                         .filter(
-                            (p) =>
-                                p &&
-                                p.isVisible !== false && // không lấy sp ẩn
-                                (!p.discountPrice || p.discountPrice === 0), // loại bỏ sp đã có sẵn giá gạch
+                            (p) => p && p.isVisible !== false, // chỉ loại sp ẩn thôi
                         ),
                 }));
+                console.log('API Promotions:', data);
+                console.log('After filter:', validPromotions);
+
                 setPromotions(validPromotions);
             } catch (err) {
                 console.error('❌ Error fetching promotions:', err);
@@ -52,6 +52,7 @@ export default function PromotionsWrapper() {
                         alt: promo.name,
                     }}
                     products={promo.assignedProducts}
+                    promotionCardImg={promo.promotionCardImg}
                 />
             ))}
         </>
