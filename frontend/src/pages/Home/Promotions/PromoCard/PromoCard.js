@@ -3,9 +3,7 @@ import React from 'react';
 import styles from './PromoCard.module.scss';
 import classNames from 'classnames/bind';
 import { normalizeImageUrl } from '~/utils/normalizeImageUrl';
-import { faStar as solidStar, faStarHalfAlt } from '@fortawesome/free-solid-svg-icons';
-import { faStar as regularStar } from '@fortawesome/free-regular-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import BasicRating from '~/components/Rating/Rating';
 
 const cx = classNames.bind(styles);
 
@@ -20,12 +18,6 @@ export default function PromoCard({ product, promotionCardImg }) {
     const promotionPrice = product.discountPrice || product.promotionPrice || price;
     const discountPercent =
         product.discountPercent || (price > 0 ? Math.round(((price - promotionPrice) / price) * 100) : 0);
-
-    // Giả sử product.rating là số điểm trung bình (VD: 4.5)
-    const rating = product.rating || 0;
-    const maxStars = 5;
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating - fullStars >= 0.5;
 
     return (
         <div className={cx('promo-card')}>
@@ -44,21 +36,17 @@ export default function PromoCard({ product, promotionCardImg }) {
                 <div className={cx('price-wrapper')}>
                     <div className={cx('prices')}>
                         <span className={cx('price-sale')}>{promotionPrice.toLocaleString()}₫</span>
-                        {promotionPrice < price && <span className={cx('price-original')}>{price.toLocaleString()}₫</span>}
+                        {promotionPrice < price && (
+                            <span className={cx('price-original')}>{price.toLocaleString()}₫</span>
+                        )}
                     </div>
                     {discountPercent > 0 && <span className={cx('discount-badge')}>-{discountPercent}%</span>}
                 </div>
 
                 {/* Đánh giá sao */}
                 <div className={cx('rating')}>
-                    {[...Array(fullStars)].map((_, i) => (
-                        <FontAwesomeIcon key={i} icon={solidStar} color="#FFD700" />
-                    ))}
-                    {hasHalfStar && <FontAwesomeIcon icon={faStarHalfAlt} color="#FFD700" />}
-                    {[...Array(maxStars - fullStars - (hasHalfStar ? 1 : 0))].map((_, i) => (
-                        <FontAwesomeIcon key={i + fullStars + 1} icon={regularStar} color="#FFD700" />
-                    ))}
-                    <span className={cx('rating-value')}>{rating.toFixed(1)}</span>
+                    <BasicRating value={product.averageRating || 0} />
+                    <span className={cx('rating-count')}>({product.reviewCount || 0} đánh giá)</span>
                 </div>
 
                 <div className={cx('status')}>Vừa mở bán</div>

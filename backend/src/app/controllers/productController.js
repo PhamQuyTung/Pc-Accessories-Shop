@@ -133,14 +133,15 @@ class ProductController {
     try {
       const product = await Product.findOne({
         slug: req.params.slug,
-        deleted: { $ne: true }, // Chỉ lấy sản phẩm chưa xóa
-        visible: true, // Chỉ lấy sản phẩm đang hiển thị
+        deleted: { $ne: true },
+        visible: true,
       }).lean();
 
       if (!product)
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
 
-      const reviews = product.reviews || [];
+      // Lấy reviews từ collection Review
+      const reviews = await Review.find({ product: product._id }).lean();
       const reviewCount = reviews.length;
       const averageRating = reviewCount
         ? reviews.reduce((acc, cur) => acc + cur.rating, 0) / reviewCount
@@ -150,6 +151,7 @@ class ProductController {
         ...product,
         averageRating: Number((Math.round(averageRating * 10) / 10).toFixed(1)),
         reviewCount,
+        reviews, // Trả về danh sách đánh giá
       });
     } catch (err) {
       res.status(500).json({ error: "Lỗi server" });

@@ -2,6 +2,7 @@ const Promotion = require("../models/promotion");
 const Product = require("../models/product");
 const { isActiveNow } = require("../../utils/promotionTime");
 const { rollbackPromotion } = require("../../utils/promotionUtils");
+const Review = require("../models/review");
 
 // Chỉ cho phép gán sản phẩm đang "còn hàng trở lên"
 const ELIGIBLE_STATUSES = ["còn hàng", "nhiều hàng", "sản phẩm mới"];
@@ -124,12 +125,8 @@ exports.list = async (req, res) => {
   try {
     const { q } = req.query;
 
-    // Lấy tất cả CTKM
-    let promotions = await Promotion.find().populate(
-      "assignedProducts.product"
-    );
+    let promotions = await Promotion.find().populate("assignedProducts.product");
 
-    // Nếu có query q, filter theo tên
     if (q) {
       const keyword = q.toLowerCase();
       promotions = promotions.filter((p) =>
@@ -137,8 +134,45 @@ exports.list = async (req, res) => {
       );
     }
 
-    // ✅ Tính trạng thái realtime cho từng CTKM
     const result = promotions.map(computeStatus);
+
+    // Gom tất cả productId
+    const allProducts = [];
+    result.forEach(promo => {
+      promo.assignedProducts.forEach(ap => {
+        if (ap.product && ap.product._id) {
+          allProducts.push(ap.product._id.toString());
+        }
+      });
+    });
+
+    // Lấy tất cả reviews của các sản phẩm này
+    const reviews = await Review.find({ product: { $in: allProducts } }).lean();
+
+    // Gom review theo productId
+    const reviewMap = {};
+    reviews.forEach(r => {
+      const pid = r.product.toString();
+      if (!reviewMap[pid]) reviewMap[pid] = [];
+      reviewMap[pid].push(r);
+    });
+
+    // Gắn averageRating và reviewCount vào từng sản phẩm
+    result.forEach(promo => {
+      promo.assignedProducts.forEach(ap => {
+        const product = ap.product;
+        if (product && product._id) {
+          const pid = product._id.toString();
+          const productReviews = reviewMap[pid] || [];
+          const reviewCount = productReviews.length;
+          const averageRating = reviewCount
+            ? productReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+            : 0;
+          product.averageRating = Number((Math.round(averageRating * 10) / 10).toFixed(1));
+          product.reviewCount = reviewCount;
+        }
+      });
+    });
 
     res.json(result);
   } catch (err) {
@@ -159,6 +193,40 @@ exports.detail = async (req, res) => {
       (ap) => ap.product && (ap.product.quantity > 0 || ap.product.stock > 0)
     );
 
+    // Gom tất cả productId
+    const allProducts = [];
+    promo.assignedProducts.forEach(ap => {
+      if (ap.product && ap.product._id) {
+        allProducts.push(ap.product._id.toString());
+      }
+    });
+
+    // Lấy tất cả reviews của các sản phẩm này
+    const reviews = await Review.find({ product: { $in: allProducts } }).lean();
+
+    // Gom review theo productId
+    const reviewMap = {};
+    reviews.forEach(r => {
+      const pid = r.product.toString();
+      if (!reviewMap[pid]) reviewMap[pid] = [];
+      reviewMap[pid].push(r);
+    });
+
+    // Gắn averageRating và reviewCount vào từng sản phẩm
+    promo.assignedProducts.forEach(ap => {
+      const product = ap.product;
+      if (product && product._id) {
+        const pid = product._id.toString();
+        const productReviews = reviewMap[pid] || [];
+        const reviewCount = productReviews.length;
+        const averageRating = reviewCount
+          ? productReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+          : 0;
+        product.averageRating = Number((Math.round(averageRating * 10) / 10).toFixed(1));
+        product.reviewCount = reviewCount;
+      }
+    });
+
     res.json(computeStatus(promo));
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -173,6 +241,45 @@ exports.active = async (req, res) => {
     const activePromos = promos
       .map(computeStatus)
       .filter((p) => p.status === "active");
+
+    // Gom tất cả productId
+    const allProducts = [];
+    activePromos.forEach(promo => {
+      promo.assignedProducts.forEach(ap => {
+        if (ap.product && ap.product._id) {
+          allProducts.push(ap.product._id.toString());
+        }
+      });
+    });
+
+    // Lấy tất cả reviews của các sản phẩm này
+    const reviews = await Review.find({ product: { $in: allProducts } }).lean();
+
+    // Gom review theo productId
+    const reviewMap = {};
+    reviews.forEach(r => {
+      const pid = r.product.toString();
+      if (!reviewMap[pid]) reviewMap[pid] = [];
+      reviewMap[pid].push(r);
+    });
+
+    // Gắn averageRating và reviewCount vào từng sản phẩm
+    activePromos.forEach(promo => {
+      promo.assignedProducts.forEach(ap => {
+        const product = ap.product;
+        if (product && product._id) {
+          const pid = product._id.toString();
+          const productReviews = reviewMap[pid] || [];
+          const reviewCount = productReviews.length;
+          const averageRating = reviewCount
+            ? productReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+            : 0;
+          product.averageRating = Number((Math.round(averageRating * 10) / 10).toFixed(1));
+          product.reviewCount = reviewCount;
+        }
+      });
+    });
+
     res.json(activePromos);
   } catch (err) {
     res.status(500).json({ message: err.message });

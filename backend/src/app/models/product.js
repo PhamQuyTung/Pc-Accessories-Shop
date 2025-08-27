@@ -104,7 +104,6 @@ const productSchema = new mongoose.Schema({
   },
 
   variations: [variationSchema],
-  reviews: [reviewSchema],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
   deleted: { type: Boolean, default: false },

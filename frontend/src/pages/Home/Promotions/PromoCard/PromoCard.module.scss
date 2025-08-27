@@ -103,14 +103,19 @@
         .rating {
             display: flex;
             align-items: center;
-            gap: 2px;
-            margin-bottom: 4px;
+            margin-top: 4px;
 
-            .rating-value {
-                margin-left: 6px;
-                font-size: 13px;
-                color: #888;
+            .rating-count {
+                font-size: 14px;
+                color: #6d6e72;
+                margin-left: 4px;
             }
+        }
+
+        .status {
+            font-size: 13px;
+            color: #888;
+            margin-top: 4px;
         }
     }
 }

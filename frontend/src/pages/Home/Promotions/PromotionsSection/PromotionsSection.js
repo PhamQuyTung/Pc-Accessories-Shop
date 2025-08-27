@@ -9,7 +9,7 @@ import styles from './PromotionsSection.module.scss';
 import { Row, Col } from 'react-bootstrap';
 
 import { normalizeImageUrl } from '~/utils/normalizeImageUrl';
-import ProductCard from '../ProductCard/PromoCard';
+import ProductCard from '../PromoCard/PromoCard';
 
 const cx = classNames.bind(styles);
 
