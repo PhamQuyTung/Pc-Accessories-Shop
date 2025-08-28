@@ -125,7 +125,9 @@ exports.list = async (req, res) => {
   try {
     const { q } = req.query;
 
-    let promotions = await Promotion.find().populate("assignedProducts.product");
+    let promotions = await Promotion.find().populate(
+      "assignedProducts.product"
+    );
 
     if (q) {
       const keyword = q.toLowerCase();
@@ -138,8 +140,8 @@ exports.list = async (req, res) => {
 
     // Gom tất cả productId
     const allProducts = [];
-    result.forEach(promo => {
-      promo.assignedProducts.forEach(ap => {
+    result.forEach((promo) => {
+      promo.assignedProducts.forEach((ap) => {
         if (ap.product && ap.product._id) {
           allProducts.push(ap.product._id.toString());
         }
@@ -151,15 +153,15 @@ exports.list = async (req, res) => {
 
     // Gom review theo productId
     const reviewMap = {};
-    reviews.forEach(r => {
+    reviews.forEach((r) => {
       const pid = r.product.toString();
       if (!reviewMap[pid]) reviewMap[pid] = [];
       reviewMap[pid].push(r);
     });
 
     // Gắn averageRating và reviewCount vào từng sản phẩm
-    result.forEach(promo => {
-      promo.assignedProducts.forEach(ap => {
+    result.forEach((promo) => {
+      promo.assignedProducts.forEach((ap) => {
         const product = ap.product;
         if (product && product._id) {
           const pid = product._id.toString();
@@ -168,7 +170,9 @@ exports.list = async (req, res) => {
           const averageRating = reviewCount
             ? productReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
             : 0;
-          product.averageRating = Number((Math.round(averageRating * 10) / 10).toFixed(1));
+          product.averageRating = Number(
+            (Math.round(averageRating * 10) / 10).toFixed(1)
+          );
           product.reviewCount = reviewCount;
         }
       });
@@ -195,7 +199,7 @@ exports.detail = async (req, res) => {
 
     // Gom tất cả productId
     const allProducts = [];
-    promo.assignedProducts.forEach(ap => {
+    promo.assignedProducts.forEach((ap) => {
       if (ap.product && ap.product._id) {
         allProducts.push(ap.product._id.toString());
       }
@@ -206,14 +210,14 @@ exports.detail = async (req, res) => {
 
     // Gom review theo productId
     const reviewMap = {};
-    reviews.forEach(r => {
+    reviews.forEach((r) => {
       const pid = r.product.toString();
       if (!reviewMap[pid]) reviewMap[pid] = [];
       reviewMap[pid].push(r);
     });
 
     // Gắn averageRating và reviewCount vào từng sản phẩm
-    promo.assignedProducts.forEach(ap => {
+    promo.assignedProducts.forEach((ap) => {
       const product = ap.product;
       if (product && product._id) {
         const pid = product._id.toString();
@@ -222,7 +226,9 @@ exports.detail = async (req, res) => {
         const averageRating = reviewCount
           ? productReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
           : 0;
-        product.averageRating = Number((Math.round(averageRating * 10) / 10).toFixed(1));
+        product.averageRating = Number(
+          (Math.round(averageRating * 10) / 10).toFixed(1)
+        );
         product.reviewCount = reviewCount;
       }
     });
@@ -244,8 +250,8 @@ exports.active = async (req, res) => {
 
     // Gom tất cả productId
     const allProducts = [];
-    activePromos.forEach(promo => {
-      promo.assignedProducts.forEach(ap => {
+    activePromos.forEach((promo) => {
+      promo.assignedProducts.forEach((ap) => {
         if (ap.product && ap.product._id) {
           allProducts.push(ap.product._id.toString());
         }
@@ -257,15 +263,15 @@ exports.active = async (req, res) => {
 
     // Gom review theo productId
     const reviewMap = {};
-    reviews.forEach(r => {
+    reviews.forEach((r) => {
       const pid = r.product.toString();
       if (!reviewMap[pid]) reviewMap[pid] = [];
       reviewMap[pid].push(r);
     });
 
     // Gắn averageRating và reviewCount vào từng sản phẩm
-    activePromos.forEach(promo => {
-      promo.assignedProducts.forEach(ap => {
+    activePromos.forEach((promo) => {
+      promo.assignedProducts.forEach((ap) => {
         const product = ap.product;
         if (product && product._id) {
           const pid = product._id.toString();
@@ -274,7 +280,9 @@ exports.active = async (req, res) => {
           const averageRating = reviewCount
             ? productReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
             : 0;
-          product.averageRating = Number((Math.round(averageRating * 10) / 10).toFixed(1));
+          product.averageRating = Number(
+            (Math.round(averageRating * 10) / 10).toFixed(1)
+          );
           product.reviewCount = reviewCount;
         }
       });
@@ -396,25 +404,29 @@ exports.assignProducts = async (req, res) => {
 
 exports.unassignProduct = async (req, res, next) => {
   try {
-    const promo = await Promotion.findById(req.params.id);
-    if (!promo)
-      return res.status(404).json({ message: "Không tìm thấy CTKM." });
+    const { id, productId } = req.params;
 
-    const productId = req.params.productId;
-    const idx = promo.assignedProducts.findIndex(
-      (pp) => String(pp.product) === productId
+    // Xóa trực tiếp bằng $pull
+    const result = await Promotion.updateOne(
+      { _id: id },
+      { $pull: { assignedProducts: { 
+        $or: [
+          { product: productId },
+          { "product._id": productId }
+        ]
+      } } }
     );
-    if (idx === -1)
-      return res
-        .status(404)
-        .json({ message: "Sản phẩm không nằm trong CTKM." });
 
-    if (isActiveNow(promo)) {
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: "Sản phẩm không nằm trong CTKM." });
+    }
+
+    // Nếu cần, gọi lại tick để cập nhật giá sản phẩm
+    const promo = await Promotion.findById(id);
+    if (promo && isActiveNow(promo)) {
       await require("../../jobs/promotionEngine").tick();
     }
 
-    promo.assignedProducts.splice(idx, 1);
-    await promo.save();
     res.json({ message: "Đã gỡ sản phẩm khỏi CTKM." });
   } catch (e) {
     next(e);

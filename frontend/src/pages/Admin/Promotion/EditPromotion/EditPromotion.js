@@ -47,9 +47,7 @@ export default function EditPromotion() {
                     bannerImg: promo.bannerImg || '',
                     promotionCardImg: promo.promotionCardImg || '',
                 });
-                setSelectedIds(
-                    (promo.assignedProducts || []).map((ap) => ap.product?._id || ap.product)
-                );
+                setSelectedIds((promo.assignedProducts || []).map((ap) => ap.product?._id || ap.product));
             } catch (err) {
                 showToast('Không thể tải dữ liệu CTKM', 'error');
             }
@@ -83,9 +81,23 @@ export default function EditPromotion() {
     };
 
     const toggleSelect = (id) => {
-        setSelectedIds((prev) =>
-            prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
-        );
+        setSelectedIds((prev) => (prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]));
+    };
+
+    const handleRemoveProduct = async (productId) => {
+        try {
+            await axiosClient.delete(`/promotions/${id}/unassign-product/${productId}`);
+            setForm((prev) => ({
+                ...prev,
+                assignedProducts: prev.assignedProducts.filter(
+                    (ap) => (ap.product?._id || ap.product) !== productId
+                ),
+            }));
+            setSelectedIds((prev) => prev.filter((pid) => pid !== productId));
+            showToast('Đã gỡ sản phẩm khỏi CTKM', 'success');
+        } catch (err) {
+            showToast('Gỡ sản phẩm thất bại', 'error');
+        }
     };
 
     const submit = async (e) => {
@@ -115,12 +127,7 @@ export default function EditPromotion() {
             <form onSubmit={submit}>
                 <div className={cx('form-group')}>
                     <label>Tên chương trình</label>
-                    <input
-                        name="name"
-                        value={form.name}
-                        onChange={onChange}
-                        required
-                    />
+                    <input name="name" value={form.name} onChange={onChange} required />
                 </div>
                 <div className={cx('form-group')}>
                     <label>Phần trăm giảm (%)</label>
@@ -167,12 +174,7 @@ export default function EditPromotion() {
                             onChange={onChangeDaily}
                         />
                         <label>Ngày kết thúc</label>
-                        <input
-                            type="date"
-                            name="endDate"
-                            value={form.daily.endDate || ''}
-                            onChange={onChangeDaily}
-                        />
+                        <input type="date" name="endDate" value={form.daily.endDate || ''} onChange={onChangeDaily} />
                         <label>Giờ bắt đầu</label>
                         <input
                             type="time"
@@ -181,86 +183,74 @@ export default function EditPromotion() {
                             onChange={onChangeDaily}
                         />
                         <label>Giờ kết thúc</label>
-                        <input
-                            type="time"
-                            name="endTime"
-                            value={form.daily.endTime || ''}
-                            onChange={onChangeDaily}
-                        />
+                        <input type="time" name="endTime" value={form.daily.endTime || ''} onChange={onChangeDaily} />
                     </div>
                 )}
                 <div className={cx('form-group')}>
                     <label>Ẩn khi kết thúc</label>
-                    <input
-                        type="checkbox"
-                        name="hideWhenEnded"
-                        checked={form.hideWhenEnded}
-                        onChange={onChange}
-                    />
+                    <input type="checkbox" name="hideWhenEnded" checked={form.hideWhenEnded} onChange={onChange} />
                 </div>
                 <div className={cx('form-group')}>
                     <label>Banner</label>
-                    <input
-                        name="bannerImg"
-                        value={form.bannerImg}
-                        onChange={onChange}
-                    />
+                    <input name="bannerImg" value={form.bannerImg} onChange={onChange} />
                 </div>
                 <div className={cx('form-group')}>
                     <label>Khung sản phẩm</label>
-                    <input
-                        name="promotionCardImg"
-                        value={form.promotionCardImg}
-                        onChange={onChange}
-                    />
+                    <input name="promotionCardImg" value={form.promotionCardImg} onChange={onChange} />
                 </div>
                 <div className={cx('form-group')}>
                     <label>Sản phẩm đã áp dụng</label>
                     <div className={cx('applied-products-list')}>
-                        {products.filter(p => selectedIds.includes(p._id)).length === 0 && (
+                        {form.assignedProducts.length === 0 && (
                             <div className={cx('empty')}>Chưa có sản phẩm nào được áp dụng</div>
                         )}
-                        {products.filter(p => selectedIds.includes(p._id)).map((p) => (
-                            <div key={p._id} className={cx('applied-product-card')}>
-                                <img
-                                    src={p.images?.[0] || '/default-product.jpg'}
-                                    alt={p.name}
-                                    className={cx('product-thumb')}
-                                />
-                                <div className={cx('product-meta')}>
-                                    <div className={cx('product-name')}>{p.name}</div>
-                                    <div className={cx('product-price')}>
-                                        {p.discountPrice && p.discountPrice > 0 ? (
-                                            <>
+                        {form.assignedProducts.map((ap) => {
+                            // ap.product có thể là object hoặc id, nên lấy object từ products nếu cần
+                            const product =
+                                typeof ap.product === 'object'
+                                    ? ap.product
+                                    : products.find((p) => p._id === ap.product);
+                            if (!product) return null;
+                            return (
+                                <div key={product._id} className={cx('applied-product-card')}>
+                                    <div className={cx('product-meta')}>
+                                        <div className={cx('product-name')}>{product.name}</div>
+                                        <div className={cx('product-price')}>
+                                            {product.discountPrice && product.discountPrice > 0 ? (
+                                                <>
+                                                    <span className={cx('price-sale')}>
+                                                        {product.discountPrice.toLocaleString()}₫
+                                                    </span>
+                                                    <span className={cx('price-original')}>
+                                                        {product.price.toLocaleString()}₫
+                                                    </span>
+                                                </>
+                                            ) : (
                                                 <span className={cx('price-sale')}>
-                                                    {p.discountPrice.toLocaleString()}₫
+                                                    {product.price.toLocaleString()}₫
                                                 </span>
-                                                <span className={cx('price-original')}>
-                                                    {p.price.toLocaleString()}₫
-                                                </span>
-                                            </>
-                                        ) : (
-                                            <span className={cx('price-sale')}>
-                                                {p.price.toLocaleString()}₫
-                                            </span>
-                                        )}
+                                            )}
+                                        </div>
+                                        <div
+                                            className={cx('product-status', {
+                                                'in-stock': product.quantity > 0,
+                                                'out-stock': product.quantity <= 0,
+                                            })}
+                                        >
+                                            {product.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
+                                        </div>
                                     </div>
-                                    <div className={cx('product-status', {
-                                        'in-stock': p.quantity > 0,
-                                        'out-stock': p.quantity <= 0,
-                                    })}>
-                                        {p.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
-                                    </div>
+                                    {/* Nút gỡ sẽ xử lý sau */}
+                                    <button
+                                        type="button"
+                                        className={cx('btn-remove')}
+                                        onClick={() => handleRemoveProduct(product._id)}
+                                    >
+                                        Gỡ
+                                    </button>
                                 </div>
-                                <button
-                                    type="button"
-                                    className={cx('btn-remove')}
-                                    onClick={() => toggleSelect(p._id)}
-                                >
-                                    Gỡ
-                                </button>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
                 <div className={cx('form-group')}>
@@ -298,10 +288,12 @@ export default function EditPromotion() {
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className={cx('product-status', {
-                                                'in-stock': p.quantity > 0,
-                                                'out-stock': p.quantity <= 0,
-                                            })}>
+                                            <div
+                                                className={cx('product-status', {
+                                                    'in-stock': p.quantity > 0,
+                                                    'out-stock': p.quantity <= 0,
+                                                })}
+                                            >
                                                 {p.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
                                             </div>
                                         </div>
