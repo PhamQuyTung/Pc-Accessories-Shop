@@ -4,6 +4,7 @@ import styles from './PromoCard.module.scss';
 import classNames from 'classnames/bind';
 import { normalizeImageUrl } from '~/utils/normalizeImageUrl';
 import BasicRating from '~/components/Rating/Rating';
+import { Link } from 'react-router-dom';
 
 const cx = classNames.bind(styles);
 
@@ -31,7 +32,9 @@ export default function PromoCard({ product, promotionCardImg }) {
 
             {/* Info */}
             <div className={cx('info')}>
-                <h3 className={cx('name')}>{name}</h3>
+                <Link className={cx('link')} to={`/products/${product.slug}`}>
+                    <h3 className={cx('name')}>{name}</h3>
+                </Link>
 
                 <div className={cx('price-wrapper')}>
                     <div className={cx('prices')}>

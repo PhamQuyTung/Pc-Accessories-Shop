@@ -41,6 +41,7 @@ import ProfileInfo from '~/pages/Profile/tabs/ProfileInfo/ProfileInfo';
 import ProfileAddress from '~/pages/Profile/tabs/ProfileAddress';
 import ProfileOrders from '~/pages/Profile/tabs/ProfileOrders';
 import ProfileViewed from '~/pages/Profile/tabs/ProfileViewed/ProfileViewed';
+import EditPromotion from '~/pages/Admin/Promotion/EditPromotion/EditPromotion';
 
 
 const routes = [
@@ -112,7 +113,7 @@ const routes = [
             { path: 'promotions', element: <PromotionManagement /> }, // Danh sách + Xem chi tiết
             { path: 'promotions/new', element: <CreatePromotion /> }, // Thêm mới
             { path: 'promotions/:id', element: <PromotionDetail /> }, // Chi tiết CTKM
-            // { path: 'promotions/:id/edit', element: <PromotionDetail /> }, // Sửa
+            { path: 'promotions/:id/edit', element: <EditPromotion /> }, // Sửa
         ],
     },
 

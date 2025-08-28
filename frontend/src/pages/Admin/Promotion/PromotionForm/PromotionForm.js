@@ -33,23 +33,14 @@ export default function PromotionForm() {
             try {
                 // Lấy sản phẩm đủ điều kiện từ API
                 const { data } = await axiosClient.get('/promotions/available-products');
-                console.log('API available products:', data);
-
                 const productList = Array.isArray(data.products) ? data.products : [];
-                console.log(
-                    'Statuses from API:',
-                    productList.map((p) => p.status),
-                );
-
                 // Loại sản phẩm có giá gạch
                 const filteredList = productList.filter((p) => !p.discountPrice || p.discountPrice <= 0);
-
                 setProducts(filteredList);
 
                 if (isEdit) {
-                    const { data: promo } = await axiosClient.get(`/admin/promotions/${id}`);
-                    console.log('promo data:', promo);
-
+                    // Lấy thông tin CTKM và sản phẩm đã gán
+                    const { data: promo } = await axiosClient.get(`/promotions/${id}`);
                     setForm((prev) => ({
                         ...prev,
                         name: promo.name,
@@ -58,10 +49,10 @@ export default function PromotionForm() {
                         once: promo.once || { startAt: '', endAt: '' },
                         daily: promo.daily || { startDate: '', endDate: '', startTime: '09:00', endTime: '18:00' },
                         hideWhenEnded: promo.hideWhenEnded ?? true,
-                        bannerImg: promo.bannerImg || prev.bannerImg, // ✅ giữ lại hoặc gán từ API
+                        bannerImg: promo.bannerImg || prev.bannerImg,
                         promotionCardImg: promo.promotionCardImg || prev.promotionCardImg,
                     }));
-
+                    // Gán selectedIds là các sản phẩm đã gán vào CTKM
                     setSelectedIds(promo.assignedProducts.map((pp) => pp.product?._id || pp.product));
                 }
             } catch (err) {
@@ -130,18 +121,16 @@ export default function PromotionForm() {
                 promo = await axiosClient.post('/promotions', payload);
             }
 
-            // ✅ Gán sản phẩm
+            // Gán sản phẩm (dù là tạo mới hay sửa đều nên gọi lại để đồng bộ)
             if (selectedIds.length > 0) {
                 await axiosClient.post(`/promotions/${promo.data?._id || promo.data.id}/assign-products`, {
                     productIds: selectedIds,
                 });
-
-                // fetch lại để thấy assignedProducts đã update
-                const updated = await axiosClient.get(`/promotions/${promo.data?._id || promo.data.id}`);
-                console.log('✅ After assign:', updated.data);
             }
 
-            // ✅ Thành công
+            // fetch lại để thấy assignedProducts đã update (nếu muốn)
+            // const updated = await axiosClient.get(`/promotions/${promo.data?._id || promo.data.id}`);
+
             showToast(isEdit ? 'Cập nhật CTKM thành công!' : 'Tạo CTKM thành công!', 'success');
             navigate('/admin/promotions');
         } catch (err) {
