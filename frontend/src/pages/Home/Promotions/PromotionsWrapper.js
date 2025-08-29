@@ -53,6 +53,7 @@ export default function PromotionsWrapper() {
                     }}
                     products={promo.assignedProducts}
                     promotionCardImg={promo.promotionCardImg}
+                    productBannerImg={promo.productBannerImg}
                 />
             ))}
         </>

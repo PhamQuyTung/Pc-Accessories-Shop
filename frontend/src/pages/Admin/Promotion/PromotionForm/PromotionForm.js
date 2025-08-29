@@ -21,6 +21,7 @@ export default function PromotionForm() {
         assignedProducts: [],
         bannerImg: '',
         promotionCardImg: '',
+        productBannerImg: '',
     });
     const [products, setProducts] = useState([]);
     const [selectedIds, setSelectedIds] = useState([]);
@@ -95,6 +96,11 @@ export default function PromotionForm() {
             return;
         }
 
+        if (!form.productBannerImg || form.productBannerImg.trim() === '') {
+            showToast('Vui lòng chọn ảnh banner sản phẩm!', 'warning');
+            return;
+        }
+
         if (!form.bannerImg || form.bannerImg.trim() === '') {
             showToast('Vui lòng chọn ảnh cho chương trình!', 'warning');
             return;
@@ -151,9 +157,41 @@ export default function PromotionForm() {
                     <input name="name" value={form.name} onChange={onChange} placeholder="Ví dụ: Back To School 2025" />
                 </div>
 
+                {/* Ảnh background sản phẩm */}
+                <div className={cx('row')}>
+                    <label>Ảnh background sản phẩm</label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            const formData = new FormData();
+                            formData.append('file', file);
+
+                            try {
+                                const res = await axiosClient.post('/upload', formData, {
+                                    headers: { 'Content-Type': 'multipart/form-data' },
+                                });
+                                const url = res.data.url;
+                                setForm((prev) => ({ ...prev, productBannerImg: url }));
+                            } catch (err) {
+                                console.error('Upload error', err);
+                            }
+                        }}
+                    />
+                    {form.productBannerImg && (
+                        <img
+                            src={form.productBannerImg}
+                            alt="preview-product-banner"
+                            style={{ maxWidth: 200, marginTop: 8 }}
+                        />
+                    )}
+                </div>
+
                 {/* Ảnh chương trình */}
                 <div className={cx('row')}>
-                    <label>Ảnh banner</label>
+                    <label>Ảnh small banner bên trái</label>
                     <input
                         type="file"
                         accept="image/*"
@@ -184,7 +222,7 @@ export default function PromotionForm() {
 
                 {/* Ảnh viền Card sản phẩm */}
                 <div className={cx('row')}>
-                    <label>Ảnh viền card sản phẩm</label>
+                    <label>Ảnh viền card sản phẩm bên phải</label>
                     <input
                         type="file"
                         accept="image/*"

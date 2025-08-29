@@ -300,6 +300,7 @@ exports.create = async (req, res, next) => {
 
     const created = await Promotion.create({
       name: req.body.name.trim(),
+      productBannerImg: req.body.productBannerImg || "",
       bannerImg: req.body.bannerImg || "",
       promotionCardImg: req.body.promotionCardImg || "",
       percent: req.body.percent,
@@ -344,6 +345,8 @@ exports.update = async (req, res, next) => {
     }
 
     if (req.body.name) promo.name = req.body.name.trim();
+    if (req.body.productBannerImg)
+      promo.productBannerImg = req.body.productBannerImg;
     if (req.body.bannerImg) promo.bannerImg = req.body.bannerImg;
     if (req.body.promotionCardImg)
       promo.promotionCardImg = req.body.promotionCardImg;
@@ -409,16 +412,19 @@ exports.unassignProduct = async (req, res, next) => {
     // Xóa trực tiếp bằng $pull
     const result = await Promotion.updateOne(
       { _id: id },
-      { $pull: { assignedProducts: { 
-        $or: [
-          { product: productId },
-          { "product._id": productId }
-        ]
-      } } }
+      {
+        $pull: {
+          assignedProducts: {
+            $or: [{ product: productId }, { "product._id": productId }],
+          },
+        },
+      }
     );
 
     if (result.modifiedCount === 0) {
-      return res.status(404).json({ message: "Sản phẩm không nằm trong CTKM." });
+      return res
+        .status(404)
+        .json({ message: "Sản phẩm không nằm trong CTKM." });
     }
 
     // Nếu cần, gọi lại tick để cập nhật giá sản phẩm

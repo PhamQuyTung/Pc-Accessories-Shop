@@ -13,7 +13,15 @@ import ProductCard from '../PromoCard/PromoCard';
 
 const cx = classNames.bind(styles);
 
-export default function PromotionsSection({ title, endTime, detailHref, banner, products = [], promotionCardImg }) {
+export default function PromotionsSection({
+    title,
+    endTime,
+    detailHref,
+    banner,
+    products = [],
+    promotionCardImg,
+    productBannerImg,
+}) {
     const [timeLeft, setTimeLeft] = useState({
         days: 0,
         hours: 0,
@@ -81,7 +89,17 @@ export default function PromotionsSection({ title, endTime, detailHref, banner, 
                 )}
             </div>
 
-            <div className={cx('bg')}>
+            <div
+                className={cx('bg')}
+                style={{
+                    backgroundImage: productBannerImg
+                        ? `url(${normalizeImageUrl(productBannerImg)})`
+                        : `url('/default-promo-bg.jpg')`, // fallback nếu không có
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: 'cover',
+                }}
+            >
                 <div className={cx('content')}>
                     <Row>
                         <Col xs={12} md={4}>
@@ -93,7 +111,10 @@ export default function PromotionsSection({ title, endTime, detailHref, banner, 
                                     </div>
                                 ) : (
                                     <a href={banner.href || '#'} className={cx('banner')}>
-                                        <img src={normalizeImageUrl(banner.img)} alt={banner.alt || 'Promotion banner'} />
+                                        <img
+                                            src={normalizeImageUrl(banner.img)}
+                                            alt={banner.alt || 'Promotion banner'}
+                                        />
                                     </a>
                                 ))}
                         </Col>
@@ -105,8 +126,6 @@ export default function PromotionsSection({ title, endTime, detailHref, banner, 
                                         slidesPerView={4}
                                         spaceBetween={10}
                                         loop
-                                        // navigation // Hiện nút next/prev
-                                        // pagination={{ clickable: true }} // Hiện dấu chấm tròn ở dưới
                                         autoplay={{ delay: 3000 }}
                                         modules={[Autoplay, Navigation, Pagination]}
                                     >
