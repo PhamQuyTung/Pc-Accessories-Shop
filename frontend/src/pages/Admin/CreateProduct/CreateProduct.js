@@ -54,6 +54,22 @@ export default function CreateProduct() {
     const [selectedColors, setSelectedColors] = useState([]);
     const [selectedSizes, setSelectedSizes] = useState([]);
 
+    // Brands from backend
+    const [brands, setBrands] = useState([]);
+
+    // Gọi API lấy brands khi load trang
+    useEffect(() => {
+        const fetchBrands = async () => {
+            try {
+                const res = await axiosClient.get('/brands');
+                setBrands(res.data); // backend trả về mảng brands
+            } catch (err) {
+                console.error('Lỗi khi fetch brands:', err);
+            }
+        };
+        fetchBrands();
+    }, []);
+
     // Lấy API của attribute và terms
     useEffect(() => {
         const fetchAttributesAndTerms = async () => {
@@ -744,8 +760,12 @@ export default function CreateProduct() {
                                                             <div className={cx('variant-body')}>
                                                                 {/* Dòng 1: Ảnh & SKU */}
                                                                 <div className={cx('form-row', 'row-1')}>
-                                                                    <VariantImage v={v} i={i} handleVariantChange={handleVariantChange} />
-                                                                    
+                                                                    <VariantImage
+                                                                        v={v}
+                                                                        i={i}
+                                                                        handleVariantChange={handleVariantChange}
+                                                                    />
+
                                                                     <div className={cx('form-col', 'sku')}>
                                                                         <label>SKU</label>
                                                                         <input
@@ -911,9 +931,17 @@ export default function CreateProduct() {
                             </select>
                         </div>
 
+                        {/* Dropdown chọn brand */}
                         <div className={cx('field')}>
                             <label>Thương hiệu</label>
-                            <input name="brand" value={form.brand} onChange={handleFormChange} placeholder="VD: ASUS" />
+                            <select name="brand" value={form.brand} onChange={handleFormChange} required>
+                                <option value="">-- Chọn thương hiệu --</option>
+                                {brands.map((brand) => (
+                                    <option key={brand._id} value={brand._id}>
+                                        {brand.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         {productType === 'simple' && (

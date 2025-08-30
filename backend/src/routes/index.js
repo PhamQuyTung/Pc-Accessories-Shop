@@ -12,6 +12,7 @@ const favoriteRoutes = require('./favoriteRoutes'); // ✔️ Thêm route cho fa
 const reviewRoutes = require("./reviewRoutes");
 const attributeTermRoutes = require("./attributeTermRoutes");
 const promotionsRoutes = require("./promotionsRoutes");
+const brandRoutes = require("./brandRoutes");
 const uploadRoutes = require("./uploadRoutes");
 const errorHandle = require('../helpers/error.handle');
 
@@ -35,7 +36,8 @@ function route(app) {
     app.use('/api/favorites', favoriteRoutes); // 👈 Thêm route cho favorites
     app.use('/api/reviews', reviewRoutes); // 👈 Thêm route cho reviews
     app.use('/api/promotions', promotionsRoutes); // 👈 Thêm route cho promotions
-    app.use('/api/attribute-terms', attributeTermRoutes); // 👈 Thêm route cho reviews
+    app.use('/api/attribute-terms', attributeTermRoutes); // 👈 Thêm route cho attribute-terms
+    app.use('/api/brands', brandRoutes); // 👈 Thêm route cho brandRoutes
 
     // Middleware xử lý lỗi
     app.use(errorHandle);

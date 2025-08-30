@@ -1,16 +1,23 @@
-# Node
-node_modules/
-.env
-dist/
-.DS_Store
-
-# Logs
-logs/
+# Ignore logs
+logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# IDE (VS Code)
+# Ignore local environment files
+.env
+.env.*.local
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE files
 .vscode/
+.idea/
 
-# Bỏ qua thư mục upload ảnh trong backend
-backend/src/uploads/
-
+# Ignore OS specific
+*.swp
+*.swo

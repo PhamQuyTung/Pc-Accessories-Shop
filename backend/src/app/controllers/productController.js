@@ -55,6 +55,16 @@ class ProductController {
         },
         { $unwind: "$category" },
 
+        {
+          $lookup: {
+            from: "brands", // tên collection trong Mongo
+            localField: "brand", // field trong Product
+            foreignField: "_id", // so sánh với _id của Brand
+            as: "brand",
+          },
+        },
+        { $unwind: "$brand" }, // nếu 1 sản phẩm chỉ có 1 brand
+
         // ✅ THÊM ĐÂY:
         {
           $lookup: {

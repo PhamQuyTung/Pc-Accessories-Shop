@@ -106,6 +106,12 @@ const AdminSidebar = () => {
                             >
                                 Chương trình khuyến mãi
                             </NavLink>
+                            <NavLink
+                                to="/admin/brands"
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
+                                Thương hiệu sản phẩm
+                            </NavLink>
                         </motion.div>
                     )}
                 </AnimatePresence>

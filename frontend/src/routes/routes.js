@@ -42,7 +42,9 @@ import ProfileAddress from '~/pages/Profile/tabs/ProfileAddress';
 import ProfileOrders from '~/pages/Profile/tabs/ProfileOrders';
 import ProfileViewed from '~/pages/Profile/tabs/ProfileViewed/ProfileViewed';
 import EditPromotion from '~/pages/Admin/Promotion/EditPromotion/EditPromotion';
-
+import BrandManagement from '~/pages/Admin/BrandsPage/BrandsPage';
+// import CreateBrand from '~/pages/Admin/BrandManagement/CreateBrand';
+// import EditBrand from '~/pages/Admin/BrandManagement/EditBrand';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -110,10 +112,13 @@ const routes = [
             { path: 'menus', element: <AdminMenuManagement /> },
 
             // 🎯 Chương trình khuyến mãi
-            { path: 'promotions', element: <PromotionManagement /> }, // Danh sách + Xem chi tiết
+            { path: 'promotions', element: <PromotionManagement /> }, // Danh sách 
             { path: 'promotions/new', element: <CreatePromotion /> }, // Thêm mới
             { path: 'promotions/:id', element: <PromotionDetail /> }, // Chi tiết CTKM
             { path: 'promotions/:id/edit', element: <EditPromotion /> }, // Sửa
+
+            // Thương hiệu sản phẩm 
+            { path: 'brands', element: <BrandManagement /> }, // Danh sách thương hiệu
         ],
     },
 

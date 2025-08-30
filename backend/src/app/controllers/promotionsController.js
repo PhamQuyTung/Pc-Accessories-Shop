@@ -409,16 +409,15 @@ exports.unassignProduct = async (req, res, next) => {
   try {
     const { id, productId } = req.params;
 
-    // Xóa trực tiếp bằng $pull
+    // Tìm CTKM
+    const promo = await Promotion.findById(id);
+    if (!promo)
+      return res.status(404).json({ message: "Không tìm thấy CTKM." });
+
+    // Xóa khỏi assignedProducts
     const result = await Promotion.updateOne(
       { _id: id },
-      {
-        $pull: {
-          assignedProducts: {
-            $or: [{ product: productId }, { "product._id": productId }],
-          },
-        },
-      }
+      { $pull: { assignedProducts: { product: productId } } }
     );
 
     if (result.modifiedCount === 0) {
@@ -427,13 +426,17 @@ exports.unassignProduct = async (req, res, next) => {
         .json({ message: "Sản phẩm không nằm trong CTKM." });
     }
 
-    // Nếu cần, gọi lại tick để cập nhật giá sản phẩm
-    const promo = await Promotion.findById(id);
-    if (promo && isActiveNow(promo)) {
-      await require("../../jobs/promotionEngine").tick();
+    // ✅ Rollback product về giá gốc
+    const product = await Product.findById(productId);
+    if (product) {
+      product.discountPrice = 0;
+      product.discountPercent = 0;
+      product.lockPromotionId = null;
+      product.promotionApplied = null;
+      await product.save();
     }
 
-    res.json({ message: "Đã gỡ sản phẩm khỏi CTKM." });
+    res.json({ message: "Đã gỡ sản phẩm khỏi CTKM và rollback giá." });
   } catch (e) {
     next(e);
   }

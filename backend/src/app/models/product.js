@@ -66,7 +66,12 @@ const productSchema = new mongoose.Schema({
     ref: "Category",
     required: true,
   },
-  brand: { type: String, required: true },
+  brand: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Brand",
+    required: false, // optional
+  },
+
   description: String,
 
   // 🔹 Thuộc tính áp dụng chung cho sản phẩm (giữ reference)

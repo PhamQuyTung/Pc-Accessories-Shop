@@ -4,8 +4,10 @@ import axiosClient from '~/utils/axiosClient';
 import styles from './EditPromotion.module.scss';
 import classNames from 'classnames/bind';
 import { useToast } from '~/components/ToastMessager/ToastMessager';
+import Pagination from '~/components/Pagination/Pagination';
 
 const cx = classNames.bind(styles);
+
 const ELIGIBLE_STATUSES = ['còn hàng', 'nhiều hàng', 'sản phẩm mới'];
 
 export default function EditPromotion() {
@@ -25,6 +27,85 @@ export default function EditPromotion() {
     const [selectedIds, setSelectedIds] = useState([]);
     const navigate = useNavigate();
     const showToast = useToast();
+
+    // Khai báo thêm state lọc & phân trang
+    const [search, setSearch] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 10;
+
+    // (nếu bạn có API danh mục thì load, tạm fake mảng rỗng)
+    const [categories, setCategories] = useState([]);
+
+    // (nếu bạn có API nhãn hiệu thì load, tạm fake mảng rỗng)
+    const [brandFilter, setBrandFilter] = useState('');
+    const [brands, setBrands] = useState([]);
+
+    // Lọc sản phẩm
+    const filteredProducts = products.filter((p) => {
+        const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+
+        const matchCategory = categoryFilter
+            ? typeof p.category === 'string'
+                ? p.category === categoryFilter
+                : p.category?._id === categoryFilter
+            : true;
+
+        const matchStatus =
+            statusFilter === 'in-stock' ? p.quantity > 0 : statusFilter === 'out-stock' ? p.quantity <= 0 : true;
+
+        const matchBrand = brandFilter
+            ? typeof p.brand === 'string'
+                ? p.brand === brandFilter
+                : p.brand?._id === brandFilter
+            : true;
+
+        return matchSearch && matchCategory && matchBrand && matchStatus;
+    });
+
+    // Thêm hàm resetFilters reset bộ lọc & tìm kiếm
+    const resetFilters = () => {
+        setSearch('');
+        setCategoryFilter('');
+        setBrandFilter('');
+        setStatusFilter('');
+        setCurrentPage(1);
+    };
+
+    // Tính tổng số trang
+    const totalPages = Math.ceil(filteredProducts.length / pageSize);
+
+    // Cắt sản phẩm theo trang
+    const paginatedProducts = filteredProducts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+    // Load danh mục từ API (nếu có)
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await axiosClient.get('/categories');
+                // giả sử API trả về mảng categories
+                setCategories(res.data);
+            } catch (error) {
+                console.error('Lỗi load categories:', error);
+            }
+        };
+
+        fetchCategories();
+    }, []);
+
+    // Load nhãn hiệu từ API (nếu có)
+    useEffect(() => {
+        const fetchBrands = async () => {
+            try {
+                const res = await axiosClient.get('/brands');
+                setBrands(res.data);
+            } catch (error) {
+                console.error('Lỗi load brands:', error);
+            }
+        };
+        fetchBrands();
+    }, []);
 
     // Lấy dữ liệu CTKM và danh sách sản phẩm đủ điều kiện
     useEffect(() => {
@@ -54,6 +135,12 @@ export default function EditPromotion() {
         })();
         // eslint-disable-next-line
     }, [id]);
+
+    // Hàm load lại sản phẩm (nếu cần)
+    const fetchProducts = async () => {
+        const { data } = await axiosClient.get('/promotions/available-products');
+        setProducts(Array.isArray(data.products) ? data.products : []);
+    };
 
     const onChange = (e) => {
         const { name, value, type: inputType, checked } = e.target;
@@ -87,13 +174,16 @@ export default function EditPromotion() {
     const handleRemoveProduct = async (productId) => {
         try {
             await axiosClient.delete(`/promotions/${id}/unassign-product/${productId}`);
+
             setForm((prev) => ({
                 ...prev,
-                assignedProducts: prev.assignedProducts.filter(
-                    (ap) => (ap.product?._id || ap.product) !== productId
-                ),
+                assignedProducts: prev.assignedProducts.filter((ap) => (ap.product?._id || ap.product) !== productId),
             }));
             setSelectedIds((prev) => prev.filter((pid) => pid !== productId));
+
+            // 🔄 Reload danh sách products
+            await fetchProducts();
+
             showToast('Đã gỡ sản phẩm khỏi CTKM', 'success');
         } catch (err) {
             showToast('Gỡ sản phẩm thất bại', 'error');
@@ -186,26 +276,36 @@ export default function EditPromotion() {
                         <input type="time" name="endTime" value={form.daily.endTime || ''} onChange={onChangeDaily} />
                     </div>
                 )}
+
                 <div className={cx('form-group')}>
                     <label>Ẩn khi kết thúc</label>
                     <input type="checkbox" name="hideWhenEnded" checked={form.hideWhenEnded} onChange={onChange} />
                 </div>
+
                 <div className={cx('form-group')}>
                     <label>Banner</label>
                     <input name="bannerImg" value={form.bannerImg} onChange={onChange} />
                 </div>
+
                 <div className={cx('form-group')}>
                     <label>Khung sản phẩm</label>
                     <input name="promotionCardImg" value={form.promotionCardImg} onChange={onChange} />
                 </div>
+
                 <div className={cx('form-group')}>
-                    <label>Sản phẩm đã áp dụng</label>
+                    <label className={cx('section-label')}>
+                        Sản phẩm đã áp dụng
+                        {form.assignedProducts.length > 0 && (
+                            <span className={cx('product-count')}>({form.assignedProducts.length} sản phẩm)</span>
+                        )}
+                    </label>
                     <div className={cx('applied-products-list')}>
                         {form.assignedProducts.length === 0 && (
-                            <div className={cx('empty')}>Chưa có sản phẩm nào được áp dụng</div>
+                            <div className={cx('empty')}>
+                                <span>📦</span> Chưa có sản phẩm nào được áp dụng
+                            </div>
                         )}
                         {form.assignedProducts.map((ap) => {
-                            // ap.product có thể là object hoặc id, nên lấy object từ products nếu cần
                             const product =
                                 typeof ap.product === 'object'
                                     ? ap.product
@@ -240,69 +340,135 @@ export default function EditPromotion() {
                                             {product.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
                                         </div>
                                     </div>
-                                    {/* Nút gỡ sẽ xử lý sau */}
                                     <button
                                         type="button"
                                         className={cx('btn-remove')}
                                         onClick={() => handleRemoveProduct(product._id)}
                                     >
-                                        Gỡ
+                                        ✖
                                     </button>
                                 </div>
                             );
                         })}
                     </div>
                 </div>
+
+                {/* Chọn/thay thế sản phẩm áp dụng */}
                 <div className={cx('form-group')}>
                     <label>Chọn/thay thế sản phẩm áp dụng</label>
-                    <div className={cx('product-list-grid')}>
-                        {products.map((p) => (
-                            <div key={p._id} className={cx('product-card')}>
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedIds.includes(p._id)}
-                                        onChange={() => toggleSelect(p._id)}
-                                    />
-                                    <div className={cx('product-info')}>
+
+                    {/* Bộ lọc */}
+                    <div className={cx('filters')}>
+                        {/* Tìm kiếm */}
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm sản phẩm..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+
+                        {/* Lọc theo danh mục */}
+                        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+                            <option value="">--Danh mục--</option>
+                            {categories.length > 0 ? (
+                                categories.map((cate) => (
+                                    <option key={cate._id} value={cate._id}>
+                                        {cate.name}
+                                    </option>
+                                ))
+                            ) : (
+                                <option disabled>Đang tải...</option>
+                            )}
+                        </select>
+
+                        {/* Lọc theo thương hiệu */}
+                        <select value={brandFilter} onChange={(e) => setBrandFilter(e.target.value)}>
+                            <option value="">--Thương hiệu--</option>
+                            {brands.length > 0 ? (
+                                brands.map((brand) => (
+                                    <option key={brand._id} value={brand._id}>
+                                        {brand.name}
+                                    </option>
+                                ))
+                            ) : (
+                                <option disabled>Đang tải...</option>
+                            )}
+                        </select>
+
+                        {/* Lọc theo trạng thái */}
+                        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                            <option value="">--Trạng thái--</option>
+                            <option value="in-stock">Còn hàng</option>
+                            <option value="out-stock">Hết hàng</option>
+                        </select>
+
+                        {/* Nút reset */}
+                        <button type="button" className={cx('btn-reset')} onClick={resetFilters}>
+                            Reset
+                        </button>
+                    </div>
+
+                    {/* Danh sách sản phẩm dạng table */}
+                    <table className={cx('product-table')}>
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Sản phẩm</th>
+                                <th>Giá</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {paginatedProducts.map((p) => (
+                                <tr key={p._id}>
+                                    <td>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIds.includes(p._id)}
+                                            onChange={() => toggleSelect(p._id)}
+                                        />
+                                    </td>
+                                    <td className={cx('product-name-cell')}>
                                         <img
                                             src={p.images?.[0] || '/default-product.jpg'}
                                             alt={p.name}
-                                            className={cx('product-thumb')}
+                                            className={cx('thumb')}
                                         />
-                                        <div className={cx('product-meta')}>
-                                            <div className={cx('product-name')}>{p.name}</div>
-                                            <div className={cx('product-price')}>
-                                                {p.discountPrice && p.discountPrice > 0 ? (
-                                                    <>
-                                                        <span className={cx('price-sale')}>
-                                                            {p.discountPrice.toLocaleString()}₫
-                                                        </span>
-                                                        <span className={cx('price-original')}>
-                                                            {p.price.toLocaleString()}₫
-                                                        </span>
-                                                    </>
-                                                ) : (
-                                                    <span className={cx('price-sale')}>
-                                                        {p.price.toLocaleString()}₫
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div
-                                                className={cx('product-status', {
-                                                    'in-stock': p.quantity > 0,
-                                                    'out-stock': p.quantity <= 0,
-                                                })}
-                                            >
-                                                {p.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </label>
-                            </div>
-                        ))}
-                    </div>
+                                        <span>{p.name}</span>
+                                    </td>
+                                    <td>
+                                        {p.discountPrice && p.discountPrice > 0 ? (
+                                            <>
+                                                <span className={cx('price-sale')}>
+                                                    {p.discountPrice.toLocaleString()}₫
+                                                </span>
+                                                <span className={cx('price-original')}>
+                                                    {p.price.toLocaleString()}₫
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <span className={cx('price-sale')}>{p.price.toLocaleString()}₫</span>
+                                        )}
+                                    </td>
+                                    <td>
+                                        <span
+                                            className={cx('status', {
+                                                'in-stock': p.quantity > 0,
+                                                'out-stock': p.quantity <= 0,
+                                            })}
+                                        >
+                                            {p.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    {/* Pagination */}
+                    <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
                 </div>
+
                 <button type="submit" className={cx('btn-submit')}>
                     Lưu thay đổi
                 </button>
