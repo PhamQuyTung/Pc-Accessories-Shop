@@ -1,4 +1,5 @@
 const Brand = require("../models/brand");
+const Product = require("../models/product");
 const slugify = require("slugify");
 
 const brandController = {
@@ -66,6 +67,58 @@ const brandController = {
       res.json({ message: "Brand deleted successfully" });
     } catch (err) {
       res.status(500).json({ message: err.message });
+    }
+  },
+
+  // GET brands with pagination
+  async getPaginated(req, res) {
+    try {
+      let { page = 1, limit = 10, search = "" } = req.query;
+      page = parseInt(page);
+      limit = parseInt(limit);
+
+      const query = search ? { name: { $regex: search, $options: "i" } } : {};
+
+      const total = await Brand.countDocuments(query);
+
+      // Lấy danh sách brand kèm số sản phẩm
+      const brands = await Brand.aggregate([
+        { $match: query },
+        { $sort: { createdAt: -1 } },
+        { $skip: (page - 1) * limit },
+        { $limit: limit },
+        {
+          $lookup: {
+            from: "products", // tên collection trong MongoDB
+            localField: "_id", // Brand._id
+            foreignField: "brand", // Product.brand
+            as: "products",
+          },
+        },
+        {
+          $addFields: {
+            productCount: { $size: "$products" },
+          },
+        },
+        {
+          $project: {
+            products: 0, // ẩn mảng products, chỉ giữ lại số lượng
+          },
+        },
+      ]);
+
+      res.json({
+        success: true,
+        data: brands,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
     }
   },
 };

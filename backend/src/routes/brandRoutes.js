@@ -14,4 +14,7 @@ router.put("/:id", brandController.update);
 // DELETE
 router.delete("/:id", brandController.remove);
 
+// GET paginated
+router.get("/paginated", brandController.getPaginated); // Lấy brand có phân trang
+
 module.exports = router;
