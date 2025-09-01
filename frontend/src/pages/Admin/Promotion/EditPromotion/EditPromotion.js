@@ -111,7 +111,7 @@ export default function EditPromotion() {
     useEffect(() => {
         (async () => {
             try {
-                // Lấy sản phẩm đủ điều kiện
+                // 🔥 Backend đã filter sẵn => chỉ cần lấy trực tiếp
                 const { data } = await axiosClient.get('/promotions/available-products');
                 setProducts(Array.isArray(data.products) ? data.products : []);
 
@@ -409,61 +409,67 @@ export default function EditPromotion() {
                     </div>
 
                     {/* Danh sách sản phẩm dạng table */}
-                    <table className={cx('product-table')}>
-                        <thead>
-                            <tr>
-                                <th></th>
-                                <th>Sản phẩm</th>
-                                <th>Giá</th>
-                                <th>Trạng thái</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paginatedProducts.map((p) => (
-                                <tr key={p._id}>
-                                    <td>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedIds.includes(p._id)}
-                                            onChange={() => toggleSelect(p._id)}
-                                        />
-                                    </td>
-                                    <td className={cx('product-name-cell')}>
-                                        <img
-                                            src={p.images?.[0] || '/default-product.jpg'}
-                                            alt={p.name}
-                                            className={cx('thumb')}
-                                        />
-                                        <span>{p.name}</span>
-                                    </td>
-                                    <td>
-                                        {p.discountPrice && p.discountPrice > 0 ? (
-                                            <>
-                                                <span className={cx('price-sale')}>
-                                                    {p.discountPrice.toLocaleString()}₫
-                                                </span>
-                                                <span className={cx('price-original')}>
-                                                    {p.price.toLocaleString()}₫
-                                                </span>
-                                            </>
-                                        ) : (
-                                            <span className={cx('price-sale')}>{p.price.toLocaleString()}₫</span>
-                                        )}
-                                    </td>
-                                    <td>
-                                        <span
-                                            className={cx('status', {
-                                                'in-stock': p.quantity > 0,
-                                                'out-stock': p.quantity <= 0,
-                                            })}
-                                        >
-                                            {p.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
-                                        </span>
-                                    </td>
+                    {paginatedProducts.length === 0 ? (
+                        <div className={cx('empty')}>
+                            <span>📦</span> Chưa có sản phẩm nào đủ điều kiện
+                        </div>
+                    ) : (
+                        <table className={cx('product-table')}>
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Sản phẩm</th>
+                                    <th>Giá</th>
+                                    <th>Trạng thái</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {paginatedProducts.map((p) => (
+                                    <tr key={p._id}>
+                                        <td>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.includes(p._id)}
+                                                onChange={() => toggleSelect(p._id)}
+                                            />
+                                        </td>
+                                        <td className={cx('product-name-cell')}>
+                                            <img
+                                                src={p.images?.[0] || '/default-product.jpg'}
+                                                alt={p.name}
+                                                className={cx('thumb')}
+                                            />
+                                            <span>{p.name}</span>
+                                        </td>
+                                        <td>
+                                            {p.discountPrice && p.discountPrice > 0 ? (
+                                                <>
+                                                    <span className={cx('price-sale')}>
+                                                        {p.discountPrice.toLocaleString()}₫
+                                                    </span>
+                                                    <span className={cx('price-original')}>
+                                                        {p.price.toLocaleString()}₫
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span className={cx('price-sale')}>{p.price.toLocaleString()}₫</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <span
+                                                className={cx('status', {
+                                                    'in-stock': p.quantity > 0,
+                                                    'out-stock': p.quantity <= 0,
+                                                })}
+                                            >
+                                                {p.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
 
                     {/* Pagination */}
                     <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />

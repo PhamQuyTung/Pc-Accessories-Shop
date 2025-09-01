@@ -41,6 +41,10 @@ export default function BrandsPage() {
 
     const [loading, setLoading] = useState(false);
 
+    // Sắp xếp
+    const [sortField, setSortField] = useState('createdAt');
+    const [sortOrder, setSortOrder] = useState('desc'); // asc | desc
+
     const showToast = useToast();
 
     // Debounce searchTerm
@@ -52,13 +56,13 @@ export default function BrandsPage() {
     // Fetch brands mỗi khi page hoặc debouncedSearchTerm thay đổi
     useEffect(() => {
         fetchBrands();
-    }, [currentPage, debouncedSearchTerm]);
+    }, [currentPage, debouncedSearchTerm, sortField, sortOrder]);
 
     const fetchBrands = async () => {
         try {
             setLoading(true);
             const res = await axiosClient.get(
-                `/brands/paginated?page=${currentPage}&limit=${pageSize}&search=${debouncedSearchTerm}`,
+                `/brands/paginated?page=${currentPage}&limit=${pageSize}&search=${debouncedSearchTerm}&sortField=${sortField}&sortOrder=${sortOrder}`,
             );
 
             // Ép skeleton hiển thị ít nhất 400ms
@@ -71,6 +75,17 @@ export default function BrandsPage() {
             showToast('Không tải được danh sách thương hiệu!', 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Hàm xử lý khi click tiêu đề cột
+    const handleSort = (field) => {
+        if (sortField === field) {
+            // Đảo chiều asc <-> desc
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder('asc');
         }
     };
 
@@ -260,7 +275,12 @@ export default function BrandsPage() {
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Tên</th>
+
+                                <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
+                                    Tên
+                                    {sortField === 'name' && <span>{sortOrder === 'asc' ? ' 🔼' : ' 🔽'}</span>}
+                                </th>
+
                                 <th>Slug</th>
                                 <th>Logo</th>
                                 <th>Mô tả</th>

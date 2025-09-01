@@ -73,9 +73,12 @@ const brandController = {
   // GET brands with pagination
   async getPaginated(req, res) {
     try {
-      let { page = 1, limit = 10, search = "" } = req.query;
+      let { page = 1, limit = 10, search = "", sortField = "createdAt", sortOrder = "desc" } = req.query;
       page = parseInt(page);
       limit = parseInt(limit);
+
+      const sort = {};
+      sort[sortField] = sortOrder === "asc" ? 1 : -1;
 
       const query = search ? { name: { $regex: search, $options: "i" } } : {};
 
@@ -84,7 +87,7 @@ const brandController = {
       // Lấy danh sách brand kèm số sản phẩm
       const brands = await Brand.aggregate([
         { $match: query },
-        { $sort: { createdAt: -1 } },
+        { $sort: sort },
         { $skip: (page - 1) * limit },
         { $limit: limit },
         {

@@ -470,12 +470,22 @@ exports.getAvailableProducts = async (req, res) => {
 
     const match = {
       deleted: false,
-      $or: [{ quantity: { $gt: 0 } }, { "variations.quantity": { $gt: 0 } }],
-      // ✅ chỉ lấy sản phẩm chưa có giá gạch
-      $or: [
-        { discountPrice: { $exists: false } },
-        { discountPrice: 0 },
-        { discountPrice: null },
+      visible: true,                         // hiển thị
+      status: { $in: ELIGIBLE_STATUSES }, // 🔥 status trong DB chính là còn hàng / nhiều hàng
+      $and: [
+        {
+          $or: [
+            { quantity: { $gt: 0 } },
+            { "variations.quantity": { $gt: 0 } },
+          ],
+        },
+        {
+          $or: [
+            { discountPrice: { $exists: false } },
+            { discountPrice: 0 },
+            { discountPrice: null },
+          ],
+        },
       ],
     };
 
