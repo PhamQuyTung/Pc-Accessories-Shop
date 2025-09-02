@@ -36,7 +36,12 @@ export default function CollectionsPage() {
 
     // 👉 Trích xuất bộ lọc từ danh sách sản phẩm
     const extractFilters = (products) => {
-        const brands = [...new Set(products.map((p) => p.brand))].filter(Boolean);
+        const brands = [
+            ...new Map(
+                products.filter((p) => p.brand).map((p) => [p.brand.slug, { name: p.brand.name, slug: p.brand.slug }]),
+            ).values(),
+        ];
+
         const rams = [...new Set(products.map((p) => p.ram))].filter(Boolean);
         const cpus = [...new Set(products.map((p) => p.cpu))].filter(Boolean);
 
@@ -114,7 +119,7 @@ export default function CollectionsPage() {
         }
 
         if (selectedFilters.brand) {
-            filtered = filtered.filter((p) => p.brand === selectedFilters.brand);
+            filtered = filtered.filter((p) => p.brand?.slug === selectedFilters.brand);
         }
 
         if (selectedFilters.ram) {

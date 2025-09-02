@@ -54,8 +54,8 @@ export default function FilterSidebar({ filters, onChange }) {
                 <select name="brand" value={selected.brand} onChange={handleOtherChange}>
                     <option value="">Tất cả</option>
                     {filters.brands.map((brand) => (
-                        <option key={brand} value={brand}>
-                            {brand}
+                        <option key={brand.slug} value={brand.slug}>
+                            {brand.name}
                         </option>
                     ))}
                 </select>

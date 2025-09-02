@@ -568,7 +568,9 @@ class ProductController {
         category: category._id,
         deleted: { $ne: true }, // Chỉ lấy sản phẩm chưa xóa
         visible: true, // Chỉ lấy sản phẩm đang hiển thị
-      }).lean();
+      })
+      .populate("brand", "name slug")   // ✅ thêm dòng này chỉ cần populate thêm brand là lấy được brand.name thay vì _id
+      .lean();
 
       const enrichedProducts = products.map((product) => {
         const reviews = product.reviews || [];
