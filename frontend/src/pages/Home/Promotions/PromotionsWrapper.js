@@ -1,7 +1,16 @@
-// src/components/Promotions/PromotionsWrapper.js
 import React, { useEffect, useState } from 'react';
 import axiosClient from '~/utils/axiosClient';
 import PromotionsSection from './PromotionsSection/PromotionsSection';
+
+function formatPromotionName(name) {
+    return name
+        .toLowerCase()
+        .normalize("NFD")               // tách dấu
+        .replace(/[\u0300-\u036f]/g, "") // xóa dấu
+        .replace(/đ/g, "d")
+        .replace(/[^a-z0-9]+/g, "-")    // thay space & ký tự đặc biệt bằng -
+        .replace(/^-+|-+$/g, "");       // xóa - ở đầu/cuối
+}
 
 export default function PromotionsWrapper() {
     const [promotions, setPromotions] = useState([]);
@@ -11,18 +20,12 @@ export default function PromotionsWrapper() {
         const fetchPromotions = async () => {
             try {
                 const { data } = await axiosClient.get('/promotions/active');
-                // Đảm bảo dữ liệu hợp lệ
                 const validPromotions = (data || []).map((promo) => ({
                     ...promo,
                     assignedProducts: (promo.assignedProducts || [])
-                        .map((ap) => ap.product) // lấy product gốc
-                        .filter(
-                            (p) => p && p.isVisible !== false, // chỉ loại sp ẩn thôi
-                        ),
+                        .map((ap) => ap.product)
+                        .filter((p) => p && p.isVisible !== false),
                 }));
-                console.log('API Promotions:', data);
-                console.log('After filter:', validPromotions);
-
                 setPromotions(validPromotions);
             } catch (err) {
                 console.error('❌ Error fetching promotions:', err);
@@ -34,28 +37,29 @@ export default function PromotionsWrapper() {
     }, []);
 
     if (loading) return <p>Đang tải khuyến mãi...</p>;
-
-    if (promotions.length === 0) return null; // không có CTKM thì ẩn luôn
+    if (promotions.length === 0) return null;
 
     return (
         <>
-            {promotions.map((promo) => (
-                <PromotionsSection
-                    key={promo._id}
-                    title={promo.name}
-                    // Ưu tiên once.endAt, fallback daily.endDate
-                    endTime={promo.once?.endAt || promo.daily?.endDate || null}
-                    detailHref={`/promotions/${promo.slug || promo._id}`}
-                    banner={{
-                        href: `/promotions/${promo.slug || promo._id}`,
-                        img: promo.bannerImg || '/default-banner.jpg',
-                        alt: promo.name,
-                    }}
-                    products={promo.assignedProducts}
-                    promotionCardImg={promo.promotionCardImg}
-                    productBannerImg={promo.productBannerImg}
-                />
-            ))}
+            {promotions.map((promo) => {
+                const promoLink = `/promotions/${formatPromotionName(promo.name)}`;
+                return (
+                    <PromotionsSection
+                        key={promo._id}
+                        title={promo.name}
+                        endTime={promo.once?.endAt || promo.daily?.endDate || null}
+                        detailHref={promoLink}
+                        banner={{
+                            href: promoLink,
+                            img: promo.bannerImg || '/default-banner.jpg',
+                            alt: promo.name,
+                        }}
+                        products={promo.assignedProducts}
+                        promotionCardImg={promo.promotionCardImg}
+                        productBannerImg={promo.productBannerImg}
+                    />
+                );
+            })}
         </>
     );
 }

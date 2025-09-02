@@ -20,7 +20,9 @@ const AdminSidebar = () => {
             location.pathname.startsWith('/admin/products') ||
                 location.pathname.startsWith('/admin/categories') ||
                 location.pathname.startsWith('/admin/tags') ||
-                location.pathname.startsWith('/admin/attributes'),
+                location.pathname.startsWith('/admin/attributes') ||
+                location.pathname.startsWith('/admin/promotions') || // thêm
+                location.pathname.startsWith('/admin/brands'), // thêm
         );
 
         setShowAppearanceMenu(
@@ -35,7 +37,9 @@ const AdminSidebar = () => {
         location.pathname.startsWith('/admin/products') ||
         location.pathname.startsWith('/admin/categories') ||
         location.pathname.startsWith('/admin/tags') ||
-        location.pathname.startsWith('/admin/attributes');
+        location.pathname.startsWith('/admin/attributes') ||
+        location.pathname.startsWith('/admin/promotions') || // thêm
+        location.pathname.startsWith('/admin/brands'); // thêm
 
     const isAppearanceActive =
         location.pathname.startsWith('/admin/menus') ||
@@ -106,10 +110,7 @@ const AdminSidebar = () => {
                             >
                                 Chương trình khuyến mãi
                             </NavLink>
-                            <NavLink
-                                to="/admin/brands"
-                                className={({ isActive }) => cx('link', { active: isActive })}
-                            >
+                            <NavLink to="/admin/brands" className={({ isActive }) => cx('link', { active: isActive })}>
                                 Thương hiệu sản phẩm
                             </NavLink>
                         </motion.div>
