@@ -88,7 +88,8 @@ export default function PromotionsSection({
                     </a>
                 )}
             </div>
-
+            
+            {/* Body */}
             <div
                 className={cx('bg')}
                 style={{

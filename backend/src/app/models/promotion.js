@@ -1,11 +1,11 @@
 // models/Promotion.js
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
+const slugify = require("slugify");
 
 const PromotionProductSchema = new Schema(
   {
     product: { type: Schema.Types.ObjectId, ref: "Product", required: true },
-    // Lưu lại discount trước khi áp khuyến mãi để hoàn nguyên
     backupDiscountPrice: { type: Number, default: 0 },
     backupDiscountPercent: { type: Number, default: 0 },
   },
@@ -15,27 +15,26 @@ const PromotionProductSchema = new Schema(
 const PromotionSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
-    productBannerImg: { type: String}, // URL ảnh background (dùng cho carousel / section lớn)
-    bannerImg: { type: String }, // URL ảnh banner (dùng cho header / card nhỏ bên trái)
-    promotionCardImg: { type: String }, // URL ảnh hiển thị cho card nhỏ sản phẩm bên phải
+    slug: { type: String, unique: true, trim: true, lowercase: true },
+
+    productBannerImg: { type: String },
+    bannerImg: { type: String },
+    promotionCardImg: { type: String },
 
     percent: { type: Number, required: true, min: 1, max: 90 },
 
-    // Kiểu lịch: once (1 lần), daily (lặp hằng ngày)
     type: { type: String, enum: ["once", "daily"], required: true },
 
-    // Lịch 1 lần
     once: {
       startAt: { type: Date },
       endAt: { type: Date },
     },
 
-    // Lịch lặp hằng ngày (trong khoảng ngày)
     daily: {
-      startDate: { type: Date }, // ngày bắt đầu (00:00)
-      endDate: { type: Date }, // ngày kết thúc (23:59) - optional
-      startTime: { type: String }, // HH:mm
-      endTime: { type: String }, // HH:mm (có thể qua đêm - > start > end)
+      startDate: { type: Date },
+      endDate: { type: Date },
+      startTime: { type: String },
+      endTime: { type: String },
     },
 
     assignedProducts: [PromotionProductSchema],
@@ -54,11 +53,45 @@ const PromotionSchema = new Schema(
   { timestamps: true }
 );
 
-PromotionSchema.index({
-  status: 1,
-  currentlyActive: 1,
-  "once.startAt": 1,
-  "once.endAt": 1,
+// Index cho slug
+PromotionSchema.index({ slug: 1 }, { unique: true });
+
+// Tự động sinh slug trước khi lưu
+// Middleware generate slug
+PromotionSchema.pre("save", async function (next) {
+  if (this.isModified("name") || !this.slug) {
+    // 👉 Thay / và \ thành dấu gạch ngang
+    const safeName = this.name.replace(/[\/\\]/g, "-");
+
+    // 👉 Sinh slug từ tên
+    let baseSlug = slugify(safeName, {
+      lower: true,
+      strict: true,
+      locale: "vi",
+      remove: /[*+~.()'"!:@]/g, // loại thêm ký tự không mong muốn
+    });
+
+    // 👉 Nếu slug rỗng thì fallback = timestamp
+    if (!baseSlug) {
+      baseSlug = Date.now().toString();
+    }
+
+    let slug = baseSlug;
+    let i = 1;
+
+    // 👉 Đảm bảo slug unique
+    while (
+      await mongoose.models.Promotion.findOne({
+        slug,
+        _id: { $ne: this._id }, // bỏ qua doc hiện tại khi update
+      })
+    ) {
+      slug = `${baseSlug}-${i++}`;
+    }
+
+    this.slug = slug;
+  }
+  next();
 });
 
 module.exports = mongoose.model("Promotion", PromotionSchema);

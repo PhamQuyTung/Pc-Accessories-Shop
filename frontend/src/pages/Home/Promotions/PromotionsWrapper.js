@@ -42,7 +42,7 @@ export default function PromotionsWrapper() {
     return (
         <>
             {promotions.map((promo) => {
-                const promoLink = `/promotions/${formatPromotionName(promo.name)}`;
+                const promoLink = `/collections/${formatPromotionName(promo.name)}`;
                 return (
                     <PromotionsSection
                         key={promo._id}

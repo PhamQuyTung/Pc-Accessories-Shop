@@ -284,32 +284,39 @@ class ProductController {
     const { category, exclude } = req.query;
 
     try {
-      const related = await Product.find({
-        category,
-        _id: { $ne: exclude },
-        deleted: { $ne: true }, // Chỉ lấy sản phẩm chưa xóa
-        visible: true, // Chỉ lấy sản phẩm đang hiển thị
-      })
-        .limit(7)
-        .lean(); // Thêm .lean() để hiệu suất tốt hơn
+      const related = await Product.aggregate([
+        {
+          $match: {
+            category: new mongoose.Types.ObjectId(category),
+            _id: { $ne: new mongoose.Types.ObjectId(exclude) },
+            deleted: { $ne: true },
+            visible: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "reviews",
+            localField: "_id",
+            foreignField: "product",
+            as: "reviews",
+          },
+        },
+        {
+          $addFields: {
+            averageRating: {
+              $cond: [
+                { $gt: [{ $size: "$reviews" }, 0] },
+                { $avg: "$reviews.rating" },
+                0,
+              ],
+            },
+            reviewCount: { $size: "$reviews" },
+          },
+        },
+        { $limit: 7 },
+      ]);
 
-      const enrichedRelated = related.map((product) => {
-        const reviews = product.reviews || [];
-        const reviewCount = reviews.length;
-        const averageRating = reviewCount
-          ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
-          : 0;
-
-        return {
-          ...product,
-          averageRating: Number(
-            (Math.round(averageRating * 10) / 10).toFixed(1)
-          ),
-          reviewCount,
-        };
-      });
-
-      res.json(enrichedRelated);
+      res.json(related);
     } catch (err) {
       console.error("Lỗi khi lấy sản phẩm liên quan:", err);
       res.status(500).json({ error: "Không thể lấy sản phẩm liên quan" });
@@ -490,37 +497,43 @@ class ProductController {
   // Tìm kiếm sản phẩm
   async searchProducts(req, res) {
     const { query } = req.query;
-
     if (!query || query.trim() === "") {
       return res.status(400).json({ error: "Query không được để trống" });
     }
 
     try {
-      const products = await Product.find({
-        name: { $regex: query, $options: "i" },
-        deleted: { $ne: true },
-        visible: true, // Chỉ lấy sản phẩm đang hiển thị
-      })
-        .limit(10)
-        .lean();
+      const products = await Product.aggregate([
+        {
+          $match: {
+            name: { $regex: query, $options: "i" },
+            deleted: { $ne: true },
+            visible: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "reviews",
+            localField: "_id",
+            foreignField: "product",
+            as: "reviews",
+          },
+        },
+        {
+          $addFields: {
+            averageRating: {
+              $cond: [
+                { $gt: [{ $size: "$reviews" }, 0] },
+                { $avg: "$reviews.rating" },
+                0,
+              ],
+            },
+            reviewCount: { $size: "$reviews" },
+          },
+        },
+        { $limit: 10 },
+      ]);
 
-      const enrichedProducts = products.map((product) => {
-        const reviews = product.reviews || [];
-        const reviewCount = reviews.length;
-        const averageRating = reviewCount
-          ? reviews.reduce((acc, cur) => acc + cur.rating, 0) / reviewCount
-          : 0;
-
-        return {
-          ...product,
-          averageRating: Number(
-            (Math.round(averageRating * 10) / 10).toFixed(1)
-          ),
-          reviewCount,
-        };
-      });
-
-      res.json(enrichedProducts);
+      res.json(products);
     } catch (err) {
       console.error("Lỗi khi tìm kiếm sản phẩm:", err);
       res.status(500).json({ error: "Lỗi server" });
@@ -564,31 +577,46 @@ class ProductController {
         return res.status(404).json({ error: "Không tìm thấy danh mục" });
       }
 
-      const products = await Product.find({
-        category: category._id,
-        deleted: { $ne: true }, // Chỉ lấy sản phẩm chưa xóa
-        visible: true, // Chỉ lấy sản phẩm đang hiển thị
-      })
-      .populate("brand", "name slug")   // ✅ thêm dòng này chỉ cần populate thêm brand là lấy được brand.name thay vì _id
-      .lean();
+      const products = await Product.aggregate([
+        {
+          $match: {
+            category: category._id,
+            deleted: { $ne: true },
+            visible: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "brands",
+            localField: "brand",
+            foreignField: "_id",
+            as: "brand",
+          },
+        },
+        { $unwind: "$brand" },
+        {
+          $lookup: {
+            from: "reviews",
+            localField: "_id",
+            foreignField: "product",
+            as: "reviews",
+          },
+        },
+        {
+          $addFields: {
+            averageRating: {
+              $cond: [
+                { $gt: [{ $size: "$reviews" }, 0] },
+                { $avg: "$reviews.rating" },
+                0,
+              ],
+            },
+            reviewCount: { $size: "$reviews" },
+          },
+        },
+      ]);
 
-      const enrichedProducts = products.map((product) => {
-        const reviews = product.reviews || [];
-        const reviewCount = reviews.length;
-        const averageRating = reviewCount
-          ? reviews.reduce((acc, cur) => acc + cur.rating, 0) / reviewCount
-          : 0;
-
-        return {
-          ...product,
-          averageRating: Number(
-            (Math.round(averageRating * 10) / 10).toFixed(1)
-          ),
-          reviewCount,
-        };
-      });
-
-      res.json(enrichedProducts);
+      res.json(products);
     } catch (err) {
       console.error("Lỗi khi lấy sản phẩm theo danh mục:", err);
       res.status(500).json({ error: "Lỗi server" });

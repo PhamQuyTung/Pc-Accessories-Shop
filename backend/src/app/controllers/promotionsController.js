@@ -3,6 +3,7 @@ const Product = require("../models/product");
 const { isActiveNow } = require("../../utils/promotionTime");
 const { rollbackPromotion } = require("../../utils/promotionUtils");
 const Review = require("../models/review");
+const slugify = require("slugify");
 
 // Chỉ cho phép gán sản phẩm đang "còn hàng trở lên"
 const ELIGIBLE_STATUSES = ["còn hàng", "nhiều hàng", "sản phẩm mới"];
@@ -300,6 +301,7 @@ exports.create = async (req, res, next) => {
 
     const created = await Promotion.create({
       name: req.body.name.trim(),
+      // slug: slugify(req.body.name, { lower: true, strict: true }), // tự động sinh slug trong model nên code này không cần nữa
       productBannerImg: req.body.productBannerImg || "",
       bannerImg: req.body.bannerImg || "",
       promotionCardImg: req.body.promotionCardImg || "",
@@ -470,7 +472,7 @@ exports.getAvailableProducts = async (req, res) => {
 
     const match = {
       deleted: false,
-      visible: true,                         // hiển thị
+      visible: true, // hiển thị
       status: { $in: ELIGIBLE_STATUSES }, // 🔥 status trong DB chính là còn hàng / nhiều hàng
       $and: [
         {
@@ -500,5 +502,44 @@ exports.getAvailableProducts = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Lấy sản phẩm theo slug CTKM (dành cho trang frontend)
+exports.productsBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const promo = await Promotion.findOne({ slug }).populate(
+      "assignedProducts.product"
+    );
+
+    if (!promo) {
+      return res.status(404).json({ message: "Không tìm thấy CTKM" });
+    }
+
+    // Chỉ lấy sản phẩm còn hiển thị
+    const products = promo.assignedProducts
+      .map((ap) => ap.product)
+      .filter((p) => p && !p.deleted && p.visible);
+
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Lấy chi tiết CTKM theo slug (dành cho trang frontend)
+exports.detailBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const promo = await Promotion.findOne({ slug }).populate(
+      "assignedProducts.product",
+      "name price discountPrice status sku stock quantity"
+    );
+    if (!promo) return res.status(404).json({ message: "Không tìm thấy CTKM" });
+
+    res.json(computeStatus(promo));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

@@ -45,6 +45,7 @@ import EditPromotion from '~/pages/Admin/Promotion/EditPromotion/EditPromotion';
 import BrandManagement from '~/pages/Admin/BrandsPage/BrandsPage';
 // import CreateBrand from '~/pages/Admin/BrandManagement/CreateBrand';
 // import EditBrand from '~/pages/Admin/BrandManagement/EditBrand';
+import PromotionCollectionPage from '~/pages/PromotionsCollectionPage/PromotionsCollectionPage';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -62,7 +63,10 @@ const routes = [
             { path: '/orders-success', element: <OrdersSuccess /> },
             { path: '/orders', element: <OrdersPage /> },
             { path: '/search', element: <SearchResultPage /> },
-            { path: '/collections/:slug', element: <CollectionsPage /> },
+            { path: '/categories/:slug', element: <CollectionsPage /> },
+            // 👉 Thêm route cho promotions collections
+            // 👉 Chia rõ ràng: nếu là promotion thì vào PromotionCollectionPage
+            { path: '/collections/:slug', element: <PromotionCollectionPage /> },
             { path: '/promotion', element: <Promotion /> },
             { path: '/contact', element: <Contact /> },
             { path: '/blog', element: <Blog /> },
@@ -112,12 +116,12 @@ const routes = [
             { path: 'menus', element: <AdminMenuManagement /> },
 
             // 🎯 Chương trình khuyến mãi
-            { path: 'promotions', element: <PromotionManagement /> }, // Danh sách 
+            { path: 'promotions', element: <PromotionManagement /> }, // Danh sách
             { path: 'promotions/new', element: <CreatePromotion /> }, // Thêm mới
             { path: 'promotions/:id', element: <PromotionDetail /> }, // Chi tiết CTKM
             { path: 'promotions/:id/edit', element: <EditPromotion /> }, // Sửa
 
-            // Thương hiệu sản phẩm 
+            // Thương hiệu sản phẩm
             { path: 'brands', element: <BrandManagement /> }, // Danh sách thương hiệu
         ],
     },

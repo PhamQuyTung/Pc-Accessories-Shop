@@ -6,21 +6,28 @@ import styles from './Breadcrumb.module.scss';
 
 const cx = classNames.bind(styles);
 
-const Breadcrumb = ({ categorySlug }) => {
-    const { slug } = useParams();
+const Breadcrumb = ({ categorySlug, slug: propSlug, type }) => {
+    const { slug: routeSlug } = useParams();
     const location = useLocation();
     const [breadcrumbData, setBreadcrumbData] = useState([]);
 
     useEffect(() => {
         const fetchBreadcrumb = async () => {
             try {
-                if (location.pathname.includes('/collections')) {
-                    // Trang danh mục
-                    const res = await axiosClient.get(`/products/breadcrumb/category/${categorySlug || slug}`);
+                if (type === 'promotion') {
+                    // 👉 Trang khuyến mãi
+                    const res = await axiosClient.get(`/promotions/slug/${propSlug || routeSlug}`);
+                    setBreadcrumbData([
+                        { path: '/', label: 'Trang chủ' },
+                        { path: location.pathname, label: res.data.name },
+                    ]);
+                } else if (type === 'category') {
+                    // 👉 Trang danh mục
+                    const res = await axiosClient.get(`/products/breadcrumb/category/${categorySlug || routeSlug}`);
                     setBreadcrumbData(res.data);
                 } else if (location.pathname.includes('/products')) {
-                    // Trang chi tiết sản phẩm
-                    const res = await axiosClient.get(`/products/breadcrumb/${slug}`);
+                    // 👉 Trang chi tiết sản phẩm
+                    const res = await axiosClient.get(`/products/breadcrumb/${routeSlug}`);
                     setBreadcrumbData(res.data);
                 }
             } catch (err) {
@@ -29,7 +36,7 @@ const Breadcrumb = ({ categorySlug }) => {
         };
 
         fetchBreadcrumb();
-    }, [slug, categorySlug, location.pathname]);
+    }, [routeSlug, propSlug, categorySlug, location.pathname, type]);
 
     return (
         <nav className={cx('breadcrumb')}>
