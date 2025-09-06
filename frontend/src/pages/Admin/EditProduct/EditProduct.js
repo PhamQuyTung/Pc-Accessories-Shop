@@ -18,6 +18,8 @@ function EditProduct() {
     const [importing, setImporting] = useState(false);
     const [existingProducts, setExistingProducts] = useState([]);
 
+    const [brands, setBrands] = useState([]);
+
     useEffect(() => {
         axios
             .get('http://localhost:5000/api/categories')
@@ -31,6 +33,13 @@ function EditProduct() {
                 setExistingProducts(res.data);
             })
             .catch(() => {});
+    }, []);
+
+    useEffect(() => {
+        axios
+            .get('http://localhost:5000/api/brands')
+            .then((res) => setBrands(res.data))
+            .catch(() => setBrands([]));
     }, []);
 
     useEffect(() => {
@@ -76,6 +85,15 @@ function EditProduct() {
                 ...prev,
                 specs: {
                     ...prev.specs,
+                    [key]: value,
+                },
+            }));
+        } else if (name.startsWith('description.')) {
+            const key = name.split('.')[1];
+            setFormData((prev) => ({
+                ...prev,
+                description: {
+                    ...prev.description,
                     [key]: value,
                 },
             }));
@@ -156,6 +174,8 @@ function EditProduct() {
         try {
             const payload = {
                 ...formData,
+                shortDescription: formData.shortDescription || '',
+                longDescription: formData.longDescription || '',
                 quantity: importing ? 0 : Number(formData.quantity),
                 status: statusArr,
                 price: Number(formData.price),
@@ -223,13 +243,37 @@ function EditProduct() {
                 </div>
 
                 <div className={cx('group')}>
-                    <label>Mô tả</label>
-                    <textarea name="description" value={formData.description} onChange={handleChange} rows={4} />
+                    <label>Mô tả ngắn</label>
+                    <textarea
+                        name="shortDescription"
+                        value={formData.shortDescription || ''}
+                        onChange={handleChange}
+                        rows={2}
+                        placeholder="Ví dụ: Màn hình 14 inch FHD IPS, 165Hz..."
+                    />
+                </div>
+
+                <div className={cx('group')}>
+                    <label>Mô tả chi tiết</label>
+                    <textarea
+                        name="longDescription"
+                        value={formData.longDescription || ''}
+                        onChange={handleChange}
+                        rows={6}
+                        placeholder="Viết chi tiết tính năng, ưu điểm, công nghệ..."
+                    />
                 </div>
 
                 <div className={cx('group')}>
                     <label>Thương hiệu</label>
-                    <input type="text" name="brand" value={formData.brand} onChange={handleChange} required />
+                    <select name="brand" value={formData.brand} onChange={handleChange} required>
+                        <option value="">-- Chọn thương hiệu --</option>
+                        {brands.map((b) => (
+                            <option key={b._id} value={b._id}>
+                                {b.name}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
                 <div className={cx('group')}>

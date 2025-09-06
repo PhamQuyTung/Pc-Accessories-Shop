@@ -22,6 +22,7 @@ import SpinnerLoading from '~/components/SpinnerLoading/SpinnerLoading';
 import { useToast } from '~/components/ToastMessager';
 import cartEvent from '~/utils/cartEvent';
 import ReviewList from '~/components/ReviewList/ReviewList';
+import ExpandableContent from '~/components/ExpandableContent/ExpandableContent';
 
 const cx = classNames.bind(styles);
 
@@ -283,14 +284,7 @@ function ProductDetail() {
     const renderTabContent = () => {
         switch (activeTab) {
             case 'description':
-                return (
-                    <div
-                        className={cx('product-description')}
-                        dangerouslySetInnerHTML={{
-                            __html: product.longDescription || '<p>Không có mô tả chi tiết</p>',
-                        }}
-                    />
-                );
+                return <ExpandableContent html={product.longDescription || '<p>Không có mô tả chi tiết</p>'} />;
 
             case 'additional':
                 return (

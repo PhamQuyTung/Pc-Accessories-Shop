@@ -1,0 +1,36 @@
+.expandable-wrapper {
+    position: relative;
+    width: 100%;
+    margin-top: 12px;
+}
+
+.expandable-content {
+    overflow: hidden;
+    transition: max-height 0.5s ease;
+}
+
+.overlay {
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #fff);
+}
+
+.toggle-btn {
+    display: block;
+    margin: 10px auto 0;
+    padding: 8px 20px;
+    background: #f03e3e;
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s;
+
+    &:hover {
+        background: #d63333;
+    }
+}
