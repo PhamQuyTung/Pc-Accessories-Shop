@@ -72,7 +72,8 @@ const productSchema = new mongoose.Schema({
     required: false, // optional
   },
 
-  description: String,
+  shortDescription: { type: String, default: "" }, // 👈 mô tả ngắn
+  longDescription: { type: String, default: "" }, // 👈 mô tả dài
 
   // 🔹 Thuộc tính áp dụng chung cho sản phẩm (giữ reference)
   attributes: [

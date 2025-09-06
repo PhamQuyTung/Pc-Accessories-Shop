@@ -283,7 +283,15 @@ function ProductDetail() {
     const renderTabContent = () => {
         switch (activeTab) {
             case 'description':
-                return <p>{product.description || 'Không có dòng mô tả'}</p>;
+                return (
+                    <div
+                        className={cx('product-description')}
+                        dangerouslySetInnerHTML={{
+                            __html: product.longDescription || '<p>Không có mô tả chi tiết</p>',
+                        }}
+                    />
+                );
+
             case 'additional':
                 return (
                     <>
@@ -430,7 +438,7 @@ function ProductDetail() {
                                 </div>
 
                                 <div className={cx('product-info__des')}>
-                                    <p>{product.description}</p>
+                                    <p>{product.shortDescription || 'Không có mô tả ngắn'}</p>
                                 </div>
 
                                 <div className={cx('product-info__actions')}>

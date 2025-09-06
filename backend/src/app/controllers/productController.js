@@ -230,7 +230,8 @@ class ProductController {
         specs,
         category,
         brand,
-        description,
+        shortDescription,
+        longDescription,
         dimensions,
         weight,
         variations,
@@ -247,7 +248,8 @@ class ProductController {
         specs,
         category,
         brand,
-        description,
+        shortDescription,
+        longDescription,
         dimensions: {
           length: dimensions?.length || 0,
           width: dimensions?.width || 0,
@@ -396,6 +398,10 @@ class ProductController {
   async updateProduct(req, res) {
     try {
       const data = { ...req.body };
+
+      // đảm bảo luôn có shortDescription & longDescription
+      data.shortDescription = data.shortDescription || "";
+      data.longDescription = data.longDescription || "";
 
       if (data.dimensions) {
         data.dimensions = {

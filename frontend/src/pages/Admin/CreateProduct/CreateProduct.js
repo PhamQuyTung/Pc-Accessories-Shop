@@ -18,7 +18,8 @@ export default function CreateProduct() {
     // Basic form data
     const [form, setForm] = useState({
         name: '',
-        description: '',
+        shortDescription: '',
+        longDescription: '',
         images: [''],
         price: '',
         discountPrice: '',
@@ -397,6 +398,8 @@ export default function CreateProduct() {
 
         const payload = {
             ...form,
+            shortDescription: form.shortDescription || '',
+            longDescription: form.longDescription || '',
             brand: (form.brand || '').trim(),
             price: productType === 'simple' ? Number(form.price) : Number(form.price || 0),
             discountPrice: productType === 'simple' ? Number(form.discountPrice || 0) : Number(form.discountPrice || 0),
@@ -489,10 +492,20 @@ export default function CreateProduct() {
                         </div>
 
                         <div className={cx('field')}>
+                            <label>Mô tả ngắn</label>
+                            <textarea
+                                name="shortDescription"
+                                value={form.shortDescription}
+                                onChange={handleFormChange}
+                                rows={3}
+                            />
+                        </div>
+
+                        <div className={cx('field')}>
                             <label>Mô tả dài</label>
                             <textarea
-                                name="description"
-                                value={form.description}
+                                name="longDescription"
+                                value={form.longDescription}
                                 onChange={handleFormChange}
                                 rows={6}
                             />
