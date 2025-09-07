@@ -61,6 +61,7 @@ function Login() {
                         value={formData.password}
                         onChange={handleChange}
                         placeholder="Nhập mật khẩu..."
+                        showToggle // 👈 bật icon mắt
                     />
 
                     {serverError && <div className={cx('error')}>{serverError}</div>}

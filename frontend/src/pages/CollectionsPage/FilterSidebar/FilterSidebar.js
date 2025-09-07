@@ -53,8 +53,8 @@ export default function FilterSidebar({ filters, onChange }) {
                 <label>Hãng:</label>
                 <select name="brand" value={selected.brand} onChange={handleOtherChange}>
                     <option value="">Tất cả</option>
-                    {filters.brands.map((brand) => (
-                        <option key={brand.slug} value={brand.slug}>
+                    {filters.brands.map((brand, index) => (
+                        <option key={brand.slug || index} value={brand.slug}>
                             {brand.name}
                         </option>
                     ))}
@@ -66,8 +66,8 @@ export default function FilterSidebar({ filters, onChange }) {
                     <label>RAM:</label>
                     <select name="ram" value={selected.ram} onChange={handleOtherChange}>
                         <option value="">Tất cả</option>
-                        {filters.rams.map((ram) => (
-                            <option key={ram} value={ram}>
+                        {filters.rams.map((ram, index) => (
+                            <option key={`${ram}-${index}`} value={ram}>
                                 {ram}
                             </option>
                         ))}
@@ -80,8 +80,8 @@ export default function FilterSidebar({ filters, onChange }) {
                     <label>CPU:</label>
                     <select name="cpu" value={selected.cpu} onChange={handleOtherChange}>
                         <option value="">Tất cả</option>
-                        {filters.cpus.map((cpu) => (
-                            <option key={cpu} value={cpu}>
+                        {filters.cpus.map((cpu, index) => (
+                            <option key={`${cpu}-${index}`} value={cpu}>
                                 {cpu}
                             </option>
                         ))}

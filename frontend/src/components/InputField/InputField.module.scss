@@ -36,3 +36,32 @@
     font-size: 1.4rem;
     margin-top: 0.25rem;
 }
+
+.form-group {
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    .input {
+        width: 100%;
+        padding-right: 36px; // chừa chỗ cho icon mắt
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 10px;
+        cursor: pointer;
+        color: #666;
+        display: flex;
+        align-items: center;
+
+        &:hover {
+            color: #000;
+        }
+    }
+}

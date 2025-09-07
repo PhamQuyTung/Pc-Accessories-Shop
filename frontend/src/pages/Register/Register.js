@@ -175,6 +175,7 @@ function Register() {
                         onBlur={handleBlur}
                         error={errors.password}
                         placeholder="Nhập mật khẩu..."
+                        showToggle // 👈 bật icon mắt
                     />
                     <InputField
                         label="Xác nhận mật khẩu"
@@ -185,6 +186,7 @@ function Register() {
                         onBlur={handleBlur}
                         error={errors.confirmPassword}
                         placeholder="Xác nhận mật khẩu..."
+                        showToggle // 👈 bật icon mắt
                     />
                     <button type="submit" className={cx('button')}>
                         Đăng Ký
