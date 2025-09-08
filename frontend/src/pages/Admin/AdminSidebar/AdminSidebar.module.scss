@@ -1,80 +1,61 @@
 .AdminSidebar {
-    // padding: 20px 0;
-    // background-color: #333;
     height: 100vh;
     overflow-y: auto;
     font-size: 14px;
+    background: #1f2937; // nền tối (gray-800)
+    color: #c1c1c1;
 }
 
 .menu-group {
-    // margin-bottom: 12px;
+    margin-bottom: 12px;
 }
 
 .accordion-header {
-    padding: 6px 8px;
+    padding: 8px 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    // background-color: #f3f4f6; // gray-100
-    color: #374151; // gray-700
+    color: #c1c1c1;
     font-weight: 600;
     transition: background 0.3s;
 
     &.active {
-        background-color: #0073AA; // blue-700
+        background-color: #0073aa;
         color: #fff;
-
-        .custom-iconBox {
-            color: #fff;
-        }
     }
 
     &:hover {
-        background-color: #0073AA; // blue-500
+        background-color: #0073aa;
         color: #fff;
-    }
-}
-
-
-.accordion-header.active {
-    background-color: #0073AA;
-    color: white;
-
-    .group-title {
-        color: white;
-    }
-
-    svg {
-        color: white;
     }
 }
 
 .group-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 14px;
     font-weight: bold;
-    color: #c1c1c1;
-    padding: 8px 16px;
 }
 
 .custom-iconBox {
-    margin-right: 16px;
-    color: #c1c1c1;
     font-size: 16px;
 }
 
 .accordion-content {
-    // margin-left: 12px;
     margin-top: 6px;
+    margin-left: 8px;
 }
 
 .link {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     padding: 6px 10px;
     color: #c1c1c1;
     text-decoration: none;
     border-radius: 4px;
-    margin-left: 12px;
 
     &:hover {
         color: white;
@@ -82,7 +63,6 @@
     }
 }
 
-.active {
-    // background-color: #0073AA;
+.link.active {
     color: white !important;
 }

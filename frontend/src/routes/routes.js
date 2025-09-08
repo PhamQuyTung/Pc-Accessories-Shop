@@ -46,6 +46,7 @@ import BrandManagement from '~/pages/Admin/BrandsPage/BrandsPage';
 // import CreateBrand from '~/pages/Admin/BrandManagement/CreateBrand';
 // import EditBrand from '~/pages/Admin/BrandManagement/EditBrand';
 import PromotionCollectionPage from '~/pages/PromotionsCollectionPage/PromotionsCollectionPage';
+import QuickAccessPage from '~/pages/Admin/QuickAccessPage/QuickAccessPage';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -105,6 +106,7 @@ const routes = [
             </RequireAdmin>
         ),
         children: [
+            { index: true, element: <QuickAccessPage /> }, // 👈 Trang mặc định khi vào /admin
             { path: 'products', element: <ProductManagement /> },
             { path: 'products/create', element: <CreateProduct /> },
             { path: 'products/trash', element: <Trash /> },

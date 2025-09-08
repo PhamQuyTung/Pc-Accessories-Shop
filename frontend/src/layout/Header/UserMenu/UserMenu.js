@@ -69,7 +69,7 @@ function UserMenu({ user, onLogout }) {
 
                         {user.role === 'admin' && (
                             <NavLink
-                                to="/admin/products"
+                                to="/admin"
                                 className={({ isActive }) => cx('dropdown__item', { active: isActive })}
                             >
                                 <span className={cx('icon-wrapper')}>

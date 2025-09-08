@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import styles from './AdminSidebar.module.scss';
 import classNames from 'classnames/bind';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, LayoutDashboard, BarChart3 } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBox, faPalette } from '@fortawesome/free-solid-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,20 +11,25 @@ const cx = classNames.bind(styles);
 
 const AdminSidebar = () => {
     const location = useLocation();
+    const [showDashboardMenu, setShowDashboardMenu] = useState(false);
     const [showProductMenu, setShowProductMenu] = useState(false);
     const [showAppearanceMenu, setShowAppearanceMenu] = useState(false);
 
-    // Tự động mở accordion nếu path phù hợp
     useEffect(() => {
+        // Dashboard mở khi ở /admin hoặc /admin/stats
+        setShowDashboardMenu(location.pathname === '/admin' || location.pathname.startsWith('/admin/stats'));
+
+        // Sản phẩm
         setShowProductMenu(
             location.pathname.startsWith('/admin/products') ||
                 location.pathname.startsWith('/admin/categories') ||
                 location.pathname.startsWith('/admin/tags') ||
                 location.pathname.startsWith('/admin/attributes') ||
-                location.pathname.startsWith('/admin/promotions') || // thêm
-                location.pathname.startsWith('/admin/brands'), // thêm
+                location.pathname.startsWith('/admin/promotions') ||
+                location.pathname.startsWith('/admin/brands'),
         );
 
+        // Giao diện
         setShowAppearanceMenu(
             location.pathname.startsWith('/admin/menus') ||
                 location.pathname.startsWith('/admin/widgets') ||
@@ -32,22 +37,61 @@ const AdminSidebar = () => {
         );
     }, [location.pathname]);
 
-    // Xác định accordion nào đang active
+    // Kiểm tra active cho từng nhóm sản phẩm
     const isProductActive =
         location.pathname.startsWith('/admin/products') ||
         location.pathname.startsWith('/admin/categories') ||
         location.pathname.startsWith('/admin/tags') ||
         location.pathname.startsWith('/admin/attributes') ||
-        location.pathname.startsWith('/admin/promotions') || // thêm
-        location.pathname.startsWith('/admin/brands'); // thêm
+        location.pathname.startsWith('/admin/promotions') ||
+        location.pathname.startsWith('/admin/brands');
 
+    // Giao diện active
     const isAppearanceActive =
         location.pathname.startsWith('/admin/menus') ||
         location.pathname.startsWith('/admin/widgets') ||
         location.pathname.startsWith('/admin/appearance');
 
+    // Dashboard active
+    const isDashboardActive = location.pathname === '/admin' || location.pathname.startsWith('/admin/stats');
+
     return (
         <div className={cx('AdminSidebar')}>
+            {/* Nhóm Dashboard */}
+            <div className={cx('menu-group')}>
+                <div
+                    className={cx('accordion-header', { active: isDashboardActive })}
+                    onClick={() => setShowDashboardMenu((prev) => !prev)}
+                >
+                    <span className={cx('group-title')}>
+                        <LayoutDashboard size={16} className={cx('custom-iconBox')} />
+                        Dashboard
+                    </span>
+                    {showDashboardMenu ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                </div>
+
+                <AnimatePresence initial={false}>
+                    {showDashboardMenu && (
+                        <motion.div
+                            className={cx('accordion-content')}
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <NavLink to="/admin" end className={({ isActive }) => cx('link', { active: isActive })}>
+                                Truy cập nhanh
+                            </NavLink>
+                            <NavLink to="/admin/stats" className={({ isActive }) => cx('link', { active: isActive })}>
+                                Thống kê
+                            </NavLink>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* Nhóm bài viết */}
+
             {/* Nhóm Sản phẩm */}
             <div className={cx('menu-group')}>
                 <div
