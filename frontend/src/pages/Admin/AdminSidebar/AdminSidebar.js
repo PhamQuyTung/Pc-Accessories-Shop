@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import styles from './AdminSidebar.module.scss';
 import classNames from 'classnames/bind';
-import { ChevronDown, ChevronRight, LayoutDashboard, BarChart3 } from 'lucide-react';
+import { ChevronDown, ChevronRight, LayoutDashboard } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBox, faPalette } from '@fortawesome/free-solid-svg-icons';
+import { faBox, faPalette, faNewspaper } from '@fortawesome/free-solid-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const cx = classNames.bind(styles);
@@ -12,12 +12,20 @@ const cx = classNames.bind(styles);
 const AdminSidebar = () => {
     const location = useLocation();
     const [showDashboardMenu, setShowDashboardMenu] = useState(false);
+    const [showPostMenu, setShowPostMenu] = useState(false);
     const [showProductMenu, setShowProductMenu] = useState(false);
     const [showAppearanceMenu, setShowAppearanceMenu] = useState(false);
 
     useEffect(() => {
         // Dashboard mở khi ở /admin hoặc /admin/stats
         setShowDashboardMenu(location.pathname === '/admin' || location.pathname.startsWith('/admin/stats'));
+
+        // Bài viết
+        setShowPostMenu(
+            location.pathname.startsWith('/admin/posts') ||
+            location.pathname.startsWith('/admin/post-categories') ||
+            location.pathname.startsWith('/admin/post-tags')
+        );
 
         // Sản phẩm
         setShowProductMenu(
@@ -37,6 +45,16 @@ const AdminSidebar = () => {
         );
     }, [location.pathname]);
 
+    
+    // Dashboard active
+    const isDashboardActive = location.pathname === '/admin' || location.pathname.startsWith('/admin/stats');
+    
+    // Bài viết active
+    const isPostActive =
+        location.pathname.startsWith('/admin/posts') ||
+        location.pathname.startsWith('/admin/post-categories') ||
+        location.pathname.startsWith('/admin/post-tags');
+    
     // Kiểm tra active cho từng nhóm sản phẩm
     const isProductActive =
         location.pathname.startsWith('/admin/products') ||
@@ -51,10 +69,7 @@ const AdminSidebar = () => {
         location.pathname.startsWith('/admin/menus') ||
         location.pathname.startsWith('/admin/widgets') ||
         location.pathname.startsWith('/admin/appearance');
-
-    // Dashboard active
-    const isDashboardActive = location.pathname === '/admin' || location.pathname.startsWith('/admin/stats');
-
+        
     return (
         <div className={cx('AdminSidebar')}>
             {/* Nhóm Dashboard */}
@@ -90,7 +105,44 @@ const AdminSidebar = () => {
                 </AnimatePresence>
             </div>
 
-            {/* Nhóm bài viết */}
+            {/* Nhóm Bài viết */}
+            <div className={cx('menu-group')}>
+                <div
+                    className={cx('accordion-header', { active: isPostActive })}
+                    onClick={() => setShowPostMenu((prev) => !prev)}
+                >
+                    <span className={cx('group-title')}>
+                        <FontAwesomeIcon icon={faNewspaper} className={cx('custom-iconBox')} />
+                        Bài viết
+                    </span>
+                    {showPostMenu ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                </div>
+
+                <AnimatePresence initial={false}>
+                    {showPostMenu && (
+                        <motion.div
+                            className={cx('accordion-content')}
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <NavLink to="/admin/posts" end className={({ isActive }) => cx('link', { active: isActive })}>
+                                Tất cả bài viết
+                            </NavLink>
+                            <NavLink to="/admin/posts/create" className={({ isActive }) => cx('link', { active: isActive })}>
+                                Viết bài mới
+                            </NavLink>
+                            <NavLink to="/admin/post-categories" className={({ isActive }) => cx('link', { active: isActive })}>
+                                Chuyên mục
+                            </NavLink>
+                            <NavLink to="/admin/post-tags" className={({ isActive }) => cx('link', { active: isActive })}>
+                                Thẻ
+                            </NavLink>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
 
             {/* Nhóm Sản phẩm */}
             <div className={cx('menu-group')}>
