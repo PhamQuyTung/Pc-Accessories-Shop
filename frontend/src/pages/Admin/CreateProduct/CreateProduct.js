@@ -4,10 +4,19 @@ import axios from 'axios';
 import classNames from 'classnames/bind';
 import styles from './CreateProduct.module.scss';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '~/components/ToastMessager';
 import Swal from 'sweetalert2';
 import { motion, AnimatePresence } from 'framer-motion';
+
+import ReactQuill from "react-quill-new";
+import 'react-quill-new/dist/quill.snow.css';
+import ImageResize from 'quill-image-resize-module-react';
+import Quill from 'quill';
+
+import { useToast } from '~/components/ToastMessager';
 import VariantImage from '~/components/VariantImage/VariantImage';
+
+// Đăng ký plugin resize ảnh
+Quill.register('modules/imageResize', ImageResize);
 
 const cx = classNames.bind(styles);
 
@@ -502,12 +511,20 @@ export default function CreateProduct() {
                         </div>
 
                         <div className={cx('field')}>
-                            <label>Mô tả dài</label>
-                            <textarea
-                                name="longDescription"
+                            <label>Mô tả chi tiết</label>
+                            <ReactQuill
+                                theme="snow"
                                 value={form.longDescription}
-                                onChange={handleFormChange}
-                                rows={6}
+                                onChange={(content) => setForm((prev) => ({ ...prev, longDescription: content }))}
+                                modules={{
+                                    toolbar: [
+                                        [{ header: [1, 2, 3, false] }],
+                                        ['bold', 'italic', 'underline', 'strike'],
+                                        [{ list: 'ordered' }, { list: 'bullet' }],
+                                        ['link', 'image', 'video'],
+                                        ['clean'],
+                                    ],
+                                }}
                             />
                         </div>
 

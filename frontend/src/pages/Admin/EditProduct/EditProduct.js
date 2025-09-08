@@ -5,7 +5,48 @@ import styles from './EditProduct.module.scss';
 import classNames from 'classnames/bind';
 import { useToast } from '~/components/ToastMessager';
 
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+import Quill from 'quill';
+import ImageResize from 'quill-image-resize-module-react';
+
+import he from 'he'; // 👉 package decode HTML entity
+
+// Đăng ký module ImageResize
+Quill.register('modules/imageResize', ImageResize);
+
 const cx = classNames.bind(styles);
+
+// Cấu hình toolbar cho ReactQuill
+const quillModules = {
+    toolbar: {
+        container: [
+            [{ header: [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            ['link', 'image', 'video'],
+            ['clean'],
+        ],
+        handlers: {
+            link: function (value) {
+                if (value) {
+                    const href = prompt('Nhập URL:');
+                    if (href) {
+                        const range = this.quill.getSelection();
+                        if (range && range.length > 0) {
+                            this.quill.format('link', href); // 👈 chỉ áp dụng cho text đang chọn
+                        }
+                    }
+                } else {
+                    this.quill.format('link', false);
+                }
+            },
+        },
+    },
+    imageResize: {
+        parchment: Quill.import('parchment'), // vẫn giữ resize ảnh
+    },
+};
 
 function EditProduct() {
     const { id } = useParams();
@@ -20,6 +61,7 @@ function EditProduct() {
 
     const [brands, setBrands] = useState([]);
 
+    // Load categories và products để check trùng tên
     useEffect(() => {
         axios
             .get('http://localhost:5000/api/categories')
@@ -35,6 +77,7 @@ function EditProduct() {
             .catch(() => {});
     }, []);
 
+    // Load brands
     useEffect(() => {
         axios
             .get('http://localhost:5000/api/brands')
@@ -42,16 +85,28 @@ function EditProduct() {
             .catch(() => setBrands([]));
     }, []);
 
+    // Ở useEffect khi load sản phẩm
     useEffect(() => {
         axios
             .get(`http://localhost:5000/api/products/edit/${id}`)
             .then((res) => {
-                setFormData(res.data);
-                setImporting(res.data.status?.includes('đang nhập hàng') || false);
+                const product = res.data;
+
+                // Decode nếu bị escaped
+                const decodedLongDesc = he.decode(product.longDescription || '');
+
+                setFormData({
+                    ...product,
+                    shortDescription: product.shortDescription || '',
+                    longDescription: decodedLongDesc, // 👈 đảm bảo dạng HTML thật
+                });
+
+                setImporting(product.status?.includes('đang nhập hàng') || false);
             })
             .catch(() => toast('Không tìm thấy sản phẩm!', 'error'));
     }, [id]);
 
+    // Khi chọn category thì load schema
     useEffect(() => {
         if (formData?.category) {
             axios.get(`http://localhost:5000/api/categories/${formData.category}`).then((res) => {
@@ -76,6 +131,7 @@ function EditProduct() {
         }
     }, [formData?.category]);
 
+    // Xử lý thay đổi form
     const handleChange = (e) => {
         const { name, value } = e.target;
 
@@ -113,6 +169,7 @@ function EditProduct() {
         }
     };
 
+    // Thêm trường ảnh
     const handleAddImageField = () => {
         setFormData((prev) => ({
             ...prev,
@@ -120,6 +177,7 @@ function EditProduct() {
         }));
     };
 
+    // Xóa trường ảnh
     const handleRemoveImageField = (index) => {
         setFormData((prev) => ({
             ...prev,
@@ -127,6 +185,7 @@ function EditProduct() {
         }));
     };
 
+    // Xử lý submit form
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -193,6 +252,7 @@ function EditProduct() {
         }
     };
 
+    // Nếu chưa load xong formData thì hiển thị loading
     if (!formData) return <div>Đang tải...</div>;
 
     return (
@@ -255,12 +315,11 @@ function EditProduct() {
 
                 <div className={cx('group')}>
                     <label>Mô tả chi tiết</label>
-                    <textarea
-                        name="longDescription"
+                    <ReactQuill
+                        theme="snow"
                         value={formData.longDescription || ''}
-                        onChange={handleChange}
-                        rows={6}
-                        placeholder="Viết chi tiết tính năng, ưu điểm, công nghệ..."
+                        onChange={(content) => setFormData((prev) => ({ ...prev, longDescription: content }))}
+                        modules={quillModules}
                     />
                 </div>
 

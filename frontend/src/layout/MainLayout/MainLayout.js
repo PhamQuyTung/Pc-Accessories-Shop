@@ -13,7 +13,7 @@ function MainLayout() {
             <header className={cx('header-wrapper')}>
                 <Header />
             </header>
-            <main style={{ marginTop: '177px' }}>
+            <main style={{ marginTop: '155px' }}>
                 <Outlet /> {/* render child route */}
             </main>
             <Footer />
