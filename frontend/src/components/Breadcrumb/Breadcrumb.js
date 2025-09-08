@@ -24,11 +24,25 @@ const Breadcrumb = ({ categorySlug, slug: propSlug, type }) => {
                 } else if (type === 'category') {
                     // 👉 Trang danh mục
                     const res = await axiosClient.get(`/products/breadcrumb/category/${categorySlug || routeSlug}`);
-                    setBreadcrumbData(res.data);
+
+                    // ✅ Fix path: chuyển collections -> categories
+                    const fixedData = res.data.map((item) => ({
+                        ...item,
+                        path: item.path.replace('/collections/', '/categories/'),
+                    }));
+
+                    setBreadcrumbData(fixedData);
                 } else if (location.pathname.includes('/products')) {
                     // 👉 Trang chi tiết sản phẩm
                     const res = await axiosClient.get(`/products/breadcrumb/${routeSlug}`);
-                    setBreadcrumbData(res.data);
+
+                    // ✅ Fix path: chuyển collections -> categories
+                    const fixedData = res.data.map((item) => ({
+                        ...item,
+                        path: item.path.replace('/collections/', '/categories/'),
+                    }));
+
+                    setBreadcrumbData(fixedData);
                 }
             } catch (err) {
                 console.error('Lỗi khi lấy breadcrumb:', err);
