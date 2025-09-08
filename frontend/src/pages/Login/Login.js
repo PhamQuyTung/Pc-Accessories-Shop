@@ -29,8 +29,12 @@ function Login() {
         setServerError('');
         try {
             const res = await axios.post('http://localhost:5000/api/auth/login', formData);
+
+            // ✅ Lưu thông tin vào localStorage
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('user', JSON.stringify(res.data.user));
+            localStorage.setItem('role', res.data.user.role); // 👈 thêm dòng này
+
             toast('Đăng nhập thành công!', 'success');
             setTimeout(() => navigate('/'), 1500);
         } catch (err) {

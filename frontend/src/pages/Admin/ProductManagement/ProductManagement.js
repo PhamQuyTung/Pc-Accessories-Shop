@@ -264,7 +264,13 @@ const ProductManagement = () => {
                                     className={cx('product-thumb')}
                                 />
                             </td>
-                            <td>{product.name}</td>
+
+                            <td>
+                                <Link to={`/products/${product.slug}`} className={cx('product-link')}>
+                                    {product.name}
+                                </Link>
+                            </td>
+
                             <td>
                                 {typeof product.brand === 'object' && product.brand?.name
                                     ? product.brand.name
@@ -275,6 +281,7 @@ const ProductManagement = () => {
 
                             <td>{product.price != null ? formatCurrency(product.price) : 'N/A'}</td>
                             <td>{product.discountPrice != null ? formatCurrency(product.discountPrice) : 'N/A'}</td>
+                            
                             <td>
                                 {formatCurrency(
                                     typeof product.discountPrice === 'number' && product.discountPrice > 0

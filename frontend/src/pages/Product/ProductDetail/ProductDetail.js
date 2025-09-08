@@ -1,6 +1,6 @@
 // --- Imports giữ nguyên ---
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import axiosClient from '~/utils/axiosClient';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -48,6 +48,10 @@ function ProductDetail() {
     const [isAddingToCart, setIsAddingToCart] = useState(false);
 
     const reviewSectionRef = useRef(null);
+
+    const role = localStorage.getItem('role'); // hoặc lấy từ Redux: state.auth.user.role
+
+    const navigate = useNavigate();
 
     const toast = useToast();
 
@@ -351,10 +355,25 @@ function ProductDetail() {
         }
     };
 
+    console.log('🔑 Role in localStorage:', role);
+
     return (
         <div className={cx('product-detail')}>
-            {/* Breadcrumb */}
-            <Breadcrumb />
+            <div className={cx('breadcrumb-wrap')}>
+                {/* Breadcrumb */}
+                <Breadcrumb />
+                {/* ✅ Nút chỉ admin mới thấy */}
+                {role === 'admin' && (
+                    <div className={cx('admin-actions')}>
+                        <Link to={`/products/edit/${product._id}`} className={cx('btn-admin__link')}>
+                            ✏️ Chỉnh sửa
+                        </Link>
+                        <Link to="/admin/products/create" className={cx('btn-admin__link')}>
+                            ➕ Thêm sản phẩm
+                        </Link>
+                    </div>
+                )}
+            </div>
 
             {/* Product-detail Main */}
             <div className={cx('product-detail__wraps')}>
