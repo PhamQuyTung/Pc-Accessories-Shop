@@ -6,6 +6,7 @@ import BanPhim from './BanPhim/BanPhim';
 import LT from './LT/LT';
 import Screen from './Screen/Screen';
 import Promotions from './Promotions/PromotionsWrapper';
+import LatestPosts from './LatestPosts/LatestPosts';
 
 function Home() {
     return (
@@ -18,6 +19,7 @@ function Home() {
             <Chuot />
             <BanPhim />
             <Screen />
+            <LatestPosts />
         </div>
     );
 }

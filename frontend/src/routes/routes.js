@@ -47,6 +47,11 @@ import BrandManagement from '~/pages/Admin/BrandsPage/BrandsPage';
 // import EditBrand from '~/pages/Admin/BrandManagement/EditBrand';
 import PromotionCollectionPage from '~/pages/PromotionsCollectionPage/PromotionsCollectionPage';
 import QuickAccessPage from '~/pages/Admin/QuickAccessPage/QuickAccessPage';
+import PostsPage from '~/pages/Admin/Post/PostsPage/PostsPage';
+import CreatePostPage from '~/pages/Admin/Post/CreatePostPage/CreatePostPage';
+import EditPostPage from '~/pages/Admin/Post/EditPostPage/EditPostPage';
+import PostCategoryPage from '~/pages/Admin/Post/PostCategoryPage/PostCategoryPage';
+import PostTagPage from '~/pages/Admin/Post/PostTagPage/PostTagPage';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -116,6 +121,13 @@ const routes = [
             { path: 'attributes/:attributeId/terms', element: <AttributeTermPage /> },
             { path: 'attributes/assign', element: <AssignAttributeToCategory /> },
             { path: 'menus', element: <AdminMenuManagement /> },
+
+            // Bài viết
+            { path: 'posts', element: <PostsPage /> },
+            { path: 'posts/create', element: <CreatePostPage /> },
+            { path: 'posts/edit/:id', element: <EditPostPage /> },
+            { path: 'post-categories', element: <PostCategoryPage /> },
+            { path: 'post-tags', element: <PostTagPage /> },
 
             // 🎯 Chương trình khuyến mãi
             { path: 'promotions', element: <PromotionManagement /> }, // Danh sách
