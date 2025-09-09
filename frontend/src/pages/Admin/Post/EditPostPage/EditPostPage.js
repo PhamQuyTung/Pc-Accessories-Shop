@@ -11,14 +11,44 @@ const EditPostPage = () => {
     const navigate = useNavigate();
 
     const [post, setPost] = useState(null);
+    const [categories, setCategories] = useState([]);
+    const [tags, setTags] = useState([]);
+    const [openCategory, setOpenCategory] = useState(false);
+    const [openTags, setOpenTags] = useState(false);
 
+    // Fetch categories và tags
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await axiosClient.get('/post-categories');
+                setCategories(res.data);
+            } catch (err) {
+                console.error('Lỗi load categories:', err);
+            }
+        };
+
+        const fetchTags = async () => {
+            try {
+                const res = await axiosClient.get('/post-tags');
+                setTags(res.data);
+            } catch (err) {
+                console.error('Lỗi load tags:', err);
+            }
+        };
+
+        fetchCategories();
+        fetchTags();
+    }, []);
+
+    // Fetch bài viết
     useEffect(() => {
         const fetchPost = async () => {
             try {
                 const res = await axiosClient.get(`/posts/${id}`);
                 setPost({
                     ...res.data,
-                    tags: res.data.tags?.join(', ') || '',
+                    category: res.data.category || '',
+                    tags: res.data.tags || [],
                 });
             } catch (err) {
                 console.error('❌ Lỗi khi tải bài viết:', err);
@@ -27,16 +57,25 @@ const EditPostPage = () => {
         fetchPost();
     }, [id]);
 
+    const handleAddTag = (tag) => {
+        if (!post.tags.includes(tag)) {
+            setPost({ ...post, tags: [...post.tags, tag] });
+        }
+    };
+
+    const handleRemoveTag = (tag) => {
+        setPost({ ...post, tags: post.tags.filter((t) => t !== tag) });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             const payload = {
                 ...post,
-                tags: post.tags
-                    .split(',')
-                    .map((t) => t.trim())
-                    .filter(Boolean),
+                category: post.category,
+                tags: post.tags,
             };
+
             await axiosClient.put(`/posts/${id}`, payload);
             alert('✅ Cập nhật thành công!');
             navigate('/admin/posts');
@@ -80,36 +119,62 @@ const EditPostPage = () => {
                     />
                 </div>
 
-                {/* Nội dung */}
-                <div className={cx('form-group')}>
-                    <label>Nội dung</label>
-                    <textarea
-                        rows={10}
-                        value={post.content}
-                        onChange={(e) => setPost({ ...post, content: e.target.value })}
-                        required
-                    />
-                </div>
-
                 {/* Danh mục */}
                 <div className={cx('form-group')}>
                     <label>Chuyên mục</label>
-                    <input
-                        type="text"
-                        value={post.category}
-                        onChange={(e) => setPost({ ...post, category: e.target.value })}
-                    />
+                    <div className={cx('custom-select')}>
+                        <div className={cx('select-trigger')} onClick={() => setOpenCategory(!openCategory)}>
+                            {post.category || 'Chọn chuyên mục'}
+                            <span className={cx('arrow')}>▼</span>
+                        </div>
+                        {openCategory && (
+                            <ul className={cx('select-options')}>
+                                {categories.map((cat) => (
+                                    <li
+                                        key={cat._id}
+                                        onClick={() => {
+                                            setPost({ ...post, category: cat.slug });
+                                            setOpenCategory(false);
+                                        }}
+                                    >
+                                        {cat.name}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
                 </div>
 
                 {/* Thẻ */}
                 <div className={cx('form-group')}>
                     <label>Thẻ</label>
-                    <input
-                        type="text"
-                        value={post.tags}
-                        onChange={(e) => setPost({ ...post, tags: e.target.value })}
-                        placeholder="Ngăn cách bằng dấu phẩy"
-                    />
+                    <div className={cx('custom-select')}>
+                        <div className={cx('select-trigger')} onClick={() => setOpenTags(!openTags)}>
+                            Thêm thẻ...
+                            <span className={cx('arrow')}>▼</span>
+                        </div>
+                        {openTags && (
+                            <ul className={cx('select-options')}>
+                                {tags.map((tag) => (
+                                    <li key={tag._id} onClick={() => handleAddTag(tag.slug)}>
+                                        {tag.name}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+
+                    {/* Hiển thị tags đã chọn */}
+                    <div className={cx('selected-tags')}>
+                        {post.tags.map((tag) => (
+                            <span key={tag} className={cx('tag-badge')}>
+                                {tag}
+                                <button type="button" onClick={() => handleRemoveTag(tag)}>
+                                    ×
+                                </button>
+                            </span>
+                        ))}
+                    </div>
                 </div>
 
                 <button type="submit" className={cx('btn-submit')}>

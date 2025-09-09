@@ -17,7 +17,7 @@ import NotFoundPage from '~/pages/NotFoundPage/NotFoundPage';
 import CollectionsPage from '~/pages/CollectionsPage/CollectionsPage';
 import Promotion from '~/pages/Promotion';
 import Contact from '~/pages/Contact';
-import Blog from '~/pages/Blog';
+import Blog from '~/pages/BlogPage/BlogPage';
 
 import Login from '~/pages/Login/Login';
 import Register from '~/pages/Register/Register';
@@ -52,6 +52,7 @@ import CreatePostPage from '~/pages/Admin/Post/CreatePostPage/CreatePostPage';
 import EditPostPage from '~/pages/Admin/Post/EditPostPage/EditPostPage';
 import PostCategoryPage from '~/pages/Admin/Post/PostCategoryPage/PostCategoryPage';
 import PostTagPage from '~/pages/Admin/Post/PostTagPage/PostTagPage';
+import PostDetailPage from '~/pages/PostDetailPage/PostDetailPage';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -76,6 +77,7 @@ const routes = [
             { path: '/promotion', element: <Promotion /> },
             { path: '/contact', element: <Contact /> },
             { path: '/blog', element: <Blog /> },
+            { path: '/blog/:id', element: <PostDetailPage /> },
 
             // Profile nested dưới MainLayout để vẫn có Header/Footer
             {
