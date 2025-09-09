@@ -30,20 +30,80 @@
     }
 
     .meta {
-        font-size: 14px;
+        font-size: 16px;
         color: #666;
         margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
 
-        span {
-            margin-right: 12px;
+        .author {
+            display: inline-flex;
+            align-items: center;
+            font-size: 16px;
+            color: #333;
+
+            p {
+                margin: 0;
+                font-size: 16px;
+                color: #e11b1e;
+            }
+
+            svg {
+                color: #5c5e61;
+                margin-right: 6px;
+            }
         }
 
         .category {
-            background: #e11b1e;
-            color: #fff;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            font-size: 16px;
+            color: #333;
+
+            p {
+                margin: 0;
+                font-size: 16px;
+                color: #e11b1e;
+            }
+
+            svg {
+                color: #5c5e61;
+                margin-right: 6px;
+            }
+        }
+
+        .date {
+            display: inline-flex;
+            align-items: center;
+            font-size: 16px;
+            color: #5c5e61;
+
+            svg {
+                margin-right: 6px;
+            }
+
+            p {
+                margin: 0;
+                font-size: 16px;
+            }
+        }
+
+        .comments-count {
+            display: inline-flex;
+            align-items: center;
+            font-size: 16px;
+            color: #5c5e61;
+
+            svg {
+                margin-right: 6px;
+            }
+
+            p {
+                margin: 0;
+                font-size: 16px;
+            }
         }
     }
 
@@ -65,16 +125,22 @@
     }
 
     .tags {
-        margin-top: 12px;
-
         .tag {
             display: inline-block;
             background: #f1f1f1;
             color: #333;
-            font-size: 13px;
+            font-size: 14px;
             padding: 4px 8px;
             border-radius: 4px;
-            margin-right: 6px;
+            margin-right: 8px;
+            // margin-bottom: 8px;
+            cursor: pointer;
+            transition: 0.3s all;
+
+            &:hover {
+                background: #e11b1e;
+                color: #fff;
+            }
         }
     }
 }
@@ -148,7 +214,13 @@
     }
 
     .comment-form {
-        margin-bottom: 30px;
+        margin: 30px 0;
+
+        h4 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
 
         textarea {
             width: 100%;
@@ -162,7 +234,7 @@
 
         button {
             margin-top: 10px;
-            background: #ff7a00;
+            background: #e11b1e;
             color: #fff;
             border: none;
             padding: 10px 20px;
@@ -170,9 +242,10 @@
             cursor: pointer;
             font-weight: 500;
             transition: 0.3s;
+            font-size: 14px;
 
             &:hover {
-                background: #e56d00;
+                background: #c00;
             }
         }
     }
@@ -199,25 +272,33 @@
         .comment-body {
             flex: 1;
 
+            .comment-meta {
+                display: flex;
+                justify-content: space-between;
+                align-items: start;
+                margin-bottom: 6px;
+            }
+
             .comment-header {
                 display: flex;
-                align-items: center;
-                gap: 10px;
+                flex-direction: column;
+                gap: 5px;
                 margin-bottom: 5px;
 
                 .username {
+                    font-size: 16px;
                     font-weight: 600;
                 }
 
                 .date {
                     color: #888;
-                    font-size: 13px;
+                    font-size: 14px;
                 }
             }
 
             .rating {
                 color: #f5a623;
-                font-size: 14px;
+                font-size: 18px;
                 margin-bottom: 6px;
             }
 
@@ -243,7 +324,7 @@
                 display: flex;
                 gap: 15px;
 
-                button {
+                .helpful-btn {
                     background: none;
                     border: none;
                     color: #666;
@@ -252,6 +333,10 @@
 
                     &:hover {
                         color: #000;
+                    }
+
+                    svg {
+                        margin-right: 6px;
                     }
                 }
             }
@@ -267,6 +352,79 @@
         color: #ddd;
         &.active {
             color: #f5a623;
+        }
+    }
+}
+
+.tags-section {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+
+    h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+        color: #c00;
+    }
+}
+
+.th-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 24px 0;
+    padding: 16px 0;
+    border-top: 1px solid #eee;
+
+    .tags-section {
+        display: flex;
+        align-items: center;
+        h3 {
+            margin-right: 8px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+    }
+
+    .share-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .share-icons {
+            display: flex;
+            gap: 10px;
+
+            a {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                background: #f4f4f4;
+                color: #555;
+                font-size: 16px;
+                transition: all 0.3s;
+
+                &:hover {
+                    background: #e11b1e;
+                    color: #fff;
+                }
+            }
         }
     }
 }

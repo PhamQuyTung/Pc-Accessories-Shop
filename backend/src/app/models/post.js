@@ -12,8 +12,9 @@ const PostSchema = new mongoose.Schema(
       required: true,
     },
     author: {
-      type: String,
-      default: "admin", // sau này có thể liên kết User model
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "account", // 👈 phải trùng với model name của account
+      required: true,
     },
     category: {
       type: String,
@@ -30,7 +31,7 @@ const PostSchema = new mongoose.Schema(
     },
     image: {
       type: String, // Lưu URL hoặc đường dẫn ảnh
-      default: "",  // để trống nếu chưa có
+      default: "", // để trống nếu chưa có
     },
   },
   { timestamps: true }
