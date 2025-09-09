@@ -137,3 +137,136 @@
         }
     }
 }
+
+.comments {
+    margin-top: 40px;
+
+    h2 {
+        font-size: 20px;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+
+    .comment-form {
+        margin-bottom: 30px;
+
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: vertical;
+            font-size: 14px;
+        }
+
+        button {
+            margin-top: 10px;
+            background: #ff7a00;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.3s;
+
+            &:hover {
+                background: #e56d00;
+            }
+        }
+    }
+
+    .comment-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .comment-item {
+        display: flex;
+        gap: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .comment-body {
+            flex: 1;
+
+            .comment-header {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 5px;
+
+                .username {
+                    font-weight: 600;
+                }
+
+                .date {
+                    color: #888;
+                    font-size: 13px;
+                }
+            }
+
+            .rating {
+                color: #f5a623;
+                font-size: 14px;
+                margin-bottom: 6px;
+            }
+
+            .text {
+                font-size: 15px;
+                margin-bottom: 10px;
+            }
+
+            .comment-images {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 10px;
+
+                img {
+                    width: 80px;
+                    height: 60px;
+                    border-radius: 6px;
+                    object-fit: cover;
+                }
+            }
+
+            .actions {
+                display: flex;
+                gap: 15px;
+
+                button {
+                    background: none;
+                    border: none;
+                    color: #666;
+                    cursor: pointer;
+                    font-size: 14px;
+
+                    &:hover {
+                        color: #000;
+                    }
+                }
+            }
+        }
+    }
+}
+
+.rating-input {
+    margin: 8px 0;
+    .star {
+        font-size: 22px;
+        cursor: pointer;
+        color: #ddd;
+        &.active {
+            color: #f5a623;
+        }
+    }
+}

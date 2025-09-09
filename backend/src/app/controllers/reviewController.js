@@ -20,6 +20,48 @@ class ReviewController {
     }
   }
 
+  // Lấy tất cả comment theo bài viết
+  async getByPost(req, res) {
+    try {
+      const { postId } = req.params;
+      const comments = await Review.find({ post: postId })
+        .populate("user", "name avatar")
+        .sort({ createdAt: -1 });
+
+      res.json(comments);
+    } catch (err) {
+      console.error("❌ Lỗi khi lấy comment:", err.message);
+      res.status(500).json({
+        message: "Lỗi khi lấy comment",
+        error: err.message,
+      });
+    }
+  }
+
+  // Thêm comment cho blog
+  async createForPost(req, res) {
+    try {
+      const { postId } = req.params;
+      const { comment, rating } = req.body; // 👈 Lấy rating từ body
+      const userId = req.userId;
+
+      const review = new Review({
+        user: userId,
+        post: postId,
+        comment,
+        rating, // 👈 có thể null nếu user không nhập
+      });
+
+      await review.save();
+
+      const populated = await review.populate("user", "name avatar"); // 👈 trả về kèm user info
+      res.status(201).json(populated);
+    } catch (error) {
+      console.error("❌ Lỗi khi tạo comment:", error);
+      res.status(500).json({ message: "Không thể tạo comment", error });
+    }
+  }
+
   // Thêm review mới
   async create(req, res) {
     try {

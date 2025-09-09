@@ -1,4 +1,3 @@
-// models/review.js
 const mongoose = require("mongoose");
 
 const reviewSchema = new mongoose.Schema(
@@ -11,10 +10,13 @@ const reviewSchema = new mongoose.Schema(
     product: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
-      required: true,
     },
-    rating: { type: Number, required: true, min: 1, max: 5 },
-    comment: { type: String },
+    post: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Post",
+    },
+    rating: { type: Number, min: 1, max: 5 }, // 👉 với blog có thể không cần rating
+    comment: { type: String, required: true },
   },
   { timestamps: true }
 );
