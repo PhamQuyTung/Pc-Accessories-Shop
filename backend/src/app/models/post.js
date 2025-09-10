@@ -13,25 +13,28 @@ const PostSchema = new mongoose.Schema(
     },
     author: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "account", // 👈 phải trùng với model name của account
+      ref: "account", // 👈 model account
       required: true,
     },
     category: {
-      type: String,
-      default: "Uncategorized",
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PostCategory", // 👈 model PostCategory
+      required: true,
     },
-    tags: {
-      type: [String],
-      default: [],
-    },
+    tags: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "PostTag", // 👈 model PostTag
+      },
+    ],
     status: {
       type: String,
       enum: ["draft", "published", "trash"],
       default: "draft",
     },
     image: {
-      type: String, // Lưu URL hoặc đường dẫn ảnh
-      default: "", // để trống nếu chưa có
+      type: String,
+      default: "",
     },
   },
   { timestamps: true }

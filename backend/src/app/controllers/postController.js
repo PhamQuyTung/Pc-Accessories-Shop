@@ -4,8 +4,11 @@ const Post = require("../../app/models/post");
 exports.getPosts = async (req, res) => {
   try {
     const posts = await Post.find()
-      .populate("author", "name firstName lastName avatar") // 👈 thêm vào đây
+      .populate("author", "name firstName lastName avatar")
+      .populate("category", "name slug") // 👈 lấy name, slug
+      .populate("tags", "name slug") // 👈 lấy name, slug
       .sort({ createdAt: -1 });
+
     res.json(posts);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -15,10 +18,10 @@ exports.getPosts = async (req, res) => {
 // Lấy bài viết theo ID
 exports.getPostById = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id).populate(
-      "author",
-      "name firstName lastName avatar"
-    ); // 👈 lấy thông tin user
+    const post = await Post.findById(req.params.id)
+      .populate("author", "name firstName lastName avatar")
+      .populate("category", "name slug")
+      .populate("tags", "name slug");
 
     if (!post) {
       return res.status(404).json({ error: "Không tìm thấy bài viết" });
@@ -35,7 +38,7 @@ exports.createPost = async (req, res) => {
   try {
     const newPost = new Post({
       ...req.body,
-      author: req.userId, // 👈 lấy từ middleware
+      author: req.userId,
     });
     const savedPost = await newPost.save();
     res.status(201).json(savedPost);
@@ -49,10 +52,15 @@ exports.updatePost = async (req, res) => {
   try {
     const updatedPost = await Post.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
-    });
+    })
+      .populate("author", "name firstName lastName avatar")
+      .populate("category", "name slug")
+      .populate("tags", "name slug");
+
     if (!updatedPost) {
       return res.status(404).json({ error: "Không tìm thấy bài viết" });
     }
+
     res.json(updatedPost);
   } catch (err) {
     res.status(400).json({ error: err.message });

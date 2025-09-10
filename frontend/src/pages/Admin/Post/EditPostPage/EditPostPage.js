@@ -23,7 +23,7 @@ const EditPostPage = () => {
                 const res = await axiosClient.get('/post-categories');
                 setCategories(res.data);
             } catch (err) {
-                console.error('Lỗi load categories:', err);
+                console.error('❌ Lỗi load categories:', err);
             }
         };
 
@@ -32,7 +32,7 @@ const EditPostPage = () => {
                 const res = await axiosClient.get('/post-tags');
                 setTags(res.data);
             } catch (err) {
-                console.error('Lỗi load tags:', err);
+                console.error('❌ Lỗi load tags:', err);
             }
         };
 
@@ -47,8 +47,8 @@ const EditPostPage = () => {
                 const res = await axiosClient.get(`/posts/${id}`);
                 setPost({
                     ...res.data,
-                    category: res.data.category || '',
-                    tags: res.data.tags || [],
+                    category: res.data.category?._id || '',
+                    tags: res.data.tags?.map((t) => t._id) || [],
                 });
             } catch (err) {
                 console.error('❌ Lỗi khi tải bài viết:', err);
@@ -57,14 +57,14 @@ const EditPostPage = () => {
         fetchPost();
     }, [id]);
 
-    const handleAddTag = (tag) => {
-        if (!post.tags.includes(tag)) {
-            setPost({ ...post, tags: [...post.tags, tag] });
+    const handleAddTag = (tagId) => {
+        if (!post.tags.includes(tagId)) {
+            setPost({ ...post, tags: [...post.tags, tagId] });
         }
     };
 
-    const handleRemoveTag = (tag) => {
-        setPost({ ...post, tags: post.tags.filter((t) => t !== tag) });
+    const handleRemoveTag = (tagId) => {
+        setPost({ ...post, tags: post.tags.filter((t) => t !== tagId) });
     };
 
     const handleSubmit = async (e) => {
@@ -72,8 +72,8 @@ const EditPostPage = () => {
         try {
             const payload = {
                 ...post,
-                category: post.category,
-                tags: post.tags,
+                category: post.category, // _id
+                tags: post.tags, // array of _id
             };
 
             await axiosClient.put(`/posts/${id}`, payload);
@@ -124,7 +124,7 @@ const EditPostPage = () => {
                     <label>Chuyên mục</label>
                     <div className={cx('custom-select')}>
                         <div className={cx('select-trigger')} onClick={() => setOpenCategory(!openCategory)}>
-                            {post.category || 'Chọn chuyên mục'}
+                            {categories.find((c) => c._id === post.category)?.name || 'Chọn chuyên mục'}
                             <span className={cx('arrow')}>▼</span>
                         </div>
                         {openCategory && (
@@ -133,7 +133,7 @@ const EditPostPage = () => {
                                     <li
                                         key={cat._id}
                                         onClick={() => {
-                                            setPost({ ...post, category: cat.slug });
+                                            setPost({ ...post, category: cat._id });
                                             setOpenCategory(false);
                                         }}
                                     >
@@ -156,7 +156,7 @@ const EditPostPage = () => {
                         {openTags && (
                             <ul className={cx('select-options')}>
                                 {tags.map((tag) => (
-                                    <li key={tag._id} onClick={() => handleAddTag(tag.slug)}>
+                                    <li key={tag._id} onClick={() => handleAddTag(tag._id)}>
                                         {tag.name}
                                     </li>
                                 ))}
@@ -166,14 +166,17 @@ const EditPostPage = () => {
 
                     {/* Hiển thị tags đã chọn */}
                     <div className={cx('selected-tags')}>
-                        {post.tags.map((tag) => (
-                            <span key={tag} className={cx('tag-badge')}>
-                                {tag}
-                                <button type="button" onClick={() => handleRemoveTag(tag)}>
-                                    ×
-                                </button>
-                            </span>
-                        ))}
+                        {post.tags.map((tagId) => {
+                            const tag = tags.find((t) => t._id === tagId);
+                            return (
+                                <span key={tagId} className={cx('tag-badge')}>
+                                    {tag?.name || tagId}
+                                    <button type="button" onClick={() => handleRemoveTag(tagId)}>
+                                        ×
+                                    </button>
+                                </span>
+                            );
+                        })}
                     </div>
                 </div>
 

@@ -71,6 +71,7 @@ const PostsPage = () => {
                                 <td>
                                     <input type="checkbox" />
                                 </td>
+
                                 <td>
                                     <strong>{post.title}</strong>
                                     <div className={cx('row-actions')}>
@@ -86,9 +87,13 @@ const PostsPage = () => {
                                         </button>
                                     </div>
                                 </td>
-                                <td>{post.author}</td>
-                                <td>{post.category}</td>
-                                <td>{post.tags?.join(', ') || '—'}</td>
+
+                                <td>
+                                    {post.author?.name ||
+                                        `${post.author?.firstName || ''} ${post.author?.lastName || ''}`}
+                                </td>
+                                <td>{post.category?.name || '—'}</td>
+                                <td>{post.tags?.map((tag) => tag.name).join(', ') || '—'}</td>
                                 <td>{new Date(post.createdAt).toLocaleDateString('vi-VN')}</td>
                             </tr>
                         ))

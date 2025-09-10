@@ -35,7 +35,7 @@ const LatestPosts = () => {
                     <Link to={`/blog/${post._id}`} key={post._id} className={cx('card')}>
                         <div className={cx('thumb')}>
                             <img src={post.image || '/no-image.png'} alt={post.title} />
-                            <span className={cx('category')}>{post.category}</span>
+                            <span className={cx('category')}>{post.category?.name || 'Chưa có chuyên mục'}</span>
                         </div>
                         <div className={cx('info')}>
                             <h3>{post.title}</h3>

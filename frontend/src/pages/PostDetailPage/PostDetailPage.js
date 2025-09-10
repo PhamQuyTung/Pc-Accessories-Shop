@@ -14,7 +14,6 @@ const PostDetailPage = () => {
 
     const [post, setPost] = useState(null);
     const [relatedPosts, setRelatedPosts] = useState([]);
-
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
     const [rating, setRating] = useState(0);
@@ -25,10 +24,10 @@ const PostDetailPage = () => {
                 const res = await axiosClient.get(`/posts/${id}`);
                 setPost(res.data);
 
-                // Gọi API để lấy bài viết liên quan
-                fetchRelatedPosts(res.data.category, res.data._id);
+                // Gọi API để lấy bài viết liên quan (theo category._id)
+                fetchRelatedPosts(res.data.category?._id, res.data._id);
 
-                // Gọi API để lấy comment
+                // Lấy comment
                 fetchComments();
             } catch (err) {
                 console.error('❌ Lỗi tải bài viết:', err);
@@ -37,11 +36,12 @@ const PostDetailPage = () => {
         fetchPost();
     }, [id]);
 
-    const fetchRelatedPosts = async (category, currentId) => {
+    const fetchRelatedPosts = async (categoryId, currentId) => {
+        if (!categoryId) return;
         try {
-            const res = await axiosClient.get(`/posts?category=${category}`);
+            const res = await axiosClient.get(`/posts?category=${categoryId}`);
             const filtered = res.data.filter((p) => p._id !== currentId);
-            setRelatedPosts(filtered.slice(0, 4)); // lấy tối đa 4 bài
+            setRelatedPosts(filtered.slice(0, 4));
         } catch (err) {
             console.error('❌ Lỗi tải related posts:', err);
         }
@@ -94,7 +94,7 @@ const PostDetailPage = () => {
 
                     <span className={cx('category')}>
                         <FontAwesomeIcon icon={faFolder} />
-                        <p>{post.category}</p>
+                        <p>{post.category?.name || 'Chưa phân loại'}</p>
                     </span>
 
                     <span className={cx('date')}>
@@ -123,14 +123,16 @@ const PostDetailPage = () => {
                     {/* Tags Section */}
                     <div className={cx('tags-section')}>
                         <h3>Thẻ:</h3>
-                        {post.tags?.length > 0 && (
+                        {post.tags?.length > 0 ? (
                             <div className={cx('tags')}>
-                                {post.tags.map((tag, idx) => (
-                                    <span key={idx} className={cx('tag')}>
-                                        {tag}
+                                {post.tags.map((tag) => (
+                                    <span key={tag._id} className={cx('tag')}>
+                                        {tag.name}
                                     </span>
                                 ))}
                             </div>
+                        ) : (
+                            <p>—</p>
                         )}
                     </div>
 
