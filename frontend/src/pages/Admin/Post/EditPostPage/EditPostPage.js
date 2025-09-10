@@ -3,6 +3,8 @@ import styles from './EditPostPage.module.scss';
 import classNames from 'classnames/bind';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '~/utils/axiosClient';
+import { confirmAlert } from '~/utils/alertSweet';
+import { useToast } from '~/components/ToastMessager/ToastMessager';
 
 const cx = classNames.bind(styles);
 
@@ -15,6 +17,8 @@ const EditPostPage = () => {
     const [tags, setTags] = useState([]);
     const [openCategory, setOpenCategory] = useState(false);
     const [openTags, setOpenTags] = useState(false);
+
+    const showToast = useToast();
 
     // Fetch categories và tags
     useEffect(() => {
@@ -69,6 +73,10 @@ const EditPostPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const result = await confirmAlert('Xác nhận cập nhật?', 'Bạn có chắc muốn lưu thay đổi?');
+        if (!result.isConfirmed) return;
+
         try {
             const payload = {
                 ...post,
@@ -77,11 +85,11 @@ const EditPostPage = () => {
             };
 
             await axiosClient.put(`/posts/${id}`, payload);
-            alert('✅ Cập nhật thành công!');
+            showToast('✅ Cập nhật thành công!', 'success');
             navigate('/admin/posts');
         } catch (err) {
             console.error('❌ Lỗi khi cập nhật bài viết:', err);
-            alert('Cập nhật thất bại!');
+            showToast('Cập nhật thất bại!', 'error');
         }
     };
 

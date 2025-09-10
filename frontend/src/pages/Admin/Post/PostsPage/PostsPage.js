@@ -4,12 +4,16 @@ import classNames from 'classnames/bind';
 import { Link } from 'react-router-dom';
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import axiosClient from '~/utils/axiosClient';
+import { confirmAlert } from '~/utils/alertSweet';
+import { useToast } from '~/components/ToastMessager/ToastMessager';
 
 const cx = classNames.bind(styles);
 
 const PostsPage = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const showToast = useToast();
 
     // Lấy danh sách bài viết
     useEffect(() => {
@@ -28,13 +32,18 @@ const PostsPage = () => {
 
     // Xóa bài viết
     const handleDelete = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa bài viết này?')) return;
+        const result = await confirmAlert('Xóa bài viết?', 'Bạn sẽ không thể khôi phục bài viết này!');
+        if (!result.isConfirmed) return;
+
         try {
             await axiosClient.delete(`/posts/${id}`);
             setPosts((prev) => prev.filter((p) => p._id !== id));
+            // successAlert('Đã xóa bài viết!');
+            showToast('Đã xóa bài viết!', 'success');
         } catch (err) {
             console.error('❌ Lỗi khi xóa post:', err);
-            alert('Xóa bài viết thất bại!');
+            // errorAlert('Xóa bài viết thất bại!');
+            showToast('Xóa bài viết thất bại!', 'error');
         }
     };
 
