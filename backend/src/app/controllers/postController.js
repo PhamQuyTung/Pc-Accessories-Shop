@@ -33,7 +33,10 @@ exports.getPostById = async (req, res) => {
 // Tạo bài viết mới
 exports.createPost = async (req, res) => {
   try {
-    const newPost = new Post(req.body);
+    const newPost = new Post({
+      ...req.body,
+      author: req.userId, // 👈 lấy từ middleware
+    });
     const savedPost = await newPost.save();
     res.status(201).json(savedPost);
   } catch (err) {
