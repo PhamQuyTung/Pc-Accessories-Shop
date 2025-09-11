@@ -20,6 +20,8 @@ const CreatePostPage = () => {
     const [openTags, setOpenTags] = useState(false);
 
     const [image, setImage] = useState('');
+    const [status, setStatus] = useState('draft'); // 👈 thêm state cho status
+    const [openStatus, setOpenStatus] = useState(false);
 
     const navigate = useNavigate();
 
@@ -67,12 +69,22 @@ const CreatePostPage = () => {
                 category,
                 tags: selectedTags,
                 image,
+                status, // 👈 gửi lên API
             };
 
             await axiosClient.post('/posts', payload);
+
             // successAlert("Bài viết đã được tạo!");
             showToast('Bài viết đã được tạo!', 'success');
-            navigate('/admin/posts');
+
+            // Điều hướng theo status
+            if (status === 'draft') {
+                navigate('/admin/posts/drafts');
+            } else if (status === 'trash') {
+                navigate('/admin/posts/trash');
+            } else {
+                navigate('/admin/posts');
+            }
         } catch (err) {
             console.error('❌ Lỗi tạo bài viết:', err);
             // errorAlert("Tạo bài viết thất bại!");
@@ -167,6 +179,46 @@ const CreatePostPage = () => {
                                 </span>
                             );
                         })}
+                    </div>
+                </div>
+
+                {/* Trạng thái */}
+                <div className={cx('form-group')}>
+                    <label>Trạng thái</label>
+                    <div className={cx('custom-select')}>
+                        <div className={cx('select-trigger')} onClick={() => setOpenStatus((prev) => !prev)}>
+                            {status === 'draft' ? 'Bản nháp' : status === 'published' ? 'Xuất bản' : 'Thùng rác'}
+                            <span className={cx('arrow')}>▼</span>
+                        </div>
+
+                        {openStatus && (
+                            <ul className={cx('select-options')}>
+                                <li
+                                    onClick={() => {
+                                        setStatus('draft');
+                                        setOpenStatus(false);
+                                    }}
+                                >
+                                    Bản nháp
+                                </li>
+                                <li
+                                    onClick={() => {
+                                        setStatus('published');
+                                        setOpenStatus(false);
+                                    }}
+                                >
+                                    Xuất bản
+                                </li>
+                                <li
+                                    onClick={() => {
+                                        setStatus('trash');
+                                        setOpenStatus(false);
+                                    }}
+                                >
+                                    Thùng rác
+                                </li>
+                            </ul>
+                        )}
                     </div>
                 </div>
 

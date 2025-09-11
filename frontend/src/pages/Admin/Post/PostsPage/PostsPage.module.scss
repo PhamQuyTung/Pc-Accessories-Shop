@@ -84,3 +84,24 @@
         }
     }
 }
+.btn-featured {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &.active {
+        background: #ffebcc;
+        border-color: #ffa500;
+        color: #d97706;
+    }
+
+    svg {
+        color: inherit;
+    }
+}

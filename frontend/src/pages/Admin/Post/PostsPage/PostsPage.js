@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './PostsPage.module.scss';
 import classNames from 'classnames/bind';
 import { Link } from 'react-router-dom';
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Star } from 'lucide-react';
 import axiosClient from '~/utils/axiosClient';
 import { confirmAlert } from '~/utils/alertSweet';
 import { useToast } from '~/components/ToastMessager/ToastMessager';
@@ -30,20 +30,36 @@ const PostsPage = () => {
         fetchPosts();
     }, []);
 
-    // Xóa bài viết
+    // Xóa (chuyển vào thùng rác)
     const handleDelete = async (id) => {
-        const result = await confirmAlert('Xóa bài viết?', 'Bạn sẽ không thể khôi phục bài viết này!');
+        const result = await confirmAlert(
+            'Chuyển vào thùng rác?',
+            'Bài viết sẽ được đưa vào thùng rác',
+        );
         if (!result.isConfirmed) return;
 
         try {
-            await axiosClient.delete(`/posts/${id}`);
+            await axiosClient.put(`/posts/${id}`, { status: 'trash' });
             setPosts((prev) => prev.filter((p) => p._id !== id));
-            // successAlert('Đã xóa bài viết!');
-            showToast('Đã xóa bài viết!', 'success');
+            showToast('🗑️ Đã chuyển bài viết vào thùng rác!', 'success');
         } catch (err) {
-            console.error('❌ Lỗi khi xóa post:', err);
-            // errorAlert('Xóa bài viết thất bại!');
-            showToast('Xóa bài viết thất bại!', 'error');
+            console.error('❌ Lỗi khi chuyển vào thùng rác:', err);
+            showToast('Không thể xóa bài viết!', 'error');
+        }
+    };
+
+    // Toggle featured
+    const handleToggleFeatured = async (id) => {
+        try {
+            const res = await axiosClient.patch(`/posts/${id}/toggle-featured`);
+            setPosts((prev) => prev.map((p) => (p._id === id ? { ...p, isFeatured: res.data.post.isFeatured } : p)));
+            showToast(
+                res.data.post.isFeatured ? 'Đã bật nổi bật cho bài viết!' : 'Đã tắt nổi bật cho bài viết!',
+                'success',
+            );
+        } catch (err) {
+            console.error('❌ Lỗi toggle featured:', err);
+            showToast('Không thể thay đổi trạng thái nổi bật!', 'error');
         }
     };
 
@@ -70,6 +86,7 @@ const PostsPage = () => {
                         <th>Tác giả</th>
                         <th>Chuyên mục</th>
                         <th>Thẻ</th>
+                        <th>Nổi bật</th>
                         <th>Ngày</th>
                     </tr>
                 </thead>
@@ -101,8 +118,23 @@ const PostsPage = () => {
                                     {post.author?.name ||
                                         `${post.author?.firstName || ''} ${post.author?.lastName || ''}`}
                                 </td>
+
                                 <td>{post.category?.name || '—'}</td>
+
                                 <td>{post.tags?.map((tag) => tag.name).join(', ') || '—'}</td>
+
+                                {/* Nút toggle featured */}
+                                <td>
+                                    <button
+                                        type="button"
+                                        className={cx('btn-featured', { active: post.isFeatured })}
+                                        onClick={() => handleToggleFeatured(post._id)}
+                                    >
+                                        <Star size={16} />
+                                        {post.isFeatured ? 'Nổi bật' : 'Bình thường'}
+                                    </button>
+                                </td>
+
                                 <td>{new Date(post.createdAt).toLocaleDateString('vi-VN')}</td>
                             </tr>
                         ))

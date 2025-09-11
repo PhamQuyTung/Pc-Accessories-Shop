@@ -53,6 +53,8 @@ import EditPostPage from '~/pages/Admin/Post/EditPostPage/EditPostPage';
 import PostCategoryPage from '~/pages/Admin/Post/PostCategoryPage/PostCategoryPage';
 import PostTagPage from '~/pages/Admin/Post/PostTagPage/PostTagPage';
 import PostDetailPage from '~/pages/PostDetailPage/PostDetailPage';
+import DraftPostsPage from '~/pages/Admin/Post/DraftPostsPage/DraftPostsPage';
+import TrashPostsPage from '~/pages/Admin/Post/TrashPostsPage/TrashPostsPage';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -130,6 +132,8 @@ const routes = [
             { path: 'posts/edit/:id', element: <EditPostPage /> },
             { path: 'post-categories', element: <PostCategoryPage /> },
             { path: 'post-tags', element: <PostTagPage /> },
+            { path: 'posts/drafts', element: <DraftPostsPage /> },
+            { path: 'posts/trash', element: <TrashPostsPage /> },
 
             // 🎯 Chương trình khuyến mãi
             { path: 'promotions', element: <PromotionManagement /> }, // Danh sách

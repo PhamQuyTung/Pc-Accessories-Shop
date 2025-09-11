@@ -133,6 +133,12 @@ const AdminSidebar = () => {
                             <NavLink to="/admin/posts/create" className={({ isActive }) => cx('link', { active: isActive })}>
                                 Viết bài mới
                             </NavLink>
+                            <NavLink to="/admin/posts/drafts" className={({ isActive }) => cx('link', { active: isActive })}>
+                                Bản nháp
+                            </NavLink>
+                            <NavLink to="/admin/posts/trash" className={({ isActive }) => cx('link', { active: isActive })}>
+                                Thùng rác
+                            </NavLink>
                             <NavLink to="/admin/post-categories" className={({ isActive }) => cx('link', { active: isActive })}>
                                 Chuyên mục
                             </NavLink>

@@ -3,10 +3,10 @@ const Post = require("../../app/models/post");
 // Lấy tất cả bài viết
 exports.getPosts = async (req, res) => {
   try {
-    const posts = await Post.find()
+    const posts = await Post.find({ status: "published" }) // 👈 chỉ lấy published
       .populate("author", "name firstName lastName avatar")
-      .populate("category", "name slug") // 👈 lấy name, slug
-      .populate("tags", "name slug") // 👈 lấy name, slug
+      .populate("category", "name slug")
+      .populate("tags", "name slug")
       .sort({ createdAt: -1 });
 
     res.json(posts);
@@ -75,6 +75,73 @@ exports.deletePost = async (req, res) => {
       return res.status(404).json({ error: "Không tìm thấy bài viết" });
     }
     res.json({ message: "Đã xóa bài viết" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Lấy bài viết nổi bật
+exports.getFeaturedPosts = async (req, res) => {
+  try {
+    const posts = await Post.find({ status: "published", isFeatured: true })
+      .populate("author", "name firstName lastName avatar")
+      .populate("category", "name slug")
+      .populate("tags", "name slug")
+      .sort({ createdAt: -1 })
+      .limit(5); // giới hạn số lượng
+
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Toggle featured
+exports.toggleFeatured = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ error: "Không tìm thấy bài viết" });
+    }
+
+    // Đảo ngược trạng thái
+    post.isFeatured = !post.isFeatured;
+    await post.save();
+
+    res.json({
+      message: `Đã ${post.isFeatured ? "bật" : "tắt"} featured cho bài viết`,
+      post,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Lấy bài viết bản nháp
+exports.getDraftPosts = async (req, res) => {
+  try {
+    const posts = await Post.find({ status: "draft" })
+      .populate("author", "name firstName lastName avatar")
+      .populate("category", "name slug")
+      .populate("tags", "name slug")
+      .sort({ createdAt: -1 });
+
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Lấy bài viết trong thùng rác
+exports.getTrashPosts = async (req, res) => {
+  try {
+    const posts = await Post.find({ status: "trash" })
+      .populate("author", "name firstName lastName avatar")
+      .populate("category", "name slug")
+      .populate("tags", "name slug")
+      .sort({ createdAt: -1 });
+
+    res.json(posts);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
