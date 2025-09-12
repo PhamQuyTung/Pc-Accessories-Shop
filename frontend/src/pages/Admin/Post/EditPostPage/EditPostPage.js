@@ -134,6 +134,17 @@ const EditPostPage = () => {
                     />
                 </div>
 
+                {/* Nội dung */}
+                <div className={cx('form-group')}>
+                    <label>Nội dung</label>
+                    <textarea
+                        rows={10}
+                        value={post.content || ''}
+                        onChange={(e) => setPost({ ...post, content: e.target.value })}
+                        required
+                    />
+                </div>
+
                 {/* Danh mục */}
                 <div className={cx('form-group')}>
                     <label>Chuyên mục</label>
