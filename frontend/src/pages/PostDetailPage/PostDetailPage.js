@@ -91,7 +91,9 @@ const PostDetailPage = () => {
     const fetchRelatedPosts = async (categoryId, currentId) => {
         if (!categoryId) return;
         try {
-            const res = await axiosClient.get(`/posts?category=${categoryId}`);
+            const res = await axiosClient.get(`/posts?categoryId=${categoryId}`);
+
+            // filter bỏ bài viết hiện tại
             const filtered = res.data.filter((p) => p._id !== currentId);
             setRelatedPosts(filtered.slice(0, 4));
         } catch (err) {

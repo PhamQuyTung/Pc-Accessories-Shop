@@ -1,9 +1,20 @@
 const Post = require("../../app/models/post");
 
-// Lấy tất cả bài viết
+// Lấy tất cả bài viết (có hỗ trợ filter category)
 exports.getPosts = async (req, res) => {
   try {
-    const posts = await Post.find({ status: "published" }) // 👈 chỉ lấy published
+    const filter = { status: "published" };
+
+    // Nếu có query categoryId thì filter theo category
+    if (req.query.categoryId) {
+      filter.category = req.query.categoryId;
+    }
+
+    // Nếu có query slug thì filter theo slug (join sang Category)
+    // cái này cần populate và filter bằng mongoose populate match
+    // hoặc làm thêm route riêng getPostsByCategorySlug
+
+    const posts = await Post.find(filter)
       .populate("author", "name firstName lastName avatar")
       .populate("category", "name slug")
       .populate("tags", "name slug")
