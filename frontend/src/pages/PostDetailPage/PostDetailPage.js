@@ -8,6 +8,7 @@ import { faFacebook, faInstagram, faLinkedin, faTwitter } from '@fortawesome/fre
 import { faCalendar, faComment, faFolder, faThumbsDown, faThumbsUp, faUser } from '@fortawesome/free-regular-svg-icons';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import LoadingSpinner from '~/components/SpinnerLoading/SpinnerLoading';
+import ExpandableContent from '~/components/ExpandableContent/ExpandableContent';
 
 const cx = classNames.bind(styles);
 
@@ -67,7 +68,7 @@ const PostDetailPage = () => {
     useEffect(() => {
         const fetchPost = async () => {
             setLoading(true); // ✅ bật loading khi fetch
-            
+
             try {
                 const res = await axiosClient.get(`/posts/${id}`);
                 setPost(res.data);
@@ -141,7 +142,6 @@ const PostDetailPage = () => {
                     <Link to="/blog" className={cx('back')}>
                         ← Quay lại
                     </Link>
-
                     <div className={cx('post-info')}>
                         {/* Title */}
                         <h1 className={cx('title')}>{post.title}</h1>
@@ -182,8 +182,8 @@ const PostDetailPage = () => {
                     )}
 
                     {/* Nội dung bài viết */}
-                    <div className={cx('content')}>{post.content}</div>
-
+                    <div className={cx('post-body')} dangerouslySetInnerHTML={{ __html: post.content }} />
+                    
                     {/* Tags & share post */}
                     <div className={cx('th-section')}>
                         {/* Tags Section */}
@@ -233,7 +233,6 @@ const PostDetailPage = () => {
                             </div>
                         </div>
                     </div>
-
                     {/* 💬 Comment Section */}
                     <div className={cx('comments')}>
                         <h2>Bình luận ({comments.length})</h2>
@@ -316,7 +315,6 @@ const PostDetailPage = () => {
                             <button onClick={handleAddComment}>Đăng bình luận</button>
                         </div>
                     </div>
-
                     {/* 🔥 Bài viết liên quan */}
                     {relatedPosts.length > 0 && (
                         <div className={cx('related-posts')}>

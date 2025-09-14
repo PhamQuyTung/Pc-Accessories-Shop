@@ -55,6 +55,7 @@ import PostTagPage from '~/pages/Admin/Post/PostTagPage/PostTagPage';
 import PostDetailPage from '~/pages/PostDetailPage/PostDetailPage';
 import DraftPostsPage from '~/pages/Admin/Post/DraftPostsPage/DraftPostsPage';
 import TrashPostsPage from '~/pages/Admin/Post/TrashPostsPage/TrashPostsPage';
+import PostPreviewPage from '~/pages/Admin/Post/PostPreviewPage/PostPreviewPage';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -134,6 +135,7 @@ const routes = [
             { path: 'post-tags', element: <PostTagPage /> },
             { path: 'posts/drafts', element: <DraftPostsPage /> },
             { path: 'posts/trash', element: <TrashPostsPage /> },
+            { path: 'posts/preview/:id', element: <PostPreviewPage /> },
 
             // 🎯 Chương trình khuyến mãi
             { path: 'promotions', element: <PromotionManagement /> }, // Danh sách

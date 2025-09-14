@@ -62,18 +62,26 @@ const DraftPostsPage = () => {
                         {drafts.map((post) => (
                             <tr key={post._id}>
                                 <td>
-                                    <Link to={`/blog/${post._id}`}>{post.title}</Link>
+                                    {post.title}
                                 </td>
                                 <td>{post.author?.name}</td>
                                 <td>{post.category?.name}</td>
                                 <td>{new Date(post.createdAt).toLocaleDateString('vi-VN')}</td>
                                 <td>
-                                    <Link to={`/admin/posts/edit/${post._id}`} className={cx('btn-edit')}>
-                                        Sửa
-                                    </Link>
-                                    <button className={cx('btn-delete')} onClick={() => handleMoveToTrash(post._id)}>
-                                        Xóa
-                                    </button>
+                                    <td>
+                                        <Link to={`/admin/posts/preview/${post._id}`} className={cx('btn-preview')}>
+                                            Xem trước
+                                        </Link>
+                                        <Link to={`/admin/posts/edit/${post._id}`} className={cx('btn-edit')}>
+                                            Sửa
+                                        </Link>
+                                        <button
+                                            className={cx('btn-delete')}
+                                            onClick={() => handleMoveToTrash(post._id)}
+                                        >
+                                            Xóa
+                                        </button>
+                                    </td>
                                 </td>
                             </tr>
                         ))}

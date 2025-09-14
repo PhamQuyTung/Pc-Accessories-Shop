@@ -5,6 +5,46 @@ import { useNavigate } from 'react-router-dom';
 import axiosClient from '~/utils/axiosClient';
 import { successAlert, errorAlert } from '~/utils/alertSweet';
 import { useToast } from '~/components/ToastMessager/ToastMessager';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+import Quill from 'quill';
+import ImageResize from 'quill-image-resize-module-react';
+
+// Đăng ký module resize ảnh
+Quill.register('modules/imageResize', ImageResize);
+
+const modules = {
+    toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ['blockquote', 'code-block'],
+        ['link', 'image'],
+        [{ align: [] }, { color: [] }, { background: [] }],
+        ['clean'],
+    ],
+    imageResize: {
+        parchment: Quill.import('parchment'),
+        modules: ['Resize', 'DisplaySize', 'Toolbar'],
+    },
+};
+
+const formats = [
+    'header',
+    'bold',
+    'italic',
+    'underline',
+    'strike',
+    'list',
+    'bullet',
+    'blockquote',
+    'code-block',
+    'link',
+    'image',
+    'align',
+    'color',
+    'background',
+];
 
 const cx = classNames.bind(styles);
 
@@ -115,9 +155,16 @@ const CreatePostPage = () => {
                 </div>
 
                 {/* Nội dung */}
-                <div className={cx('form-group')}>
+                <div className="form-group">
                     <label>Nội dung</label>
-                    <textarea rows={10} value={content} onChange={(e) => setContent(e.target.value)} required />
+                    <ReactQuill
+                        value={content}
+                        onChange={setContent}
+                        modules={modules}
+                        formats={formats}
+                        theme="snow"
+                        style={{ height: '400px', marginBottom: '50px' }}
+                    />
                 </div>
 
                 {/* Danh mục */}
