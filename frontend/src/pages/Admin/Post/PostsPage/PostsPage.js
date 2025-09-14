@@ -32,10 +32,7 @@ const PostsPage = () => {
 
     // Xóa (chuyển vào thùng rác)
     const handleDelete = async (id) => {
-        const result = await confirmAlert(
-            'Chuyển vào thùng rác?',
-            'Bài viết sẽ được đưa vào thùng rác',
-        );
+        const result = await confirmAlert('Chuyển vào thùng rác?', 'Bài viết sẽ được đưa vào thùng rác');
         if (!result.isConfirmed) return;
 
         try {
@@ -99,7 +96,9 @@ const PostsPage = () => {
                                 </td>
 
                                 <td>
-                                    <strong>{post.title}</strong>
+                                    <Link to={`/blog/${post._id}`} className={cx('title-link')}>
+                                        <h4>{post.title}</h4>
+                                    </Link>
                                     <div className={cx('row-actions')}>
                                         <Link to={`/admin/posts/edit/${post._id}`}>
                                             <Edit size={14} /> Sửa

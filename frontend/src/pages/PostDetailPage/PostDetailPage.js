@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFacebook, faInstagram, faLinkedin, faTwitter } from '@fortawesome/free-brands-svg-icons';
 import { faCalendar, faComment, faFolder, faThumbsDown, faThumbsUp, faUser } from '@fortawesome/free-regular-svg-icons';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import LoadingSpinner from '~/components/SpinnerLoading/SpinnerLoading';
 
 const cx = classNames.bind(styles);
 
@@ -22,6 +23,8 @@ const PostDetailPage = () => {
     const [categories, setCategories] = useState([]);
     const [tags, setTags] = useState([]);
     const [featuredPosts, setFeaturedPosts] = useState([]);
+
+    const [loading, setLoading] = useState(true); // ✅ thêm state loading
 
     // Lấy categories, tags, featured posts cho sidebar
     useEffect(() => {
@@ -63,6 +66,8 @@ const PostDetailPage = () => {
     // Lấy chi tiết bài viết
     useEffect(() => {
         const fetchPost = async () => {
+            setLoading(true); // ✅ bật loading khi fetch
+            
             try {
                 const res = await axiosClient.get(`/posts/${id}`);
                 setPost(res.data);
@@ -74,6 +79,9 @@ const PostDetailPage = () => {
                 fetchComments();
             } catch (err) {
                 console.error('❌ Lỗi tải bài viết:', err);
+            } finally {
+                // ✅ mô phỏng delay 500ms để thấy spinner
+                setTimeout(() => setLoading(false), 500);
             }
         };
         fetchPost();
@@ -114,6 +122,11 @@ const PostDetailPage = () => {
             alert('Bạn cần đăng nhập để bình luận!');
         }
     };
+
+    // ✅ Nếu đang loading → show spinner
+    if (loading) {
+        return <LoadingSpinner />;
+    }
 
     // Nếu chưa tải xong post
     if (!post) return <p>Đang tải bài viết...</p>;

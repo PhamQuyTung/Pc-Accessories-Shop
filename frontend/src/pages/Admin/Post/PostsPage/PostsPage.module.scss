@@ -84,6 +84,7 @@
         }
     }
 }
+
 .btn-featured {
     display: inline-flex;
     align-items: center;
@@ -103,5 +104,24 @@
 
     svg {
         color: inherit;
+    }
+}
+
+.title-link {
+    text-decoration: none;
+    display: block;
+
+    &:hover {
+        text-decoration: none;
+    }
+
+    h4 {
+        font-size: 1.6rem;
+        color: #333;
+        transition: all 0.3s ease;
+
+        &:hover {
+            color: #b54242;
+        }
     }
 }
