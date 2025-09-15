@@ -1,4 +1,3 @@
-// PostPreviewPage.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axiosClient from '~/utils/axiosClient';
@@ -58,6 +57,7 @@ const PostPreviewPage = () => {
                     </div>
                 )}
 
+                {/* Nội dung với blot */}
                 <div className={cx('post-body')} dangerouslySetInnerHTML={{ __html: post.content }} />
             </article>
         </div>

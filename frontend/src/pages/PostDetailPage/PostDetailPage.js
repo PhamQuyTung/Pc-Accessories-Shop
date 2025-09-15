@@ -8,7 +8,6 @@ import { faFacebook, faInstagram, faLinkedin, faTwitter } from '@fortawesome/fre
 import { faCalendar, faComment, faFolder, faThumbsDown, faThumbsUp, faUser } from '@fortawesome/free-regular-svg-icons';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import LoadingSpinner from '~/components/SpinnerLoading/SpinnerLoading';
-import ExpandableContent from '~/components/ExpandableContent/ExpandableContent';
 
 const cx = classNames.bind(styles);
 
@@ -26,6 +25,8 @@ const PostDetailPage = () => {
     const [featuredPosts, setFeaturedPosts] = useState([]);
 
     const [loading, setLoading] = useState(true); // ✅ thêm state loading
+
+    const [relatedProducts, setRelatedProducts] = useState([]);
 
     // Lấy categories, tags, featured posts cho sidebar
     useEffect(() => {
@@ -75,6 +76,12 @@ const PostDetailPage = () => {
 
                 // Gọi API để lấy bài viết liên quan (theo category._id)
                 fetchRelatedPosts(res.data.category?._id, res.data._id);
+
+                // 👇 gọi thêm API để lấy products theo category
+                if (res.data.category?._id) {
+                    const prodRes = await axiosClient.get(`/products?categoryId=${res.data.category._id}`);
+                    setRelatedProducts(prodRes.data.slice(0, 6));
+                }
 
                 // Lấy comment
                 fetchComments();
@@ -183,7 +190,7 @@ const PostDetailPage = () => {
 
                     {/* Nội dung bài viết */}
                     <div className={cx('post-body')} dangerouslySetInnerHTML={{ __html: post.content }} />
-                    
+
                     {/* Tags & share post */}
                     <div className={cx('th-section')}>
                         {/* Tags Section */}

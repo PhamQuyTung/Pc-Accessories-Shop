@@ -2,31 +2,51 @@ import React, { useState, useEffect } from 'react';
 import styles from './CreatePostPage.module.scss';
 import classNames from 'classnames/bind';
 import { useNavigate } from 'react-router-dom';
-import axiosClient from '~/utils/axiosClient';
-import { successAlert, errorAlert } from '~/utils/alertSweet';
-import { useToast } from '~/components/ToastMessager/ToastMessager';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import Quill from 'quill';
 import ImageResize from 'quill-image-resize-module-react';
 
+import axiosClient from '~/utils/axiosClient';
+import { successAlert, errorAlert } from '~/utils/alertSweet';
+import { useToast } from '~/components/ToastMessager/ToastMessager';
+import QuoteBlot from '~/components/QuillBlots/QuoteBlot';
+import ProductBlot from '~/components/QuillBlots/ProductBlot';
+
 // Đăng ký module resize ảnh
 Quill.register('modules/imageResize', ImageResize);
+Quill.register(QuoteBlot);
+Quill.register(ProductBlot);
 
 const modules = {
-    toolbar: [
-        [{ header: [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        ['blockquote', 'code-block'],
-        ['link', 'image'],
-        [{ align: [] }, { color: [] }, { background: [] }],
-        ['clean'],
-    ],
-    imageResize: {
-        parchment: Quill.import('parchment'),
-        modules: ['Resize', 'DisplaySize', 'Toolbar'],
+    toolbar: {
+        container: [
+            [{ header: [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            ['blockquote', 'code-block'],
+            ['link', 'image'],
+            [{ align: [] }, { color: [] }, { background: [] }],
+            ['clean'],
+            ['insertQuote', 'insertProduct'], // nút custom blot
+        ],
+        handlers: {
+            insertQuote: function () {
+                const text = prompt('Nhập nội dung quote');
+                const cite = prompt('Nhập tác giả');
+                const range = this.quill.getSelection();
+                if (range) this.quill.insertEmbed(range.index, 'quote', { text, cite }, Quill.sources.USER);
+            },
+            insertProduct: function () {
+                const name = prompt('Tên sản phẩm');
+                const image = prompt('URL ảnh');
+                const price = prompt('Giá sản phẩm');
+                const range = this.quill.getSelection();
+                if (range) this.quill.insertEmbed(range.index, 'product', { name, image, price }, Quill.sources.USER);
+            },
+        },
     },
+    imageResize: { parchment: Quill.import('parchment') },
 };
 
 const formats = [
@@ -161,7 +181,24 @@ const CreatePostPage = () => {
                         value={content}
                         onChange={setContent}
                         modules={modules}
-                        formats={formats}
+                        formats={[
+                            'header',
+                            'bold',
+                            'italic',
+                            'underline',
+                            'strike',
+                            'list',
+                            'bullet',
+                            'blockquote',
+                            'code-block',
+                            'link',
+                            'image',
+                            'align',
+                            'color',
+                            'background',
+                            'quote',
+                            'product', // thêm blot custom vào formats
+                        ]}
                         theme="snow"
                         style={{ height: '400px', marginBottom: '50px' }}
                     />

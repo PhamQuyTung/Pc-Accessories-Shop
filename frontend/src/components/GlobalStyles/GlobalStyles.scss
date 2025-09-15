@@ -26,8 +26,28 @@ html {
 }
 
 body {
-    font-family: "Inter", sans-serif !important;
+    font-family: 'Inter', sans-serif !important;
     font-size: 1.6rem;
     line-height: 1.5;
     text-rendering: optimizespeed;
+}
+
+:global(.custom-quote) {
+    padding: 20px;
+    background: #fdefe2;
+    border-left: 4px solid #f1913d;
+    border-radius: 10px;
+    margin: 16px 0;
+}
+
+:global(.custom-quote .quote-text) {
+    font-style: italic;
+    color: #d35400;
+}
+
+:global(.custom-quote .quote-author) {
+    text-align: right;
+    font-weight: bold;
+    color: #e67e22;
+    margin-top: 8px;
 }

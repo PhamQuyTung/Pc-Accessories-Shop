@@ -2,9 +2,60 @@ import React, { useState, useEffect } from 'react';
 import styles from './EditPostPage.module.scss';
 import classNames from 'classnames/bind';
 import { useParams, useNavigate } from 'react-router-dom';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+import Quill from 'quill';
+import ImageResize from 'quill-image-resize-module-react';
+
 import axiosClient from '~/utils/axiosClient';
 import { confirmAlert } from '~/utils/alertSweet';
 import { useToast } from '~/components/ToastMessager/ToastMessager';
+import QuoteBlot from '~/components/QuillBlots/QuoteBlot';
+import ProductBlot from '~/components/QuillBlots/ProductBlot';
+
+// ✅ đăng ký module resize
+Quill.register('modules/imageResize', ImageResize);
+Quill.register(QuoteBlot);
+Quill.register(ProductBlot);
+
+const quillModules = {
+    toolbar: {
+        container: [
+            [{ header: [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            ['blockquote', 'code-block'], // blockquote gốc vẫn dùng được
+            ['link', 'image'],
+            ['clean'],
+            ['insertQuote', 'insertProduct'], // 👈 nút custom
+        ],
+        handlers: {
+            insertQuote: function () {
+                const text = prompt('Nhập nội dung quote');
+                const cite = prompt('Nhập tác giả');
+                const range = this.quill.getSelection();
+                if (range) {
+                    this.quill.insertEmbed(
+                        range.index,
+                        'quote', // 👈 dùng custom blot
+                        { text, cite },
+                        Quill.sources.USER,
+                    );
+                }
+            },
+            insertProduct: function () {
+                const name = prompt('Tên sản phẩm');
+                const image = prompt('URL ảnh');
+                const price = prompt('Giá sản phẩm');
+                const range = this.quill.getSelection();
+                if (range) {
+                    this.quill.insertEmbed(range.index, 'product', { name, image, price }, Quill.sources.USER);
+                }
+            },
+        },
+    },
+    imageResize: { parchment: Quill.import('parchment') },
+};
 
 const cx = classNames.bind(styles);
 
@@ -134,14 +185,30 @@ const EditPostPage = () => {
                     />
                 </div>
 
-                {/* Nội dung */}
+                {/* Nội dung dùng ReactQuill */}
                 <div className={cx('form-group')}>
                     <label>Nội dung</label>
-                    <textarea
-                        rows={10}
+                    <ReactQuill
+                        theme="snow"
                         value={post.content || ''}
-                        onChange={(e) => setPost({ ...post, content: e.target.value })}
-                        required
+                        onChange={(value) => setPost({ ...post, content: value })}
+                        modules={quillModules}
+                        formats={[
+                            'header',
+                            'bold',
+                            'italic',
+                            'underline',
+                            'strike',
+                            'list',
+                            'bullet',
+                            'blockquote',
+                            'code-block',
+                            'link',
+                            'image',
+                            'quote',
+                            'product',
+                        ]}
+                        style={{ minHeight: '300px' }}
                     />
                 </div>
 

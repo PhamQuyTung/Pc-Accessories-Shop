@@ -104,3 +104,12 @@
         }
     }
 }
+
+:global(.ql-editor blockquote) {
+    padding: 27px 25px 26px;
+    background-color: #fdefe2;
+    border-left: 4px solid #f1913d !important;
+    border-radius: 10px;
+    margin-bottom: 20px !important;
+    color: #f1913d;
+}

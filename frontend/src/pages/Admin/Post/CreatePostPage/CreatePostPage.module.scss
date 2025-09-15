@@ -104,3 +104,37 @@
         }
     }
 }
+
+// custom-quote
+.custom-quote {
+    border-left: 4px solid #3498db;
+    padding-left: 16px;
+    margin: 20px 0;
+    font-style: italic;
+    background: #f0f8ff;
+    cite {
+        display: block;
+        margin-top: 8px;
+        font-weight: bold;
+        color: #555;
+    }
+}
+
+.product-card {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px 0;
+    text-align: center;
+    img {
+        max-width: 100%;
+        border-radius: 4px;
+    }
+    h4 {
+        margin: 8px 0 4px;
+    }
+    p {
+        color: #e74c3c;
+        font-weight: bold;
+    }
+}

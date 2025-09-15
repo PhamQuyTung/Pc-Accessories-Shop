@@ -1,6 +1,6 @@
 .post-detail {
     padding: 40px 0;
-    background: #f8f9fa;
+    background: #fff;
 
     .container {
         max-width: 1500px;
@@ -562,4 +562,55 @@
             }
         }
     }
+}
+
+.post-body {
+    font-size: 1.6rem;
+
+    blockquote {
+        padding: 27px 25px 26px;
+        background-color: #fdefe2;
+        border-left: 4px solid #f1913d !important;
+        border-radius: 10px;
+        margin-bottom: 20px !important;
+        color: #f1913d;
+    }
+}
+
+// QuoteBlot
+.ql-quote {
+    // border-left: 4px solid #ccc;
+    padding-left: 16px;
+    margin: 16px 0;
+    font-style: italic;
+    background: #f9f9f9;
+}
+.ql-quote .cite {
+    display: block;
+    text-align: right;
+    font-size: 0.9em;
+    color: #666;
+}
+
+// ProductBlot
+.ql-product {
+    display: flex;
+    border: 1px solid #eee;
+    padding: 10px;
+    margin: 10px 0;
+    align-items: center;
+}
+.ql-product img {
+    max-width: 100px;
+    margin-right: 10px;
+}
+.ql-product .info {
+    display: flex;
+    flex-direction: column;
+}
+.ql-product .info .name {
+    font-weight: bold;
+}
+.ql-product .info .price {
+    color: #e91e63;
 }
