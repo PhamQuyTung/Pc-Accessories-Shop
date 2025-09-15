@@ -47,9 +47,10 @@ const quillModules = {
                 const name = prompt('Tên sản phẩm');
                 const image = prompt('URL ảnh');
                 const price = prompt('Giá sản phẩm');
+                const link = prompt('Link sản phẩm (tùy chọn)');
                 const range = this.quill.getSelection();
                 if (range) {
-                    this.quill.insertEmbed(range.index, 'product', { name, image, price }, Quill.sources.USER);
+                    this.quill.insertEmbed(range.index, 'product', { name, image, price, link }, Quill.sources.USER);
                 }
             },
         },

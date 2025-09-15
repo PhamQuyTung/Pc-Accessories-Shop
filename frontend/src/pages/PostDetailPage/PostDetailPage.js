@@ -8,6 +8,7 @@ import { faFacebook, faInstagram, faLinkedin, faTwitter } from '@fortawesome/fre
 import { faCalendar, faComment, faFolder, faThumbsDown, faThumbsUp, faUser } from '@fortawesome/free-regular-svg-icons';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import LoadingSpinner from '~/components/SpinnerLoading/SpinnerLoading';
+import ProductInline from '~/components/ProductInline/ProductInline';
 
 const cx = classNames.bind(styles);
 
@@ -133,6 +134,26 @@ const PostDetailPage = () => {
         }
     };
 
+    const renderContent = () => {
+        const regex = /\[product id="(.*?)"\]/g;
+        const parts = post.content.split(regex);
+
+        let rendered = [];
+        for (let i = 0; i < parts.length; i++) {
+            if (i % 2 === 0) {
+                // text HTML
+                rendered.push(<div key={`html-${i}`} dangerouslySetInnerHTML={{ __html: parts[i] }} />);
+            } else {
+                // productId
+                const productId = parts[i];
+                const product = post.embeddedProducts?.find((p) => p._id === productId);
+                rendered.push(<ProductInline key={`prod-${productId}`} product={product} />);
+            }
+        }
+
+        return rendered;
+    };
+
     // ✅ Nếu đang loading → show spinner
     if (loading) {
         return <LoadingSpinner />;
@@ -189,7 +210,7 @@ const PostDetailPage = () => {
                     )}
 
                     {/* Nội dung bài viết */}
-                    <div className={cx('post-body')} dangerouslySetInnerHTML={{ __html: post.content }} />
+                    <div className={cx('post-body')}>{renderContent()}</div>
 
                     {/* Tags & share post */}
                     <div className={cx('th-section')}>

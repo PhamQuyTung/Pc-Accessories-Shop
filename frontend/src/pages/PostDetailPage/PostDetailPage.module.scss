@@ -614,3 +614,58 @@
 .ql-product .info .price {
     color: #e91e63;
 }
+
+// Product Blot
+.product-block {
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 20px 0;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    max-width: 500px;
+
+    &__inner {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    &__image img {
+        width: 120px;
+        height: auto;
+        border-radius: 6px;
+        object-fit: cover;
+    }
+
+    &__info {
+        flex: 1;
+    }
+
+    &__title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    &__price {
+        color: #d32f2f;
+        font-weight: bold;
+        margin-bottom: 12px;
+    }
+
+    &__btn {
+        display: inline-block;
+        padding: 6px 12px;
+        background: #1976d2;
+        color: #fff;
+        font-size: 14px;
+        border-radius: 4px;
+        text-decoration: none;
+        transition: 0.2s;
+
+        &:hover {
+            background: #125aa0;
+        }
+    }
+}

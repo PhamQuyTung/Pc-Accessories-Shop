@@ -18,31 +18,40 @@ Quill.register('modules/imageResize', ImageResize);
 Quill.register(QuoteBlot);
 Quill.register(ProductBlot);
 
-const modules = {
+const quillModules = {
     toolbar: {
         container: [
             [{ header: [1, 2, 3, false] }],
             ['bold', 'italic', 'underline', 'strike'],
             [{ list: 'ordered' }, { list: 'bullet' }],
-            ['blockquote', 'code-block'],
+            ['blockquote', 'code-block'], // blockquote gốc vẫn dùng được
             ['link', 'image'],
-            [{ align: [] }, { color: [] }, { background: [] }],
             ['clean'],
-            ['insertQuote', 'insertProduct'], // nút custom blot
+            ['insertQuote', 'insertProduct'], // 👈 nút custom
         ],
         handlers: {
             insertQuote: function () {
                 const text = prompt('Nhập nội dung quote');
                 const cite = prompt('Nhập tác giả');
                 const range = this.quill.getSelection();
-                if (range) this.quill.insertEmbed(range.index, 'quote', { text, cite }, Quill.sources.USER);
+                if (range) {
+                    this.quill.insertEmbed(
+                        range.index,
+                        'quote', // 👈 dùng custom blot
+                        { text, cite },
+                        Quill.sources.USER,
+                    );
+                }
             },
             insertProduct: function () {
                 const name = prompt('Tên sản phẩm');
                 const image = prompt('URL ảnh');
                 const price = prompt('Giá sản phẩm');
+                const link = prompt('Link sản phẩm (tùy chọn)');
                 const range = this.quill.getSelection();
-                if (range) this.quill.insertEmbed(range.index, 'product', { name, image, price }, Quill.sources.USER);
+                if (range) {
+                    this.quill.insertEmbed(range.index, 'product', { name, image, price, link }, Quill.sources.USER);
+                }
             },
         },
     },
@@ -180,7 +189,7 @@ const CreatePostPage = () => {
                     <ReactQuill
                         value={content}
                         onChange={setContent}
-                        modules={modules}
+                        modules={quillModules}
                         formats={[
                             'header',
                             'bold',

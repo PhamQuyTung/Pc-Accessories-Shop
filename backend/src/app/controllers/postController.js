@@ -38,7 +38,25 @@ exports.getPostById = async (req, res) => {
       return res.status(404).json({ error: "Không tìm thấy bài viết" });
     }
 
-    res.json(post);
+    // Regex tìm shortcode [product id="..."]
+    const regex = /\[product id="(.*?)"\]/g;
+    const productIds = [];
+    let match;
+    while ((match = regex.exec(post.content)) !== null) {
+      productIds.push(match[1]);
+    }
+
+    // Nếu có productIds thì query thêm
+    let products = [];
+    if (productIds.length > 0) {
+      const Product = require("../../app/models/product");
+      products = await Product.find({ _id: { $in: productIds } });
+    }
+
+    res.json({
+      ...post.toObject(),
+      embeddedProducts: products,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
