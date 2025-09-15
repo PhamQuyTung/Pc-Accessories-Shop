@@ -4,6 +4,7 @@ import styles from './BlogPage.module.scss';
 import classNames from 'classnames/bind';
 import axiosClient from '~/utils/axiosClient';
 import { Link } from 'react-router-dom';
+import getExcerpt from '~/utils/getExcerpt';
 
 const cx = classNames.bind(styles);
 
@@ -36,9 +37,9 @@ const BlogPage = () => {
                             <Link to={`/blog/${post._id}`}>
                                 <h2 className={cx('post-title')}>{post.title}</h2>
                             </Link>
-                            <p className={cx('excerpt')}>
-                                {post.content.length > 100 ? post.content.slice(0, 100) + '...' : post.content}
-                            </p>
+
+                            <p className={cx('excerpt')}>{getExcerpt(post.content, 100)}</p>
+
                             <Link to={`/blog/${post._id}`} className={cx('read-more')}>
                                 Xem chi tiết →
                             </Link>
