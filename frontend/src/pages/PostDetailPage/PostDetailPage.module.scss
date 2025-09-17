@@ -25,18 +25,6 @@
         margin-bottom: 30px;
     }
 
-    .back {
-        display: inline-block;
-        margin-bottom: 12px;
-        color: #e11b1e;
-        font-size: 14px;
-        text-decoration: none;
-
-        &:hover {
-            text-decoration: underline;
-        }
-    }
-
     .title {
         font-size: 28px;
         font-weight: 700;
@@ -243,6 +231,7 @@
             border-radius: 8px;
             resize: vertical;
             font-size: 14px;
+            outline: none;
         }
 
         button {

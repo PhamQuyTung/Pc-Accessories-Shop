@@ -48,3 +48,15 @@ exports.deleteCategory = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Lấy danh mục theo slug
+exports.getCategoryBySlug = async (req, res) => {
+  try {
+    const category = await PostCategory.findOne({ slug: req.params.slug });
+    if (!category)
+      return res.status(404).json({ message: "Category not found" });
+    res.json(category);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

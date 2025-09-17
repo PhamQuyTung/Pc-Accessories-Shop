@@ -96,9 +96,10 @@ const PostsPage = () => {
                                 </td>
 
                                 <td>
-                                    <Link to={`/blog/${post._id}`} className={cx('title-link')}>
+                                    <Link to={`/blog/category/${posts[0].category.slug}/${posts[0].slug}`}>
                                         <h4>{post.title}</h4>
                                     </Link>
+                                    
                                     <div className={cx('row-actions')}>
                                         <Link to={`/admin/posts/edit/${post._id}`}>
                                             <Edit size={14} /> Sửa

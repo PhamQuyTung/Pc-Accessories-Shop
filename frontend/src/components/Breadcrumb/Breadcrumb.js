@@ -43,6 +43,51 @@ const Breadcrumb = ({ categorySlug, slug: propSlug, type }) => {
                     }));
 
                     setBreadcrumbData(fixedData);
+                } else if (type === 'blog-category') {
+                    // 👉 Breadcrumb cho Blog Category
+                    try {
+                        const res = await axiosClient.get(`/post-categories/slug/${routeSlug}`);
+                        const category = res.data;
+
+                        setBreadcrumbData([
+                            { path: '/', label: 'Trang chủ' },
+                            { path: '/blog', label: 'Blog' },
+                            { path: `/blog/category/${category.slug}`, label: category.name },
+                        ]);
+                    } catch (err) {
+                        console.error('Lỗi khi lấy breadcrumb blog-category:', err);
+                        // fallback
+                        setBreadcrumbData([
+                            { path: '/', label: 'Trang chủ' },
+                            { path: '/blog', label: 'Blog' },
+                            { path: `/blog/category/${routeSlug}`, label: routeSlug.replace(/-/g, ' ') },
+                        ]);
+                    }
+                } else if (type === 'blog-tag') {
+                    // 👉 Breadcrumb cho Blog Tag
+                    setBreadcrumbData([
+                        { path: '/', label: 'Trang chủ' },
+                        { path: '/blog', label: 'Blog' },
+                        { path: `/blog/tag/${routeSlug}`, label: routeSlug.replace(/-/g, ' ') },
+                    ]);
+                } else if (type === 'blog-detail') {
+                    // 👉 Breadcrumb cho trang chi tiết bài viết
+                    try {
+                        const res = await axiosClient.get(`/posts/${categorySlug}/${propSlug || routeSlug}`);
+                        const post = res.data;
+
+                        setBreadcrumbData([
+                            { path: '/', label: 'Trang chủ' },
+                            { path: '/blog', label: 'Blog' },
+                            {
+                                path: `/blog/category/${post.category?.slug}`,
+                                label: post.category?.name || 'Chưa phân loại',
+                            },
+                            { path: location.pathname, label: post.title },
+                        ]);
+                    } catch (err) {
+                        console.error('Lỗi khi lấy breadcrumb blog-detail:', err);
+                    }
                 }
             } catch (err) {
                 console.error('Lỗi khi lấy breadcrumb:', err);

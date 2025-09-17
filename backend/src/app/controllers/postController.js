@@ -1,4 +1,5 @@
 const Post = require("../../app/models/post");
+const slugify = require("slugify");
 
 // Lấy tất cả bài viết (có hỗ trợ filter category)
 exports.getPosts = async (req, res) => {
@@ -171,6 +172,62 @@ exports.getTrashPosts = async (req, res) => {
       .sort({ createdAt: -1 });
 
     res.json(posts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Lấy tất cả bài viết theo category.slug
+exports.getPostsByCategorySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const posts = await Post.find({ status: "published" })
+      .populate({
+        path: "category",
+        match: { slug }, // lọc category theo slug
+        select: "name slug",
+      })
+      .populate("author", "name firstName lastName avatar")
+      .populate("tags", "name slug")
+      .sort({ createdAt: -1 });
+
+    // Loại bỏ bài viết không có category match
+    const filtered = posts.filter((post) => post.category);
+
+    // Nếu trong DB chưa có slug, generate tạm thời (fallback)
+    const withSlug = filtered.map((post) => {
+      if (!post.slug) {
+        post.slug = slugify(post.title, { lower: true, strict: true });
+      }
+      return post;
+    });
+
+    res.json(withSlug);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ✅ Lấy chi tiết bài viết theo categorySlug + postSlug
+exports.getPostBySlug = async (req, res) => {
+  try {
+    const { categorySlug, postSlug } = req.params;
+
+    const post = await Post.findOne({ slug: postSlug, status: "published" })
+      .populate({
+        path: "category",
+        match: { slug: categorySlug }, // đảm bảo đúng category
+        select: "name slug",
+      })
+      .populate("author", "name firstName lastName avatar")
+      .populate("tags", "name slug");
+
+    if (!post || !post.category) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    res.json(post);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

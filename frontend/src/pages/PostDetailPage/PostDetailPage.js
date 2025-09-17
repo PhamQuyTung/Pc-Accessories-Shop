@@ -6,10 +6,10 @@ import classNames from 'classnames/bind';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFacebook, faInstagram, faLinkedin, faTwitter } from '@fortawesome/free-brands-svg-icons';
 import { faCalendar, faComment, faFolder, faThumbsDown, faThumbsUp, faUser } from '@fortawesome/free-regular-svg-icons';
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import LoadingSpinner from '~/components/SpinnerLoading/SpinnerLoading';
 import ProductInline from '~/components/ProductInline/ProductInline';
 import SidebarPost from '~/components/SidebarPost/SidebarPost';
+import Breadcrumb from '~/components/Breadcrumb/Breadcrumb';
 
 const cx = classNames.bind(styles);
 
@@ -21,14 +21,12 @@ const PostDetailPage = () => {
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
     const [rating, setRating] = useState(0);
-
     const [categories, setCategories] = useState([]);
     const [tags, setTags] = useState([]);
     const [featuredPosts, setFeaturedPosts] = useState([]);
-
     const [loading, setLoading] = useState(true); // ✅ thêm state loading
-
     const [relatedProducts, setRelatedProducts] = useState([]);
+    const { categorySlug, postSlug } = useParams();
 
     // Lấy categories, tags, featured posts cho sidebar
     useEffect(() => {
@@ -73,7 +71,8 @@ const PostDetailPage = () => {
             setLoading(true); // ✅ bật loading khi fetch
 
             try {
-                const res = await axiosClient.get(`/posts/${id}`);
+                // 👉 API lấy bài viết theo slug
+                const res = await axiosClient.get(`/posts/${categorySlug}/${postSlug}`);
                 setPost(res.data);
 
                 // Gọi API để lấy bài viết liên quan (theo category._id)
@@ -87,7 +86,7 @@ const PostDetailPage = () => {
                 }
 
                 // Lấy comment
-                fetchComments();
+                fetchComments(res.data._id);
             } catch (err) {
                 console.error('❌ Lỗi tải bài viết:', err);
             } finally {
@@ -113,9 +112,9 @@ const PostDetailPage = () => {
     };
 
     // Lấy comments
-    const fetchComments = async () => {
+    const fetchComments = async (postId) => {
         try {
-            const res = await axiosClient.get(`/reviews/post/${id}`);
+            const res = await axiosClient.get(`/reviews/post/${postId}`);
             setComments(res.data);
         } catch (err) {
             console.error('❌ Lỗi tải comments:', err);
@@ -126,9 +125,9 @@ const PostDetailPage = () => {
     const handleAddComment = async () => {
         if (!newComment.trim()) return;
         try {
-            await axiosClient.post(`/reviews/post/${id}`, { comment: newComment, rating });
+            await axiosClient.post(`/reviews/post/${post._id}`, { comment: newComment, rating });
             setNewComment('');
-            fetchComments();
+            fetchComments(post._id); 
             setRating(0);
         } catch (err) {
             console.error('❌ Lỗi gửi comment:', err);
@@ -169,9 +168,8 @@ const PostDetailPage = () => {
             <div className={cx('container')}>
                 {/* Post Content */}
                 <div className={cx('content-wrapper')}>
-                    <Link to="/blog" className={cx('back')}>
-                        ← Quay lại
-                    </Link>
+                    <Breadcrumb type="blog-detail" slug={post.slug} categorySlug={post.category?.slug} />
+
                     <div className={cx('post-info')}>
                         {/* Title */}
                         <h1 className={cx('title')}>{post.title}</h1>
@@ -263,6 +261,7 @@ const PostDetailPage = () => {
                             </div>
                         </div>
                     </div>
+
                     {/* 💬 Comment Section */}
                     <div className={cx('comments')}>
                         <h2>Bình luận ({comments.length})</h2>
@@ -345,13 +344,18 @@ const PostDetailPage = () => {
                             <button onClick={handleAddComment}>Đăng bình luận</button>
                         </div>
                     </div>
+
                     {/* 🔥 Bài viết liên quan */}
                     {relatedPosts.length > 0 && (
                         <div className={cx('related-posts')}>
                             <h2>Bài viết liên quan</h2>
                             <div className={cx('related-grid')}>
                                 {relatedPosts.map((rp) => (
-                                    <Link key={rp._id} to={`/blog/${rp._id}`} className={cx('related-card')}>
+                                    <Link
+                                        key={rp._id}
+                                        to={`/blog/category/${rp.category.slug}/${rp.slug}`}
+                                        className={cx('related-card')}
+                                    >
                                         <div className={cx('thumbnail')}>
                                             <img src={rp.image || '/default-thumbnail.jpg'} alt={rp.title} />
                                         </div>
