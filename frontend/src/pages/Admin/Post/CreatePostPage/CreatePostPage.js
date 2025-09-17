@@ -5,18 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import Quill from 'quill';
-import ImageResize from 'quill-image-resize-module-react';
 
 import axiosClient from '~/utils/axiosClient';
-import { successAlert, errorAlert } from '~/utils/alertSweet';
 import { useToast } from '~/components/ToastMessager/ToastMessager';
-import QuoteBlot from '~/components/QuillBlots/QuoteBlot';
-import ProductBlot from '~/components/QuillBlots/ProductBlot';
-
-// Đăng ký module resize ảnh
-Quill.register('modules/imageResize', ImageResize);
-Quill.register(QuoteBlot);
-Quill.register(ProductBlot);
 
 const quillModules = {
     toolbar: {

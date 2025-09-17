@@ -8,12 +8,8 @@ import { useToast } from '~/components/ToastMessager';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import Quill from 'quill';
-import ImageResize from 'quill-image-resize-module-react';
 
 import he from 'he'; // 👉 package decode HTML entity
-
-// Đăng ký module ImageResize
-Quill.register('modules/imageResize', ImageResize);
 
 const cx = classNames.bind(styles);
 

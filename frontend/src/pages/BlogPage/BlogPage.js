@@ -5,6 +5,7 @@ import classNames from 'classnames/bind';
 import axiosClient from '~/utils/axiosClient';
 import { Link } from 'react-router-dom';
 import getExcerpt from '~/utils/getExcerpt';
+import SidebarPost from '~/components/SidebarPost/SidebarPost';
 
 const cx = classNames.bind(styles);
 
@@ -27,25 +28,43 @@ const BlogPage = () => {
     return (
         <div className={cx('blog-page')}>
             <h1 className={cx('page-title')}>Tin tức công nghệ</h1>
-            <div className={cx('posts-grid')}>
-                {posts.map((post) => (
-                    <div key={post._id} className={cx('post-card')}>
-                        <div className={cx('thumbnail')}>
-                            <img src={post.image || '/default-thumbnail.jpg'} alt={post.title} />
-                        </div>
-                        <div className={cx('post-content')}>
-                            <Link to={`/blog/${post._id}`}>
-                                <h2 className={cx('post-title')}>{post.title}</h2>
-                            </Link>
+            <div className={cx('layout')}>
+                <div className={cx('main-content')}>
+                    {posts.length > 0 && (
+                        <>
+                            {/* Bài viết nổi bật */}
+                            <div className={cx('featured-post')}>
+                                <img src={posts[0].image} alt={posts[0].title} />
+                                <div className={cx('featured-content')}>
+                                    <Link to={`/blog/${posts[0]._id}`}>
+                                        <h2>{posts[0].title}</h2>
+                                    </Link>
+                                    <p>{getExcerpt(posts[0].content, 200)}</p>
+                                </div>
+                            </div>
 
-                            <p className={cx('excerpt')}>{getExcerpt(post.content, 100)}</p>
+                            {/* Grid các bài viết còn lại */}
+                            <div className={cx('posts-grid')}>
+                                {posts.slice(1).map((post) => (
+                                    <div key={post._id} className={cx('post-card')}>
+                                        <div className={cx('thumbnail')}>
+                                            <img src={post.image || '/default-thumbnail.jpg'} alt={post.title} />
+                                        </div>
+                                        <div className={cx('post-content')}>
+                                            <Link to={`/blog/${post._id}`}>
+                                                <h3 className={cx('post-title')}>{post.title}</h3>
+                                            </Link>
+                                            <p className={cx('excerpt')}>{getExcerpt(post.content, 120)}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
 
-                            <Link to={`/blog/${post._id}`} className={cx('read-more')}>
-                                Xem chi tiết →
-                            </Link>
-                        </div>
-                    </div>
-                ))}
+                {/* Sidebar */}
+                <SidebarPost />
             </div>
         </div>
     );

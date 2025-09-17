@@ -9,6 +9,7 @@ import { faCalendar, faComment, faFolder, faThumbsDown, faThumbsUp, faUser } fro
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import LoadingSpinner from '~/components/SpinnerLoading/SpinnerLoading';
 import ProductInline from '~/components/ProductInline/ProductInline';
+import SidebarPost from '~/components/SidebarPost/SidebarPost';
 
 const cx = classNames.bind(styles);
 
@@ -81,7 +82,8 @@ const PostDetailPage = () => {
                 // 👇 gọi thêm API để lấy products theo category
                 if (res.data.category?._id) {
                     const prodRes = await axiosClient.get(`/products?categoryId=${res.data.category._id}`);
-                    setRelatedProducts(prodRes.data.slice(0, 6));
+                    console.log('✅ prodRes.data:', prodRes.data);
+                    setRelatedProducts(prodRes.data.products.slice(0, 6));
                 }
 
                 // Lấy comment
@@ -362,57 +364,7 @@ const PostDetailPage = () => {
                 </div>
 
                 {/* Sidebar Right */}
-                <aside className={cx('sidebar')}>
-                    {/* 🔎 Search */}
-                    <div className={cx('sidebar-widget')}>
-                        <h3 className={cx('sidebar-title')}>Search Blog</h3>
-                        <div className={cx('search-box')}>
-                            <input type="text" placeholder="Search..." />
-                            <button>
-                                <FontAwesomeIcon icon={faSearch} />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* 📂 Categories */}
-                    <div className={cx('sidebar-widget')}>
-                        <h3 className={cx('sidebar-title')}>Categories</h3>
-                        <ul className={cx('categories')}>
-                            {categories.map((cat) => (
-                                <li key={cat._id}>
-                                    <Link to={`/blog/category/${cat.slug}`}>{cat.name}</Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* 🔖 Popular Tags */}
-                    <div className={cx('sidebar-widget')}>
-                        <h3 className={cx('sidebar-title')}>Popular Tags</h3>
-                        <div className={cx('tags')}>
-                            {tags.map((tag) => (
-                                <Link key={tag._id} to={`/blog/tag/${tag.slug}`} className={cx('tag')}>
-                                    {tag.name}
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* ⭐ Bài viết nổi bật */}
-                    <div className={cx('sidebar-widget')}>
-                        <h3 className={cx('sidebar-title')}>Bài viết nổi bật</h3>
-                        <ul className={cx('featured-posts')}>
-                            {featuredPosts.map((p) => (
-                                <li key={p._id}>
-                                    <Link to={`/blog/${p._id}`}>
-                                        <img src={p.image || '/default-thumbnail.jpg'} alt={p.title} />
-                                        <p>{p.title}</p>
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </aside>
+                <SidebarPost />
             </div>
         </div>
     );

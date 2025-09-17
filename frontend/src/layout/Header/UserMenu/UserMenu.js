@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import Tippy from '@tippyjs/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -10,6 +10,16 @@ import styles from './UserMenu.module.scss';
 import { EyeIcon, HandWaveIcon, ListItemIcon, OutTheDoor } from '~/components/Icons';
 
 const cx = classNames.bind(styles);
+
+// ✅ Bọc child của Tippy để ref hoạt động đúng trong React 19
+const UserBox = forwardRef(({ user }, ref) => (
+    <div ref={ref} className={cx('header__user-box')}>
+        <FontAwesomeIcon icon={faUser} className={cx('user-icon')} />
+        <div className={cx('user-text')}>
+            <span className={cx('name')}>{user.name}</span>
+        </div>
+    </div>
+));
 
 function UserMenu({ user, onLogout }) {
     const navigate = useNavigate();
@@ -89,12 +99,7 @@ function UserMenu({ user, onLogout }) {
                 placement="bottom-end"
                 offset={[0, 10]}
             >
-                <div className={cx('header__user-box')}>
-                    <FontAwesomeIcon icon={faUser} className={cx('user-icon')} />
-                    <div className={cx('user-text')}>
-                        <span className={cx('name')}>{user.name}</span>
-                    </div>
-                </div>
+                <UserBox user={user} />
             </Tippy>
         </div>
     );
