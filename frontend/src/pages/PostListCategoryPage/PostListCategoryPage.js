@@ -16,6 +16,7 @@ const PostListCategoryPage = () => {
     const { slug } = useParams();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [category, setCategory] = useState(null);
 
     useEffect(() => {
         fetchPosts();
@@ -24,7 +25,8 @@ const PostListCategoryPage = () => {
     const fetchPosts = async () => {
         try {
             const res = await axiosClient.get(`/posts/category/${slug}`);
-            setPosts(res.data);
+            setPosts(res.data.posts); // backend trả về { posts, category }
+            setCategory(res.data.category); // category: { name, slug, description... }
         } catch (err) {
             console.error('❌ Lỗi khi load category posts:', err);
         } finally {
@@ -41,7 +43,7 @@ const PostListCategoryPage = () => {
             </div>
 
             <h1 className={cx('page-title')}>
-                Danh mục: <span>{slug.replace(/-/g, ' ')}</span>
+                Danh mục: <span>{category?.name || slug.replace(/-/g, ' ')}</span>
             </h1>
 
             <div className={cx('layout')}>

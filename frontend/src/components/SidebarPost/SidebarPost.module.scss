@@ -49,6 +49,9 @@
                 padding-bottom: 6px;
                 border-bottom: 1px solid #ececec;
                 margin-bottom: 8px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
 
                 a {
                     text-decoration: none;
@@ -63,6 +66,12 @@
                     &:hover {
                         color: #e11b1e;
                     }
+                }
+
+                span {
+                    font-size: 1.4rem;
+                    color: #999;
+                    font-weight: 400;
                 }
             }
         }

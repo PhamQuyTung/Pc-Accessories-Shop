@@ -1,5 +1,7 @@
 .blog-page {
     padding: 40px 20px;
+    max-width: 1500px;
+    margin: 0 auto;
 
     .page-title {
         font-size: 28px;
@@ -110,7 +112,6 @@
     align-items: flex-start;
     justify-content: space-between;
     flex-wrap: nowrap;
-    padding: 24px;
 }
 
 .main-content {

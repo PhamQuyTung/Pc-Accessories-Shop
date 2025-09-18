@@ -17,7 +17,7 @@ const SidebarPost = () => {
         const fetchData = async () => {
             try {
                 const [catRes, tagRes, featRes] = await Promise.all([
-                    axiosClient.get('/post-categories'),
+                    axiosClient.get('/post-categories/with-count'),
                     axiosClient.get('/post-tags'),
                     axiosClient.get('/posts/featured'),
                 ]);
@@ -51,7 +51,10 @@ const SidebarPost = () => {
                 <ul className={cx('categories')}>
                     {categories.map((cat) => (
                         <li key={cat._id}>
-                            <Link to={`/blog/category/${cat.slug}`}>{cat.name}</Link>
+                            <Link to={`/blog/category/${cat.slug}`}>
+                                {cat.name} 
+                            </Link>
+                            <span>({cat.total || 0})</span>
                         </li>
                     ))}
                 </ul>

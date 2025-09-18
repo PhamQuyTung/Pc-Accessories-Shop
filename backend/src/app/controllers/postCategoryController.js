@@ -1,4 +1,5 @@
 const PostCategory = require("../models/postCategory");
+const Post = require("../models/post");
 
 // Lấy tất cả categories
 exports.getCategories = async (req, res) => {
@@ -56,6 +57,35 @@ exports.getCategoryBySlug = async (req, res) => {
     if (!category)
       return res.status(404).json({ message: "Category not found" });
     res.json(category);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ✅ Lấy danh mục kèm tổng số bài viết
+exports.getCategoriesWithCount = async (req, res) => {
+  try {
+    const categories = await PostCategory.aggregate([
+      {
+        $lookup: {
+          from: "posts",
+          localField: "_id",
+          foreignField: "category",
+          as: "posts",
+        },
+      },
+      {
+        $addFields: {
+          total: { $size: "$posts" },
+        },
+      },
+      {
+        $project: {
+          posts: 0,
+        },
+      },
+    ]);
+    res.json(categories);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

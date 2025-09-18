@@ -6,12 +6,17 @@ import styles from './Breadcrumb.module.scss';
 
 const cx = classNames.bind(styles);
 
-const Breadcrumb = ({ categorySlug, slug: propSlug, type }) => {
+const Breadcrumb = ({ categorySlug, slug: propSlug, type, customData }) => {
     const { slug: routeSlug } = useParams();
     const location = useLocation();
     const [breadcrumbData, setBreadcrumbData] = useState([]);
 
     useEffect(() => {
+        if (customData) {
+            setBreadcrumbData(customData);
+            return;
+        }
+        
         const fetchBreadcrumb = async () => {
             try {
                 if (type === 'promotion') {
@@ -65,11 +70,25 @@ const Breadcrumb = ({ categorySlug, slug: propSlug, type }) => {
                     }
                 } else if (type === 'blog-tag') {
                     // 👉 Breadcrumb cho Blog Tag
-                    setBreadcrumbData([
-                        { path: '/', label: 'Trang chủ' },
-                        { path: '/blog', label: 'Blog' },
-                        { path: `/blog/tag/${routeSlug}`, label: routeSlug.replace(/-/g, ' ') },
-                    ]);
+                    try {
+                        const res = await axiosClient.get(`/post-tags/slug/${routeSlug}`);
+                        const tag = res.data;
+                        console.log('👉 Kết quả API blog-tag:', tag);
+
+                        setBreadcrumbData([
+                            { path: '/', label: 'Trang chủ' },
+                            { path: '/blog', label: 'Blog' },
+                            { path: `/blog/tag/${tag.slug}`, label: tag.name },
+                        ]);
+                    } catch (err) {
+                        console.error('Lỗi khi lấy breadcrumb blog-tag:', err);
+                        // fallback
+                        setBreadcrumbData([
+                            { path: '/', label: 'Trang chủ' },
+                            { path: '/blog', label: 'Blog' },
+                            { path: `/blog/tag/${routeSlug}`, label: routeSlug.replace(/-/g, ' ') },
+                        ]);
+                    }
                 } else if (type === 'blog-detail') {
                     // 👉 Breadcrumb cho trang chi tiết bài viết
                     try {
@@ -95,7 +114,7 @@ const Breadcrumb = ({ categorySlug, slug: propSlug, type }) => {
         };
 
         fetchBreadcrumb();
-    }, [routeSlug, propSlug, categorySlug, location.pathname, type]);
+    }, [routeSlug, propSlug, categorySlug, location.pathname, type, customData]);
 
     return (
         <nav className={cx('breadcrumb')}>

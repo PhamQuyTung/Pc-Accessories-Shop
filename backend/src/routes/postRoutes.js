@@ -10,12 +10,12 @@ router.get("/drafts", postController.getDraftPosts); // GET /api/post/drafts
 router.get("/trash", postController.getTrashPosts); // GET /api/post/trash
 
 router.get("/category/:slug", postController.getPostsByCategorySlug); // GET /api/posts/category/:slug
-// ✅ Lấy chi tiết bài viết theo categorySlug + postSlug
-router.get("/:categorySlug/:postSlug", postController.getPostBySlug);
+router.get("/tag/:slug", postController.getPostsByTagSlug); // GET /api/posts/tag/:slug
+router.get("/:categorySlug/:postSlug", postController.getPostBySlug); // ✅ Lấy chi tiết bài viết theo categorySlug + postSlug
 
 router.post("/", authMiddleware, postController.createPost); // POST /api/posts
 router.put("/:id", postController.updatePost); // PUT /api/posts/:id
-router.patch("/:id/toggle-featured", postController.toggleFeatured);    // Toggle featured
+router.patch("/:id/toggle-featured", postController.toggleFeatured); // Toggle featured
 router.get("/:id", postController.getPostById); // GET /api/posts/:id
 router.delete("/:id", postController.deletePost); // DELETE /api/posts/:id
 

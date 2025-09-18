@@ -4,6 +4,7 @@ const postCategoryController = require("../app/controllers/postCategoryControlle
 
 // CRUD cho categories
 router.get("/", postCategoryController.getCategories);      // GET /api/post-categories
+router.get("/with-count", postCategoryController.getCategoriesWithCount); 
 router.post("/", postCategoryController.createCategory);    // POST /api/post-categories
 router.get("/slug/:slug", postCategoryController.getCategoryBySlug); // GET /api/post-categories/slug/:slug
 router.put("/:id", postCategoryController.updateCategory);  // PUT /api/post-categories/:id

@@ -96,7 +96,7 @@ const PostsPage = () => {
                                 </td>
 
                                 <td>
-                                    <Link to={`/blog/category/${posts[0].category.slug}/${posts[0].slug}`}>
+                                    <Link className={cx('title-link')} to={`/blog/category/${posts[0].category.slug}/${posts[0].slug}`}>
                                         <h4>{post.title}</h4>
                                     </Link>
                                     

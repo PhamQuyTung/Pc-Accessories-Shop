@@ -57,6 +57,7 @@ import DraftPostsPage from '~/pages/Admin/Post/DraftPostsPage/DraftPostsPage';
 import TrashPostsPage from '~/pages/Admin/Post/TrashPostsPage/TrashPostsPage';
 import PostPreviewPage from '~/pages/Admin/Post/PostPreviewPage/PostPreviewPage';
 import PostListCategoryPage from '~/pages/PostListCategoryPage/PostListCategoryPage';
+import PostListTagPage from '~/pages/PostListTagPage/PostListTagPage';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -83,6 +84,7 @@ const routes = [
             { path: '/blog', element: <Blog /> },
             { path: '/blog/category/:categorySlug/:postSlug', element: <PostDetailPage /> },
             { path: '/blog/category/:slug', element: <PostListCategoryPage /> },
+            { path: '/blog/tag/:slug', element: <PostListTagPage /> },
 
             // Profile nested dưới MainLayout để vẫn có Header/Footer
             {

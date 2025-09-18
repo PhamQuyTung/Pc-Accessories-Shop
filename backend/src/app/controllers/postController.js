@@ -1,4 +1,5 @@
 const Post = require("../../app/models/post");
+const PostCategory = require("../models/postCategory");
 const slugify = require("slugify");
 
 // Lấy tất cả bài viết (có hỗ trợ filter category)
@@ -66,10 +67,25 @@ exports.getPostById = async (req, res) => {
 // Tạo bài viết mới
 exports.createPost = async (req, res) => {
   try {
+    let { category, ...data } = req.body;
+
+    // Nếu category là slug thì convert sang ObjectId
+    if (
+      category &&
+      typeof category === "string" &&
+      !category.match(/^[0-9a-fA-F]{24}$/)
+    ) {
+      const catDoc = await PostCategory.findOne({ slug: category });
+      if (!catDoc) return res.status(400).json({ error: "Category not found" });
+      category = catDoc._id;
+    }
+
     const newPost = new Post({
-      ...req.body,
+      ...data,
+      category,
       author: req.userId,
     });
+
     const savedPost = await newPost.save();
     res.status(201).json(savedPost);
   } catch (err) {
@@ -80,9 +96,23 @@ exports.createPost = async (req, res) => {
 // Cập nhật bài viết
 exports.updatePost = async (req, res) => {
   try {
-    const updatedPost = await Post.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    })
+    let { category, ...data } = req.body;
+
+    if (
+      category &&
+      typeof category === "string" &&
+      !category.match(/^[0-9a-fA-F]{24}$/)
+    ) {
+      const catDoc = await PostCategory.findOne({ slug: category });
+      if (!catDoc) return res.status(400).json({ error: "Category not found" });
+      category = catDoc._id;
+    }
+
+    const updatedPost = await Post.findByIdAndUpdate(
+      req.params.id,
+      { ...data, category },
+      { new: true }
+    )
       .populate("author", "name firstName lastName avatar")
       .populate("category", "name slug")
       .populate("tags", "name slug");
@@ -182,28 +212,48 @@ exports.getPostsByCategorySlug = async (req, res) => {
   try {
     const { slug } = req.params;
 
-    const posts = await Post.find({ status: "published" })
-      .populate({
-        path: "category",
-        match: { slug }, // lọc category theo slug
-        select: "name slug",
-      })
+    // Lấy category theo slug
+    const category = await require("../models/postCategory").findOne({ slug });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    // Lấy bài viết thuộc category đó
+    const posts = await Post.find({
+      status: "published",
+      category: category._id,
+    })
       .populate("author", "name firstName lastName avatar")
+      .populate("category", "name slug")
       .populate("tags", "name slug")
       .sort({ createdAt: -1 });
 
-    // Loại bỏ bài viết không có category match
-    const filtered = posts.filter((post) => post.category);
+    res.json({ posts, category });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
-    // Nếu trong DB chưa có slug, generate tạm thời (fallback)
-    const withSlug = filtered.map((post) => {
-      if (!post.slug) {
-        post.slug = slugify(post.title, { lower: true, strict: true });
-      }
-      return post;
-    });
+// Lấy tất cả bài viết theo tag.slug
+exports.getPostsByTagSlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
 
-    res.json(withSlug);
+    // Lấy tag theo slug
+    const Tag = require("../models/postTag");
+    const tag = await Tag.findOne({ slug });
+    if (!tag) {
+      return res.status(404).json({ message: "Tag not found" });
+    }
+
+    // Lấy bài viết có tag đó
+    const posts = await Post.find({ status: "published", tags: tag._id })
+      .populate("author", "name firstName lastName avatar")
+      .populate("category", "name slug")
+      .populate("tags", "name slug")
+      .sort({ createdAt: -1 });
+
+    res.json({ posts, tag });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

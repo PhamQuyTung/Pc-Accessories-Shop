@@ -44,3 +44,16 @@ exports.deleteTag = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Lấy tag theo slug
+exports.getTagBySlug = async (req, res) => {
+  try {
+    const tag = await PostTag.findOne({ slug: req.params.slug });
+    if (!tag) {
+      return res.status(404).json({ error: "Không tìm thấy thẻ" });
+    }
+    res.json(tag);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
