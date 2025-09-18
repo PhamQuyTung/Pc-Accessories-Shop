@@ -6,7 +6,7 @@ import axiosClient from '~/utils/axiosClient';
 import { Link } from 'react-router-dom';
 import getExcerpt from '~/utils/getExcerpt';
 import SidebarPost from '~/components/SidebarPost/SidebarPost';
-import Breadcrumb from '~/components/Breadcrumb/Breadcrumb'; // 👈 import thêm
+import Breadcrumb from '~/components/Breadcrumb/Breadcrumb';
 
 const cx = classNames.bind(styles);
 

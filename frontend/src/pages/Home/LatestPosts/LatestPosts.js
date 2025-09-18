@@ -4,6 +4,8 @@ import axiosClient from '~/utils/axiosClient';
 import styles from './LatestPosts.module.scss';
 import classNames from 'classnames/bind';
 
+import getExcerpt from '~/utils/getExcerpt';
+
 const cx = classNames.bind(styles);
 
 const LatestPosts = () => {
@@ -31,15 +33,19 @@ const LatestPosts = () => {
             </div>
 
             <div className={cx('grid')}>
-                {posts.map((post) => (
-                    <Link to={`/blog/${post._id}`} key={post._id} className={cx('card')}>
+                {posts.slice(0, 4).map((post) => (   // 👈 giới hạn 4 bài
+                    <Link
+                        to={`/blog/category/${post.category?.slug}/${post.slug}`} // 👈 dùng post, không dùng posts[0]
+                        key={post._id}
+                        className={cx('card')}
+                    >
                         <div className={cx('thumb')}>
                             <img src={post.image || '/no-image.png'} alt={post.title} />
                             <span className={cx('category')}>{post.category?.name || 'Chưa có chuyên mục'}</span>
                         </div>
                         <div className={cx('info')}>
                             <h3>{post.title}</h3>
-                            <p>{post.content.slice(0, 80)}...</p>
+                            <p className={cx('excerpt')}>{getExcerpt(post.content, 120)}</p>
                         </div>
                     </Link>
                 ))}

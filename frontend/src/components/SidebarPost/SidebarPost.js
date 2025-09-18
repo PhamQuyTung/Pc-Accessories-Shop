@@ -78,7 +78,7 @@ const SidebarPost = () => {
                 <ul className={cx('featured-posts')}>
                     {featuredPosts.map((p) => (
                         <li key={p._id}>
-                            <Link to={`/blog/${p._id}`}>
+                            <Link to={`/blog/category/${p.category.slug}/${p.slug}`}>
                                 <img src={p.image || '/default-thumbnail.jpg'} alt={p.title} />
                                 <p>{p.title}</p>
                             </Link>
