@@ -73,7 +73,7 @@ const Breadcrumb = ({ categorySlug, slug: propSlug, type, customData }) => {
                     try {
                         const res = await axiosClient.get(`/post-tags/slug/${routeSlug}`);
                         const tag = res.data;
-                        console.log('👉 Kết quả API blog-tag:', tag);
+                        // console.log('👉 Kết quả API blog-tag:', tag);
 
                         setBreadcrumbData([
                             { path: '/', label: 'Trang chủ' },

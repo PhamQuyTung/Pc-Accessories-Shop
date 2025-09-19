@@ -7,16 +7,16 @@ import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import ReactQuill from "react-quill-new";
+import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import Quill from 'quill';
-import { ImageResize } from 'quill-image-resize-module-ts';
+import QuillResizeModule from 'quill-resize-module';
 
 import { useToast } from '~/components/ToastMessager';
 import VariantImage from '~/components/VariantImage/VariantImage';
 
 // Đăng ký plugin resize ảnh
-Quill.register('modules/imageResize', ImageResize);
+Quill.register('modules/resize', QuillResizeModule);
 
 const cx = classNames.bind(styles);
 
@@ -524,6 +524,11 @@ export default function CreateProduct() {
                                         ['link', 'image', 'video'],
                                         ['clean'],
                                     ],
+                                    resize: {
+                                        locale: {
+                                            altTip: 'Giữ ALT để giữ tỉ lệ',
+                                        },
+                                    },
                                 }}
                             />
                         </div>

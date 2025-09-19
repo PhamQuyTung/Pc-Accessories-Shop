@@ -29,7 +29,7 @@ function Product({ category }) {
                     status: true,
                 };
 
-                console.log('📦 Gửi request với params:', params); // 👉 thêm dòng này
+                // console.log('📦 Gửi request với params:', params); // 👉 thêm dòng này
 
                 const res = await axiosClient.get('/products', {
                     params,
@@ -67,7 +67,7 @@ function Product({ category }) {
                 modules={[Navigation, Autoplay]}
                 spaceBetween={10}
                 slidesPerView={5}
-                loop={true}
+                loop={products.length > 5}  // 👉 chỉ bật loop khi đủ slide
                 autoplay={{ delay: 5000, disableOnInteraction: false }}
                 navigation={{
                     prevEl: `.${cx('prev-btn')}`,
@@ -173,7 +173,7 @@ function Product({ category }) {
                                 {/* Rating Star */}
                                 <div className={cx('rating')}>
                                     <BasicRating value={product.averageRating || 0} />
-                                    {console.log('⭐ Rating:', product.averageRating)}
+                                    {/* {console.log('⭐ Rating:', product.averageRating)} */}
                                     <span className={cx('rating-count')}>({product.reviewCount || 0} đánh giá)</span>
                                 </div>
                             </div>

@@ -1,11 +1,11 @@
 import Quill from 'quill';
-import { ImageResize } from 'quill-image-resize-module-ts'; // ✅ bản chuẩn
+import QuillResizeModule from 'quill-resize-module';
 import QuoteBlot from '~/components/QuillBlots/QuoteBlot';
 import ProductBlot from '~/components/QuillBlots/ProductBlot';
 
 export function registerQuillModules() {
-    if (!Quill.imports['modules/imageResize']) {
-        Quill.register('modules/imageResize', ImageResize);
+    if (!Quill.imports['modules/resize']) {
+        Quill.register('modules/resize', QuillResizeModule);
     }
     if (!Quill.imports['formats/quote']) {
         Quill.register(QuoteBlot);

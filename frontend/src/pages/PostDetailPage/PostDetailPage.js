@@ -81,7 +81,7 @@ const PostDetailPage = () => {
                 // 👇 gọi thêm API để lấy products theo category
                 if (res.data.category?._id) {
                     const prodRes = await axiosClient.get(`/products?categoryId=${res.data.category._id}`);
-                    console.log('✅ prodRes.data:', prodRes.data);
+                    // console.log('✅ prodRes.data:', prodRes.data);
                     setRelatedProducts(prodRes.data.products.slice(0, 6));
                 }
 

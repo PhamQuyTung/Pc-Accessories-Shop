@@ -11,7 +11,7 @@ const cx = classNames.bind(styles);
 function ProductCard({ product, viewMode }) {
     if (!product) return null;
 
-    console.log('Product:', product);
+    // console.log('Product:', product);
 
     return (
         <div className={cx('product-card', viewMode === 'list' ? 'list-mode' : 'grid-mode')}>
