@@ -2,69 +2,15 @@ import React, { useState, useEffect } from 'react';
 import styles from './CreatePostPage.module.scss';
 import classNames from 'classnames/bind';
 import { useNavigate } from 'react-router-dom';
+
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import Quill from 'quill';
+import { quillModules, registerQuillModules, quillFormats } from '~/utils/quillSetup';
 
 import axiosClient from '~/utils/axiosClient';
 import { useToast } from '~/components/ToastMessager/ToastMessager';
 
-const quillModules = {
-    toolbar: {
-        container: [
-            [{ header: [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            [{ list: 'ordered' }, { list: 'bullet' }],
-            ['blockquote', 'code-block'], // blockquote gốc vẫn dùng được
-            ['link', 'image'],
-            ['clean'],
-            ['insertQuote', 'insertProduct'], // 👈 nút custom
-        ],
-        handlers: {
-            insertQuote: function () {
-                const text = prompt('Nhập nội dung quote');
-                const cite = prompt('Nhập tác giả');
-                const range = this.quill.getSelection();
-                if (range) {
-                    this.quill.insertEmbed(
-                        range.index,
-                        'quote', // 👈 dùng custom blot
-                        { text, cite },
-                        Quill.sources.USER,
-                    );
-                }
-            },
-            insertProduct: function () {
-                const name = prompt('Tên sản phẩm');
-                const image = prompt('URL ảnh');
-                const price = prompt('Giá sản phẩm');
-                const link = prompt('Link sản phẩm (tùy chọn)');
-                const range = this.quill.getSelection();
-                if (range) {
-                    this.quill.insertEmbed(range.index, 'product', { name, image, price, link }, Quill.sources.USER);
-                }
-            },
-        },
-    },
-    imageResize: { parchment: Quill.import('parchment') },
-};
-
-const formats = [
-    'header',
-    'bold',
-    'italic',
-    'underline',
-    'strike',
-    'list',
-    'bullet',
-    'blockquote',
-    'code-block',
-    'link',
-    'image',
-    'align',
-    'color',
-    'background',
-];
+registerQuillModules();
 
 const cx = classNames.bind(styles);
 
@@ -188,7 +134,6 @@ const CreatePostPage = () => {
                             'underline',
                             'strike',
                             'list',
-                            'bullet',
                             'blockquote',
                             'code-block',
                             'link',

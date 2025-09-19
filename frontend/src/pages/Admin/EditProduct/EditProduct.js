@@ -7,42 +7,13 @@ import { useToast } from '~/components/ToastMessager';
 
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import Quill from 'quill';
+import { quillModules, quillFormats, registerQuillModules } from '~/utils/quillSetup';
 
 import he from 'he'; // 👉 package decode HTML entity
 
-const cx = classNames.bind(styles);
+registerQuillModules();
 
-// Cấu hình toolbar cho ReactQuill
-const quillModules = {
-    toolbar: {
-        container: [
-            [{ header: [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            [{ list: 'ordered' }, { list: 'bullet' }],
-            ['link', 'image', 'video'],
-            ['clean'],
-        ],
-        handlers: {
-            link: function (value) {
-                if (value) {
-                    const href = prompt('Nhập URL:');
-                    if (href) {
-                        const range = this.quill.getSelection();
-                        if (range && range.length > 0) {
-                            this.quill.format('link', href); // 👈 chỉ áp dụng cho text đang chọn
-                        }
-                    }
-                } else {
-                    this.quill.format('link', false);
-                }
-            },
-        },
-    },
-    imageResize: {
-        parchment: Quill.import('parchment'), // vẫn giữ resize ảnh
-    },
-};
+const cx = classNames.bind(styles);
 
 function EditProduct() {
     const { id } = useParams();
@@ -67,7 +38,7 @@ function EditProduct() {
         axios
             .get('http://localhost:5000/api/products')
             .then((res) => {
-                console.log('Fetched products:', res.data); // 👈 kiểm tra ở đây
+                // console.log('Fetched products:', res.data); // 👈 kiểm tra ở đây
                 setExistingProducts(res.data);
             })
             .catch(() => {});
@@ -316,6 +287,7 @@ function EditProduct() {
                         value={formData.longDescription || ''}
                         onChange={(content) => setFormData((prev) => ({ ...prev, longDescription: content }))}
                         modules={quillModules}
+                        formats={quillFormats}
                     />
                 </div>
 

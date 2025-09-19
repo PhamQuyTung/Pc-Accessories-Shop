@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import styles from './EditPostPage.module.scss';
 import classNames from 'classnames/bind';
 import { useParams, useNavigate } from 'react-router-dom';
+
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+import { quillModules, registerQuillModules } from '~/utils/quillSetup';
 
 import axiosClient from '~/utils/axiosClient';
 import { confirmAlert } from '~/utils/alertSweet';
 import { useToast } from '~/components/ToastMessager/ToastMessager';
 
-import { quillModules, registerQuillModules } from '~/utils/quillSetup';
 
 registerQuillModules();
 

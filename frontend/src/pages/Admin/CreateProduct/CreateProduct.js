@@ -8,15 +8,13 @@ import Swal from 'sweetalert2';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import ReactQuill from 'react-quill-new';
+import { quillModules, quillFormats, registerQuillModules } from '~/utils/quillSetup';
 import 'react-quill-new/dist/quill.snow.css';
-import Quill from 'quill';
-import QuillResizeModule from 'quill-resize-module';
 
 import { useToast } from '~/components/ToastMessager';
 import VariantImage from '~/components/VariantImage/VariantImage';
 
-// Đăng ký plugin resize ảnh
-Quill.register('modules/resize', QuillResizeModule);
+registerQuillModules();
 
 const cx = classNames.bind(styles);
 
@@ -84,13 +82,13 @@ export default function CreateProduct() {
     useEffect(() => {
         const fetchAttributesAndTerms = async () => {
             try {
-                console.log('🚀 Bắt đầu load attributes + terms');
+                // console.log('🚀 Bắt đầu load attributes + terms');
 
                 // 1️⃣ Lấy danh sách attributes từ backend
                 const { data: attrRes } = await axiosClient.get('/attributes');
                 const attributes = Array.isArray(attrRes) ? attrRes : attrRes.data || [];
 
-                console.log('✅ Attributes nhận về:', attributes);
+                // console.log('✅ Attributes nhận về:', attributes);
 
                 if (!attributes.length) {
                     console.warn('⚠️ Không có attributes nào từ server');
@@ -113,7 +111,7 @@ export default function CreateProduct() {
 
                         try {
                             const url = `/attribute-terms/${attr._id}`;
-                            console.log('🔹 Gọi URL:', axiosClient.defaults.baseURL + url);
+                            // console.log('🔹 Gọi URL:', axiosClient.defaults.baseURL + url);
 
                             const res = await axiosClient.get(url);
                             const terms = Array.isArray(res.data) ? res.data : res.data?.data || [];
@@ -140,9 +138,9 @@ export default function CreateProduct() {
                 // 3️⃣ Log cảnh báo nếu cần
                 attributesWithTerms.forEach((attr) => {
                     if (attr.terms.length > 0) {
-                        console.log(`📦 Terms của ${attr.name}:`, attr.terms);
+                        // console.log(`📦 Terms của ${attr.name}:`, attr.terms);
                     } else if (attr.type === 'color' || attr.type === 'button') {
-                        console.warn(`⚠️ ${attr.name} chưa có terms`);
+                        // console.warn(`⚠️ ${attr.name} chưa có terms`);
                     }
                 });
 
@@ -163,7 +161,7 @@ export default function CreateProduct() {
                 // setAllAttributes(attributesWithTerms); // để render danh sách chọn
                 // setProductAttributes([]); // ban đầu rỗng
 
-                console.log('🎯 Kết quả cuối:', attributesWithTerms);
+                // console.log('🎯 Kết quả cuối:', attributesWithTerms);
             } catch (error) {
                 console.error('❌ Lỗi lấy attributes:', error);
             }
@@ -516,20 +514,8 @@ export default function CreateProduct() {
                                 theme="snow"
                                 value={form.longDescription}
                                 onChange={(content) => setForm((prev) => ({ ...prev, longDescription: content }))}
-                                modules={{
-                                    toolbar: [
-                                        [{ header: [1, 2, 3, false] }],
-                                        ['bold', 'italic', 'underline', 'strike'],
-                                        [{ list: 'ordered' }, { list: 'bullet' }],
-                                        ['link', 'image', 'video'],
-                                        ['clean'],
-                                    ],
-                                    resize: {
-                                        locale: {
-                                            altTip: 'Giữ ALT để giữ tỉ lệ',
-                                        },
-                                    },
-                                }}
+                                modules={quillModules}
+                                formats={quillFormats}
                             />
                         </div>
 

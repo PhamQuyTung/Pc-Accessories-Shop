@@ -54,3 +54,24 @@ export const quillModules = {
         },
     },
 };
+
+// Formats khớp với Quill v2
+export const quillFormats = [
+    'header',
+    'bold',
+    'italic',
+    'underline',
+    'strike',
+    'list', // chỉ cần 'list' (không có 'bullet' hay 'ordered')
+    'blockquote',
+    'code-block',
+    'link',
+    'image',
+    'align',
+    'color',
+    'video',
+    'background',
+    // 'clean',
+    'quote', // custom blot
+    'product', // custom blot
+];
