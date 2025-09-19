@@ -299,3 +299,25 @@ exports.getPostBySlug = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// searchPosts
+exports.searchPosts = async (req, res) => {
+  try {
+    const { q, limit } = req.query;
+
+    if (!q) return res.json([]);
+
+    const posts = await Post.find({
+      status: "published", // ✅ chỉ lấy bài đã publish
+      title: { $regex: q, $options: "i" },
+    })
+      .limit(parseInt(limit) || 5)
+      .populate("category", "slug name")
+      .select("title slug image category content");
+
+    res.json(posts);
+  } catch (error) {
+    console.error("❌ searchPosts error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};

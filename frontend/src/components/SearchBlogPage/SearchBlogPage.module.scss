@@ -1,0 +1,124 @@
+.search-page {
+    padding: 40px 0;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 0 20px;
+
+    .search-header {
+        text-align: center;
+        margin-bottom: 40px;
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 20px 0 15px;
+            color: #222;
+            text-align: center;
+        }
+
+        p {
+            font-size: 1.6rem;
+        }
+    }
+
+    .layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 40px;
+    }
+
+    .main-content {
+        p {
+            font-size: 15px;
+            margin-bottom: 20px;
+            color: #444;
+        }
+    }
+
+    // ================= POSTS GRID =================
+    .posts-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+    }
+
+    .post-card {
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+
+        &:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+
+            img {
+                transform: scale(1.05);
+            }
+        }
+
+        .thumbnail {
+            overflow: hidden;
+            img {
+                width: 100%;
+                height: 180px;
+                object-fit: cover;
+                transition: transform 0.3s ease;
+            }
+        }
+
+        .post-content {
+            padding: 15px;
+
+            a {
+                text-decoration: none;
+            }
+
+            .post-title {
+                font-size: 18px;
+                font-weight: 600;
+                color: #222;
+                margin-bottom: 10px;
+                display: block;
+                text-decoration: none;
+
+                &:hover {
+                    color: #d33;
+                }
+            }
+
+            .excerpt {
+                font-size: 14px;
+                line-height: 1.5;
+                color: #555;
+            }
+        }
+    }
+
+    // ================= NOT FOUND =================
+    .not-found {
+        text-align: center;
+        padding: 50px 20px;
+        color: #555;
+
+        h2 {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 15px 0 10px;
+        }
+
+        p {
+            font-size: 15px;
+            color: #777;
+        }
+
+        svg {
+            width: 80px;
+            height: 80px;
+            opacity: 0.6;
+        }
+    }
+}

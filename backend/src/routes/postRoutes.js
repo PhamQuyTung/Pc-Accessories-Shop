@@ -8,6 +8,8 @@ router.get("/", postController.getPosts); // GET /api/posts
 router.get("/featured", postController.getFeaturedPosts);
 router.get("/drafts", postController.getDraftPosts); // GET /api/post/drafts
 router.get("/trash", postController.getTrashPosts); // GET /api/post/trash
+router.get("/search", postController.searchPosts);
+
 
 router.get("/category/:slug", postController.getPostsByCategorySlug); // GET /api/posts/category/:slug
 router.get("/tag/:slug", postController.getPostsByTagSlug); // GET /api/posts/tag/:slug

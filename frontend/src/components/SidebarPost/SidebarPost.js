@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import axiosClient from '~/utils/axiosClient';
 import styles from './SidebarPost.module.scss';
 import classNames from 'classnames/bind';
@@ -12,6 +12,13 @@ const SidebarPost = () => {
     const [categories, setCategories] = useState([]);
     const [tags, setTags] = useState([]);
     const [featuredPosts, setFeaturedPosts] = useState([]);
+
+    // 🔎 Search state
+    const [query, setQuery] = useState('');
+    const [suggestions, setSuggestions] = useState([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const searchRef = useRef(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -32,17 +39,77 @@ const SidebarPost = () => {
         fetchData();
     }, []);
 
+    // Debounce search
+    useEffect(() => {
+        if (!query.trim()) {
+            setSuggestions([]);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            try {
+                const res = await axiosClient.get(`/posts/search?q=${query}&limit=5`);
+                setSuggestions(res.data);
+                setShowDropdown(true);
+            } catch (err) {
+                console.error('❌ Lỗi search:', err);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [query]);
+
+    // Đóng dropdown khi click ngoài
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (searchRef.current && !searchRef.current.contains(e.target)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        if (query.trim()) {
+            navigate(`/blog/search?q=${query}`);
+            setShowDropdown(false);
+        }
+    };
+
     return (
         <aside className={cx('sidebar')}>
             {/* 🔎 Search */}
-            <div className={cx('sidebar-widget')}>
+            <div className={cx('sidebar-widget')} ref={searchRef}>
                 <h3 className={cx('sidebar-title')}>Search Blog</h3>
-                <div className={cx('search-box')}>
-                    <input type="text" placeholder="Search..." />
-                    <button>
+                <form className={cx('search-box')} onSubmit={handleSearchSubmit}>
+                    <input
+                        type="text"
+                        placeholder="Search..."
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onFocus={() => query && setShowDropdown(true)}
+                    />
+                    <button type="submit">
                         <FontAwesomeIcon icon={faSearch} />
                     </button>
-                </div>
+                </form>
+
+                {/* Gợi ý search */}
+                {showDropdown && suggestions.length > 0 && (
+                    <ul className={cx('search-suggestions')}>
+                        {suggestions.map((post) => (
+                            <li key={post._id}>
+                                <Link to={`/blog/category/${post.category.slug}/${post.slug}`}>
+                                    <img src={post.image || '/default-thumbnail.jpg'} alt={post.title} />
+                                    <span>{post.title}</span>
+                                </Link>
+                            </li>
+                        ))}
+                        <li className={cx('view-all')}>
+                            <Link to={`/blog/search?q=${query}`}>👉 Xem tất cả kết quả</Link>
+                        </li>
+                    </ul>
+                )}
             </div>
 
             {/* 📂 Categories */}
@@ -51,9 +118,7 @@ const SidebarPost = () => {
                 <ul className={cx('categories')}>
                     {categories.map((cat) => (
                         <li key={cat._id}>
-                            <Link to={`/blog/category/${cat.slug}`}>
-                                {cat.name} 
-                            </Link>
+                            <Link to={`/blog/category/${cat.slug}`}>{cat.name}</Link>
                             <span>({cat.total || 0})</span>
                         </li>
                     ))}

@@ -95,7 +95,7 @@ const PostDetailPage = () => {
             }
         };
         fetchPost();
-    }, [id]);
+    }, [categorySlug, postSlug]);
 
     // Lấy bài viết liên quan
     const fetchRelatedPosts = async (categoryId, currentId) => {
