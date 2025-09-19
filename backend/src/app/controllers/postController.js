@@ -267,7 +267,7 @@ exports.getPostBySlug = async (req, res) => {
     const post = await Post.findOne({ slug: postSlug, status: "published" })
       .populate({
         path: "category",
-        match: { slug: categorySlug }, // đảm bảo đúng category
+        match: { slug: categorySlug },
         select: "name slug",
       })
       .populate("author", "name firstName lastName avatar")
@@ -277,7 +277,24 @@ exports.getPostBySlug = async (req, res) => {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    res.json(post);
+    // Regex tìm shortcode [product id="..."]
+    const regex = /\[product id="(.*?)"\]/g;
+    const productIds = [];
+    let match;
+    while ((match = regex.exec(post.content)) !== null) {
+      productIds.push(match[1]);
+    }
+
+    let products = [];
+    if (productIds.length > 0) {
+      const Product = require("../../app/models/product");
+      products = await Product.find({ _id: { $in: productIds } });
+    }
+
+    res.json({
+      ...post.toObject(),
+      embeddedProducts: products,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

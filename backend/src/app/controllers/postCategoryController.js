@@ -62,15 +62,18 @@ exports.getCategoryBySlug = async (req, res) => {
   }
 };
 
-// ✅ Lấy danh mục kèm tổng số bài viết
+// ✅ Lấy danh mục kèm tổng số bài viết (chỉ published)
 exports.getCategoriesWithCount = async (req, res) => {
   try {
     const categories = await PostCategory.aggregate([
       {
         $lookup: {
           from: "posts",
-          localField: "_id",
-          foreignField: "category",
+          let: { categoryId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$category", "$$categoryId"] } } },
+            { $match: { status: "published" } }, // 👈 chỉ lấy published
+          ],
           as: "posts",
         },
       },
@@ -85,6 +88,7 @@ exports.getCategoriesWithCount = async (req, res) => {
         },
       },
     ]);
+
     res.json(categories);
   } catch (err) {
     res.status(500).json({ error: err.message });

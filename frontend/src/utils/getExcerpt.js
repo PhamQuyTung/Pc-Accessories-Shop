@@ -5,7 +5,10 @@ export default function getExcerpt(html, maxLength = 100) {
     // 🧹 Bỏ hết thẻ HTML
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
-    const text = tmp.textContent || tmp.innerText || '';
+    let text = tmp.textContent || tmp.innerText || '';
+
+    // ❌ Loại bỏ shortcode dạng [product id="..."]
+    text = text.replace(/\[product.*?\]/g, '');
 
     // ✂️ Cắt nội dung plain text
     if (text.length > maxLength) {

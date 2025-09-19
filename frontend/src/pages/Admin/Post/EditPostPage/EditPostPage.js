@@ -193,7 +193,6 @@ const EditPostPage = () => {
                             'underline',
                             'strike',
                             'list',
-                            'bullet',
                             'blockquote',
                             'code-block',
                             'link',

@@ -9,8 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import ReactQuill from "react-quill-new";
 import 'react-quill-new/dist/quill.snow.css';
-import ImageResize from 'quill-image-resize-module-react';
 import Quill from 'quill';
+import { ImageResize } from 'quill-image-resize-module-ts';
 
 import { useToast } from '~/components/ToastMessager';
 import VariantImage from '~/components/VariantImage/VariantImage';
