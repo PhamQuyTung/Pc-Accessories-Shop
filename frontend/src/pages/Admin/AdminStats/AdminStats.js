@@ -11,11 +11,13 @@ import {
     FaCheckCircle,
     FaRegFileAlt,
 } from 'react-icons/fa';
+import { io } from 'socket.io-client'; // 👈 import socket.io client
 import styles from './AdminStats.module.scss';
 import classNames from 'classnames/bind';
 
 import axiosClient from '~/utils/axiosClient';
 import Counter from '~/components/Counter/Counter';
+import { useToast } from '~/components/ToastMessager';
 
 const cx = classNames.bind(styles);
 
@@ -35,58 +37,83 @@ function AdminStats() {
     const [chartData, setChartData] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const showToast = useToast(); // 👈 dùng hook toast
+
+    // 🔥 Hàm fetch stats
+    const fetchStats = async () => {
+        try {
+            const [orderRes, userRes, productStatsRes, postStatsRes] = await Promise.all([
+                axiosClient.get('/orders/all'),
+                axiosClient.get('/accounts'),
+                axiosClient.get('/products/stats'),
+                axiosClient.get('/posts/stats'),
+            ]);
+
+            const ordersData = orderRes.data?.orders || [];
+            const usersData = userRes.data || [];
+            const productStats = productStatsRes.data;
+            const postStats = postStatsRes.data;
+
+            const revenue = ordersData
+                .filter((o) => o.status === 'completed')
+                .reduce((sum, o) => sum + (o.finalAmount || 0), 0);
+
+            const monthly = {};
+            ordersData.forEach((o) => {
+                const d = new Date(o.createdAt);
+                const key = `${d.getMonth() + 1}/${d.getFullYear()}`;
+                monthly[key] = (monthly[key] || 0) + 1;
+            });
+            const chartArr = Object.keys(monthly).map((key) => ({
+                month: key,
+                orders: monthly[key],
+            }));
+
+            setStats({
+                orders: ordersData.length,
+                users: usersData.length,
+                revenue,
+                products: productStats.total,
+                visibleProducts: productStats.visible,
+                hiddenProducts: productStats.hidden,
+                posts: postStats.total,
+                publishedPosts: postStats.published,
+                draftPosts: postStats.draft,
+            });
+            setOrders(ordersData);
+            setChartData(chartArr);
+        } catch (err) {
+            console.error('Fetch stats failed:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const [orderRes, userRes, productStatsRes, postStatsRes] = await Promise.all([
-                    axiosClient.get('/orders'),
-                    axiosClient.get('/accounts'),
-                    axiosClient.get('/products/stats'),
-                    axiosClient.get('/posts/stats'),
-                ]);
-
-                const ordersData = orderRes.data?.orders || [];
-                const usersData = userRes.data || [];
-                const productStats = productStatsRes.data;
-                const postStats = postStatsRes.data;
-
-                const revenue = ordersData
-                    .filter((o) => o.status === 'completed')
-                    .reduce((sum, o) => sum + (o.finalAmount || 0), 0);
-
-                const monthly = {};
-                ordersData.forEach((o) => {
-                    const d = new Date(o.createdAt);
-                    const key = `${d.getMonth() + 1}/${d.getFullYear()}`;
-                    monthly[key] = (monthly[key] || 0) + 1;
-                });
-                const chartArr = Object.keys(monthly).map((key) => ({
-                    month: key,
-                    orders: monthly[key],
-                }));
-
-                setStats({
-                    orders: ordersData.length,
-                    users: usersData.length,
-                    revenue,
-                    products: productStats.total,
-                    visibleProducts: productStats.visible,
-                    hiddenProducts: productStats.hidden,
-                    posts: postStats.total,
-                    publishedPosts: postStats.published,
-                    draftPosts: postStats.draft,
-                });
-                setOrders(ordersData);
-                setChartData(chartArr);
-            } catch (err) {
-                console.error('Fetch stats failed:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchStats();
-    }, []);
+
+        const socket = io('http://localhost:5000', { withCredentials: true });
+
+        socket.on('order:new', (order) => {
+            console.log('📢 Có đơn hàng mới:', order);
+            showToast(`📢 Có đơn hàng mới từ ${order?.shippingInfo?.name || 'khách hàng'}`, 'success');
+            fetchStats();
+        });
+
+        socket.on('order:cancelled', (order) => {
+            console.log('⚠️ Đơn hàng bị hủy:', order);
+            showToast(`⚠️ Đơn hàng ${order._id} đã bị hủy`, 'warning');
+            fetchStats();
+        });
+
+        socket.on('order:deleted', ({ orderId }) => {
+            console.log('🗑️ Đơn hàng bị xóa:', orderId);
+            showToast(`🗑️ Đơn hàng ${orderId} đã bị xóa`, 'error');
+            fetchStats();
+        });
+
+        return () => socket.disconnect();
+    }, [showToast]);
 
     const cards = [
         { title: 'Đơn hàng', value: stats.orders, icon: <FaShoppingCart />, color: 'blue' },
@@ -102,7 +129,7 @@ function AdminStats() {
 
     return (
         <div className={cx('wrapper')}>
-            <h2>Thống kê Admin</h2>
+            <h2>Thống kê TECHVN</h2>
 
             {/* Cards */}
             <div className={cx('stats-cards')}>

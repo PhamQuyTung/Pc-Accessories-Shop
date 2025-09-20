@@ -11,10 +11,11 @@
     z-index: 9999;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     opacity: 0.95;
-    animation: fadeInOut 2s;
     display: flex;
     align-items: center;
+    animation: slideInOut 3s forwards; // 👈 đổi animation
 }
+
 .toast.success {
     background: #28a745;
 }
@@ -23,26 +24,28 @@
 }
 .toast.warning {
     background: #ffc107;
+    color: #333 !important; // để chữ không bị khó nhìn
 }
 .toast.info {
     background: #17a2b8;
 }
 
-@keyframes fadeInOut {
+@keyframes slideInOut {
     0% {
+        transform: translateX(120%);
         opacity: 0;
-        transform: translateY(-20px);
     }
     10% {
+        transform: translateX(0);
         opacity: 1;
-        transform: translateY(0);
     }
     90% {
+        transform: translateX(0);
         opacity: 1;
     }
     100% {
+        transform: translateX(120%);
         opacity: 0;
-        transform: translateY(-20px);
     }
 }
 
@@ -50,4 +53,5 @@
     width: 22px;
     height: 22px;
     fill: #fff;
+    flex-shrink: 0;
 }

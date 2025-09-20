@@ -21,6 +21,7 @@
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
     font-family: 'Segoe UI', Tahoma, sans-serif;
     font-size: 15px; // tăng size trong modal
+    z-index: 999;
 }
 
 .modal-title {
