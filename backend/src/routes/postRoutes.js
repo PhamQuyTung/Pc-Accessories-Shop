@@ -9,6 +9,7 @@ router.get("/featured", postController.getFeaturedPosts);
 router.get("/drafts", postController.getDraftPosts); // GET /api/post/drafts
 router.get("/trash", postController.getTrashPosts); // GET /api/post/trash
 router.get("/search", postController.searchPosts);
+router.get("/stats", postController.getStats);
 
 
 router.get("/category/:slug", postController.getPostsByCategorySlug); // GET /api/posts/category/:slug

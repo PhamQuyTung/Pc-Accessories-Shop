@@ -5,11 +5,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import { quillModules, registerQuillModules } from '~/utils/quillSetup';
+import { quillModules, registerQuillModules, quillFormats } from '~/utils/quillSetup';
 
 import axiosClient from '~/utils/axiosClient';
 import { confirmAlert } from '~/utils/alertSweet';
 import { useToast } from '~/components/ToastMessager/ToastMessager';
+import CustomToolbar from '~/components/Editor/CustomToolbar';
 
 
 registerQuillModules();
@@ -145,25 +146,13 @@ const EditPostPage = () => {
                 {/* Nội dung dùng ReactQuill */}
                 <div className={cx('form-group')}>
                     <label>Nội dung</label>
+                    <CustomToolbar />   {/* 👈 render toolbar custom */}
                     <ReactQuill
                         theme="snow"
                         value={post.content || ''}
                         onChange={(value) => setPost({ ...post, content: value })}
                         modules={quillModules}
-                        formats={[
-                            'header',
-                            'bold',
-                            'italic',
-                            'underline',
-                            'strike',
-                            'list',
-                            'blockquote',
-                            'code-block',
-                            'link',
-                            'image',
-                            'quote',
-                            'product',
-                        ]}
+                        formats={quillFormats}
                         style={{ minHeight: '300px' }}
                     />
                 </div>

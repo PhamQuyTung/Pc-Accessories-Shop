@@ -21,6 +21,9 @@ router.get("/", ProductController.getAll);                           // Danh sá
 router.get("/search", ProductController.searchProducts);             // Tìm kiếm
 router.get("/related", ProductController.getRelatedProducts);        // Sản phẩm liên quan
 router.get("/category/:slug", ProductController.getByCategorySlug);  // Theo danh mục
+router.get("/count", ProductController.countProducts); // Đếm số lượng sản phẩm
+router.get('/stats', ProductController.getProductStats); // Thống kê chi tiết sản phẩm (tổng, ẩn, hiện)
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ➕ Create, 🖊️ Update, 🗑️ Delete

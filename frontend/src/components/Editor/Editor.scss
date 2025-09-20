@@ -1,0 +1,23 @@
+/* Editor.scss */
+
+/* Ẩn pseudo-element mặc định của Quill */
+.ql-toolbar button.ql-insertQuote:before,
+.ql-toolbar button.ql-insertProduct:before {
+    content: none !important;
+}
+
+/* Hiển thị icon React */
+.ql-toolbar .ql-insertQuote svg,
+.ql-toolbar .ql-insertProduct svg {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.ql-toolbar .ql-insertQuote,
+.ql-toolbar .ql-insertProduct {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

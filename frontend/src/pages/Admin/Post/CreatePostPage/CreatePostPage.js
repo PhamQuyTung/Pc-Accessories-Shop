@@ -9,6 +9,7 @@ import { quillModules, registerQuillModules, quillFormats } from '~/utils/quillS
 
 import axiosClient from '~/utils/axiosClient';
 import { useToast } from '~/components/ToastMessager/ToastMessager';
+import CustomToolbar from '~/components/Editor/CustomToolbar';
 
 registerQuillModules();
 
@@ -123,28 +124,13 @@ const CreatePostPage = () => {
                 {/* Nội dung */}
                 <div className="form-group">
                     <label>Nội dung</label>
+                    <CustomToolbar />
                     <ReactQuill
                         value={content}
+                        theme="snow"
                         onChange={setContent}
                         modules={quillModules}
-                        formats={[
-                            'header',
-                            'bold',
-                            'italic',
-                            'underline',
-                            'strike',
-                            'list',
-                            'blockquote',
-                            'code-block',
-                            'link',
-                            'image',
-                            'align',
-                            'color',
-                            'background',
-                            'quote',
-                            'product', // thêm blot custom vào formats
-                        ]}
-                        theme="snow"
+                        formats={quillFormats}
                         style={{ height: '400px', marginBottom: '50px' }}
                     />
                 </div>

@@ -321,3 +321,35 @@ exports.searchPosts = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// Lấy số liệu thống kê bài viết (total, publish, draft, trash)
+exports.getStats = async (req, res) => {
+  try {
+    const totalPosts = await Post.countDocuments();
+    const publishedPosts = await Post.countDocuments({ status: "published" });
+    const draftPosts = await Post.countDocuments({ status: "draft" });
+    const trashPosts = await Post.countDocuments({ status: "trash" });
+
+    // Thống kê số bài viết theo tháng (12 tháng gần nhất)
+    const monthlyPosts = await Post.aggregate([
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    res.json({
+      total: totalPosts,
+      published: publishedPosts,
+      draft: draftPosts,
+      trash: trashPosts,
+      monthlyPosts,
+    });
+  } catch (error) {
+    console.error("❌ getStats error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

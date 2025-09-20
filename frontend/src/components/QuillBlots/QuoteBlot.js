@@ -11,7 +11,7 @@ class QuoteBlot extends BlockEmbed {
         let node = super.create();
         node.innerHTML = `
             <p class="quote-text">“${value?.text || ''}”</p>
-            <p class="quote-author">— ${value?.cite || ''}</p>
+            <p class="quote-author">said by <strong>${value?.cite || ''}</strong></p>
         `;
         return node;
     }

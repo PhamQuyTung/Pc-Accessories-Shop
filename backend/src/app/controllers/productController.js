@@ -628,6 +628,39 @@ class ProductController {
       res.status(500).json({ error: "Lỗi server" });
     }
   }
+
+  // Đêm số lượng sản phẩm
+  async countProducts(req, res) {
+    try {
+      const total = await Product.countDocuments({ deleted: { $ne: true } });
+      res.json({ total });
+    } catch (err) {
+      res.status(500).json({ error: "Lỗi khi đếm sản phẩm" });
+    }
+  }
+
+  // GET /api/products/stats
+  async getProductStats(req, res) {
+    try {
+      const total = await Product.countDocuments({ deleted: { $ne: true } });
+      const visibleCount = await Product.countDocuments({
+        deleted: { $ne: true },
+        visible: true,
+      });
+      const hiddenCount = await Product.countDocuments({
+        deleted: { $ne: true },
+        visible: false,
+      });
+
+      res.json({
+        total,
+        visible: visibleCount,
+        hidden: hiddenCount,
+      });
+    } catch (err) {
+      res.status(500).json({ error: "Lỗi khi thống kê sản phẩm" });
+    }
+  }
 }
 
 module.exports = new ProductController();

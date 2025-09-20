@@ -18,20 +18,13 @@ export function registerQuillModules() {
 
 export const quillModules = {
     toolbar: {
-        container: [
-            [{ header: [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            [{ list: 'ordered' }, { list: 'bullet' }],
-            ['blockquote', 'code-block'],
-            ['link', 'image'],
-            ['clean'],
-            ['insertQuote', 'insertProduct'],
-        ],
+        container: '#toolbar', // 👈 tham chiếu tới CustomToolbar
         handlers: {
             insertQuote: function () {
                 const text = prompt('Nhập nội dung quote');
                 const cite = prompt('Nhập tác giả');
                 const range = this.quill.getSelection();
+
                 if (range) {
                     this.quill.insertEmbed(range.index, 'quote', { text, cite }, Quill.sources.USER);
                 }
@@ -42,6 +35,7 @@ export const quillModules = {
                 const price = prompt('Giá sản phẩm');
                 const link = prompt('Link sản phẩm (tùy chọn)');
                 const range = this.quill.getSelection();
+                
                 if (range) {
                     this.quill.insertEmbed(range.index, 'product', { name, image, price, link }, Quill.sources.USER);
                 }
