@@ -30,9 +30,17 @@ const orderSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["new", "processing", "shipping", "completed", "cancelled"],
+      enum: [
+        "new", // Đơn mới
+        "processing", // Đang xử lý
+        "shipping", // Đang giao
+        "completed", // Hoàn thành
+        "cancelled", // Hủy bởi user/admin
+        "deleted", // 👈 Soft delete
+      ],
       default: "new",
     },
+
     cancelReason: { type: String, default: "" },
 
     shippingInfo: {

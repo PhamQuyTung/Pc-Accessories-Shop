@@ -11,6 +11,8 @@ import ModalCancelOrder from '~/components/ModalCancelOrder/ModalCancelOrder';
 import { useNavigate } from 'react-router-dom';
 import cartEvent from '~/utils/cartEvent';
 
+const API_BASE_URL = 'http://localhost:5000';
+
 const STATUS_LABELS = {
     new: 'Chờ xác nhận',
     processing: 'Đang xử lý',
@@ -29,7 +31,16 @@ const collapseVariants = {
 };
 
 function getProductImage(product) {
-    return product?.images?.[0] || '/images/no-image.png';
+    if (product && Array.isArray(product.images) && product.images.length > 0) {
+        const img = product.images[0]; // luôn lấy index = 0
+        if (typeof img === 'string' && img.trim() !== '') {
+            return img.startsWith('http') ? img : `${API_BASE_URL}/${img}`;
+        }
+    }
+
+    console.log("Product images:", product?.images);
+
+    return `${API_BASE_URL}/images/no-image.png`;
 }
 
 function OrderCard({ order, onCancel }) {
@@ -164,11 +175,11 @@ function OrderCard({ order, onCancel }) {
                             {order.items.map((item, idx) => {
                                 const product = item.product_id;
                                 const withdrawn = !product || product.deleted || product.status === false;
-                                const image = getProductImage(product);
 
                                 return (
                                     <div key={idx} className={cx('order-item', { withdrawn })}>
-                                        <img src={image} alt={product?.name || 'Sản phẩm'} />
+                                        <img src={getProductImage(product)} alt={product?.name || 'Sản phẩm'} />
+
                                         <div className={cx('item-info')}>
                                             <p className={cx('name')}>{product?.name || 'Không xác định'}</p>
                                             <p>Số lượng: {item.quantity}</p>

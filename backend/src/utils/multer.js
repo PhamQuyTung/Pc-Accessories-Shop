@@ -2,7 +2,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-const AVATAR_FOLDER = path.join(__dirname, "../uploads/avatars");
+const AVATAR_FOLDER = path.join(__dirname, "../public/uploads/avatars");
 
 // đảm bảo folder tồn tại
 if (!fs.existsSync(AVATAR_FOLDER)) {
