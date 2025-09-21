@@ -3,6 +3,7 @@ import AuthLayout from '~/layout/AuthLayout';
 import AdminLayout from '~/layout/AdminLayout/AdminLayout';
 import RequireAdmin from '~/components/RequireAdmin/RequireAdmin';
 
+// routes page
 import Home from '~/pages/Home/Home';
 import About from '~/pages/About';
 import Product from '~/pages/Product/Product';
@@ -22,6 +23,7 @@ import Blog from '~/pages/BlogPage/BlogPage';
 import Login from '~/pages/Login/Login';
 import Register from '~/pages/Register/Register';
 
+// routes admin
 import ProductManagement from '~/pages/Admin/ProductManagement/ProductManagement';
 import CreateProduct from '~/pages/Admin/CreateProduct/CreateProduct';
 import EditProduct from '~/pages/Admin/EditProduct/EditProduct';
@@ -35,7 +37,11 @@ import AdminMenuManagement from '~/pages/Admin/AdminMenuManagement/AdminMenuMana
 import PromotionManagement from '~/pages/Admin/Promotion/PromotionList/PromotionList';
 import CreatePromotion from '~/pages/Admin/Promotion/PromotionForm/PromotionForm';
 import PromotionDetail from '~/pages/Admin/Promotion/PromotionDetail/PromotionDetail';
+import AdminStats from '~/pages/Admin/AdminStats/AdminStats';
+import OrdersAdminManagement from '~/pages/Admin/OrderAdmin/OrdersManagement/OrdersManagement';
+import OrderAdminDetail from '~/pages/Admin/OrderAdmin/OrderDetail/OrderDetail';
 
+// routes thường
 import ProfileLayout from '~/pages/Profile/ProfileLayout';
 import ProfileInfo from '~/pages/Profile/tabs/ProfileInfo/ProfileInfo';
 import ProfileAddress from '~/pages/Profile/tabs/ProfileAddress';
@@ -59,7 +65,6 @@ import PostPreviewPage from '~/pages/Admin/Post/PostPreviewPage/PostPreviewPage'
 import PostListCategoryPage from '~/pages/PostListCategoryPage/PostListCategoryPage';
 import PostListTagPage from '~/pages/PostListTagPage/PostListTagPage';
 import SearchBlogPage from '~/components/SearchBlogPage/SearchBlogPage';
-import AdminStats from '~/pages/Admin/AdminStats/AdminStats';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -153,6 +158,15 @@ const routes = [
 
             // Thương hiệu sản phẩm
             { path: 'brands', element: <BrandManagement /> }, // Danh sách thương hiệu
+
+            // Order Managerment Admin
+            // Quản lý đơn hàng
+            { path: 'orders', element: <OrdersAdminManagement /> }, // tất cả đơn
+            { path: 'orders/:id', element: <OrderAdminDetail /> }, // chi tiết đơn
+            // { path: 'orders/pending', element: <OrdersManagement status="pending" /> },
+            // { path: 'orders/processing', element: <OrdersManagement status="processing" /> },
+            // { path: 'orders/completed', element: <OrdersManagement status="completed" /> },
+            // { path: 'orders/cancelled', element: <OrdersManagement status="cancelled" /> },
         ],
     },
 

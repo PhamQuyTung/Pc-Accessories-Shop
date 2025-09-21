@@ -180,3 +180,24 @@ exports.getAllOrders = async (req, res) => {
     res.status(500).json({ message: "Lỗi khi lấy danh sách đơn hàng" });
   }
 };
+
+// Lấy đơn hàng theo ID
+exports.getOrderById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const order = await Order.findById(id).populate(
+      "items.product_id",
+      "name slug price discountPrice images status deleted"
+    );
+
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng!" });
+    }
+
+    res.status(200).json({ order });
+  } catch (err) {
+    console.error("🔥 Lỗi khi lấy chi tiết đơn hàng:", err);
+    res.status(500).json({ message: "Lỗi khi lấy chi tiết đơn hàng" });
+  }
+};

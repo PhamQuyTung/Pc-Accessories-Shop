@@ -4,7 +4,7 @@ import styles from './AdminSidebar.module.scss';
 import classNames from 'classnames/bind';
 import { ChevronDown, ChevronRight, LayoutDashboard } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBox, faPalette, faNewspaper } from '@fortawesome/free-solid-svg-icons';
+import { faBox, faPalette, faNewspaper, faClipboardList } from '@fortawesome/free-solid-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const cx = classNames.bind(styles);
@@ -15,6 +15,7 @@ const AdminSidebar = () => {
     const [showPostMenu, setShowPostMenu] = useState(false);
     const [showProductMenu, setShowProductMenu] = useState(false);
     const [showAppearanceMenu, setShowAppearanceMenu] = useState(false);
+    const [showOrderMenu, setShowOrderMenu] = useState(false);
 
     useEffect(() => {
         // Dashboard mở khi ở /admin hoặc /admin/stats
@@ -23,8 +24,8 @@ const AdminSidebar = () => {
         // Bài viết
         setShowPostMenu(
             location.pathname.startsWith('/admin/posts') ||
-            location.pathname.startsWith('/admin/post-categories') ||
-            location.pathname.startsWith('/admin/post-tags')
+                location.pathname.startsWith('/admin/post-categories') ||
+                location.pathname.startsWith('/admin/post-tags'),
         );
 
         // Sản phẩm
@@ -43,18 +44,20 @@ const AdminSidebar = () => {
                 location.pathname.startsWith('/admin/widgets') ||
                 location.pathname.startsWith('/admin/appearance'),
         );
+
+        // Orders
+        setShowOrderMenu(location.pathname.startsWith('/admin/orders'));
     }, [location.pathname]);
 
-    
     // Dashboard active
     const isDashboardActive = location.pathname === '/admin' || location.pathname.startsWith('/admin/stats');
-    
+
     // Bài viết active
     const isPostActive =
         location.pathname.startsWith('/admin/posts') ||
         location.pathname.startsWith('/admin/post-categories') ||
         location.pathname.startsWith('/admin/post-tags');
-    
+
     // Kiểm tra active cho từng nhóm sản phẩm
     const isProductActive =
         location.pathname.startsWith('/admin/products') ||
@@ -69,7 +72,10 @@ const AdminSidebar = () => {
         location.pathname.startsWith('/admin/menus') ||
         location.pathname.startsWith('/admin/widgets') ||
         location.pathname.startsWith('/admin/appearance');
-        
+
+    // Orders active
+    const isOrderActive = location.pathname.startsWith('/admin/orders');
+
     return (
         <div className={cx('AdminSidebar')}>
             {/* Nhóm Dashboard */}
@@ -127,22 +133,41 @@ const AdminSidebar = () => {
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <NavLink to="/admin/posts" end className={({ isActive }) => cx('link', { active: isActive })}>
+                            <NavLink
+                                to="/admin/posts"
+                                end
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
                                 Tất cả bài viết
                             </NavLink>
-                            <NavLink to="/admin/posts/create" className={({ isActive }) => cx('link', { active: isActive })}>
+                            <NavLink
+                                to="/admin/posts/create"
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
                                 Viết bài mới
                             </NavLink>
-                            <NavLink to="/admin/posts/drafts" className={({ isActive }) => cx('link', { active: isActive })}>
+                            <NavLink
+                                to="/admin/posts/drafts"
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
                                 Bản nháp
                             </NavLink>
-                            <NavLink to="/admin/posts/trash" className={({ isActive }) => cx('link', { active: isActive })}>
+                            <NavLink
+                                to="/admin/posts/trash"
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
                                 Thùng rác
                             </NavLink>
-                            <NavLink to="/admin/post-categories" className={({ isActive }) => cx('link', { active: isActive })}>
+                            <NavLink
+                                to="/admin/post-categories"
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
                                 Chuyên mục
                             </NavLink>
-                            <NavLink to="/admin/post-tags" className={({ isActive }) => cx('link', { active: isActive })}>
+                            <NavLink
+                                to="/admin/post-tags"
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
                                 Thẻ
                             </NavLink>
                         </motion.div>
@@ -253,6 +278,52 @@ const AdminSidebar = () => {
                                 className={({ isActive }) => cx('link', { active: isActive })}
                             >
                                 Tùy chỉnh giao diện
+                            </NavLink>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* Nhóm Đơn hàng */}
+            <div className={cx('menu-group')}>
+                <div
+                    className={cx('accordion-header', { active: isOrderActive })}
+                    onClick={() => setShowOrderMenu((prev) => !prev)}
+                >
+                    <span className={cx('group-title')}>
+                        <FontAwesomeIcon icon={faClipboardList} className={cx('custom-iconBox')} />
+                        Đơn hàng
+                    </span>
+                    {showOrderMenu ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                </div>
+
+                <AnimatePresence initial={false}>
+                    {showOrderMenu && (
+                        <motion.div
+                            className={cx('accordion-content')}
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <NavLink
+                                to="/admin/orders"
+                                end
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
+                                Tất cả đơn hàng
+                            </NavLink>
+                            <NavLink
+                                to="/admin/orders/create"
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
+                                Thêm đơn hàng
+                            </NavLink>
+                            <NavLink
+                                to="/admin/orders/trash"
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
+                                Thùng rác đơn hàng
                             </NavLink>
                         </motion.div>
                     )}

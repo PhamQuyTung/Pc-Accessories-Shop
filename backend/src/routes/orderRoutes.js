@@ -7,8 +7,14 @@ const authMiddleware = require("../app/middlewares/authMiddleware");
 router.post("/checkout", authMiddleware, orderController.checkoutOrder);
 router.post("/:id/cancel", authMiddleware, orderController.cancelOrder);
 router.delete("/:id", authMiddleware, orderController.deleteOrder);
+// Lấy đơn hàng của user
 router.get("/", authMiddleware, orderController.getUserOrders);
+
+// Lấy danh sách tất cả đơn (admin)
 router.get("/all", authMiddleware, orderController.getAllOrders);
+
+// ✅ Lấy chi tiết đơn theo ID
+router.get("/:id", authMiddleware, orderController.getOrderById);
 
 
 module.exports = router;
