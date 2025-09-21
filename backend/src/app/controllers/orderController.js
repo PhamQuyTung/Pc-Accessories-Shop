@@ -201,3 +201,23 @@ exports.getOrderById = async (req, res) => {
     res.status(500).json({ message: "Lỗi khi lấy chi tiết đơn hàng" });
   }
 };
+
+// PATCH /api/orders/:id/status
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).populate("items.product_id", "name slug images");
+
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    }
+
+    res.json({ success: true, order });
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi server", error: err.message });
+  }
+};

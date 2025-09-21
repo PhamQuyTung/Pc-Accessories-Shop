@@ -21,6 +21,9 @@ const OrderDetail = () => {
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    const [newStatus, setNewStatus] = useState('');
+    const [updating, setUpdating] = useState(false);
+
     useEffect(() => {
         const fetchOrder = async () => {
             try {
@@ -28,6 +31,7 @@ const OrderDetail = () => {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
                 });
                 setOrder(res.data.order);
+                setNewStatus(res.data.order.status); // 👈 cập nhật sau khi có order
             } catch (err) {
                 console.error('Lỗi khi lấy đơn hàng:', err);
             } finally {
@@ -36,6 +40,24 @@ const OrderDetail = () => {
         };
         fetchOrder();
     }, [id]);
+
+    const handleUpdateStatus = async () => {
+        try {
+            setUpdating(true);
+            const res = await axios.patch(
+                `/api/orders/${order._id}/status`,
+                { status: newStatus },
+                { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } },
+            );
+            setOrder(res.data.order);
+            alert('Cập nhật trạng thái thành công!');
+        } catch (err) {
+            console.error('Lỗi cập nhật:', err);
+            alert('Cập nhật thất bại!');
+        } finally {
+            setUpdating(false);
+        }
+    };
 
     if (loading) return <p>Đang tải...</p>;
     if (!order) return <p>Không tìm thấy đơn hàng</p>;
@@ -149,7 +171,22 @@ const OrderDetail = () => {
 
             {/* Action buttons */}
             <div className={cx('actions')}>
-                <button className={cx('btn', 'update')}>Cập nhật trạng thái</button>
+                <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    className={cx('status-select')}
+                >
+                    <option value="new">Mới</option>
+                    <option value="processing">Đang xử lý</option>
+                    <option value="shipping">Đang giao</option>
+                    <option value="completed">Hoàn thành</option>
+                    <option value="cancelled">Đã hủy</option>
+                </select>
+
+                <button onClick={handleUpdateStatus} className={cx('btn', 'update')} disabled={updating}>
+                    {updating ? 'Đang cập nhật...' : 'Cập nhật trạng thái'}
+                </button>
+
                 <button className={cx('btn', 'print')}>In hóa đơn</button>
                 <button className={cx('btn', 'delete')}>Xóa đơn hàng</button>
                 <Link to="/admin/orders" className={cx('btn', 'back')}>

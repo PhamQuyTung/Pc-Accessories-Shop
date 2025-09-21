@@ -16,5 +16,7 @@ router.get("/all", authMiddleware, orderController.getAllOrders);
 // ✅ Lấy chi tiết đơn theo ID
 router.get("/:id", authMiddleware, orderController.getOrderById);
 
+// PATCH /api/orders/:id/status
+router.patch("/:id/status", authMiddleware, orderController.updateOrderStatus);
 
 module.exports = router;
