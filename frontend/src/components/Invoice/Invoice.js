@@ -1,97 +1,19 @@
-// OrderDetail.js
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { forwardRef } from 'react';
 import classNames from 'classnames/bind';
-import styles from './OrderDetail.module.scss';
-import axios from 'axios';
-import { useReactToPrint } from 'react-to-print';
-import Invoice from '~/components/Invoice/Invoice';
+import styles from './Invoice.module.scss';
 
 const cx = classNames.bind(styles);
 
-const orderStages = [
-    'Tiếp nhận đơn hàng',
-    'Xác nhận đơn hàng',
-    'Chuẩn bị hàng hóa',
-    'Đóng gói',
-    'Vận chuyển và giao hàng',
-    'Xử lý thanh toán',
-    'Xử lý đổi trả (nếu có)',
-];
-
-const OrderDetail = () => {
-    const { id } = useParams();
-    const [order, setOrder] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [newStatus, setNewStatus] = useState('');
-    const [updating, setUpdating] = useState(false);
-
-    // 👉 ref cho phần in
-    const printRef = useRef();
-
-    // Hook in
-    const handlePrint = useReactToPrint({
-        contentRef: printRef, // 👈 dùng contentRef thay vì content()
-        documentTitle: `HoaDon_${id}`,
-    });
-
-    useEffect(() => {
-        const fetchOrder = async () => {
-            try {
-                const res = await axios.get(`/api/orders/${id}`, {
-                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-                });
-                setOrder(res.data.order);
-                setNewStatus(res.data.order.status);
-            } catch (err) {
-                console.error('Lỗi khi lấy đơn hàng:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchOrder();
-    }, [id]);
-
-    const handleUpdateStatus = async () => {
-        try {
-            setUpdating(true);
-            const res = await axios.patch(
-                `/api/orders/${order._id}/status`,
-                { status: newStatus },
-                { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } },
-            );
-            setOrder(res.data.order);
-            alert('Cập nhật trạng thái thành công!');
-        } catch (err) {
-            console.error('Lỗi cập nhật:', err);
-            alert('Cập nhật thất bại!');
-        } finally {
-            setUpdating(false);
-        }
-    };
-
-    if (loading) return <p>Đang tải...</p>;
-    if (!order) return <p>Không tìm thấy đơn hàng</p>;
-
-    let currentStageIndex = 0;
-    if (order.status === 'new') currentStageIndex = 1;
-    if (order.status === 'processing') currentStageIndex = 3;
-    if (order.status === 'shipping') currentStageIndex = 4;
-    if (order.status === 'completed') currentStageIndex = 6;
-    if (order.status === 'cancelled') currentStageIndex = 1;
-
+const Invoice = forwardRef(({ order, orderStages, currentStageIndex }, ref) => {
     return (
-        <div className={cx('order-detail')}>
-            {/* 👉 Ẩn invoice chỉ để in, không hiện trên UI */}
-            <div style={{ display: 'none' }}>
-                <Invoice ref={printRef} order={order} orderStages={orderStages} currentStageIndex={currentStageIndex} />
-            </div>
-
-            {/* Content */}
+        <div ref={ref} className={cx('invoice')}>
             {/* Header */}
             <div className={cx('header')}>
-                <h1>Chi tiết đơn hàng #{order._id.slice(-6)}</h1>
-                <span className={cx('status', order.status)}>{order.status}</span>
+                <div className={cx('logo')}>TECHVN</div>
+                <div>
+                    <h1>Chi tiết đơn hàng #{order._id.slice(-6)}</h1>
+                    <span className={cx('status', order.status)}>{order.status}</span>
+                </div>
             </div>
 
             <p className={cx('date')}>Ngày đặt: {new Date(order.createdAt).toLocaleDateString('vi-VN')}</p>
@@ -216,36 +138,28 @@ const OrderDetail = () => {
                 </p>
             </div>
 
-            {/* Action buttons */}
-            <div className={cx('actions')}>
-                <select
-                    value={newStatus}
-                    onChange={(e) => setNewStatus(e.target.value)}
-                    className={cx('status-select')}
-                >
-                    <option value="new">Mới</option>
-                    <option value="processing">Đang xử lý</option>
-                    <option value="shipping">Đang giao</option>
-                    <option value="completed">Hoàn thành</option>
-                    <option value="cancelled">Đã hủy</option>
-                </select>
+            {/* Footer chữ ký */}
+            <div className={cx('footer')}>
+                <div className={cx('signature')}>
+                    <p>
+                        <strong>Người lập hóa đơn</strong>
+                    </p>
+                    {/* Chèn ảnh chữ ký */}
+                    <div className={cx('signature-img')}>
+                        <img src="/uploads/signature/signature-tung.png" alt="Chữ ký người lập" />
+                    </div>
+                    {/* <div className={cx('line')}></div> */}
+                </div>
 
-                <button onClick={handleUpdateStatus} className={cx('btn', 'update')} disabled={updating}>
-                    {updating ? 'Đang cập nhật...' : 'Cập nhật trạng thái'}
-                </button>
-
-                <button onClick={handlePrint} className={cx('btn', 'print')}>
-                    🖨️ In hóa đơn
-                </button>
-
-                <button className={cx('btn', 'delete')}>Xóa đơn hàng</button>
-
-                <Link to="/admin/orders" className={cx('btn', 'back')}>
-                    ← Quay lại
-                </Link>
+                <div className={cx('signature')}>
+                    <p>
+                        <strong>Người nhận hàng</strong>
+                    </p>
+                    {/* <div className={cx('line')}></div> */}
+                </div>
             </div>
         </div>
     );
-};
+});
 
-export default OrderDetail;
+export default Invoice;
