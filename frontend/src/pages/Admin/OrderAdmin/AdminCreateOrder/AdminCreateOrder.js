@@ -34,6 +34,30 @@ const AdminCreateOrder = () => {
     const [selectedProduct, setSelectedProduct] = useState('');
     const [quantity, setQuantity] = useState(1);
 
+    // thêm state cho tax
+    const [taxPercent, setTaxPercent] = useState(0);
+
+    // thêm state cho discountpercent
+    const [discountPercent, setDiscountPercent] = useState(0);
+
+    // Tính toán toàn bộ khi items, taxPercent, discountPercent, serviceFee, shippingFee thay đổi
+    useEffect(() => {
+        const subtotal = formData.items.reduce((sum, i) => sum + i.total, 0);
+
+        const taxAmount = Math.round((subtotal * taxPercent) / 100);
+        const discountAmount = Math.round((subtotal * discountPercent) / 100);
+
+        const finalAmount = subtotal + taxAmount + formData.serviceFee + formData.shippingFee - discountAmount;
+
+        setFormData((prev) => ({
+            ...prev,
+            subtotal,
+            tax: taxAmount,
+            discount: discountAmount,
+            finalAmount,
+        }));
+    }, [formData.items, taxPercent, discountPercent, formData.serviceFee, formData.shippingFee]);
+
     // Fetch danh sách sản phẩm khi load trang
     useEffect(() => {
         axiosClient
@@ -47,34 +71,20 @@ const AdminCreateOrder = () => {
             .catch((err) => console.error('Lỗi khi lấy sản phẩm:', err));
     }, []);
 
-    // Tính toán lại subtotal & finalAmount khi items/fees thay đổi
-    useEffect(() => {
-        const subtotal = formData.items.reduce((sum, i) => sum + i.total, 0);
-        const finalAmount = subtotal + formData.tax + formData.serviceFee + formData.shippingFee - formData.discount;
-        setFormData((prev) => ({ ...prev, subtotal, finalAmount }));
-    }, [formData.items, formData.tax, formData.serviceFee, formData.shippingFee, formData.discount]);
-
-    // Thêm sản phẩm vào đơn
+    // Thêm từ input tay
     const handleAddItem = () => {
-        if (!newItem.productName || !newItem.price) return;
-
-        const price = parseFloat(newItem.price);
-        const quantity = parseInt(newItem.quantity, 10);
-        const itemTotal = price * quantity;
-
-        const updatedItems = [...formData.items, { ...newItem, price, quantity, total: itemTotal }];
-
-        const subtotal = updatedItems.reduce((sum, i) => sum + i.total, 0);
-        const finalAmount = subtotal + formData.tax + formData.serviceFee + formData.shippingFee - formData.discount;
-
-        setFormData({
-            ...formData,
-            items: updatedItems,
-            subtotal,
-            finalAmount,
+        handleAddToOrder({
+            productName: newItem.productName,
+            price: parseFloat(newItem.price),
+            quantity: parseInt(newItem.quantity, 10),
         });
-
         setNewItem({ productName: '', price: '', quantity: 1 });
+    };
+
+    // Xóa sản phẩm trong items
+    const handleRemoveItem = (index) => {
+        const updatedItems = formData.items.filter((_, i) => i !== index);
+        setFormData((prev) => ({ ...prev, items: updatedItems }));
     };
 
     // Submit đơn hàng
@@ -110,40 +120,41 @@ const AdminCreateOrder = () => {
         }
     };
 
-    // Xóa sản phẩm items
-    const handleRemoveItem = (index) => {
-        const updatedItems = formData.items.filter((_, i) => i !== index);
-        const subtotal = updatedItems.reduce((sum, i) => sum + i.total, 0);
-        const finalAmount = subtotal + formData.tax + formData.serviceFee + formData.shippingFee - formData.discount;
-        setFormData({ ...formData, items: updatedItems, subtotal, finalAmount });
+    // Thêm từ dropdown
+    const handleAddProduct = () => {
+        const product = products.find((p) => p._id === selectedProduct);
+        if (!product) return;
+
+        handleAddToOrder({
+            productId: product._id,
+            productName: product.name,
+            price: parseFloat(product.price),
+            quantity: parseInt(quantity, 10),
+        });
+
+        setSelectedProduct('');
+        setQuantity(1);
     };
 
-    // Thêm sản phẩm từ dropdow
-    const handleAddProduct = (productId, qty = 1) => {
-        const product = products.find((p) => p._id === productId);
-        if (product) {
-            const price = parseFloat(product.price);
-            const quantity = parseInt(qty, 10);
-            const itemTotal = price * quantity;
+    // Gom thêm sản phẩm (thủ công hoặc từ dropdown)
+    const handleAddToOrder = ({ productId, productName, price, quantity }) => {
+        if (!productName || !price || quantity <= 0) return;
 
-            setFormData((prev) => ({
-                ...prev,
-                items: [
-                    ...prev.items,
-                    {
-                        product_id: product._id,
-                        productName: product.name,
-                        price,
-                        quantity,
-                        total: itemTotal,
-                    },
-                ],
-            }));
+        const itemTotal = price * quantity;
 
-            // reset select
-            setSelectedProduct('');
-            setQuantity(1);
-        }
+        setFormData((prev) => ({
+            ...prev,
+            items: [
+                ...prev.items,
+                {
+                    product_id: productId || null,
+                    productName,
+                    price,
+                    quantity,
+                    total: itemTotal,
+                },
+            ],
+        }));
     };
 
     // Tính tổng tiền của newItem
@@ -293,43 +304,71 @@ const AdminCreateOrder = () => {
 
             {/* Tổng cộng */}
             <div className={cx('totals')}>
-                <p>
-                    <span>Tạm tính:</span> <strong>{formData.subtotal.toLocaleString('vi-VN')} ₫</strong>
-                </p>
-                <p>
-                    <span>Thuế (VAT):</span>{' '}
+                <div className={cx('row')}>
+                    <span>Tạm tính:</span>
+                    <span></span>
+                    <strong>{formData.subtotal.toLocaleString('vi-VN')} ₫</strong>
+                </div>
+
+                <div className={cx('row')}>
+                    <span>Thuế (VAT):</span>
                     <input
                         type="number"
-                        value={formData.tax}
-                        onChange={(e) => setFormData({ ...formData, tax: parseInt(e.target.value || 0, 10) })}
+                        min="0"
+                        max="100"
+                        value={taxPercent}
+                        onChange={(e) => setTaxPercent(parseFloat(e.target.value) || 0)}
                     />
-                </p>
-                <p>
-                    <span>Phí dịch vụ:</span>{' '}
+                    <em>({formData.tax.toLocaleString('vi-VN')} ₫)</em>
+                </div>
+
+                <div className={cx('row')}>
+                    <span>Phí dịch vụ:</span>
                     <input
                         type="number"
+                        min="0"
                         value={formData.serviceFee}
-                        onChange={(e) => setFormData({ ...formData, serviceFee: parseInt(e.target.value || 0, 10) })}
+                        onChange={(e) =>
+                            setFormData({
+                                ...formData,
+                                serviceFee: parseInt(e.target.value || 0, 10),
+                            })
+                        }
                     />
-                </p>
-                <p>
-                    <span>Phí vận chuyển:</span>{' '}
+                    <em>({formData.serviceFee.toLocaleString('vi-VN')} ₫)</em>
+                </div>
+
+                <div className={cx('row')}>
+                    <span>Phí vận chuyển:</span>
                     <input
                         type="number"
+                        min="0"
                         value={formData.shippingFee}
-                        onChange={(e) => setFormData({ ...formData, shippingFee: parseInt(e.target.value || 0, 10) })}
+                        onChange={(e) =>
+                            setFormData({
+                                ...formData,
+                                shippingFee: parseInt(e.target.value || 0, 10),
+                            })
+                        }
                     />
-                </p>
-                <p>
-                    <span>Giảm giá:</span>{' '}
+                    <em>({formData.shippingFee.toLocaleString('vi-VN')} ₫)</em>
+                </div>
+
+                <div className={cx('row')}>
+                    <span>Giảm giá:</span>
                     <input
                         type="number"
-                        value={formData.discount}
-                        onChange={(e) => setFormData({ ...formData, discount: parseInt(e.target.value || 0, 10) })}
+                        min="0"
+                        max="100"
+                        value={discountPercent}
+                        onChange={(e) => setDiscountPercent(parseFloat(e.target.value) || 0)}
                     />
-                </p>
+                    <em>({formData.discount.toLocaleString('vi-VN')} ₫)</em>
+                </div>
+
                 <p className={cx('grand-total')}>
-                    <span>Tổng cộng:</span> <strong>{formData.finalAmount.toLocaleString('vi-VN')} ₫</strong>
+                    <span>Tổng cộng:</span>
+                    <strong>{formData.finalAmount.toLocaleString('vi-VN')} ₫</strong>
                 </p>
             </div>
 

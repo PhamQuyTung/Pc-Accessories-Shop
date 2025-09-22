@@ -163,32 +163,40 @@
         border-radius: 8px;
         border: 1px solid #eee;
 
-        p {
-            display: flex;
+        .row {
+            display: grid;
+            grid-template-columns: 160px 120px 1fr; // label - input - value
             align-items: center;
-            justify-content: space-between;
+            gap: 12px;
             margin-bottom: 10px;
             font-size: 14px;
+
+            strong {
+                text-align: end;
+            }
 
             span {
                 color: #555;
             }
 
-            strong {
-                font-weight: 600;
-                color: #111;
-            }
-
             input {
-                width: 120px;
+                width: 100%;
                 padding: 6px 8px;
                 border: 1px solid #ddd;
                 border-radius: 6px;
                 text-align: right;
             }
+
+            em {
+                color: #666;
+                font-style: normal;
+                text-align: end;
+            }
         }
 
         .grand-total {
+            display: flex;
+            justify-content: space-between;
             font-size: 16px;
             font-weight: 700;
             color: #d32f2f;
