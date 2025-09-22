@@ -12,6 +12,7 @@ class ProductController {
         isAdmin,
         search,
         category,
+        categoryId, // 👈 thêm vào query
         visible,
         sort,
         page = 1,
@@ -28,7 +29,10 @@ class ProductController {
         match.name = { $regex: search, $options: "i" };
       }
 
-      if (category) {
+      // ✅ Ưu tiên categoryId nếu có
+      if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
+        match.category = new mongoose.Types.ObjectId(categoryId);
+      } else if (category) {
         const cat = await Category.findOne({ slug: category });
         if (cat) {
           match.category = cat._id;
@@ -54,18 +58,15 @@ class ProductController {
           },
         },
         { $unwind: "$category" },
-
         {
           $lookup: {
-            from: "brands", // tên collection trong Mongo
-            localField: "brand", // field trong Product
-            foreignField: "_id", // so sánh với _id của Brand
+            from: "brands",
+            localField: "brand",
+            foreignField: "_id",
             as: "brand",
           },
         },
-        { $unwind: "$brand" }, // nếu 1 sản phẩm chỉ có 1 brand
-
-        // ✅ THÊM ĐÂY:
+        { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
             from: "reviews",
@@ -86,11 +87,9 @@ class ProductController {
             reviewCount: { $size: "$reviews" },
           },
         },
-
-        // 👇 Phần sort & phân trang giữ nguyên
       ];
 
-      // 👉 Nếu sort theo giá thì thêm field
+      // 👉 Nếu sort theo giá thì thêm field sortPrice
       if (sort && sort.startsWith("price")) {
         pipeline.push({
           $addFields: {
@@ -105,7 +104,7 @@ class ProductController {
         });
       }
 
-      // 👉 Sort logic
+      // 👉 Sort
       if (sort) {
         const [field, order] = sort.split("_");
         const sortValue = order === "asc" ? 1 : -1;

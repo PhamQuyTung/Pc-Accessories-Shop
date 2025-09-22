@@ -1,0 +1,160 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+
+    opacity: 0;
+    transition: opacity 0.3s ease;
+
+    &.opening {
+        opacity: 1;
+    }
+
+    &.closing {
+        opacity: 0;
+    }
+}
+
+.modal {
+    position: relative;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 900px;
+    width: 100%;
+
+    transform: translateY(-20px) scale(0.95); // mặc định hơi nhỏ + dịch lên
+    opacity: 0;
+    transition: all 0.3s ease;
+
+    &.opening {
+        transform: translateY(0) scale(1); // hiện ra full size
+        opacity: 1;
+    }
+
+    &.closing {
+        transform: translateY(-20px) scale(0.95); // thu nhỏ lại khi đóng
+        opacity: 0;
+    }
+}
+
+.footer {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+
+    .footer-body {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+
+table {
+    width: 100%;
+    border-collapse: separate; // 👈 tách cell thay vì dính liền
+    border-spacing: 0 8px; // 👈 thêm khoảng cách 8px giữa các hàng
+    margin-bottom: 20px;
+
+    th,
+    td {
+        padding: 10px; // 👈 thêm padding cho ô
+        text-align: left;
+    }
+
+    td:last-child {
+        text-align: center; // căn giữa nút chọn
+    }
+}
+
+tr {
+    background: #fafafa;
+    border-radius: 6px;
+}
+
+.btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #eee;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: #f44336;
+        color: #fff;
+    }
+}
+
+.btn.success {
+    background: #4caf50;
+    color: #fff;
+}
+
+.btn.danger {
+    background: #f44336;
+    color: #fff;
+}
+
+.filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+
+    select,
+    input {
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        flex: 1;
+    }
+}
+
+.name {
+    padding-right: 20px;
+}
+
+table {
+    margin-bottom: 20px;
+}
+
+.btn-wrapp {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.th-w80px {
+    width: 80px;
+}
+
+.quantity {
+    text-align: center;
+}
+
+.cost {
+    width: 110px;
+}
+
+tr {
+    padding: 20px;
+}
+
+.close-btn {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #333;
+
+    &:hover {
+        color: red;
+    }
+}

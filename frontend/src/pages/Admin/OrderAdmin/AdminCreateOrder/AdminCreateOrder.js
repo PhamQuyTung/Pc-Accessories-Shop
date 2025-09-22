@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './AdminCreateOrder.module.scss';
 import axiosClient from '~/utils/axiosClient';
+import ProductSelectModal from '~/components/ProductSelectModal/ProductSelectModal';
 
 const cx = classNames.bind(styles);
 
@@ -24,23 +25,16 @@ const AdminCreateOrder = () => {
         finalAmount: 0,
     });
 
-    const [newItem, setNewItem] = useState({
-        productName: '',
-        price: '',
-        quantity: 1,
-    });
-
     const [products, setProducts] = useState([]);
-    const [selectedProduct, setSelectedProduct] = useState('');
-    const [quantity, setQuantity] = useState(1);
 
-    // thêm state cho tax
+    // tax & discount %
     const [taxPercent, setTaxPercent] = useState(0);
-
-    // thêm state cho discountpercent
     const [discountPercent, setDiscountPercent] = useState(0);
 
-    // Tính toán toàn bộ khi items, taxPercent, discountPercent, serviceFee, shippingFee thay đổi
+    // show modal
+    const [showProductModal, setShowProductModal] = useState(false);
+
+    // tính toán lại tiền khi items, tax, discount thay đổi
     useEffect(() => {
         const subtotal = formData.items.reduce((sum, i) => sum + i.total, 0);
 
@@ -58,36 +52,45 @@ const AdminCreateOrder = () => {
         }));
     }, [formData.items, taxPercent, discountPercent, formData.serviceFee, formData.shippingFee]);
 
-    // Fetch danh sách sản phẩm khi load trang
+    // fetch sản phẩm khi load
     useEffect(() => {
         axiosClient
             .get('/products')
             .then((res) => {
-                // Nếu API trả về { products: [...] } thì lấy res.data.products
-                // Nếu trả về mảng trực tiếp thì vẫn dùng được
                 const data = Array.isArray(res.data) ? res.data : res.data.products || [];
                 setProducts(data);
             })
             .catch((err) => console.error('Lỗi khi lấy sản phẩm:', err));
     }, []);
 
-    // Thêm từ input tay
-    const handleAddItem = () => {
-        handleAddToOrder({
-            productName: newItem.productName,
-            price: parseFloat(newItem.price),
-            quantity: parseInt(newItem.quantity, 10),
-        });
-        setNewItem({ productName: '', price: '', quantity: 1 });
+    // thêm sản phẩm vào items
+    const handleAddToOrder = ({ productId, productName, price, quantity }) => {
+        if (!productName || !price || quantity <= 0) return;
+
+        const itemTotal = price * quantity;
+
+        setFormData((prev) => ({
+            ...prev,
+            items: [
+                ...prev.items,
+                {
+                    product_id: productId || null,
+                    productName,
+                    price,
+                    quantity,
+                    total: itemTotal,
+                },
+            ],
+        }));
     };
 
-    // Xóa sản phẩm trong items
+    // xóa sản phẩm
     const handleRemoveItem = (index) => {
         const updatedItems = formData.items.filter((_, i) => i !== index);
         setFormData((prev) => ({ ...prev, items: updatedItems }));
     };
 
-    // Submit đơn hàng
+    // submit đơn hàng
     const handleSubmit = async () => {
         try {
             await axiosClient.post(
@@ -118,50 +121,6 @@ const AdminCreateOrder = () => {
             console.error('Lỗi tạo đơn hàng:', err);
             alert('Tạo đơn hàng thất bại!');
         }
-    };
-
-    // Thêm từ dropdown
-    const handleAddProduct = () => {
-        const product = products.find((p) => p._id === selectedProduct);
-        if (!product) return;
-
-        handleAddToOrder({
-            productId: product._id,
-            productName: product.name,
-            price: parseFloat(product.price),
-            quantity: parseInt(quantity, 10),
-        });
-
-        setSelectedProduct('');
-        setQuantity(1);
-    };
-
-    // Gom thêm sản phẩm (thủ công hoặc từ dropdown)
-    const handleAddToOrder = ({ productId, productName, price, quantity }) => {
-        if (!productName || !price || quantity <= 0) return;
-
-        const itemTotal = price * quantity;
-
-        setFormData((prev) => ({
-            ...prev,
-            items: [
-                ...prev.items,
-                {
-                    product_id: productId || null,
-                    productName,
-                    price,
-                    quantity,
-                    total: itemTotal,
-                },
-            ],
-        }));
-    };
-
-    // Tính tổng tiền của newItem
-    const calculateNewItemTotal = () => {
-        const price = parseFloat(newItem.price || 0);
-        const quantity = parseInt(newItem.quantity || 0, 10);
-        return price > 0 && quantity > 0 ? price * quantity : 0;
     };
 
     return (
@@ -222,7 +181,7 @@ const AdminCreateOrder = () => {
 
             {/* Sản phẩm */}
             <div className={cx('products')}>
-                <h3>Thêm sản phẩm</h3>
+                <h3>Danh sách sản phẩm</h3>
                 <table>
                     <thead>
                         <tr>
@@ -234,54 +193,6 @@ const AdminCreateOrder = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {/* Chọn sản phẩm từ dropdown */}
-                        <tr>
-                            <td>
-                                <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}>
-                                    <option value="">-- Chọn sản phẩm --</option>
-                                    {products.map((p) => (
-                                        <option key={p._id} value={p._id}>
-                                            {p.name} - {p.price.toLocaleString('vi-VN')} ₫
-                                        </option>
-                                    ))}
-                                </select>
-                            </td>
-
-                            <td className={cx('text-center')}>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    value={quantity}
-                                    onChange={(e) => setQuantity(e.target.value)}
-                                />
-                            </td>
-
-                            <td className={cx('text-right')}>
-                                {selectedProduct
-                                    ? products.find((p) => p._id === selectedProduct)?.price.toLocaleString('vi-VN') +
-                                      ' ₫'
-                                    : '—'}
-                            </td>
-
-                            <td className={cx('text-right')}>
-                                {selectedProduct
-                                    ? (
-                                          products.find((p) => p._id === selectedProduct)?.price * quantity
-                                      ).toLocaleString('vi-VN') + ' ₫'
-                                    : '—'}
-                            </td>
-
-                            <td>
-                                <button
-                                    className={cx('btn', 'icon')}
-                                    onClick={() => handleAddProduct(selectedProduct, quantity)}
-                                >
-                                    ➕
-                                </button>
-                            </td>
-                        </tr>
-
-                        {/* Các sản phẩm đã thêm */}
                         {formData.items.map((item, index) => (
                             <tr key={index}>
                                 <td>{item.productName}</td>
@@ -298,6 +209,13 @@ const AdminCreateOrder = () => {
                                 </td>
                             </tr>
                         ))}
+                        <tr>
+                            <td colSpan={5} className={cx('text-center')}>
+                                <button className={cx('btn')} onClick={() => setShowProductModal(true)}>
+                                    ➕ Thêm sản phẩm
+                                </button>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -381,6 +299,15 @@ const AdminCreateOrder = () => {
                     ← Quay lại
                 </Link>
             </div>
+
+            {/* Modal chọn sản phẩm */}
+            {showProductModal && (
+                <ProductSelectModal
+                    products={products}
+                    onAdd={handleAddToOrder}
+                    onClose={() => setShowProductModal(false)}
+                />
+            )}
         </div>
     );
 };
