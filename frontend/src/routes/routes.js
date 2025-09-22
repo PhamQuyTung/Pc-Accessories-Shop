@@ -65,6 +65,7 @@ import PostPreviewPage from '~/pages/Admin/Post/PostPreviewPage/PostPreviewPage'
 import PostListCategoryPage from '~/pages/PostListCategoryPage/PostListCategoryPage';
 import PostListTagPage from '~/pages/PostListTagPage/PostListTagPage';
 import SearchBlogPage from '~/components/SearchBlogPage/SearchBlogPage';
+import AdminCreateOrder from '~/pages/Admin/OrderAdmin/AdminCreateOrder/AdminCreateOrder';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -163,10 +164,7 @@ const routes = [
             // Quản lý đơn hàng
             { path: 'orders', element: <OrdersAdminManagement /> }, // tất cả đơn
             { path: 'orders/:id', element: <OrderAdminDetail /> }, // chi tiết đơn
-            // { path: 'orders/pending', element: <OrdersManagement status="pending" /> },
-            // { path: 'orders/processing', element: <OrdersManagement status="processing" /> },
-            // { path: 'orders/completed', element: <OrdersManagement status="completed" /> },
-            // { path: 'orders/cancelled', element: <OrdersManagement status="cancelled" /> },
+            { path: 'orders/create', element: <AdminCreateOrder /> }, // admin tạo hóa đơn
         ],
     },
 

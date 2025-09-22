@@ -41,7 +41,13 @@ const OrdersManagement = () => {
 
     return (
         <div className={cx('orders-page')}>
-            <h1 className={cx('title')}>Quản lý đơn hàng</h1>
+            {/* Header */}
+            <div className={cx('header')}>
+                <h1 className={cx('title')}>Quản lý đơn hàng</h1>
+                <Link to="/admin/orders/create" className={cx('btn', 'create')}>
+                    ➕ Tạo đơn hàng
+                </Link>
+            </div>
 
             {/* Tabs */}
             <div className={cx('tabs')}>

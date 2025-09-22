@@ -221,3 +221,62 @@ exports.updateOrderStatus = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: err.message });
   }
 };
+
+// Tạo đơn hàng bởi admin
+exports.createOrderByAdmin = async (req, res) => {
+  try {
+    const {
+      shippingInfo,
+      note,
+      paymentMethod,
+      status,
+      items,
+      subtotal,
+      tax,
+      serviceFee,
+      shippingFee,
+      discount,
+      finalAmount,
+    } = req.body;
+
+    if (!items || !items.length) {
+      return res
+        .status(400)
+        .json({ message: "Đơn hàng phải có ít nhất 1 sản phẩm!" });
+    }
+
+    const orderItems = items.map((item) => ({
+      product_id: item.product_id || null, // nếu admin nhập tay thì có thể null
+      productName: item.productName || "", // 👈 lưu lại tên sản phẩm nhập tay
+      quantity: item.quantity,
+      price: item.price,
+    }));
+
+    const order = new Order({
+      user_id: req.userId || null, // Admin có thể tạo đơn cho khách lẻ
+      items: orderItems,
+      subtotal,
+      tax,
+      serviceFee,
+      shippingFee,
+      discount,
+      totalAmount: finalAmount,
+      finalAmount,
+      paymentMethod: paymentMethod?.toLowerCase(), // 👈 ép về lowercase,
+      status: status || "new",
+      shippingInfo,
+      note,
+    });
+
+    await order.save();
+
+    // Emit realtime nếu có socket
+    const io = req.app.locals.io;
+    if (io) io.emit("order:new", { order });
+
+    return res.status(201).json({ message: "Tạo đơn hàng thành công!", order });
+  } catch (err) {
+    console.error("🔥 Lỗi tạo đơn hàng (admin):", err);
+    return res.status(500).json({ message: "Lỗi khi admin tạo đơn hàng" });
+  }
+};

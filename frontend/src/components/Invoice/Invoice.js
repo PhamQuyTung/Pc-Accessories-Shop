@@ -101,8 +101,12 @@ const Invoice = forwardRef(({ order, orderStages, currentStageIndex }, ref) => {
                             return (
                                 <tr key={item._id}>
                                     <td className={cx('product-cell')}>
-                                        <img src={imageUrl} alt={product?.name} className={cx('product-img')} />
-                                        <span>{product?.name}</span>
+                                        <img
+                                            src={imageUrl}
+                                            alt={product?.name || item.productName}
+                                            className={cx('product-img')}
+                                        />
+                                        <span>{product?.name || item.productName}</span>
                                     </td>
                                     <td className={cx('text-center')}>{item.quantity}</td>
                                     <td className={cx('text-right')}>{item.price.toLocaleString('vi-VN')} ₫</td>
@@ -134,7 +138,7 @@ const Invoice = forwardRef(({ order, orderStages, currentStageIndex }, ref) => {
                     <span>Giảm giá:</span> <strong>{order.discount.toLocaleString('vi-VN')} ₫</strong>
                 </p>
                 <p className={cx('grand-total')}>
-                    <span>Tổng cộng:</span> <strong>{order.finalAmount.toLocaleString('vi-VN')} ₫</strong>
+                    <span>Tổng cộng:</span> <strong>{(order.subtotal + order.tax + order.serviceFee + order.shippingFee - order.discount).toLocaleString('vi-VN')} ₫</strong>
                 </p>
             </div>
 

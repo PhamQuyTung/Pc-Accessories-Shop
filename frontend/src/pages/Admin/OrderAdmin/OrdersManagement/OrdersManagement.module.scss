@@ -170,3 +170,25 @@
         font-weight: 600;
     }
 }
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.btn.create {
+    background: #1677ff;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: 0.2s;
+
+    &:hover {
+        background: #0958d9;
+    }
+}

@@ -19,4 +19,7 @@ router.get("/:id", authMiddleware, orderController.getOrderById);
 // PATCH /api/orders/:id/status
 router.patch("/:id/status", authMiddleware, orderController.updateOrderStatus);
 
+// Admin tạo đơn mới
+router.post("/admin/create", authMiddleware, orderController.createOrderByAdmin);
+
 module.exports = router;

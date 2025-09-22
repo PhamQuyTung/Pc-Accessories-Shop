@@ -14,6 +14,7 @@ const orderSchema = new mongoose.Schema(
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product",
         },
+        productName: String, // 👈 thêm
         quantity: Number,
         price: Number, // Lưu lại giá tại thời điểm đặt hàng
       },
@@ -26,7 +27,7 @@ const orderSchema = new mongoose.Schema(
     serviceFee: Number,
     totalAmount: Number,
     finalAmount: Number,
-    paymentMethod: { type: String, enum: ["cod", "bank"], required: false },
+    paymentMethod: { type: String, enum: ["cod", "bank", "momo"], required: false },
 
     status: {
       type: String,
