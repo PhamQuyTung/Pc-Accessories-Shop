@@ -14,6 +14,7 @@ const tabList = [
     { key: 'shipping', label: 'Đang giao' },
     { key: 'completed', label: 'Hoàn thành' },
     { key: 'cancelled', label: 'Đã hủy' },
+    { key: 'deleted', label: 'Đã xóa' }, // Tab này lấy những đơn hàng mà người dùng xóa khỏi hệ thống
 ];
 
 const OrdersManagement = () => {
@@ -83,14 +84,19 @@ const OrdersManagement = () => {
                                 filteredOrders.map((order) => (
                                     <tr key={order._id}>
                                         <td>#{order._id.slice(-6)}</td>
+                                        
                                         <td>{order.shippingInfo?.name || 'Ẩn danh'}</td>
+
                                         <td>{new Date(order.createdAt).toLocaleDateString('vi-VN')}</td>
+
                                         <td>
                                             <span className={cx('status', order.status)}>{order.status}</span>
                                         </td>
+
                                         <td className={cx('text-right')}>
-                                            {order.finalAmount.toLocaleString('vi-VN')} ₫
+                                            {order.totalAmount.toLocaleString('vi-VN')} ₫
                                         </td>
+
                                         <td className={cx('actions')}>
                                             <Link
                                                 to={`/admin/orders/${order._id}`}

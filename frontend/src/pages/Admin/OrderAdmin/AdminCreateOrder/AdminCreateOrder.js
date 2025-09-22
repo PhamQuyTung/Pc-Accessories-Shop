@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './AdminCreateOrder.module.scss';
-import axios from 'axios';
+import axiosClient from '~/utils/axiosClient';
 
 const cx = classNames.bind(styles);
 
@@ -30,6 +30,24 @@ const AdminCreateOrder = () => {
         quantity: 1,
     });
 
+    const [products, setProducts] = useState([]);
+    const [selectedProduct, setSelectedProduct] = useState('');
+    const [quantity, setQuantity] = useState(1);
+
+    // Fetch danh sách sản phẩm khi load trang
+    useEffect(() => {
+        axiosClient
+            .get('/products')
+            .then((res) => {
+                // Nếu API trả về { products: [...] } thì lấy res.data.products
+                // Nếu trả về mảng trực tiếp thì vẫn dùng được
+                const data = Array.isArray(res.data) ? res.data : res.data.products || [];
+                setProducts(data);
+            })
+            .catch((err) => console.error('Lỗi khi lấy sản phẩm:', err));
+    }, []);
+
+    // Tính toán lại subtotal & finalAmount khi items/fees thay đổi
     useEffect(() => {
         const subtotal = formData.items.reduce((sum, i) => sum + i.total, 0);
         const finalAmount = subtotal + formData.tax + formData.serviceFee + formData.shippingFee - formData.discount;
@@ -62,8 +80,8 @@ const AdminCreateOrder = () => {
     // Submit đơn hàng
     const handleSubmit = async () => {
         try {
-            await axios.post(
-                '/api/orders/admin/create',
+            await axiosClient.post(
+                '/orders/admin/create',
                 {
                     shippingInfo: {
                         name: formData.name,
@@ -98,6 +116,34 @@ const AdminCreateOrder = () => {
         const subtotal = updatedItems.reduce((sum, i) => sum + i.total, 0);
         const finalAmount = subtotal + formData.tax + formData.serviceFee + formData.shippingFee - formData.discount;
         setFormData({ ...formData, items: updatedItems, subtotal, finalAmount });
+    };
+
+    // Thêm sản phẩm từ dropdow
+    const handleAddProduct = (productId, qty = 1) => {
+        const product = products.find((p) => p._id === productId);
+        if (product) {
+            const price = parseFloat(product.price);
+            const quantity = parseInt(qty, 10);
+            const itemTotal = price * quantity;
+
+            setFormData((prev) => ({
+                ...prev,
+                items: [
+                    ...prev.items,
+                    {
+                        product_id: product._id,
+                        productName: product.name,
+                        price,
+                        quantity,
+                        total: itemTotal,
+                    },
+                ],
+            }));
+
+            // reset select
+            setSelectedProduct('');
+            setQuantity(1);
+        }
     };
 
     // Tính tổng tiền của newItem
@@ -177,42 +223,48 @@ const AdminCreateOrder = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {/* Hàng nhập sản phẩm mới */}
+                        {/* Chọn sản phẩm từ dropdown */}
                         <tr>
                             <td>
-                                <input
-                                    type="text"
-                                    placeholder="Tên sản phẩm"
-                                    value={newItem.productName}
-                                    onChange={(e) => setNewItem({ ...newItem, productName: e.target.value })}
-                                />
+                                <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}>
+                                    <option value="">-- Chọn sản phẩm --</option>
+                                    {products.map((p) => (
+                                        <option key={p._id} value={p._id}>
+                                            {p.name} - {p.price.toLocaleString('vi-VN')} ₫
+                                        </option>
+                                    ))}
+                                </select>
                             </td>
 
                             <td className={cx('text-center')}>
                                 <input
                                     type="number"
                                     min="1"
-                                    value={newItem.quantity}
-                                    onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
+                                    value={quantity}
+                                    onChange={(e) => setQuantity(e.target.value)}
                                 />
                             </td>
 
                             <td className={cx('text-right')}>
-                                <input
-                                    type="number"
-                                    value={newItem.price}
-                                    onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
-                                />
+                                {selectedProduct
+                                    ? products.find((p) => p._id === selectedProduct)?.price.toLocaleString('vi-VN') +
+                                      ' ₫'
+                                    : '—'}
                             </td>
 
                             <td className={cx('text-right')}>
-                                {calculateNewItemTotal() > 0
-                                    ? calculateNewItemTotal().toLocaleString('vi-VN') + ' ₫'
+                                {selectedProduct
+                                    ? (
+                                          products.find((p) => p._id === selectedProduct)?.price * quantity
+                                      ).toLocaleString('vi-VN') + ' ₫'
                                     : '—'}
                             </td>
 
                             <td>
-                                <button className={cx('btn', 'icon')} onClick={handleAddItem}>
+                                <button
+                                    className={cx('btn', 'icon')}
+                                    onClick={() => handleAddProduct(selectedProduct, quantity)}
+                                >
                                     ➕
                                 </button>
                             </td>

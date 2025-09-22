@@ -49,7 +49,11 @@ exports.checkoutOrder = async (req, res) => {
     const shippingFee = req.body.shippingFee || 0;
     const serviceFee = req.body.serviceFee || 0;
 
-    const totalAmount = subtotal + tax + shippingFee + serviceFee - discount;
+    // ✅ Tổng trước giảm giá
+    const totalAmount = subtotal + tax + shippingFee + serviceFee;
+
+    // ✅ Tổng sau giảm giá
+    const finalAmount = totalAmount - discount;
 
     let newOrder = new Order({
       user_id: userId,
@@ -59,8 +63,8 @@ exports.checkoutOrder = async (req, res) => {
       discount,
       shippingFee,
       serviceFee,
-      totalAmount,
-      finalAmount: totalAmount,
+      totalAmount, 
+      finalAmount, 
       shippingInfo: req.body.shippingInfo,
       paymentMethod: req.body.paymentMethod,
     });
