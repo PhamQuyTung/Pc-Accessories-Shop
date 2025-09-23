@@ -63,8 +63,8 @@ exports.checkoutOrder = async (req, res) => {
       discount,
       shippingFee,
       serviceFee,
-      totalAmount, 
-      finalAmount, 
+      totalAmount,
+      finalAmount,
       shippingInfo: req.body.shippingInfo,
       paymentMethod: req.body.paymentMethod,
     });
@@ -282,5 +282,97 @@ exports.createOrderByAdmin = async (req, res) => {
   } catch (err) {
     console.error("🔥 Lỗi tạo đơn hàng (admin):", err);
     return res.status(500).json({ message: "Lỗi khi admin tạo đơn hàng" });
+  }
+};
+
+// Lấy thống kê đơn hàng theo giờ/ngày/tháng/năm (có timezone VN)
+exports.getOrderStats = async (req, res) => {
+  try {
+    // Theo giờ trong ngày hôm nay
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const byHour = await Order.aggregate([
+      { $match: { createdAt: { $gte: startOfDay }, status: "completed" } },
+      {
+        $group: {
+          _id: {
+            hour: {
+              $hour: { date: "$createdAt", timezone: "Asia/Ho_Chi_Minh" },
+            },
+          },
+          orders: { $sum: 1 },
+          revenue: { $sum: "$finalAmount" },
+        },
+      },
+      { $sort: { "_id.hour": 1 } },
+    ]);
+
+    // Theo ngày trong tuần này
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Chủ nhật = 0
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const byDay = await Order.aggregate([
+      { $match: { createdAt: { $gte: startOfWeek }, status: "completed" } },
+      {
+        $group: {
+          _id: {
+            day: {
+              $dayOfMonth: { date: "$createdAt", timezone: "Asia/Ho_Chi_Minh" },
+            },
+          },
+          orders: { $sum: 1 },
+          revenue: { $sum: "$finalAmount" },
+        },
+      },
+      { $sort: { "_id.day": 1 } },
+    ]);
+
+    // Theo tháng trong năm nay
+    const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+
+    const byMonth = await Order.aggregate([
+      { $match: { createdAt: { $gte: startOfYear }, status: "completed" } },
+      {
+        $group: {
+          _id: {
+            month: {
+              $month: { date: "$createdAt", timezone: "Asia/Ho_Chi_Minh" },
+            },
+          },
+          orders: { $sum: 1 },
+          revenue: { $sum: "$finalAmount" },
+        },
+      },
+      { $sort: { "_id.month": 1 } },
+    ]);
+
+    // Theo năm (toàn bộ lịch sử)
+    const byYear = await Order.aggregate([
+      { $match: { status: "completed" } },
+      {
+        $group: {
+          _id: {
+            year: {
+              $year: { date: "$createdAt", timezone: "Asia/Ho_Chi_Minh" },
+            },
+          },
+          orders: { $sum: 1 },
+          revenue: { $sum: "$finalAmount" },
+        },
+      },
+      { $sort: { "_id.year": 1 } },
+    ]);
+
+    res.json({
+      byHour,
+      byDay,
+      byMonth,
+      byYear,
+    });
+  } catch (err) {
+    console.error("🔥 Lỗi khi thống kê đơn hàng:", err);
+    res.status(500).json({ message: "Lỗi khi thống kê đơn hàng" });
   }
 };

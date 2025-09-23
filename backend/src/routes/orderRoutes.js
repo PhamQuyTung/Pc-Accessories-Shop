@@ -13,6 +13,9 @@ router.get("/", authMiddleware, orderController.getUserOrders);
 // Lấy danh sách tất cả đơn (admin)
 router.get("/all", authMiddleware, orderController.getAllOrders);
 
+// Thống kê đơn hàng (admin)
+router.get("/stats", authMiddleware, orderController.getOrderStats);
+
 // ✅ Lấy chi tiết đơn theo ID
 router.get("/:id", authMiddleware, orderController.getOrderById);
 

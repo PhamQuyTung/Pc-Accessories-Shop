@@ -11,7 +11,7 @@ import {
     FaCheckCircle,
     FaRegFileAlt,
 } from 'react-icons/fa';
-import { io } from 'socket.io-client'; // 👈 import socket.io client
+import { io } from 'socket.io-client';
 import styles from './AdminStats.module.scss';
 import classNames from 'classnames/bind';
 
@@ -36,10 +36,11 @@ function AdminStats() {
     const [orders, setOrders] = useState([]);
     const [chartData, setChartData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [chartType, setChartType] = useState('month'); // hour | day | month | year
 
-    const showToast = useToast(); // 👈 dùng hook toast
+    const showToast = useToast();
 
-    // 🔥 Hàm fetch stats
+    // 🔥 Fetch stats
     const fetchStats = async () => {
         try {
             const [orderRes, userRes, productStatsRes, postStatsRes] = await Promise.all([
@@ -58,17 +59,6 @@ function AdminStats() {
                 .filter((o) => o.status === 'completed')
                 .reduce((sum, o) => sum + (o.finalAmount || 0), 0);
 
-            const monthly = {};
-            ordersData.forEach((o) => {
-                const d = new Date(o.createdAt);
-                const key = `${d.getMonth() + 1}/${d.getFullYear()}`;
-                monthly[key] = (monthly[key] || 0) + 1;
-            });
-            const chartArr = Object.keys(monthly).map((key) => ({
-                month: key,
-                orders: monthly[key],
-            }));
-
             setStats({
                 orders: ordersData.length,
                 users: usersData.length,
@@ -80,8 +70,8 @@ function AdminStats() {
                 publishedPosts: postStats.published,
                 draftPosts: postStats.draft,
             });
+
             setOrders(ordersData);
-            setChartData(chartArr);
         } catch (err) {
             console.error('Fetch stats failed:', err);
         } finally {
@@ -89,31 +79,79 @@ function AdminStats() {
         }
     };
 
+    // 🔥 Fetch chart data
+    const fetchChartStats = async (type) => {
+        try {
+            const res = await axiosClient.get('/orders/stats');
+            const statsData = res.data;
+
+            let rawData = [];
+            switch (type) {
+                case 'hour':
+                    rawData = statsData.byHour.map((i) => ({
+                        label: `${i._id.hour}:00`,
+                        orders: i.orders,
+                        revenue: i.revenue,
+                    }));
+                    break;
+                case 'day':
+                    rawData = statsData.byDay.map((i) => ({
+                        label: `Ngày ${i._id.day}`,
+                        orders: i.orders,
+                        revenue: i.revenue,
+                    }));
+                    break;
+                case 'month':
+                    rawData = statsData.byMonth.map((i) => ({
+                        label: `T${i._id.month}`,
+                        orders: i.orders,
+                        revenue: i.revenue,
+                    }));
+                    break;
+                case 'year':
+                    rawData = statsData.byYear.map((i) => ({
+                        label: `${i._id.year}`,
+                        orders: i.orders,
+                        revenue: i.revenue,
+                    }));
+                    break;
+                default:
+                    rawData = [];
+            }
+
+            setChartData(rawData);
+        } catch (err) {
+            console.error('Fetch chart stats failed:', err);
+        }
+    };
+
+    // socket + fetch init
     useEffect(() => {
         fetchStats();
+        fetchChartStats(chartType);
 
         const socket = io('http://localhost:5000', { withCredentials: true });
 
         socket.on('order:new', (order) => {
-            console.log('📢 Có đơn hàng mới:', order);
             showToast(`📢 Có đơn hàng mới từ ${order?.shippingInfo?.name || 'khách hàng'}`, 'success');
             fetchStats();
+            fetchChartStats(chartType);
         });
 
         socket.on('order:cancelled', (order) => {
-            console.log('⚠️ Đơn hàng bị hủy:', order);
             showToast(`⚠️ Đơn hàng ${order._id} đã bị hủy`, 'warning');
             fetchStats();
+            fetchChartStats(chartType);
         });
 
         socket.on('order:deleted', ({ orderId }) => {
-            console.log('🗑️ Đơn hàng bị xóa:', orderId);
             showToast(`🗑️ Đơn hàng ${orderId} đã bị xóa`, 'error');
             fetchStats();
+            fetchChartStats(chartType);
         });
 
         return () => socket.disconnect();
-    }, [showToast]);
+    }, [chartType, showToast]);
 
     const cards = [
         { title: 'Đơn hàng', value: stats.orders, icon: <FaShoppingCart />, color: 'blue' },
@@ -148,27 +186,70 @@ function AdminStats() {
                     ))}
             </div>
 
-            {/* Chart */}
+            {/* Tabs */}
+            <div className={cx('tabs')}>
+                {[
+                    { key: 'hour', label: 'Theo giờ', icon: '🕒' },
+                    { key: 'day', label: 'Theo ngày', icon: '📅' },
+                    { key: 'month', label: 'Theo tháng', icon: '📆' },
+                    { key: 'year', label: 'Theo năm', icon: '📊' },
+                ].map((t) => (
+                    <button
+                        key={t.key}
+                        onClick={() => setChartType(t.key)}
+                        className={cx('tab', { active: chartType === t.key })}
+                    >
+                        <span className={cx('icon')}>{t.icon}</span> {t.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Orders + Revenue charts */}
             {!loading && (
-                <div className={cx('chart')}>
-                    <h3>Đơn hàng theo tháng</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#ddd" />
-                            <XAxis dataKey="month" stroke="#333" />
-                            <YAxis stroke="#333" />
-                            <Tooltip />
-                            <Legend />
-                            <Line
-                                type="monotone"
-                                dataKey="orders"
-                                stroke="#e30613"
-                                strokeWidth={3}
-                                dot={{ r: 5 }}
-                                activeDot={{ r: 8 }}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
+                <div className={cx('charts-grid')}>
+                    <div className={cx('chart')}>
+                        <h3>📦 Số đơn hàng</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <LineChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ddd" />
+                                <XAxis dataKey="label" stroke="#333" />
+                                <YAxis stroke="#333" />
+                                <Tooltip />
+                                <Legend />
+                                <Line
+                                    type="monotone"
+                                    dataKey="orders"
+                                    stroke="#e30613"
+                                    strokeWidth={3}
+                                    dot={{ r: 5 }}
+                                    activeDot={{ r: 8 }}
+                                    name="Số đơn"
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    <div className={cx('chart')}>
+                        <h3>💰 Doanh thu</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <LineChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ddd" />
+                                <XAxis dataKey="label" stroke="#333" />
+                                <YAxis stroke="#333" />
+                                <Tooltip />
+                                <Legend />
+                                <Line
+                                    type="monotone"
+                                    dataKey="revenue"
+                                    stroke="#28a745"
+                                    strokeWidth={3}
+                                    dot={{ r: 5 }}
+                                    activeDot={{ r: 8 }}
+                                    name="Doanh thu"
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
             )}
 
