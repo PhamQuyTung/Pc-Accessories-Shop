@@ -64,10 +64,10 @@ const AdminCreateOrder = () => {
     }, []);
 
     // thêm sản phẩm vào items
-    const handleAddToOrder = ({ productId, productName, price, quantity }) => {
-        if (!productName || !price || quantity <= 0) return;
+    const handleAddToOrder = ({ productId, productName, price, discountPrice, finalPrice, quantity }) => {
+        if (!productName || !finalPrice || quantity <= 0) return;
 
-        const itemTotal = price * quantity;
+        const itemTotal = finalPrice * quantity;
 
         setFormData((prev) => ({
             ...prev,
@@ -76,7 +76,9 @@ const AdminCreateOrder = () => {
                 {
                     product_id: productId || null,
                     productName,
-                    price,
+                    price, // giá gốc
+                    discountPrice, // giá KM
+                    finalPrice, // giá cuối
                     quantity,
                     total: itemTotal,
                 },
@@ -187,17 +189,24 @@ const AdminCreateOrder = () => {
                         <tr>
                             <th>Sản phẩm</th>
                             <th className={cx('text-center')}>Số lượng</th>
-                            <th className={cx('text-right')}>Đơn giá</th>
+                            <th className={cx('text-right')}>Giá gốc</th>
+                            <th className={cx('text-right')}>Giá KM</th>
+                            <th className={cx('text-right')}>Giá cuối</th>
                             <th className={cx('text-right')}>Thành tiền</th>
                             <th></th>
                         </tr>
                     </thead>
+
                     <tbody>
                         {formData.items.map((item, index) => (
                             <tr key={index}>
                                 <td>{item.productName}</td>
                                 <td className={cx('text-center')}>{item.quantity}</td>
                                 <td className={cx('text-right')}>{item.price.toLocaleString('vi-VN')} ₫</td>
+                                <td className={cx('text-right')}>
+                                    {item.discountPrice > 0 ? item.discountPrice.toLocaleString('vi-VN') + ' ₫' : '—'}
+                                </td>
+                                <td className={cx('text-right')}>{item.finalPrice.toLocaleString('vi-VN')} ₫</td>
                                 <td className={cx('text-right')}>{item.total.toLocaleString('vi-VN')} ₫</td>
                                 <td>
                                     <button
@@ -209,8 +218,9 @@ const AdminCreateOrder = () => {
                                 </td>
                             </tr>
                         ))}
+
                         <tr>
-                            <td colSpan={5} className={cx('text-center')}>
+                            <td colSpan={7} className={cx('text-center')}>
                                 <button className={cx('btn')} onClick={() => setShowProductModal(true)}>
                                     ➕ Thêm sản phẩm
                                 </button>

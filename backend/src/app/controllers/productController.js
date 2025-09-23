@@ -85,6 +85,14 @@ class ProductController {
               ],
             },
             reviewCount: { $size: "$reviews" },
+            // 👇 Thêm field finalPrice
+            finalPrice: {
+              $cond: {
+                if: { $gt: ["$discountPrice", 0] },
+                then: "$discountPrice",
+                else: "$price",
+              },
+            },
           },
         },
       ];

@@ -66,12 +66,18 @@ const ProductSelectModal = ({ onAdd, onClose }) => {
 
     const handleAdd = () => {
         if (!selectedProduct || quantity <= 0) return;
+
+        const finalPrice = selectedProduct.discountPrice > 0 ? selectedProduct.discountPrice : selectedProduct.price;
+
         onAdd({
             productId: selectedProduct._id,
             productName: selectedProduct.name,
-            price: selectedProduct.price,
+            price: selectedProduct.price, // giá gốc
+            discountPrice: selectedProduct.discountPrice || 0, // giá khuyến mãi (0 nếu không có)
+            finalPrice, // giá thực tế áp dụng
             quantity: parseInt(quantity, 10),
         });
+
         setQuantity(1);
         setSelectedProduct(null);
         handleClose();
@@ -116,7 +122,9 @@ const ProductSelectModal = ({ onAdd, onClose }) => {
                     <thead>
                         <tr>
                             <th>Tên</th>
-                            <th>Giá</th>
+                            <th className={cx('th-txtEnd')}>Giá gốc</th>
+                            <th className={cx('th-txtEnd')}>Giá KM</th>
+                            <th className={cx('th-txtEnd')}>Giá cuối</th>
                             <th className={cx('th-w80px')}>Tồn kho</th>
                             <th className={cx('th-w80px')}></th>
                         </tr>
@@ -124,26 +132,33 @@ const ProductSelectModal = ({ onAdd, onClose }) => {
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={4} className={cx('text-center')}>
+                                <td colSpan={6} className={cx('text-center')}>
                                     <LoadingSpinner />
                                 </td>
                             </tr>
                         ) : paginatedProducts.length > 0 ? (
-                            paginatedProducts.map((p) => (
-                                <tr key={p._id}>
-                                    <td className={cx('name')}>{p.name}</td>
-                                    <td className={cx('cost')}>{p.price.toLocaleString('vi-VN')} ₫</td>
-                                    <td className={cx('quantity')}>{p.quantity ?? '—'}</td>
-                                    <td>
-                                        <button className={cx('btn')} onClick={() => setSelectedProduct(p)}>
-                                            Chọn
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
+                            paginatedProducts.map((p) => {
+                                const finalPrice = p.discountPrice > 0 ? p.discountPrice : p.price;
+                                return (
+                                    <tr key={p._id}>
+                                        <td className={cx('name')}>{p.name}</td>
+                                        <td className={cx('cost')}>{p.price.toLocaleString('vi-VN')} ₫</td>
+                                        <td className={cx('discount')}>
+                                            {p.discountPrice > 0 ? `${p.discountPrice.toLocaleString('vi-VN')} ₫` : '—'}
+                                        </td>
+                                        <td className={cx('final-price')}>{finalPrice.toLocaleString('vi-VN')} ₫</td>
+                                        <td className={cx('quantity')}>{p.quantity ?? '—'}</td>
+                                        <td>
+                                            <button className={cx('btn')} onClick={() => setSelectedProduct(p)}>
+                                                Chọn
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         ) : (
                             <tr>
-                                <td colSpan={4} className={cx('text-center')}>
+                                <td colSpan={6} className={cx('text-center')}>
                                     Không có sản phẩm
                                 </td>
                             </tr>
@@ -160,6 +175,7 @@ const ProductSelectModal = ({ onAdd, onClose }) => {
                     />
                 )}
 
+                {/* chọn sản phẩm ở footer */}
                 {selectedProduct && (
                     <div className={cx('footer')}>
                         <div className={cx('footer-title')}>
@@ -168,7 +184,12 @@ const ProductSelectModal = ({ onAdd, onClose }) => {
 
                         <div className={cx('footer-body')}>
                             <span>
-                                {selectedProduct.name} - {selectedProduct.price.toLocaleString('vi-VN')} ₫
+                                {selectedProduct.name} -{' '}
+                                {(selectedProduct.discountPrice > 0
+                                    ? selectedProduct.discountPrice
+                                    : selectedProduct.price
+                                ).toLocaleString('vi-VN')}{' '}
+                                ₫
                             </span>
                             <input
                                 type="number"

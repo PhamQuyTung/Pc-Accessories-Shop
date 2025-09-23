@@ -7,13 +7,14 @@ exports.checkoutOrder = async (req, res) => {
   try {
     const cartItems = await Cart.find({ user_id: userId }).populate({
       path: "product_id",
-      select: "name deleted status price discountPrice images", // 👈 thêm images
+      select: "name deleted status price discountPrice images",
     });
 
     if (!cartItems.length) {
       return res.status(400).json({ message: "Giỏ hàng đang trống!" });
     }
 
+    // ✅ Lọc sản phẩm hợp lệ
     const validCartItems = cartItems.filter((item) => {
       const p = item.product_id;
       return (
@@ -31,28 +32,33 @@ exports.checkoutOrder = async (req, res) => {
       });
     }
 
+    // ✅ Chuẩn hóa item trong đơn hàng
     const orderItems = validCartItems.map((item) => {
       const p = item.product_id;
+      const finalPrice =
+        p.discountPrice && p.discountPrice > 0 ? p.discountPrice : p.price;
+
       return {
         product_id: p._id,
         quantity: item.quantity,
-        price: p.discountPrice > 0 ? p.discountPrice : p.price,
+        price: p.price, // giá gốc
+        discountPrice: p.discountPrice, // giá giảm (nếu có)
+        finalPrice, // giá thực tế
+        total: finalPrice * item.quantity,
       };
     });
 
-    const subtotal = orderItems.reduce(
-      (sum, item) => sum + item.quantity * item.price,
-      0
-    );
+    // ✅ Tính toán tổng
+    const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
     const tax = req.body.tax || 0;
     const discount = req.body.discount || 0;
     const shippingFee = req.body.shippingFee || 0;
     const serviceFee = req.body.serviceFee || 0;
 
-    // ✅ Tổng trước giảm giá
+    // Tổng trước giảm giá
     const totalAmount = subtotal + tax + shippingFee + serviceFee;
 
-    // ✅ Tổng sau giảm giá
+    // Tổng sau giảm giá
     const finalAmount = totalAmount - discount;
 
     let newOrder = new Order({
@@ -71,14 +77,16 @@ exports.checkoutOrder = async (req, res) => {
 
     await newOrder.save();
 
-    // 👇 Populate để trả về chi tiết sản phẩm có ảnh luôn
+    // 👇 Populate thêm thông tin sản phẩm
     newOrder = await newOrder.populate(
       "items.product_id",
-      "name price discountPrice images status deleted"
+      "name slug price discountPrice images status deleted"
     );
 
+    // ✅ Xóa giỏ hàng sau khi đặt
     await Cart.deleteMany({ user_id: userId });
 
+    // Emit realtime nếu có socket
     const io = req.app.locals.io;
     if (io) io.emit("order:new", { order: newOrder });
 

@@ -14,9 +14,12 @@ const orderSchema = new mongoose.Schema(
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product",
         },
-        productName: String, // 👈 thêm
+        productName: String, // tên tại thời điểm đặt hàng
         quantity: Number,
-        price: Number, // Lưu lại giá tại thời điểm đặt hàng
+        price: Number, // giá gốc
+        discountPrice: Number, // giá giảm (nếu có)
+        finalPrice: Number, // giá thực tế (price hoặc discountPrice)
+        total: Number, // finalPrice * quantity
       },
     ],
 
@@ -27,7 +30,11 @@ const orderSchema = new mongoose.Schema(
     serviceFee: Number,
     totalAmount: Number,
     finalAmount: Number,
-    paymentMethod: { type: String, enum: ["cod", "bank", "momo"], required: false },
+    paymentMethod: {
+      type: String,
+      enum: ["cod", "bank", "momo"],
+      required: false,
+    },
 
     status: {
       type: String,
@@ -50,7 +57,7 @@ const orderSchema = new mongoose.Schema(
       address: String,
     },
 
-    note: { type: String, default: "" },   
+    note: { type: String, default: "" },
   },
   { timestamps: true }
 );
