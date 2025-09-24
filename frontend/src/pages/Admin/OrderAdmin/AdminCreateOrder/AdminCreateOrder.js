@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './AdminCreateOrder.module.scss';
+import Swal from 'sweetalert2';
+
 import axiosClient from '~/utils/axiosClient';
 import ProductSelectModal from '~/components/ProductSelectModal/ProductSelectModal';
+
+import useUnsavedChangesWarning from '~/hooks/useUnsavedChangesWarning';
+import ConfirmNavigate from '~/components/ConfirmNavigate/ConfirmNavigate';
 
 const cx = classNames.bind(styles);
 
@@ -26,21 +31,22 @@ const AdminCreateOrder = () => {
     });
 
     const [products, setProducts] = useState([]);
-
-    // tax & discount %
     const [taxPercent, setTaxPercent] = useState(0);
     const [discountPercent, setDiscountPercent] = useState(0);
-
-    // show modal
     const [showProductModal, setShowProductModal] = useState(false);
 
-    // tính toán lại tiền khi items, tax, discount thay đổi
+    // ✅ Xác định khi nào cần cảnh báo
+    const hasUnsavedChanges =
+        formData.name || formData.phone || formData.address || formData.note || formData.items.length > 0;
+
+    // ✅ Hook chặn điều hướng & reload
+    useUnsavedChangesWarning(hasUnsavedChanges);
+
+    // Tính toán lại tiền
     useEffect(() => {
         const subtotal = formData.items.reduce((sum, i) => sum + i.total, 0);
-
         const taxAmount = Math.round((subtotal * taxPercent) / 100);
         const discountAmount = Math.round((subtotal * discountPercent) / 100);
-
         const finalAmount = subtotal + taxAmount + formData.serviceFee + formData.shippingFee - discountAmount;
 
         setFormData((prev) => ({
@@ -52,7 +58,7 @@ const AdminCreateOrder = () => {
         }));
     }, [formData.items, taxPercent, discountPercent, formData.serviceFee, formData.shippingFee]);
 
-    // fetch sản phẩm khi load
+    // Fetch sản phẩm
     useEffect(() => {
         axiosClient
             .get('/products')
@@ -63,10 +69,9 @@ const AdminCreateOrder = () => {
             .catch((err) => console.error('Lỗi khi lấy sản phẩm:', err));
     }, []);
 
-    // thêm sản phẩm vào items
+    // Thêm sản phẩm
     const handleAddToOrder = ({ productId, productName, price, discountPrice, finalPrice, quantity }) => {
         if (!productName || !finalPrice || quantity <= 0) return;
-
         const itemTotal = finalPrice * quantity;
 
         setFormData((prev) => ({
@@ -76,9 +81,9 @@ const AdminCreateOrder = () => {
                 {
                     product_id: productId || null,
                     productName,
-                    price, // giá gốc
-                    discountPrice, // giá KM
-                    finalPrice, // giá cuối
+                    price,
+                    discountPrice,
+                    finalPrice,
                     quantity,
                     total: itemTotal,
                 },
@@ -86,13 +91,13 @@ const AdminCreateOrder = () => {
         }));
     };
 
-    // xóa sản phẩm
+    // Xóa sản phẩm
     const handleRemoveItem = (index) => {
         const updatedItems = formData.items.filter((_, i) => i !== index);
         setFormData((prev) => ({ ...prev, items: updatedItems }));
     };
 
-    // submit đơn hàng
+    // Submit
     const handleSubmit = async () => {
         try {
             await axiosClient.post(
@@ -181,7 +186,7 @@ const AdminCreateOrder = () => {
                 </div>
             </div>
 
-            {/* Sản phẩm */}
+            {/* Danh sách sản phẩm */}
             <div className={cx('products')}>
                 <h3>Danh sách sản phẩm</h3>
                 <table>
@@ -196,7 +201,6 @@ const AdminCreateOrder = () => {
                             <th></th>
                         </tr>
                     </thead>
-
                     <tbody>
                         {formData.items.map((item, index) => (
                             <tr key={index}>
@@ -305,9 +309,9 @@ const AdminCreateOrder = () => {
                 <button className={cx('btn', 'update')} onClick={handleSubmit}>
                     ✅ Tạo đơn hàng
                 </button>
-                <Link to="/admin/orders" className={cx('btn', 'back')}>
+                <ConfirmNavigate to="/admin/orders" when={hasUnsavedChanges} className={cx('btn', 'back')}>
                     ← Quay lại
-                </Link>
+                </ConfirmNavigate>
             </div>
 
             {/* Modal chọn sản phẩm */}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axiosClient from '~/utils/axiosClient';
 import axios from 'axios';
 import classNames from 'classnames/bind';
@@ -10,6 +10,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ReactQuill from 'react-quill-new';
 import { quillModules, quillFormats, registerQuillModules } from '~/utils/quillSetup';
 import 'react-quill-new/dist/quill.snow.css';
+
+import ConfirmNavigate from '~/components/ConfirmNavigate/ConfirmNavigate';
+import useUnsavedChangesWarning from '~/hooks/useUnsavedChangesWarning';
 
 import { useToast } from '~/components/ToastMessager';
 import VariantImage from '~/components/VariantImage/VariantImage';
@@ -64,6 +67,20 @@ export default function CreateProduct() {
 
     // Brands from backend
     const [brands, setBrands] = useState([]);
+
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+    // ✅ Lưu form ban đầu để so sánh
+    const initialFormRef = useRef(form);
+
+    // So sánh form hiện tại với form ban đầu
+    useEffect(() => {
+        const isDirty = JSON.stringify(form) !== JSON.stringify(initialFormRef.current) || productType !== 'simple'; // nếu đổi sang variable cũng tính là thay đổi
+        setHasUnsavedChanges(isDirty);
+    }, [form, productType]);
+
+    // Hook cảnh báo khi F5 hoặc đóng tab
+    useUnsavedChangesWarning(hasUnsavedChanges);
 
     // Gọi API lấy brands khi load trang
     useEffect(() => {
@@ -442,6 +459,11 @@ export default function CreateProduct() {
         try {
             await axios.post('http://localhost:5000/api/products', payload);
             toast('Tạo sản phẩm thành công', 'success');
+
+            // ✅ reset dirty state sau khi lưu thành công
+            initialFormRef.current = form;
+            setHasUnsavedChanges(false);
+
             navigate('/admin/products');
         } catch (err) {
             console.error(err);
@@ -994,6 +1016,16 @@ export default function CreateProduct() {
                             <button type="submit" className={cx('btn', 'primary')}>
                                 Tạo sản phẩm
                             </button>
+
+                            {/* ✅ Nút hủy confirm */}
+                            <ConfirmNavigate
+                                to="/admin/products"
+                                when={hasUnsavedChanges}
+                                className={cx('btn', 'secondary')}
+                                style={{ marginLeft: '8px' }}
+                            >
+                                Hủy
+                            </ConfirmNavigate>
                         </div>
                     </section>
                 </aside>
