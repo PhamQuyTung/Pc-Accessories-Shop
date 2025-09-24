@@ -1,386 +1,169 @@
+const mongoose = require("mongoose");
 const Order = require("../models/order");
-const Cart = require("../models/cart");
+const orderService = require("../services/orderService");
 
+const populateFields = "name slug price discountPrice images status deleted";
+
+function emitEvent(req, event, payload) {
+  const io = req.app.locals.io;
+  if (io) io.emit(event, payload);
+}
+
+// === Controllers ===
+
+// Checkout
 exports.checkoutOrder = async (req, res) => {
   const userId = req.userId;
-
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const cartItems = await Cart.find({ user_id: userId }).populate({
-      path: "product_id",
-      select: "name deleted status price discountPrice images",
-    });
+    const newOrderDoc = await orderService.checkoutOrder(
+      userId,
+      req.body,
+      session
+    );
+    await session.commitTransaction();
+    session.endSession();
 
-    if (!cartItems.length) {
-      return res.status(400).json({ message: "Giỏ hàng đang trống!" });
-    }
-
-    // ✅ Lọc sản phẩm hợp lệ
-    const validCartItems = cartItems.filter((item) => {
-      const p = item.product_id;
-      return (
-        p &&
-        !p.deleted &&
-        Array.isArray(p.status) &&
-        !p.status.includes("đã thu hồi")
-      );
-    });
-
-    if (!validCartItems.length) {
-      return res.status(400).json({
-        message:
-          "Tất cả sản phẩm trong giỏ hàng đã bị thu hồi hoặc không hợp lệ!",
-      });
-    }
-
-    // ✅ Chuẩn hóa item trong đơn hàng
-    const orderItems = validCartItems.map((item) => {
-      const p = item.product_id;
-      const finalPrice =
-        p.discountPrice && p.discountPrice > 0 ? p.discountPrice : p.price;
-
-      return {
-        product_id: p._id,
-        quantity: item.quantity,
-        price: p.price, // giá gốc
-        discountPrice: p.discountPrice, // giá giảm (nếu có)
-        finalPrice, // giá thực tế
-        total: finalPrice * item.quantity,
-      };
-    });
-
-    // ✅ Tính toán tổng
-    const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
-    const tax = req.body.tax || 0;
-    const discount = req.body.discount || 0;
-    const shippingFee = req.body.shippingFee || 0;
-    const serviceFee = req.body.serviceFee || 0;
-
-    // Tổng trước giảm giá
-    const totalAmount = subtotal + tax + shippingFee + serviceFee;
-
-    // Tổng sau giảm giá
-    const finalAmount = totalAmount - discount;
-
-    let newOrder = new Order({
-      user_id: userId,
-      items: orderItems,
-      subtotal,
-      tax,
-      discount,
-      shippingFee,
-      serviceFee,
-      totalAmount,
-      finalAmount,
-      shippingInfo: req.body.shippingInfo,
-      paymentMethod: req.body.paymentMethod,
-    });
-
-    await newOrder.save();
-
-    // 👇 Populate thêm thông tin sản phẩm
-    newOrder = await newOrder.populate(
+    const order = await Order.findById(newOrderDoc._id).populate(
       "items.product_id",
-      "name slug price discountPrice images status deleted"
+      populateFields
     );
 
-    // ✅ Xóa giỏ hàng sau khi đặt
-    await Cart.deleteMany({ user_id: userId });
-
-    // Emit realtime nếu có socket
-    const io = req.app.locals.io;
-    if (io) io.emit("order:new", { order: newOrder });
-
-    res.status(200).json({
-      message: "Đặt hàng thành công!",
-      order: newOrder,
-    });
+    emitEvent(req, "order:new", { order });
+    res.status(200).json({ message: "Đặt hàng thành công!", order });
   } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+
+    if (err.message === "EMPTY_CART")
+      return res.status(400).json({ message: "Giỏ hàng đang trống!" });
+    if (err.message === "INVALID_CART_ITEMS")
+      return res
+        .status(400)
+        .json({
+          message:
+            "Tất cả sản phẩm trong giỏ hàng đã bị thu hồi hoặc không hợp lệ!",
+        });
+    if (err.message.startsWith("OUT_OF_STOCK"))
+      return res
+        .status(400)
+        .json({
+          message: `Sản phẩm ${err.message.split(":")[1]} không đủ số lượng`,
+        });
+
     console.error("🔥 Lỗi khi đặt hàng:", err);
     res.status(500).json({ message: "Lỗi khi đặt hàng" });
   }
 };
 
+// Cancel
 exports.cancelOrder = async (req, res) => {
-  const orderId = req.params.id;
-  const userId = req.userId;
-
   try {
-    const order = await Order.findOne({ _id: orderId, user_id: userId });
-    if (!order) {
-      return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
-    }
-    if (order.status === "cancelled") {
-      return res.status(400).json({ message: "Đơn hàng đã bị hủy trước đó!" });
-    }
-    if (order.status === "completed") {
-      return res
-        .status(400)
-        .json({ message: "Không thể hủy đơn hàng đã hoàn thành!" });
-    }
-
-    order.status = "cancelled";
-    order.cancelReason = req.body.reason || "Không rõ lý do";
-    await order.save();
-
-    // 👇 Emit realtime từ app.locals
-    const io = req.app.locals.io;
-    if (io) io.emit("order:cancelled", { order });
-
-    res
-      .status(200)
-      .json({ message: "Đơn hàng đã được hủy thành công!", order });
+    const order = await orderService.cancelOrder(
+      req.params.id,
+      req.userId,
+      req.body.reason
+    );
+    emitEvent(req, "order:cancelled", { order });
+    res.status(200).json({ message: "Đơn hàng đã được hủy!", order });
   } catch (err) {
+    if (err.message === "NOT_FOUND")
+      return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
+    if (err.message === "CANNOT_CANCEL")
+      return res.status(400).json({ message: "Đơn hàng không thể hủy!" });
     console.error("🔥 Lỗi hủy đơn hàng:", err);
     res.status(500).json({ message: "Lỗi khi hủy đơn hàng" });
   }
 };
 
+// Delete (soft)
 exports.deleteOrder = async (req, res) => {
-  const orderId = req.params.id;
-  const userId = req.userId;
-
   try {
-    const order = await Order.findOneAndUpdate(
-      { _id: orderId, user_id: userId },
-      { status: "deleted" }, // 👈 Soft delete
-      { new: true }
-    );
-
-    if (!order) {
-      return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
-    }
-
-    // 👇 Emit realtime từ app.locals
-    const io = req.app.locals.io;
-    if (io) io.emit("order:deleted", { orderId });
-
-    res.status(200).json({ message: "Đơn hàng đã được đánh dấu xóa!", order });
+    const order = await orderService.deleteOrder(req.params.id, req.userId);
+    emitEvent(req, "order:deleted", { orderId: order._id });
+    res.status(200).json({ message: "Đơn hàng đã bị xóa!", order });
   } catch (err) {
+    if (err.message === "NOT_FOUND")
+      return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
     console.error("🔥 Lỗi xóa đơn hàng:", err);
     res.status(500).json({ message: "Lỗi khi xóa đơn hàng" });
   }
 };
 
+// Lấy đơn hàng user
 exports.getUserOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ user_id: req.userId })
-      .populate(
-        "items.product_id",
-        "name price discountPrice images status deleted"
-      ) // 👈 thêm images
-      .sort({ createdAt: -1 });
-
+    const orders = await orderService.getUserOrders(req.userId);
     res.status(200).json(orders);
   } catch (err) {
-    console.error("🔥 Lỗi khi lấy danh sách đơn hàng:", err);
-    res.status(500).json({ message: "Lỗi khi lấy danh sách đơn hàng" });
+    console.error("🔥 Lỗi lấy orders:", err);
+    res.status(500).json({ message: "Lỗi khi lấy đơn hàng" });
   }
 };
 
+// Lấy tất cả đơn hàng (admin)
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find()
-      .populate(
-        "items.product_id",
-        "name price discountPrice images status deleted"
-      )
-      .sort({ createdAt: -1 });
-
+    const orders = await orderService.getAllOrders();
     res.status(200).json({ orders });
   } catch (err) {
-    console.error("🔥 Lỗi khi lấy danh sách đơn hàng:", err);
-    res.status(500).json({ message: "Lỗi khi lấy danh sách đơn hàng" });
+    console.error("🔥 Lỗi lấy all orders:", err);
+    res.status(500).json({ message: "Lỗi khi lấy đơn hàng" });
   }
 };
 
-// Lấy đơn hàng theo ID
+// Lấy chi tiết đơn
 exports.getOrderById = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const order = await Order.findById(id).populate(
-      "items.product_id",
-      "name slug price discountPrice images status deleted"
-    );
-
-    if (!order) {
+    const order = await orderService.getOrderById(req.params.id);
+    if (!order)
       return res.status(404).json({ message: "Không tìm thấy đơn hàng!" });
-    }
-
     res.status(200).json({ order });
   } catch (err) {
-    console.error("🔥 Lỗi khi lấy chi tiết đơn hàng:", err);
+    console.error("🔥 Lỗi get order:", err);
     res.status(500).json({ message: "Lỗi khi lấy chi tiết đơn hàng" });
   }
 };
 
-// PATCH /api/orders/:id/status
+// Update status
 exports.updateOrderStatus = async (req, res) => {
   try {
-    const { status } = req.body;
-    const order = await Order.findByIdAndUpdate(
+    const order = await orderService.updateOrderStatus(
       req.params.id,
-      { status },
-      { new: true }
-    ).populate("items.product_id", "name slug images");
-
-    if (!order) {
+      req.body.status
+    );
+    if (!order)
       return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
-    }
-
     res.json({ success: true, order });
   } catch (err) {
     res.status(500).json({ message: "Lỗi server", error: err.message });
   }
 };
 
-// Tạo đơn hàng bởi admin
+// Admin tạo đơn
 exports.createOrderByAdmin = async (req, res) => {
   try {
-    const {
-      shippingInfo,
-      note,
-      paymentMethod,
-      status,
-      items,
-      subtotal,
-      tax,
-      serviceFee,
-      shippingFee,
-      discount,
-      finalAmount,
-    } = req.body;
-
-    if (!items || !items.length) {
+    const order = await orderService.createOrderByAdmin(req.body, req.userId);
+    emitEvent(req, "order:new", { order });
+    res.status(201).json({ message: "Tạo đơn hàng thành công!", order });
+  } catch (err) {
+    if (err.message === "NO_ITEMS")
       return res
         .status(400)
         .json({ message: "Đơn hàng phải có ít nhất 1 sản phẩm!" });
-    }
-
-    const orderItems = items.map((item) => ({
-      product_id: item.product_id || null, // nếu admin nhập tay thì có thể null
-      productName: item.productName || "", // 👈 lưu lại tên sản phẩm nhập tay
-      quantity: item.quantity,
-      price: item.price,
-    }));
-
-    const order = new Order({
-      user_id: req.userId || null, // Admin có thể tạo đơn cho khách lẻ
-      items: orderItems,
-      subtotal,
-      tax,
-      serviceFee,
-      shippingFee,
-      discount,
-      totalAmount: finalAmount,
-      finalAmount,
-      paymentMethod: paymentMethod?.toLowerCase(), // 👈 ép về lowercase,
-      status: status || "new",
-      shippingInfo,
-      note,
-    });
-
-    await order.save();
-
-    // Emit realtime nếu có socket
-    const io = req.app.locals.io;
-    if (io) io.emit("order:new", { order });
-
-    return res.status(201).json({ message: "Tạo đơn hàng thành công!", order });
-  } catch (err) {
-    console.error("🔥 Lỗi tạo đơn hàng (admin):", err);
-    return res.status(500).json({ message: "Lỗi khi admin tạo đơn hàng" });
+    console.error("🔥 Lỗi tạo đơn hàng admin:", err);
+    res.status(500).json({ message: "Lỗi khi admin tạo đơn hàng" });
   }
 };
 
-// Lấy thống kê đơn hàng theo giờ/ngày/tháng/năm (có timezone VN)
+// Thống kê
 exports.getOrderStats = async (req, res) => {
   try {
-    // Theo giờ trong ngày hôm nay
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const byHour = await Order.aggregate([
-      { $match: { createdAt: { $gte: startOfDay }, status: "completed" } },
-      {
-        $group: {
-          _id: {
-            hour: {
-              $hour: { date: "$createdAt", timezone: "Asia/Ho_Chi_Minh" },
-            },
-          },
-          orders: { $sum: 1 },
-          revenue: { $sum: "$finalAmount" },
-        },
-      },
-      { $sort: { "_id.hour": 1 } },
-    ]);
-
-    // Theo ngày trong tuần này
-    const startOfWeek = new Date();
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Chủ nhật = 0
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const byDay = await Order.aggregate([
-      { $match: { createdAt: { $gte: startOfWeek }, status: "completed" } },
-      {
-        $group: {
-          _id: {
-            day: {
-              $dayOfMonth: { date: "$createdAt", timezone: "Asia/Ho_Chi_Minh" },
-            },
-          },
-          orders: { $sum: 1 },
-          revenue: { $sum: "$finalAmount" },
-        },
-      },
-      { $sort: { "_id.day": 1 } },
-    ]);
-
-    // Theo tháng trong năm nay
-    const startOfYear = new Date(new Date().getFullYear(), 0, 1);
-
-    const byMonth = await Order.aggregate([
-      { $match: { createdAt: { $gte: startOfYear }, status: "completed" } },
-      {
-        $group: {
-          _id: {
-            month: {
-              $month: { date: "$createdAt", timezone: "Asia/Ho_Chi_Minh" },
-            },
-          },
-          orders: { $sum: 1 },
-          revenue: { $sum: "$finalAmount" },
-        },
-      },
-      { $sort: { "_id.month": 1 } },
-    ]);
-
-    // Theo năm (toàn bộ lịch sử)
-    const byYear = await Order.aggregate([
-      { $match: { status: "completed" } },
-      {
-        $group: {
-          _id: {
-            year: {
-              $year: { date: "$createdAt", timezone: "Asia/Ho_Chi_Minh" },
-            },
-          },
-          orders: { $sum: 1 },
-          revenue: { $sum: "$finalAmount" },
-        },
-      },
-      { $sort: { "_id.year": 1 } },
-    ]);
-
-    res.json({
-      byHour,
-      byDay,
-      byMonth,
-      byYear,
-    });
+    const stats = await orderService.getOrderStats();
+    res.json(stats);
   } catch (err) {
-    console.error("🔥 Lỗi khi thống kê đơn hàng:", err);
+    console.error("🔥 Lỗi thống kê:", err);
     res.status(500).json({ message: "Lỗi khi thống kê đơn hàng" });
   }
 };

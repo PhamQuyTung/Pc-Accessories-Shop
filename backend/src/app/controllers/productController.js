@@ -668,6 +668,68 @@ class ProductController {
       res.status(500).json({ error: "Lỗi khi thống kê sản phẩm" });
     }
   }
+
+  // Giảm tồn kho khi order
+  async decreaseStock(req, res) {
+    try {
+      const { variationId, quantity } = req.body;
+      const { id: productId } = req.params;
+
+      if (!quantity || quantity <= 0) {
+        return res.status(400).json({ error: "Số lượng không hợp lệ" });
+      }
+
+      let product;
+
+      if (variationId) {
+        // 🔹 Trừ tồn kho trong variation
+        product = await Product.findOneAndUpdate(
+          {
+            _id: productId,
+            "variations._id": variationId,
+            "variations.quantity": { $gte: quantity }, // đảm bảo còn hàng
+          },
+          {
+            $inc: { "variations.$.quantity": -quantity },
+          },
+          { new: true }
+        );
+      } else {
+        // 🔹 Trừ tồn kho trong sản phẩm cha
+        product = await Product.findOneAndUpdate(
+          {
+            _id: productId,
+            quantity: { $gte: quantity },
+          },
+          {
+            $inc: { quantity: -quantity },
+          },
+          { new: true }
+        );
+      }
+
+      if (!product) {
+        return res
+          .status(400)
+          .json({ error: "Sản phẩm đã hết hàng hoặc không đủ số lượng" });
+      }
+
+      // ✅ Tự động cập nhật trạng thái
+      const hasStock =
+        product.quantity > 0 || product.variations.some((v) => v.quantity > 0);
+
+      product.status = hasStock ? ["còn hàng"] : ["hết hàng"];
+      await product.save();
+
+      res.json({
+        message: "Đã cập nhật tồn kho",
+        product,
+      });
+    } catch (err) {
+      console.error("❌ Lỗi decreaseStock:", err);
+      res.status(500).json({ error: "Lỗi server", details: err.message });
+    }
+  }
 }
 
 module.exports = new ProductController();

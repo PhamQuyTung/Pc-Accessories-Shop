@@ -16,6 +16,7 @@ import useUnsavedChangesWarning from '~/hooks/useUnsavedChangesWarning';
 
 import { useToast } from '~/components/ToastMessager';
 import VariantImage from '~/components/VariantImage/VariantImage';
+import { computeProductStatus } from '~/utils/productStatus';
 
 registerQuillModules();
 
@@ -407,18 +408,14 @@ export default function CreateProduct() {
             }
         }
 
-        // compute status array from (sum of variant qty) or form.quantity
-        let statusArr = [];
-        const totalQty =
-            productType === 'variable'
-                ? variants.reduce((s, v) => s + Number(v.quantity || 0), 0)
-                : Number(form.quantity || 0);
-        if (form.importing) statusArr.push('đang nhập hàng');
-        else if (totalQty === 0) statusArr.push('hết hàng');
-        else if (totalQty > 0 && totalQty < 15) statusArr.push('sắp hết hàng');
-        else if (totalQty >= 15 && totalQty < 50) statusArr.push('còn hàng');
-        else if (totalQty >= 50 && totalQty < 100) statusArr.push('nhiều hàng');
-        else if (totalQty >= 100) statusArr.push('sản phẩm mới');
+        const statusArr = computeProductStatus(
+            {
+                quantity: Number(form.quantity || 0),
+                variations:
+                    productType === 'variable' ? variants.map((v) => ({ quantity: Number(v.quantity || 0) })) : [],
+            },
+            { importing: form.importing },
+        );
 
         const payload = {
             ...form,
@@ -1010,6 +1007,23 @@ export default function CreateProduct() {
                                 />
                                 Đang nhập hàng
                             </label>
+                        </div>
+
+                        {/* 👇 Xem trước trạng thái sản phẩm */}
+                        <div className={cx('field')}>
+                            <label>Trạng thái dự kiến:</label>
+                            <span className={cx('status-preview')}>
+                                {computeProductStatus(
+                                    {
+                                        quantity: Number(form.quantity || 0),
+                                        variations:
+                                            productType === 'variable'
+                                                ? variants.map((v) => ({ quantity: Number(v.quantity || 0) }))
+                                                : [],
+                                    },
+                                    { importing: form.importing },
+                                ).join(', ')}
+                            </span>
                         </div>
 
                         <div className={cx('actions')}>

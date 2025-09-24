@@ -29,6 +29,7 @@ function Header() {
                 const res = await axiosClient.get('/carts/');
                 const items = res.data.items || []; // ✅ Lấy đúng field
                 setCartCount(items.length);
+                console.log('API carts response:', res.data);
             } catch (err) {
                 console.error('Lỗi lấy cart count:', err);
             }
@@ -71,9 +72,7 @@ function Header() {
             if (!token) return;
 
             try {
-                const res = await fetch('http://localhost:5000/api/auth/verify-token', {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const res = await axiosClient.get('/auth/verify-token');
 
                 if (res.status !== 200) {
                     localStorage.removeItem('user');

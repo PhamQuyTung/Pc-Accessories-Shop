@@ -29,6 +29,7 @@ function Login() {
         setServerError('');
         try {
             const res = await axios.post('http://localhost:5000/api/auth/login', formData);
+            console.log("Login response:", res.data);
 
             // ✅ Lưu thông tin vào localStorage
             localStorage.setItem('token', res.data.token);

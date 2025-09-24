@@ -5,8 +5,8 @@ const accountValid = require("../../validations/account");
 const ErrorResponse = require("../../helpers/ErrorResponse");
 const Token = require("../models/token");
 
-const JWT_SECRET =
-  "9b1c2f3e4d5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7d8f9b0b1c"; // 🔐 Nên để trong biến môi trường .env
+const JWT_SECRET = process.env.JWT_SECRET;
+console.log("JWT_SECRET:", JWT_SECRET);
 
 module.exports = {
   login: async (req, res, next) => {
@@ -62,7 +62,7 @@ module.exports = {
         },
       });
     } catch (err) {
-      console.error(err);
+      console.error("LOGIN ERROR:", err); // 👈 In ra lỗi thật
       return res.status(500).json({
         statusCode: 500,
         message: "Lỗi máy chủ. Vui lòng thử lại sau.",
