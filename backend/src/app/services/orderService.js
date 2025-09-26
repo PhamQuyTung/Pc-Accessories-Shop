@@ -28,20 +28,17 @@ function calcTotals(orderItems, body) {
 
 // === Services ===
 async function checkoutOrder(userId, body, session) {
+  // Lấy giỏ hàng user + populate sản phẩm
   const cartItems = await Cart.find({ user_id: userId }).populate({
     path: "product_id",
     select: populateFields,
   });
   if (!cartItems.length) throw new Error("EMPTY_CART");
 
+  // Chỉ cần đảm bảo có product và chưa bị đánh dấu xóa
   const validCartItems = cartItems.filter((c) => {
     const p = c.product_id;
-    return (
-      p &&
-      !p.deleted &&
-      Array.isArray(p.status) &&
-      !p.status.includes("đã thu hồi")
-    );
+    return p && !p.deleted;
   });
   if (!validCartItems.length) throw new Error("INVALID_CART_ITEMS");
 
@@ -50,6 +47,7 @@ async function checkoutOrder(userId, body, session) {
     const p = item.product_id;
     const finalPrice = p.discountPrice > 0 ? p.discountPrice : p.price;
 
+    // Rồi để check số lượng khi trừ tồn kho
     const updated = await Product.findOneAndUpdate(
       { _id: p._id, quantity: { $gte: item.quantity } },
       { $inc: { quantity: -item.quantity } },
@@ -67,7 +65,10 @@ async function checkoutOrder(userId, body, session) {
     });
   }
 
+  // Tính tổng tiền
   const totals = calcTotals(orderItems, body);
+
+  // Tạo order
   const newOrderArr = await Order.create(
     [
       {
@@ -81,7 +82,9 @@ async function checkoutOrder(userId, body, session) {
     { session }
   );
 
+  // Xóa giỏ hàng sau khi checkout
   await Cart.deleteMany({ user_id: userId }, { session });
+
   return newOrderArr[0];
 }
 

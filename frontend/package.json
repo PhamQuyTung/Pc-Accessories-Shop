@@ -59,7 +59,8 @@
     "prettier": "^3.5.3",
     "react-app-rewired": "^2.2.1",
     "sass": "^1.89.2",
-    "sass-loader": "^16.0.5"
+    "sass-loader": "^16.0.5",
+    "shared-utils": "file:../shared"
   },
   "scripts": {
     "start": "react-app-rewired start",

@@ -16,7 +16,7 @@ import useUnsavedChangesWarning from '~/hooks/useUnsavedChangesWarning';
 
 import { useToast } from '~/components/ToastMessager';
 import VariantImage from '~/components/VariantImage/VariantImage';
-import { computeProductStatus } from '~/utils/productStatus';
+import { computeProductStatus } from 'shared-utils';
 
 registerQuillModules();
 
@@ -1022,7 +1022,7 @@ export default function CreateProduct() {
                                                 : [],
                                     },
                                     { importing: form.importing },
-                                ).join(', ')}
+                                )}
                             </span>
                         </div>
 

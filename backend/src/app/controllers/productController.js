@@ -3,6 +3,7 @@ const Product = require("../models/product");
 const Category = require("../models/category");
 const Review = require("../models/review");
 const mongoose = require("mongoose");
+const { computeProductStatus } = require("../../../../shared/productStatus");
 
 class ProductController {
   // Lấy tất cả sản phẩm
@@ -133,8 +134,14 @@ class ProductController {
 
       const products = await Product.aggregate(pipeline);
 
+      // ✅ Cập nhật status động theo quantity
+      const productsWithStatus = products.map((p) => ({
+        ...p,
+        status: computeProductStatus(p, { importing: p.importing }),
+      }));
+
       res.status(200).json({
-        products,
+        products: productsWithStatus,
         totalCount,
         currentPage: pageNum,
         totalPages: Math.ceil(totalCount / limitNum),
@@ -169,6 +176,7 @@ class ProductController {
         averageRating: Number((Math.round(averageRating * 10) / 10).toFixed(1)),
         reviewCount,
         reviews, // Trả về danh sách đánh giá
+        status: computeProductStatus(product, { importing: product.importing }), // ✅ cập nhật status
       });
     } catch (err) {
       res.status(500).json({ error: "Lỗi server" });
@@ -232,7 +240,6 @@ class ProductController {
         price,
         discountPrice,
         quantity,
-        status,
         visible,
         specs,
         category,
@@ -242,6 +249,7 @@ class ProductController {
         dimensions,
         weight,
         variations,
+        importing, // 👈 nếu bạn có field này
       } = req.body;
 
       const product = new Product({
@@ -250,7 +258,6 @@ class ProductController {
         price,
         discountPrice,
         quantity,
-        status,
         visible,
         specs,
         category,
@@ -278,6 +285,9 @@ class ProductController {
             }))
           : [],
       });
+
+      // ✅ Tính status dựa trên quantity + variations thay vì lấy từ client
+      product.status = computeProductStatus(product, { importing });
 
       await product.save();
       res.status(201).json(product);
@@ -406,6 +416,14 @@ class ProductController {
     try {
       const data = { ...req.body };
 
+      // ✅ Ép status về string
+      if (Array.isArray(data.status)) {
+        data.status = data.status[0];
+      }
+      if (data.status) {
+        data.status = String(data.status);
+      }
+
       // đảm bảo luôn có shortDescription & longDescription
       data.shortDescription = data.shortDescription || "";
       data.longDescription = data.longDescription || "";
@@ -437,13 +455,20 @@ class ProductController {
         }));
       }
 
-      const updated = await Product.findByIdAndUpdate(req.params.id, data, {
+      // 🟢 Cập nhật product
+      let updated = await Product.findByIdAndUpdate(req.params.id, data, {
         new: true,
       });
 
       if (!updated) {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
       }
+
+      // 🟢 Tính lại status sau khi update
+      updated.status = computeProductStatus(updated, {
+        importing: updated.importing,
+      });
+      await updated.save();
 
       res.json(updated);
     } catch (err) {
@@ -546,7 +571,13 @@ class ProductController {
         { $limit: 10 },
       ]);
 
-      res.json(products);
+      // ✅ Gắn status
+      const productsWithStatus = products.map((p) => ({
+        ...p,
+        status: computeProductStatus(p, { importing: p.importing }),
+      }));
+
+      res.json(productsWithStatus);
     } catch (err) {
       console.error("Lỗi khi tìm kiếm sản phẩm:", err);
       res.status(500).json({ error: "Lỗi server" });
@@ -629,7 +660,13 @@ class ProductController {
         },
       ]);
 
-      res.json(products);
+      // ✅ Gắn status
+      const productsWithStatus = products.map((p) => ({
+        ...p,
+        status: computeProductStatus(p, { importing: p.importing }),
+      }));
+
+      res.json(productsWithStatus);
     } catch (err) {
       console.error("Lỗi khi lấy sản phẩm theo danh mục:", err);
       res.status(500).json({ error: "Lỗi server" });
@@ -709,16 +746,15 @@ class ProductController {
       }
 
       if (!product) {
-        return res
-          .status(400)
-          .json({ error: "Sản phẩm đã hết hàng hoặc không đủ số lượng" });
+        return res.status(400).json({
+          error: "Sản phẩm đã hết hàng hoặc không đủ số lượng",
+        });
       }
 
-      // ✅ Tự động cập nhật trạng thái
-      const hasStock =
-        product.quantity > 0 || product.variations.some((v) => v.quantity > 0);
-
-      product.status = hasStock ? ["còn hàng"] : ["hết hàng"];
+      // ✅ Tự động cập nhật trạng thái bằng util
+      product.status = computeProductStatus(product, {
+        importing: product.importing,
+      });
       await product.save();
 
       res.json({

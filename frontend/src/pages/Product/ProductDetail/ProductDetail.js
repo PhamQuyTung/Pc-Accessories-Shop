@@ -464,10 +464,20 @@ function ProductDetail() {
                                     <button
                                         className={cx('add-to-cart')}
                                         onClick={handleAddToCart}
-                                        disabled={isAddingToCart} // ✅ Disable khi loading
+                                        disabled={
+                                            isAddingToCart ||
+                                            product.status.includes('hết hàng') ||
+                                            product.status.includes('đang nhập hàng')
+                                        }
                                     >
                                         <FontAwesomeIcon icon={faShoppingCart} />
-                                        {isAddingToCart ? ' Đang thêm...' : ' Thêm vào giỏ'}
+                                        {isAddingToCart
+                                            ? ' Đang thêm...'
+                                            : product.status.includes('hết hàng')
+                                              ? ' Hết hàng'
+                                              : product.status.includes('đang nhập hàng')
+                                                ? ' Đang nhập hàng'
+                                                : ' Thêm vào giỏ'}
                                     </button>
 
                                     <button className={cx('favorite-btn')} onClick={toggleFavorite}>

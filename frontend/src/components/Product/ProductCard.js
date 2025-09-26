@@ -35,14 +35,24 @@ function ProductCard({ product, viewMode }) {
 
             <div className={cx('product-card__info')}>
                 <div className={cx('proloop-label--bottom')}>
-                    {product.status.includes('sản phẩm mới') && <span className={cx('new-tag')}>Sản phẩm mới</span>}
-                    {product.status.includes('nhiều hàng') && <span className={cx('many-tag')}>Nhiều hàng</span>}
-                    {product.status.includes('còn hàng') && <span className={cx('in-stock')}>Còn hàng</span>}
-                    {product.status.includes('sắp hết hàng') && <span className={cx('low-stock')}>Sắp hết hàng</span>}
-                    {product.status.includes('hết hàng') && <span className={cx('out-stock')}>Hết hàng</span>}
-                    {product.status.includes('đang nhập hàng') && (
-                        <span className={cx('importing-tag')}>Đang nhập hàng</span>
-                    )}
+                    {(() => {
+                        switch (product.status?.trim()) {
+                            case 'sản phẩm mới':
+                                return <span className={cx('new-tag')}>Sản phẩm mới</span>;
+                            case 'nhiều hàng':
+                                return <span className={cx('many-tag')}>Nhiều hàng</span>;
+                            case 'còn hàng':
+                                return <span className={cx('in-stock')}>Còn hàng</span>;
+                            case 'sắp hết hàng':
+                                return <span className={cx('low-stock')}>Sắp hết hàng</span>;
+                            case 'hết hàng':
+                                return <span className={cx('out-stock')}>Hết hàng</span>;
+                            case 'đang nhập hàng':
+                                return <span className={cx('importing-tag')}>Đang nhập hàng</span>;
+                            default:
+                                return null;
+                        }
+                    })()}
                 </div>
 
                 <div className={cx('product-card__des')}>

@@ -2,6 +2,7 @@
 const mongoose = require("mongoose");
 const { Schema, model } = require("mongoose");
 const slugify = require("slugify");
+const { computeProductStatus } = require("../../../../shared/productStatus"); // 👈 relative path
 
 // ================= Review Schema =================
 const reviewSchema = new mongoose.Schema(
@@ -58,7 +59,7 @@ const productSchema = new mongoose.Schema({
   price: { type: Number, default: null },
   discountPrice: { type: Number, default: null },
   quantity: { type: Number, default: 0 },
-  status: [String],
+  status: { type: String }, // 👈 thay vì [String]
   visible: { type: Boolean, default: true },
   specs: { type: Map, of: String },
   category: {
@@ -116,20 +117,48 @@ const productSchema = new mongoose.Schema({
 });
 
 // ================= Slug Middleware =================
+// Middleware save
 productSchema.pre("save", function (next) {
   if (this.isModified("name")) {
     this.slug = slugify(this.name, { lower: true, strict: true });
   }
+
+  this.status = computeProductStatus(this); // luôn tính lại (string)
   this.updatedAt = Date.now();
   next();
 });
 
-productSchema.pre("findOneAndUpdate", function (next) {
+// Middleware update
+productSchema.pre("findOneAndUpdate", async function (next) {
   const update = this.getUpdate();
+
   if (update.name) {
     update.slug = slugify(update.name, { lower: true, strict: true });
   }
-  update.updatedAt = Date.now();
+
+  // lấy document gốc từ DB
+  const doc = await this.model.findOne(this.getQuery());
+
+  if (doc) {
+    // merge dữ liệu gốc với update
+    const merged = {
+      ...doc.toObject(),
+      ...(update.$set || {}),
+      ...update,
+    };
+
+    update.$set = {
+      ...update.$set,
+      status: computeProductStatus(merged), // 👈 string
+      updatedAt: Date.now(),
+    };
+  } else {
+    update.$set = {
+      ...update.$set,
+      updatedAt: Date.now(),
+    };
+  }
+
   next();
 });
 
