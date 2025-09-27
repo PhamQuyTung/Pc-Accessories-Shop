@@ -64,8 +64,11 @@ function EditProduct() {
 
                 setFormData({
                     ...product,
+                    // Nếu backend trả populated object thì dùng _id, nếu trả id thì giữ nguyên
+                    category: product.category?._id || product.category || '',
+                    brand: product.brand?._id || product.brand || '',
                     shortDescription: product.shortDescription || '',
-                    longDescription: decodedLongDesc, // 👈 đảm bảo dạng HTML thật
+                    longDescription: decodedLongDesc || '', // 👈 đảm bảo dạng HTML thật
                 });
 
                 setImporting(product.status?.includes('đang nhập hàng') || false);
