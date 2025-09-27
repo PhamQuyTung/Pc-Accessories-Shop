@@ -24,6 +24,7 @@ router.get("/category/:slug", ProductController.getByCategorySlug);  // Theo dan
 router.get("/count", ProductController.countProducts); // Đếm số lượng sản phẩm
 router.get('/stats', ProductController.getProductStats); // Thống kê chi tiết sản phẩm (tổng, ẩn, hiện)
 router.post("/:id/decrease-stock", ProductController.decreaseStock); // 📉 Giảm tồn kho khi có order
+router.patch("/:id/increase-stock", ProductController.increaseStock); // 📈 Tăng tồn kho (hủy đơn, trả hàng)
 
 
 

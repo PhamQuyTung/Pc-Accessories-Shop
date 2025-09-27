@@ -115,8 +115,9 @@ async function getUserOrders(userId) {
     .sort({ createdAt: -1 });
 }
 
-async function getAllOrders() {
-  return Order.find()
+async function getAllOrders(includeDeleted = false) {
+  const query = includeDeleted ? {} : { status: { $ne: "deleted" } };
+  return Order.find(query)
     .populate("items.product_id", populateFields)
     .sort({ createdAt: -1 });
 }
@@ -245,6 +246,28 @@ async function getOrderStats() {
   return { byHour, byDay, byMonth, byYear };
 }
 
+async function restoreOrder(orderId) {
+  const order = await Order.findOneAndUpdate(
+    { _id: orderId, status: "deleted" },
+    { status: "new" }, // hoặc status cũ nếu bạn muốn lưu lại
+    { new: true }
+  );
+  if (!order) throw new Error("NOT_FOUND");
+  return order;
+}
+
+async function forceDeleteOrder(orderId) {
+  const order = await Order.findByIdAndDelete(orderId);
+  if (!order) throw new Error("NOT_FOUND");
+  return order;
+}
+
+async function getDeletedOrders() {
+  return Order.find({ status: "deleted" })
+    .populate("items.product_id", populateFields)
+    .sort({ createdAt: -1 });
+}
+
 module.exports = {
   checkoutOrder,
   cancelOrder,
@@ -255,4 +278,7 @@ module.exports = {
   updateOrderStatus,
   createOrderByAdmin,
   getOrderStats,
+  restoreOrder,
+  forceDeleteOrder,
+  getDeletedOrders,
 };

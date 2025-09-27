@@ -40,6 +40,8 @@ import PromotionDetail from '~/pages/Admin/Promotion/PromotionDetail/PromotionDe
 import AdminStats from '~/pages/Admin/AdminStats/AdminStats';
 import OrdersAdminManagement from '~/pages/Admin/OrderAdmin/OrdersManagement/OrdersManagement';
 import OrderAdminDetail from '~/pages/Admin/OrderAdmin/OrderDetail/OrderDetail';
+import OrderTrash from '~/pages/Admin/OrderAdmin/OrderTrash/OrderTrash'; // <-- thêm import
+import AdminCreateOrder from '~/pages/Admin/OrderAdmin/AdminCreateOrder/AdminCreateOrder';
 
 // routes thường
 import ProfileLayout from '~/pages/Profile/ProfileLayout';
@@ -65,7 +67,6 @@ import PostPreviewPage from '~/pages/Admin/Post/PostPreviewPage/PostPreviewPage'
 import PostListCategoryPage from '~/pages/PostListCategoryPage/PostListCategoryPage';
 import PostListTagPage from '~/pages/PostListTagPage/PostListTagPage';
 import SearchBlogPage from '~/components/SearchBlogPage/SearchBlogPage';
-import AdminCreateOrder from '~/pages/Admin/OrderAdmin/AdminCreateOrder/AdminCreateOrder';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -163,8 +164,9 @@ const routes = [
             // Order Managerment Admin
             // Quản lý đơn hàng
             { path: 'orders', element: <OrdersAdminManagement /> }, // tất cả đơn
-            { path: 'orders/:id', element: <OrderAdminDetail /> }, // chi tiết đơn
+            { path: 'orders/trash', element: <OrderTrash /> }, // <-- thêm route cho thùng rác
             { path: 'orders/create', element: <AdminCreateOrder /> }, // admin tạo hóa đơn
+            { path: 'orders/:id', element: <OrderAdminDetail /> }, // chi tiết đơn
         ],
     },
 

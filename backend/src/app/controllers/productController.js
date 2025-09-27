@@ -13,7 +13,7 @@ class ProductController {
         isAdmin,
         search,
         category,
-        categoryId, // 👈 thêm vào query
+        categoryId,
         visible,
         sort,
         page = 1,
@@ -30,7 +30,6 @@ class ProductController {
         match.name = { $regex: search, $options: "i" };
       }
 
-      // ✅ Ưu tiên categoryId nếu có
       if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
         match.category = new mongoose.Types.ObjectId(categoryId);
       } else if (category) {
@@ -48,6 +47,10 @@ class ProductController {
         match.visible = true;
       }
 
+      // 👉 Tính tổng số sản phẩm trước (không bị ảnh hưởng bởi skip/limit)
+      const totalCount = await Product.countDocuments(match);
+
+      // 👉 Pipeline chính
       let pipeline = [
         { $match: match },
         {
@@ -86,7 +89,6 @@ class ProductController {
               ],
             },
             reviewCount: { $size: "$reviews" },
-            // 👇 Thêm field finalPrice
             finalPrice: {
               $cond: {
                 if: { $gt: ["$discountPrice", 0] },
@@ -122,12 +124,6 @@ class ProductController {
       } else {
         pipeline.push({ $sort: { createdAt: -1 } });
       }
-
-      // 👉 Đếm tổng
-      const countPipeline = [...pipeline];
-      countPipeline.push({ $count: "total" });
-      const countResult = await Product.aggregate(countPipeline);
-      const totalCount = countResult[0]?.total || 0;
 
       // 👉 Phân trang
       pipeline.push({ $skip: skip }, { $limit: limitNum });
@@ -335,7 +331,13 @@ class ProductController {
         { $limit: 7 },
       ]);
 
-      res.json(related);
+      // ✅ Gắn status động
+      const relatedWithStatus = related.map((p) => ({
+        ...p,
+        status: computeProductStatus(p, { importing: p.importing }),
+      }));
+
+      res.json(relatedWithStatus);
     } catch (err) {
       console.error("Lỗi khi lấy sản phẩm liên quan:", err);
       res.status(500).json({ error: "Không thể lấy sản phẩm liên quan" });
@@ -371,12 +373,20 @@ class ProductController {
   // Lấy danh sách đánh giá của sản phẩm
   async getReviews(req, res) {
     try {
-      const product = await Product.findById(req.params.id).select("reviews");
+      const productId = req.params.id;
 
-      if (!product)
+      // Kiểm tra sản phẩm có tồn tại không
+      const product = await Product.findById(productId);
+      if (!product) {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      }
 
-      res.json(product.reviews);
+      // Lấy tất cả review theo productId
+      const reviews = await Review.find({ product: productId })
+        .populate("user", "name") // 👉 nếu muốn lấy thêm tên user
+        .sort({ createdAt: -1 }); // 👉 sort mới nhất trước
+
+      res.json(reviews);
     } catch (err) {
       res.status(500).json({ error: "Lỗi khi lấy danh sách đánh giá" });
     }
@@ -385,28 +395,46 @@ class ProductController {
   // Trang edit sản phẩm
   async editProduct(req, res) {
     try {
-      const product = await Product.findById(req.params.id);
-      if (!product)
-        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      const product = await Product.findById(req.params.id)
+        .populate("category", "name slug") // 👉 lấy thêm thông tin category
+        .populate("brand", "name slug") // 👉 lấy thêm thông tin brand
+        .lean();
 
-      // Gửi JSON cho frontend React
-      res.json(product);
+      if (!product) {
+        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      }
+
+      res.json({
+        ...product,
+        status: computeProductStatus(product, { importing: product.importing }), // ✅ đồng bộ status
+      });
     } catch (err) {
+      console.error("❌ Lỗi editProduct:", err);
       res.status(500).json({ error: "Lỗi khi lấy thông tin sản phẩm" });
     }
   }
 
-  // Cập nhật sản phẩm
+  // Lấy sản phẩm theo ID
   async getById(req, res) {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: "ID không hợp lệ" });
     }
     try {
-      const product = await Product.findById(req.params.id);
-      if (!product)
+      const product = await Product.findById(req.params.id)
+        .populate("category", "name slug")
+        .populate("brand", "name slug")
+        .lean();
+
+      if (!product) {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
-      res.json(product);
+      }
+
+      res.json({
+        ...product,
+        status: computeProductStatus(product, { importing: product.importing }), // ✅ đồng bộ status
+      });
     } catch (err) {
+      console.error("❌ Lỗi getById:", err);
       res.status(500).json({ error: "Lỗi server" });
     }
   }
@@ -416,13 +444,8 @@ class ProductController {
     try {
       const data = { ...req.body };
 
-      // ✅ Ép status về string
-      if (Array.isArray(data.status)) {
-        data.status = data.status[0];
-      }
-      if (data.status) {
-        data.status = String(data.status);
-      }
+      // ✅ Bỏ status client gửi, ta sẽ tính lại
+      delete data.status;
 
       // đảm bảo luôn có shortDescription & longDescription
       data.shortDescription = data.shortDescription || "";
@@ -455,8 +478,11 @@ class ProductController {
         }));
       }
 
-      // 🟢 Cập nhật product
-      let updated = await Product.findByIdAndUpdate(req.params.id, data, {
+      // 🟢 Tính lại status dựa trên dữ liệu mới
+      data.status = computeProductStatus(data, { importing: data.importing });
+
+      // 🟢 Cập nhật và trả về document mới
+      const updated = await Product.findByIdAndUpdate(req.params.id, data, {
         new: true,
       });
 
@@ -464,14 +490,9 @@ class ProductController {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
       }
 
-      // 🟢 Tính lại status sau khi update
-      updated.status = computeProductStatus(updated, {
-        importing: updated.importing,
-      });
-      await updated.save();
-
       res.json(updated);
     } catch (err) {
+      console.error("❌ Lỗi updateProduct:", err);
       res
         .status(500)
         .json({ error: "Lỗi khi cập nhật sản phẩm", details: err.message });
@@ -483,13 +504,17 @@ class ProductController {
     try {
       const product = await Product.findByIdAndUpdate(
         req.params.id,
-        { deleted: true },
+        { deleted: true, deletedAt: new Date() }, // 👈 thêm timestamp
         { new: true }
       );
-      if (!product)
+
+      if (!product) {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
-      res.json({ message: "Đã chuyển vào thùng rác", product });
+      }
+
+      res.json({ message: "Đã chuyển sản phẩm vào thùng rác", product });
     } catch (err) {
+      console.error("❌ Lỗi softDeleteProduct:", err);
       res.status(500).json({ error: "Lỗi khi xóa tạm thời" });
     }
   }
@@ -497,9 +522,35 @@ class ProductController {
   // Lấy sản phẩm trong thùng rác
   async getTrash(req, res) {
     try {
-      const products = await Product.find({ deleted: true });
-      res.json(products);
+      const { page = 1, limit = 10 } = req.query;
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const skip = (pageNum - 1) * limitNum;
+
+      const [products, totalCount] = await Promise.all([
+        Product.find({ deleted: true })
+          .populate("category", "name slug")
+          .populate("brand", "name slug")
+          .skip(skip)
+          .limit(limitNum)
+          .lean(),
+        Product.countDocuments({ deleted: true }),
+      ]);
+
+      // ✅ cập nhật status động
+      const productsWithStatus = products.map((p) => ({
+        ...p,
+        status: computeProductStatus(p, { importing: p.importing }),
+      }));
+
+      res.json({
+        products: productsWithStatus,
+        totalCount,
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalCount / limitNum),
+      });
     } catch (err) {
+      console.error("❌ Lỗi getTrash:", err);
       res.status(500).json({ error: "Lỗi server" });
     }
   }
@@ -507,11 +558,22 @@ class ProductController {
   // Xóa sản phẩm vĩnh viễn
   async forceDeleteProduct(req, res) {
     try {
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ error: "ID không hợp lệ" });
+      }
+
       const product = await Product.findByIdAndDelete(req.params.id);
-      if (!product)
+
+      if (!product) {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
-      res.json({ message: "Đã xóa vĩnh viễn" });
+      }
+
+      // ❗ Tuỳ chọn: xóa luôn reviews liên quan
+      await Review.deleteMany({ product: product._id });
+
+      res.json({ message: "Đã xóa sản phẩm vĩnh viễn cùng với reviews" });
     } catch (err) {
+      console.error("❌ Lỗi forceDeleteProduct:", err);
       res.status(500).json({ error: "Lỗi khi xóa vĩnh viễn" });
     }
   }
@@ -519,31 +581,49 @@ class ProductController {
   // Khôi phục sản phẩm từ thùng rác
   async restoreProduct(req, res) {
     try {
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ error: "ID không hợp lệ" });
+      }
+
       const product = await Product.findByIdAndUpdate(
         req.params.id,
-        { deleted: false },
+        { deleted: false, deletedAt: null }, // 👈 clear timestamp
         { new: true }
-      );
-      if (!product)
+      ).lean();
+
+      if (!product) {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
-      res.json({ message: "Đã khôi phục sản phẩm", product });
+      }
+
+      // ✅ cập nhật status động
+      const restored = {
+        ...product,
+        status: computeProductStatus(product, { importing: product.importing }),
+      };
+
+      res.json({ message: "Đã khôi phục sản phẩm", product: restored });
     } catch (err) {
+      console.error("❌ Lỗi restoreProduct:", err);
       res.status(500).json({ error: "Lỗi khi khôi phục sản phẩm" });
     }
   }
 
   // Tìm kiếm sản phẩm
   async searchProducts(req, res) {
-    const { query } = req.query;
+    const { query, page = 1, limit = 10 } = req.query;
     if (!query || query.trim() === "") {
       return res.status(400).json({ error: "Query không được để trống" });
     }
 
     try {
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const skip = (pageNum - 1) * limitNum;
+
       const products = await Product.aggregate([
         {
           $match: {
-            name: { $regex: query, $options: "i" },
+            name: { $regex: query.trim(), $options: "i" },
             deleted: { $ne: true },
             visible: true,
           },
@@ -566,12 +646,20 @@ class ProductController {
               ],
             },
             reviewCount: { $size: "$reviews" },
+            finalPrice: {
+              $cond: {
+                if: { $gt: ["$discountPrice", 0] },
+                then: "$discountPrice",
+                else: "$price",
+              },
+            },
           },
         },
-        { $limit: 10 },
+        { $skip: skip },
+        { $limit: limitNum },
       ]);
 
-      // ✅ Gắn status
+      // ✅ cập nhật status động
       const productsWithStatus = products.map((p) => ({
         ...p,
         status: computeProductStatus(p, { importing: p.importing }),
@@ -579,7 +667,7 @@ class ProductController {
 
       res.json(productsWithStatus);
     } catch (err) {
-      console.error("Lỗi khi tìm kiếm sản phẩm:", err);
+      console.error("❌ Lỗi khi tìm kiếm sản phẩm:", err);
       res.status(500).json({ error: "Lỗi server" });
     }
   }
@@ -597,29 +685,37 @@ class ProductController {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
       }
 
-      const updatedProduct = await Product.findByIdAndUpdate(
-        id,
-        { visible: !product.visible },
-        { new: true, runValidators: false } // Bỏ qua check brand
-      );
+      product.visible = !product.visible;
+      await product.save();
+
+      // ✅ status động
+      const updated = {
+        ...product.toObject(),
+        status: computeProductStatus(product, { importing: product.importing }),
+      };
 
       res.json({
-        message: `Sản phẩm đã được ${updatedProduct.visible ? "hiển thị" : "ẩn"}`,
-        visible: updatedProduct.visible,
+        message: `Sản phẩm đã được ${updated.visible ? "hiển thị" : "ẩn"}`,
+        product: updated,
       });
     } catch (err) {
-      console.error("Lỗi toggleVisible:", err);
+      console.error("❌ Lỗi toggleVisible:", err);
       res.status(500).json({ error: "Lỗi server", details: err.message });
     }
   }
 
-  // Lấy sản phẩm theo danh mục slug
+  // GET /api/products/category/:slug?page=1&limit=20
   async getByCategorySlug(req, res) {
     try {
-      const category = await Category.findOne({ slug: req.params.slug });
+      const { slug } = req.params;
+      const { page = 1, limit = 20 } = req.query;
+
+      const category = await Category.findOne({ slug });
       if (!category) {
         return res.status(404).json({ error: "Không tìm thấy danh mục" });
       }
+
+      const skip = (Number(page) - 1) * Number(limit);
 
       const products = await Product.aggregate([
         {
@@ -637,7 +733,7 @@ class ProductController {
             as: "brand",
           },
         },
-        { $unwind: "$brand" },
+        { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
             from: "reviews",
@@ -658,6 +754,9 @@ class ProductController {
             reviewCount: { $size: "$reviews" },
           },
         },
+        { $sort: { createdAt: -1 } }, // mới nhất trước
+        { $skip: skip },
+        { $limit: Number(limit) },
       ]);
 
       // ✅ Gắn status
@@ -666,19 +765,37 @@ class ProductController {
         status: computeProductStatus(p, { importing: p.importing }),
       }));
 
-      res.json(productsWithStatus);
+      res.json({
+        page: Number(page),
+        limit: Number(limit),
+        total: productsWithStatus.length,
+        products: productsWithStatus,
+      });
     } catch (err) {
-      console.error("Lỗi khi lấy sản phẩm theo danh mục:", err);
+      console.error("❌ Lỗi khi lấy sản phẩm theo danh mục:", err);
       res.status(500).json({ error: "Lỗi server" });
     }
   }
 
-  // Đêm số lượng sản phẩm
+  // GET /api/products/count
   async countProducts(req, res) {
     try {
-      const total = await Product.countDocuments({ deleted: { $ne: true } });
-      res.json({ total });
+      const stats = await Product.aggregate([
+        { $match: { deleted: { $ne: true } } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            visible: { $sum: { $cond: ["$visible", 1, 0] } },
+            hidden: { $sum: { $cond: ["$visible", 0, 1] } },
+            importing: { $sum: { $cond: ["$importing", 1, 0] } },
+          },
+        },
+      ]);
+
+      res.json(stats[0] || { total: 0, visible: 0, hidden: 0, importing: 0 });
     } catch (err) {
+      console.error("❌ Lỗi khi đếm sản phẩm:", err);
       res.status(500).json({ error: "Lỗi khi đếm sản phẩm" });
     }
   }
@@ -686,22 +803,21 @@ class ProductController {
   // GET /api/products/stats
   async getProductStats(req, res) {
     try {
-      const total = await Product.countDocuments({ deleted: { $ne: true } });
-      const visibleCount = await Product.countDocuments({
-        deleted: { $ne: true },
-        visible: true,
-      });
-      const hiddenCount = await Product.countDocuments({
-        deleted: { $ne: true },
-        visible: false,
-      });
+      const stats = await Product.aggregate([
+        { $match: { deleted: { $ne: true } } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            visible: { $sum: { $cond: ["$visible", 1, 0] } },
+            hidden: { $sum: { $cond: ["$visible", 0, 1] } },
+          },
+        },
+      ]);
 
-      res.json({
-        total,
-        visible: visibleCount,
-        hidden: hiddenCount,
-      });
+      res.json(stats[0] || { total: 0, visible: 0, hidden: 0 });
     } catch (err) {
+      console.error("❌ Lỗi khi thống kê sản phẩm:", err);
       res.status(500).json({ error: "Lỗi khi thống kê sản phẩm" });
     }
   }
@@ -719,12 +835,12 @@ class ProductController {
       let product;
 
       if (variationId) {
-        // 🔹 Trừ tồn kho trong variation
+        // Giảm tồn kho variation
         product = await Product.findOneAndUpdate(
           {
             _id: productId,
             "variations._id": variationId,
-            "variations.quantity": { $gte: quantity }, // đảm bảo còn hàng
+            "variations.quantity": { $gte: quantity },
           },
           {
             $inc: { "variations.$.quantity": -quantity },
@@ -732,15 +848,13 @@ class ProductController {
           { new: true }
         );
       } else {
-        // 🔹 Trừ tồn kho trong sản phẩm cha
+        // Giảm tồn kho tổng
         product = await Product.findOneAndUpdate(
           {
             _id: productId,
             quantity: { $gte: quantity },
           },
-          {
-            $inc: { quantity: -quantity },
-          },
+          { $inc: { quantity: -quantity } },
           { new: true }
         );
       }
@@ -751,10 +865,12 @@ class ProductController {
         });
       }
 
-      // ✅ Tự động cập nhật trạng thái bằng util
+      // ✅ Luôn tính lại status
       product.status = computeProductStatus(product, {
         importing: product.importing,
       });
+
+      // 🟢 Lưu lại để status đồng bộ DB
       await product.save();
 
       res.json({
@@ -763,6 +879,55 @@ class ProductController {
       });
     } catch (err) {
       console.error("❌ Lỗi decreaseStock:", err);
+      res.status(500).json({ error: "Lỗi server", details: err.message });
+    }
+  }
+
+  // PATCH /api/products/:id/increase-stock
+  async increaseStock(req, res) {
+    try {
+      const { variationId, quantity } = req.body;
+      const { id: productId } = req.params;
+
+      if (!quantity || quantity <= 0) {
+        return res.status(400).json({ error: "Số lượng không hợp lệ" });
+      }
+
+      let product;
+
+      if (variationId) {
+        // Hoàn kho cho variation
+        product = await Product.findOneAndUpdate(
+          { _id: productId, "variations._id": variationId },
+          { $inc: { "variations.$.quantity": quantity } },
+          { new: true }
+        );
+      } else {
+        // Hoàn kho cho tổng sản phẩm
+        product = await Product.findByIdAndUpdate(
+          productId,
+          { $inc: { quantity } },
+          { new: true }
+        );
+      }
+
+      if (!product) {
+        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      }
+
+      // ✅ Luôn tính lại status sau khi cập nhật
+      product.status = computeProductStatus(product, {
+        importing: product.importing,
+      });
+
+      await product.save();
+
+      res.json({
+        message: "Đã hoàn kho sản phẩm",
+        product,
+      });
+    } catch (err) {
+      console.error("❌ Lỗi increaseStock:", err);
       res.status(500).json({ error: "Lỗi server", details: err.message });
     }
   }

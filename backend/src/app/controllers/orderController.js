@@ -39,18 +39,14 @@ exports.checkoutOrder = async (req, res) => {
     if (err.message === "EMPTY_CART")
       return res.status(400).json({ message: "Giỏ hàng đang trống!" });
     if (err.message === "INVALID_CART_ITEMS")
-      return res
-        .status(400)
-        .json({
-          message:
-            "Tất cả sản phẩm trong giỏ hàng đã bị thu hồi hoặc không hợp lệ!",
-        });
+      return res.status(400).json({
+        message:
+          "Tất cả sản phẩm trong giỏ hàng đã bị thu hồi hoặc không hợp lệ!",
+      });
     if (err.message.startsWith("OUT_OF_STOCK"))
-      return res
-        .status(400)
-        .json({
-          message: `Sản phẩm ${err.message.split(":")[1]} không đủ số lượng`,
-        });
+      return res.status(400).json({
+        message: `Sản phẩm ${err.message.split(":")[1]} không đủ số lượng`,
+      });
 
     console.error("🔥 Lỗi khi đặt hàng:", err);
     res.status(500).json({ message: "Lỗi khi đặt hàng" });
@@ -165,5 +161,42 @@ exports.getOrderStats = async (req, res) => {
   } catch (err) {
     console.error("🔥 Lỗi thống kê:", err);
     res.status(500).json({ message: "Lỗi khi thống kê đơn hàng" });
+  }
+};
+
+// Khôi phục đơn
+exports.restoreOrder = async (req, res) => {
+  try {
+    const order = await orderService.restoreOrder(req.params.id);
+    res.json({ message: "Đơn hàng đã được khôi phục!", order });
+  } catch (err) {
+    if (err.message === "NOT_FOUND") {
+      return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
+    }
+    res.status(500).json({ message: "Lỗi khi khôi phục đơn hàng" });
+  }
+};
+
+// Xóa vĩnh viễn
+exports.forceDeleteOrder = async (req, res) => {
+  try {
+    await orderService.forceDeleteOrder(req.params.id);
+    res.json({ message: "Đơn hàng đã bị xóa vĩnh viễn!" });
+  } catch (err) {
+    if (err.message === "NOT_FOUND") {
+      return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
+    }
+    res.status(500).json({ message: "Lỗi khi xóa vĩnh viễn đơn hàng" });
+  }
+};
+
+// Lấy đơn đã xóa mềm
+exports.getDeletedOrders = async (req, res) => {
+  try {
+    const orders = await orderService.getDeletedOrders();
+    res.status(200).json({ orders });
+  } catch (err) {
+    console.error("🔥 Lỗi lấy deleted orders:", err);
+    res.status(500).json({ message: "Lỗi khi lấy đơn đã xóa" });
   }
 };

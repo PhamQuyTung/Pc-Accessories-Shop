@@ -14,7 +14,7 @@ const tabList = [
     { key: 'shipping', label: 'Đang giao' },
     { key: 'completed', label: 'Hoàn thành' },
     { key: 'cancelled', label: 'Đã hủy' },
-    { key: 'deleted', label: 'Đã xóa' }, // Tab này lấy những đơn hàng mà người dùng xóa khỏi hệ thống
+    // { key: 'deleted', label: 'Đã xóa' }, // Tab này lấy những đơn hàng mà người dùng xóa khỏi hệ thống
 ];
 
 const OrdersManagement = () => {
@@ -37,6 +37,24 @@ const OrdersManagement = () => {
         };
         fetchOrders();
     }, []);
+
+    const handleDelete = async (orderId) => {
+        if (!window.confirm('Bạn có chắc muốn xóa đơn này không?')) return;
+
+        try {
+            await axios.delete(`/api/orders/${orderId}`, {
+                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+            });
+
+            // Cập nhật lại state local
+            setOrders((prev) => prev.map((o) => (o._id === orderId ? { ...o, status: 'deleted' } : o)));
+
+            alert('Đơn hàng đã được chuyển vào thùng rác!');
+        } catch (err) {
+            console.error('Lỗi khi xóa đơn hàng:', err);
+            alert('Không thể xóa đơn hàng!');
+        }
+    };
 
     const filteredOrders = activeTab === 'all' ? orders : orders.filter((o) => o.status === activeTab);
 
@@ -84,7 +102,7 @@ const OrdersManagement = () => {
                                 filteredOrders.map((order) => (
                                     <tr key={order._id}>
                                         <td>#{order._id.slice(-6)}</td>
-                                        
+
                                         <td>{order.shippingInfo?.name || 'Ẩn danh'}</td>
 
                                         <td>{new Date(order.createdAt).toLocaleDateString('vi-VN')}</td>
@@ -108,7 +126,7 @@ const OrdersManagement = () => {
                                                 <Pencil size={18} />
                                             </button>
                                             <button
-                                                onClick={() => alert(`Xóa đơn ${order._id}`)}
+                                                onClick={() => handleDelete(order._id)}
                                                 className={cx('action-btn', 'delete')}
                                             >
                                                 <Trash2 size={18} />

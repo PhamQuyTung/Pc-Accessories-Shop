@@ -41,6 +41,13 @@ const OrderDetail = () => {
                 const res = await axios.get(`/api/orders/${id}`, {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
                 });
+
+                if (!res.data.order) {
+                    console.error('Đơn hàng không tồn tại hoặc đã bị xóa');
+                    setOrder(null);
+                    return;
+                }
+                
                 setOrder(res.data.order);
                 setNewStatus(res.data.order.status);
             } catch (err) {
@@ -217,7 +224,17 @@ const OrderDetail = () => {
                     <span>Giảm giá:</span> <strong>{order.discount.toLocaleString('vi-VN')} ₫</strong>
                 </p>
                 <p className={cx('grand-total')}>
-                    <span>Tổng cộng:</span> <strong>{(order.subtotal + order.tax + order.serviceFee + order.shippingFee - order.discount).toLocaleString('vi-VN')} ₫</strong>
+                    <span>Tổng cộng:</span>{' '}
+                    <strong>
+                        {(
+                            order.subtotal +
+                            order.tax +
+                            order.serviceFee +
+                            order.shippingFee -
+                            order.discount
+                        ).toLocaleString('vi-VN')}{' '}
+                        ₫
+                    </strong>
                 </p>
             </div>
 

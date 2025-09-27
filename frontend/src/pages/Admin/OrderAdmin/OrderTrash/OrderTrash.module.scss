@@ -1,0 +1,202 @@
+$bg: #f6f7f9;
+$card: #ffffff;
+$text: #2b2f33;
+$muted: #6b7280;
+$accent: #1e90ff;
+$accent-dark: #1777d6;
+$success: #16a34a;
+$danger: #ef4444;
+$border: #e6e9ee;
+$shadow: 0 6px 18px rgba(32, 41, 55, 0.06);
+
+.orders-page {
+    padding: 28px;
+    background: $bg;
+    min-height: 72vh;
+    font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+    color: $text;
+
+    .title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 18px;
+        color: $text;
+    }
+
+    // Table wrapper for horizontal scroll on small screens
+    .orders-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: transparent;
+        box-shadow: $shadow;
+        border-radius: 8px;
+        overflow: hidden;
+        display: block;
+
+        thead {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+            background: linear-gradient(180deg, $card, $card);
+            th {
+                padding: 14px 18px;
+                text-align: left;
+                font-size: 13px;
+                font-weight: 600;
+                color: $muted;
+                border-bottom: 1px solid $border;
+                &:first-child {
+                    padding-left: 22px;
+                }
+            }
+        }
+
+        tbody {
+            display: block;
+            max-height: 56vh;
+            overflow: auto;
+            width: 100%;
+            background: $card;
+
+            tr {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
+                transition:
+                    background 0.15s ease,
+                    transform 0.08s ease;
+                border-bottom: 1px solid rgba(230, 233, 238, 0.9);
+
+                &:hover {
+                    background: rgba(30, 144, 255, 0.03);
+                }
+
+                td {
+                    padding: 14px 18px;
+                    vertical-align: middle;
+                    font-size: 14px;
+                    color: $text;
+                    &:first-child {
+                        padding-left: 22px;
+                        font-weight: 600;
+                    }
+                    &:last-child {
+                        padding-right: 22px;
+                    }
+                }
+
+                .actions {
+                    display: flex;
+                    gap: 8px;
+                    justify-content: flex-end;
+                    align-items: center;
+                }
+            }
+        }
+    }
+
+    // Buttons
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        background: transparent;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.12s ease;
+        color: $muted;
+
+        &:hover {
+            transform: translateY(-1px);
+        }
+
+        &.restore {
+            color: $success;
+            border-color: rgba($success, 0.12);
+            background: rgba(22, 163, 74, 0.06);
+
+            &:hover {
+                background: rgba(22, 163, 74, 0.12);
+                border-color: rgba($success, 0.18);
+            }
+        }
+
+        &.delete {
+            color: $danger;
+            border-color: rgba($danger, 0.12);
+            background: rgba(239, 68, 68, 0.04);
+
+            &:hover {
+                background: rgba(239, 68, 68, 0.09);
+                border-color: rgba($danger, 0.18);
+            }
+        }
+    }
+
+    .no-orders {
+        text-align: center;
+        padding: 42px;
+        color: $muted;
+        font-size: 15px;
+    }
+
+    // Loading / empty states
+    p {
+        color: $muted;
+        font-size: 15px;
+    }
+
+    // Responsive tweaks
+    @media (max-width: 900px) {
+        padding: 18px;
+
+        .orders-table {
+            thead th,
+            tbody td {
+                padding: 12px 12px;
+                font-size: 13px;
+            }
+            tbody {
+                max-height: 60vh;
+            }
+        }
+    }
+
+    @media (max-width: 560px) {
+        .orders-table {
+            thead {
+                display: none;
+            }
+            tbody tr {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 8px;
+                padding: 12px 14px;
+            }
+            tbody td {
+                display: block;
+                padding: 6px 0;
+            }
+            tbody td:nth-child(1) {
+                font-weight: 700;
+            }
+            tbody td:nth-child(3),
+            tbody td:nth-child(4) {
+                color: $muted;
+                font-size: 13px;
+            }
+            .actions {
+                justify-content: flex-start;
+                margin-top: 8px;
+            }
+        }
+    }
+}
