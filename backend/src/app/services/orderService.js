@@ -6,6 +6,27 @@ const Product = require("../models/product");
 
 const populateFields = "name slug price discountPrice images status deleted";
 
+// --- helper restore stock ---
+async function restoreStockForItems(items, session = null) {
+  if (!Array.isArray(items) || items.length === 0) return;
+  const ops = items
+    .map((item) => {
+      if (!item || !item.product_id) return null;
+      // product_id có thể là ObjectId hoặc object populated
+      const pid = item.product_id._id ? item.product_id._id : item.product_id;
+      if (!pid) return null;
+      return Product.findByIdAndUpdate(
+        pid,
+        { $inc: { quantity: item.quantity || 0 } },
+        { new: true, session }
+      );
+    })
+    .filter(Boolean);
+  if (ops.length) {
+    await Promise.all(ops);
+  }
+}
+
 // === Helpers ===
 function calcTotals(orderItems, body) {
   const subtotal = orderItems.reduce((s, i) => s + i.total, 0);
@@ -93,6 +114,12 @@ async function cancelOrder(orderId, userId, reason) {
   if (!order) throw new Error("NOT_FOUND");
   if (["cancelled", "completed"].includes(order.status))
     throw new Error("CANNOT_CANCEL");
+
+  // restore stock only if it hasn't been returned yet (order wasn't cancelled/deleted)
+  if (!["cancelled", "deleted"].includes(order.status)) {
+    await restoreStockForItems(order.items);
+  }
+
   order.status = "cancelled";
   order.cancelReason = reason || "Không rõ lý do";
   await order.save();
@@ -100,18 +127,32 @@ async function cancelOrder(orderId, userId, reason) {
 }
 
 async function deleteOrder(orderId, userId) {
-  const order = await Order.findOneAndUpdate(
-    { _id: orderId, user_id: userId },
-    { status: "deleted" },
-    { new: true }
-  );
+  const order = await Order.findOne({ _id: orderId, user_id: userId });
   if (!order) throw new Error("NOT_FOUND");
-  return order;
+
+  if (!["cancelled", "deleted"].includes(order.status)) {
+    await restoreStockForItems(order.items);
+  }
+
+  order.status = "deleted";
+  await order.save();
+
+  // populate lại để trả về cho controller
+  return await Order.findById(order._id).populate(
+    "items.product_id",
+    "name slug price discountPrice images status deleted"
+  );
 }
 
 async function getUserOrders(userId) {
-  return Order.find({ user_id: userId })
-    .populate("items.product_id", populateFields)
+  return await Order.find({
+    user_id: userId,
+    status: { $ne: "deleted" }, // 👈 bỏ các đơn bị xóa mềm
+  })
+    .populate(
+      "items.product_id",
+      "name slug price discountPrice images status deleted"
+    )
     .sort({ createdAt: -1 });
 }
 
@@ -257,8 +298,33 @@ async function restoreOrder(orderId) {
 }
 
 async function forceDeleteOrder(orderId) {
-  const order = await Order.findByIdAndDelete(orderId);
+  const order = await Order.findById(orderId);
   if (!order) throw new Error("NOT_FOUND");
+
+  // restore stock if order not already cancelled/deleted
+  if (!["cancelled", "deleted"].includes(order.status)) {
+    await restoreStockForItems(order.items);
+  }
+
+  await Order.findByIdAndDelete(orderId);
+  return order;
+}
+
+async function forceDeleteOrderByUser(orderId, userId) {
+  // Tìm order thuộc về user
+  const order = await Order.findOne({ _id: orderId, user_id: userId });
+  if (!order) throw new Error("NOT_FOUND");
+
+  // Chỉ cho phép xóa vĩnh viễn nếu order đã hủy hoặc đã vào thùng rác
+  if (!["cancelled", "deleted"].includes(order.status))
+    throw new Error("CANNOT_FORCE_DELETE");
+
+  // Nếu order trước đó chưa trả hàng (status không ở cancelled/deleted) -> restore
+  if (!["cancelled", "deleted"].includes(order.status)) {
+    await restoreStockForItems(order.items);
+  }
+
+  await Order.findByIdAndDelete(orderId);
   return order;
 }
 
@@ -280,5 +346,6 @@ module.exports = {
   getOrderStats,
   restoreOrder,
   forceDeleteOrder,
+  forceDeleteOrderByUser,
   getDeletedOrders,
 };

@@ -9,5 +9,6 @@ router.get('/', authMiddleware, cartController.getCart);
 router.get('/count', authMiddleware, cartController.getCartCount);
 router.delete('/remove', authMiddleware, cartController.removeFromCart);
 router.put("/update", authMiddleware, cartController.updateCartQuantity); 
+router.post('/bulk-add', authMiddleware, cartController.bulkAddToCart);
 
 module.exports = router;

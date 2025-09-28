@@ -77,8 +77,18 @@ exports.cancelOrder = async (req, res) => {
 exports.deleteOrder = async (req, res) => {
   try {
     const order = await orderService.deleteOrder(req.params.id, req.userId);
+
+    // Populate lại cho chắc (nếu frontend cần dùng)
+    const populatedOrder = await Order.findById(order._id).populate(
+      "items.product_id",
+      populateFields
+    );
+
     emitEvent(req, "order:deleted", { orderId: order._id });
-    res.status(200).json({ message: "Đơn hàng đã bị xóa!", order });
+    res.status(200).json({
+      message: "Đơn hàng đã bị xóa!",
+      order: populatedOrder, // 👈 trả về đầy đủ + status = deleted
+    });
   } catch (err) {
     if (err.message === "NOT_FOUND")
       return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
@@ -91,7 +101,7 @@ exports.deleteOrder = async (req, res) => {
 exports.getUserOrders = async (req, res) => {
   try {
     const orders = await orderService.getUserOrders(req.userId);
-    res.status(200).json(orders);
+    res.status(200).json({ orders });
   } catch (err) {
     console.error("🔥 Lỗi lấy orders:", err);
     res.status(500).json({ message: "Lỗi khi lấy đơn hàng" });

@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import styles from './OrdersPage.module.scss';
 import classNames from 'classnames/bind';
 import axiosClient from '~/utils/axiosClient';
 import { useToast } from '~/components/ToastMessager/ToastMessager';
 import OrderCard from '~/components/OrderCard/OrderCard';
 import Swal from 'sweetalert2';
+import cartEvent from '~/utils/cartEvent'; // ✅ nhớ import
 
 const cx = classNames.bind(styles);
 
@@ -25,7 +26,7 @@ function OrdersPage() {
 
     const showToast = useToast();
 
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         try {
             const res = await axiosClient.get('/orders');
             const data = res.data;
@@ -45,12 +46,60 @@ function OrdersPage() {
         } finally {
             setLoading(false);
         }
+    }, [showToast]);
+
+    // Mua lại: thêm items vào giỏ rồi soft-delete order (chuyển vào thùng rác)
+    const handleReorder = async (order) => {
+        const confirm = await Swal.fire({
+            icon: 'question',
+            title: 'Mua lại đơn này?',
+            text: 'Các sản phẩm sẽ được thêm vào giỏ và đơn sẽ chuyển vào thùng rác.',
+            showCancelButton: true,
+            confirmButtonText: 'Đồng ý',
+            cancelButtonText: 'Hủy',
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        try {
+            setLoading(true);
+
+            // chuẩn hóa payload items
+            const itemsPayload = (order.items || []).map((it) => ({
+                product_id: it.product_id?._id || it.product_id,
+                quantity: it.quantity,
+            }));
+
+            // 1) Thêm vào giỏ
+            await axiosClient.post('/carts/bulk-add', { items: itemsPayload });
+
+            // ✅ Phát sự kiện cập nhật count ngay lập tức
+            cartEvent.emit('update-cart-count');
+
+            // 2) Soft delete order
+            const res = await axiosClient.delete(`/orders/${order._id}`);
+
+            // 🔎 Kiểm tra backend trả về
+            if (res.data?.order?.status !== 'deleted') {
+                throw new Error('Order chưa chuyển sang trạng thái deleted!');
+            }
+
+            // 3) Cập nhật state: bỏ đơn đó khỏi danh sách hiện tại
+            setOrders((prev) => prev.filter((o) => o._id !== order._id));
+
+            showToast('Đã thêm sản phẩm vào giỏ hàng và chuyển đơn vào thùng rác', 'success');
+        } catch (err) {
+            console.error('Lỗi mua lại:', err);
+            showToast('Không thể mua lại đơn. Vui lòng thử lại.', 'error');
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Gọi fetchOrders trong useEffect khi mount
     useEffect(() => {
         fetchOrders();
-    }, []);
+    }, [fetchOrders]);
 
     useEffect(() => {
         const checkForWithdrawnProducts = async () => {
@@ -127,7 +176,14 @@ function OrdersPage() {
                 {filteredOrders.length === 0 ? (
                     <div className={cx('no-orders')}>Không tìm thấy đơn hàng phù hợp.</div>
                 ) : (
-                    filteredOrders.map((order) => <OrderCard key={order._id} order={order} onCancel={fetchOrders} />)
+                    filteredOrders.map((order) => (
+                        <OrderCard
+                            key={order._id}
+                            order={order}
+                            onCancel={() => fetchOrders()}
+                            onReorder={handleReorder}
+                        />
+                    ))
                 )}
             </div>
         </div>

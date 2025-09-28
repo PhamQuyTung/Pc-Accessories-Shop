@@ -131,3 +131,24 @@ exports.updateCartQuantity = async (req, res) => {
     res.status(500).json({ message: "Lỗi khi cập nhật giỏ hàng" });
   }
 };
+
+exports.bulkAddToCart = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const items = req.body.items; // [{ product_id, quantity }, ...]
+
+    for (const item of items) {
+      await Cart.findOneAndUpdate(
+        { user_id: userId, product_id: item.product_id },
+        { $inc: { quantity: item.quantity } },
+        { upsert: true, new: true }
+      );
+    }
+
+    res.json({ message: "Thêm lại sản phẩm thành công!" });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Có lỗi khi thêm lại sản phẩm", error: err.message });
+  }
+};

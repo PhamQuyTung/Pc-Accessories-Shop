@@ -112,7 +112,7 @@ const OrdersManagement = () => {
                                         </td>
 
                                         <td className={cx('text-right')}>
-                                            {order.totalAmount.toLocaleString('vi-VN')} ₫
+                                            {order.finalAmount.toLocaleString('vi-VN')} ₫
                                         </td>
 
                                         <td className={cx('actions')}>
