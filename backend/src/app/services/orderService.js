@@ -74,7 +74,12 @@ async function checkoutOrder(userId, body, session) {
       { $inc: { quantity: -item.quantity } },
       { new: true, session }
     );
-    if (!updated) throw new Error(`OUT_OF_STOCK:${p.name}`);
+    if (!updated) {
+      const current = await Product.findById(p._id).select("quantity name");
+      throw new Error(
+        `OUT_OF_STOCK:${p.name}:${item.quantity}:${current?.quantity || 0}`
+      );
+    }
 
     orderItems.push({
       product_id: p._id,

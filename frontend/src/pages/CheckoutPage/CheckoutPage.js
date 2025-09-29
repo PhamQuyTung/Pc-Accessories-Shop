@@ -129,36 +129,45 @@ function CheckoutPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        const formElement = e.target.closest('form');
-        if (!formElement.reportValidity()) return;
-
         if (!agreed) {
             setSubmitted(true);
             return;
         }
 
-        const shippingInfo = {
-            ...form,
-            fullName: form.firstName + ' ' + form.lastName,
-            address: `${form.address1}${form.address2 ? ', ' + form.address2 : ''}, ${form.ward}, ${form.district}, ${form.province}, ${form.postalCode}`,
-            subtotal,
-            tax,
-            deliveryFee: form.deliveryMethod === 'express' ? 40000 : 0,
-            installFee,
-            total,
-        };
+        try {
+            const payload = {
+                shippingInfo: {
+                    fullName: form.firstName + ' ' + form.lastName,
+                    address: `${form.address1}${form.address2 ? ', ' + form.address2 : ''}, ${form.ward}, ${form.district}, ${form.province}, ${form.postalCode}`,
+                    phone: form.phone,
+                    email: form.email,
+                },
+                paymentMethod: 'cod', // ví dụ
+                tax,
+                shippingFee: form.deliveryMethod === 'express' ? 40000 : 0,
+                serviceFee: installFee,
+                discount: 0,
+            };
 
-        const payload = {
-            ...shippingInfo,
-            products: cartItems,
-        };
+            const res = await axiosClient.post('/orders/checkout', payload);
 
-        sessionStorage.setItem('checkoutData', JSON.stringify(payload));
+            toast.success('Đặt hàng thành công!');
+            navigate('/payment', { state: res.data.order });
+        } catch (err) {
+            if (err.response?.status === 400) {
+                const data = err.response.data;
 
-        navigate('/payment', {
-            state: payload,
-        });
+                // Nếu có thông tin sản phẩm hết hàng
+                if (data.product && data.requested && data.available !== undefined) {
+                    toast.error(`❌ ${data.product}: bạn đặt ${data.requested}, nhưng chỉ còn ${data.available}.`);
+                } else {
+                    // Các lỗi khác từ server (ví dụ EMPTY_CART, INVALID_CART_ITEMS,...)
+                    toast.error(data.message || 'Đơn hàng không hợp lệ!');
+                }
+            } else {
+                toast.error('🚨 Lỗi server, vui lòng thử lại sau!');
+            }
+        }
     };
 
     return (

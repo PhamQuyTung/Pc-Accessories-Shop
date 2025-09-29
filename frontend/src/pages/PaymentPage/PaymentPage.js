@@ -63,7 +63,12 @@ function PaymentPage() {
             setTimeout(() => navigate('/orders-success'), 1200);
         } catch (err) {
             console.error('Lỗi khi tạo đơn hàng:', err);
-            showToast('Không thể tạo đơn hàng', 'error');
+
+            if (err.response?.data?.message) {
+                showToast(err.response.data.message, 'error');
+            } else {
+                showToast('🚨 Lỗi server, vui lòng thử lại sau!', 'error');
+            }
         }
     };
 

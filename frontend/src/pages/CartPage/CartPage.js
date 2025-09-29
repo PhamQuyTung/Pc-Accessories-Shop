@@ -31,9 +31,19 @@ function CartPage() {
             console.log('⚠️ removed:', removed);
 
             setCartItems(items);
-            setRemovedItems(removed); // ✅ chuyển vào state để xử lý sau
-            setRemovedHandled(false); // 🟢 RESET để SweetAlert có thể hiển thị lại
+            setRemovedItems(removed);
+            setRemovedHandled(false);
 
+            // 🟢 Khởi tạo quantities theo API (fix bug phải bấm + mới set)
+            const initialQuantities = {};
+            items.forEach((item) => {
+                if (item.product_id?._id) {
+                    initialQuantities[item.product_id._id] = item.quantity;
+                }
+            });
+            setQuantities(initialQuantities);
+
+            // Cập nhật tổng tiền
             const total = items.reduce((sum, item) => {
                 const price = item.product_id?.discountPrice ?? item.product_id?.price ?? 0;
                 return sum + price * item.quantity;
@@ -71,20 +81,20 @@ function CartPage() {
         const newQuantity = currentQty + delta;
         if (newQuantity < 1) return;
 
-        // Cập nhật UI trước
-        setQuantities((prev) => ({
-            ...prev,
-            [productId]: newQuantity,
-        }));
-
-        // Gọi API cập nhật số lượng mới
         try {
+            // 🟢 Gọi API trước để chắc chắn backend cập nhật thành công
             await axiosClient.put('/carts/update', {
                 product_id: productId,
                 quantity: newQuantity,
             });
+
+            // Nếu thành công thì mới cập nhật UI
+            setQuantities((prev) => ({
+                ...prev,
+                [productId]: newQuantity,
+            }));
         } catch (error) {
-            console.error('Lỗi cập nhật số lượng:', error);
+            console.error('❌ Lỗi cập nhật số lượng:', error);
         }
     };
 

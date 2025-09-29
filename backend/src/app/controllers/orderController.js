@@ -43,10 +43,15 @@ exports.checkoutOrder = async (req, res) => {
         message:
           "Tất cả sản phẩm trong giỏ hàng đã bị thu hồi hoặc không hợp lệ!",
       });
-    if (err.message.startsWith("OUT_OF_STOCK"))
+    if (err.message.startsWith("OUT_OF_STOCK")) {
+      const [, productName, requested, available] = err.message.split(":");
       return res.status(400).json({
-        message: `Sản phẩm ${err.message.split(":")[1]} không đủ số lượng`,
+        message: `Sản phẩm "${productName}" chỉ còn ${available} cái, bạn đã đặt ${requested}. Vui lòng giảm số lượng.`,
+        product: productName,
+        requested: Number(requested),
+        available: Number(available),
       });
+    }
 
     console.error("🔥 Lỗi khi đặt hàng:", err);
     res.status(500).json({ message: "Lỗi khi đặt hàng" });
