@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './ProductSelectModal.module.scss';
+import Swal from 'sweetalert2';
 
 import LoadingSpinner from '../SpinnerLoading/SpinnerLoading';
 import Pagination from '../Pagination/Pagination'; // 👈 import component pagination
 
 const cx = classNames.bind(styles);
 
-const ProductSelectModal = ({ onAdd, onClose }) => {
+const ProductSelectModal = ({ onAdd, onClose, currentOrderItems = [] }) => {
     const [categories, setCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('');
     const [products, setProducts] = useState([]);
@@ -67,14 +68,28 @@ const ProductSelectModal = ({ onAdd, onClose }) => {
     const handleAdd = () => {
         if (!selectedProduct || quantity <= 0) return;
 
+        // 🔥 Tính số lượng đã có trong order
+        const existing = currentOrderItems.find((i) => i.product_id === selectedProduct._id);
+        const newQuantity = (existing?.quantity || 0) + parseInt(quantity, 10);
+
+        // ✅ Check tồn kho cộng dồn
+        if (newQuantity > (selectedProduct.quantity ?? 0)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Không đủ hàng',
+                text: `Sản phẩm "${selectedProduct.name}" chỉ còn ${selectedProduct.quantity} cái trong kho.`,
+            });
+            return;
+        }
+
         const finalPrice = selectedProduct.discountPrice > 0 ? selectedProduct.discountPrice : selectedProduct.price;
 
         onAdd({
             productId: selectedProduct._id,
             productName: selectedProduct.name,
-            price: selectedProduct.price, // giá gốc
-            discountPrice: selectedProduct.discountPrice || 0, // giá khuyến mãi (0 nếu không có)
-            finalPrice, // giá thực tế áp dụng
+            price: selectedProduct.price,
+            discountPrice: selectedProduct.discountPrice || 0,
+            finalPrice,
             quantity: parseInt(quantity, 10),
         });
 

@@ -19,7 +19,7 @@ const AdminCreateOrder = () => {
         phone: '',
         address: '',
         note: '',
-        paymentMethod: 'COD',
+        paymentMethod: 'cod',
         status: 'new',
         items: [],
         subtotal: 0,
@@ -72,23 +72,68 @@ const AdminCreateOrder = () => {
     // Thêm sản phẩm
     const handleAddToOrder = ({ productId, productName, price, discountPrice, finalPrice, quantity }) => {
         if (!productName || !finalPrice || quantity <= 0) return;
-        const itemTotal = finalPrice * quantity;
 
-        setFormData((prev) => ({
-            ...prev,
-            items: [
-                ...prev.items,
-                {
-                    product_id: productId || null,
-                    productName,
-                    price,
-                    discountPrice,
-                    finalPrice,
-                    quantity,
-                    total: itemTotal,
-                },
-            ],
-        }));
+        const productInStore = products.find((p) => p._id === productId);
+        if (!productInStore) return;
+
+        // 🔥 Tìm sản phẩm đã có trong order
+        const existingItem = formData.items.find((i) => i.product_id === productId);
+
+        if (existingItem) {
+            // ✅ Cộng dồn số lượng
+            const newQuantity = existingItem.quantity + quantity;
+
+            // Double check tồn kho
+            if (newQuantity > (productInStore.quantity ?? 0)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Không đủ hàng',
+                    text: `Sản phẩm "${productName}" chỉ còn ${productInStore.quantity} cái trong kho.`,
+                });
+                return;
+            }
+
+            setFormData((prev) => ({
+                ...prev,
+                items: prev.items.map((i) =>
+                    i.product_id === productId
+                        ? {
+                              ...i,
+                              quantity: newQuantity,
+                              total: finalPrice * newQuantity,
+                          }
+                        : i,
+                ),
+            }));
+        } else {
+            // ✅ Thêm mới nếu chưa có
+            if (quantity > (productInStore.quantity ?? 0)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Không đủ hàng',
+                    text: `Sản phẩm "${productName}" chỉ còn ${productInStore.quantity} cái trong kho.`,
+                });
+                return;
+            }
+
+            const itemTotal = finalPrice * quantity;
+
+            setFormData((prev) => ({
+                ...prev,
+                items: [
+                    ...prev.items,
+                    {
+                        product_id: productId || null,
+                        productName,
+                        price,
+                        discountPrice,
+                        finalPrice,
+                        quantity,
+                        total: itemTotal,
+                    },
+                ],
+            }));
+        }
     };
 
     // Xóa sản phẩm
@@ -100,6 +145,19 @@ const AdminCreateOrder = () => {
     // Submit
     const handleSubmit = async () => {
         try {
+            // ✅ Check tồn kho trước khi submit
+            for (const item of formData.items) {
+                const productInStore = products.find((p) => p._id === item.product_id);
+                if (productInStore && item.quantity > (productInStore.quantity ?? 0)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Không đủ hàng',
+                        text: `Sản phẩm "${item.productName}" chỉ còn ${productInStore.quantity} cái trong kho.`,
+                    });
+                    return; // ❌ Dừng submit
+                }
+            }
+
             await axiosClient.post(
                 '/orders/admin/create',
                 {
@@ -122,11 +180,20 @@ const AdminCreateOrder = () => {
                 { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } },
             );
 
-            alert('Tạo đơn hàng thành công!');
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công',
+                text: 'Tạo đơn hàng thành công!',
+            });
+
             navigate('/admin/orders');
         } catch (err) {
             console.error('Lỗi tạo đơn hàng:', err);
-            alert('Tạo đơn hàng thất bại!');
+            Swal.fire({
+                icon: 'error',
+                title: 'Thất bại',
+                text: 'Tạo đơn hàng thất bại!',
+            });
         }
     };
 
@@ -178,9 +245,9 @@ const AdminCreateOrder = () => {
                             value={formData.paymentMethod}
                             onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
                         >
-                            <option value="COD">COD</option>
-                            <option value="Bank">Chuyển khoản</option>
-                            <option value="Momo">Momo</option>
+                            <option value="cod">COD</option>
+                            <option value="bank">Chuyển khoản</option>
+                            <option value="momo">Momo</option>
                         </select>
                     </p>
                 </div>
@@ -318,6 +385,7 @@ const AdminCreateOrder = () => {
             {showProductModal && (
                 <ProductSelectModal
                     products={products}
+                    currentOrderItems={formData.items}
                     onAdd={handleAddToOrder}
                     onClose={() => setShowProductModal(false)}
                 />

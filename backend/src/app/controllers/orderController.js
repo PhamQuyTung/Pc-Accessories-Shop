@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Order = require("../models/order");
+const Product = require("../models/product");
 const orderService = require("../services/orderService");
 
 const populateFields = "name slug price discountPrice images status deleted";
@@ -154,17 +155,77 @@ exports.updateOrderStatus = async (req, res) => {
 
 // Admin tạo đơn
 exports.createOrderByAdmin = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const order = await orderService.createOrderByAdmin(req.body, req.userId);
-    emitEvent(req, "order:new", { order });
-    res.status(201).json({ message: "Tạo đơn hàng thành công!", order });
+    const body = req.body;
+
+    // --- GỘP SẢN PHẨM TRÙNG ---
+    const mergedItems = body.items.reduce((acc, item) => {
+      const exist = acc.find(
+        (i) => i.product_id.toString() === item.product_id.toString()
+      );
+      if (exist) {
+        exist.quantity += item.quantity;
+        exist.total = exist.finalPrice * exist.quantity;
+      } else {
+        acc.push({ ...item });
+      }
+      return acc;
+    }, []);
+
+    // --- CHECK & TRỪ TỒN KHO ---
+    for (const item of mergedItems) {
+      const updated = await Product.findOneAndUpdate(
+        { _id: item.product_id, quantity: { $gte: item.quantity } },
+        { $inc: { quantity: -item.quantity } },
+        { new: true, session }
+      );
+
+      if (!updated) {
+        throw new Error(
+          `OUT_OF_STOCK:${item.productName}:${item.quantity}:${updated?.quantity || 0}`
+        );
+      }
+    }
+
+    // --- TÍNH TOÁN LẠI TỔNG ---
+    const subtotal = mergedItems.reduce((sum, i) => sum + i.total, 0);
+    const order = new Order({
+      user_id: req.user?.id || null, // Nếu cần thì có thể cho null vì admin tạo
+      items: mergedItems,
+      subtotal,
+      tax: body.tax,
+      discount: body.discount,
+      shippingFee: body.shippingFee,
+      serviceFee: body.serviceFee,
+      totalAmount: subtotal + body.tax + body.shippingFee + body.serviceFee,
+      finalAmount: body.finalAmount,
+      paymentMethod: body.paymentMethod,
+      status: body.status || "new",
+      shippingInfo: body.shippingInfo,
+      note: body.note || "",
+    });
+
+    await order.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({ message: "Tạo đơn hàng thành công", order });
   } catch (err) {
-    if (err.message === "NO_ITEMS")
-      return res
-        .status(400)
-        .json({ message: "Đơn hàng phải có ít nhất 1 sản phẩm!" });
-    console.error("🔥 Lỗi tạo đơn hàng admin:", err);
-    res.status(500).json({ message: "Lỗi khi admin tạo đơn hàng" });
+    await session.abortTransaction();
+    session.endSession();
+    console.error("❌ Lỗi tạo đơn hàng:", err);
+
+    if (err.message.startsWith("OUT_OF_STOCK")) {
+      const [, name, reqQty, stock] = err.message.split(":");
+      return res.status(400).json({
+        error: `Sản phẩm "${name}" không đủ hàng. Yêu cầu: ${reqQty}, Tồn kho: ${stock}`,
+      });
+    }
+
+    res.status(500).json({ error: "Không thể tạo đơn hàng" });
   }
 };
 

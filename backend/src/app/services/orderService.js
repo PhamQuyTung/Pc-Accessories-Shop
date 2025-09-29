@@ -180,44 +180,74 @@ async function updateOrderStatus(orderId, status) {
 }
 
 async function createOrderByAdmin(body, userId) {
-  const {
-    shippingInfo,
-    note,
-    paymentMethod,
-    status,
-    items,
-    subtotal,
-    tax,
-    serviceFee,
-    shippingFee,
-    discount,
-    finalAmount,
-  } = body;
-  if (!items?.length) throw new Error("NO_ITEMS");
+  if (!body.items?.length) throw new Error("NO_ITEMS");
 
-  const orderItems = items.map((i) => ({
-    product_id: i.product_id || null,
-    productName: i.productName || "",
-    quantity: i.quantity,
-    price: i.price,
-  }));
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const orderItems = [];
 
-  const order = new Order({
-    user_id: userId || null,
-    items: orderItems,
-    subtotal,
-    tax,
-    serviceFee,
-    shippingFee,
-    discount,
-    totalAmount: finalAmount,
-    finalAmount,
-    paymentMethod: paymentMethod?.toLowerCase(),
-    status: status || "new",
-    shippingInfo,
-    note,
-  });
-  return order.save();
+    for (const item of body.items) {
+      const pid = item.product_id;
+      if (!pid) throw new Error("INVALID_PRODUCT");
+
+      // ✅ Trừ tồn kho (giống checkoutOrder)
+      const updated = await Product.findOneAndUpdate(
+        { _id: pid, quantity: { $gte: item.quantity } },
+        { $inc: { quantity: -item.quantity } },
+        { new: true, session }
+      );
+
+      if (!updated) {
+        throw new Error(
+          `OUT_OF_STOCK:${item.productName}:${item.quantity}:${
+            updated?.quantity || 0
+          }`
+        );
+      }
+
+      const finalPrice =
+        item.discountPrice > 0 ? item.discountPrice : item.price;
+
+      orderItems.push({
+        product_id: pid,
+        productName: item.productName,
+        quantity: item.quantity,
+        price: item.price,
+        discountPrice: item.discountPrice || 0,
+        finalPrice,
+        total: finalPrice * item.quantity,
+      });
+    }
+
+    // ✅ Tính tổng tiền
+    const totals = calcTotals(orderItems, body);
+
+    // ✅ Tạo order
+    const orderArr = await Order.create(
+      [
+        {
+          user_id: userId || null,
+          items: orderItems,
+          ...totals,
+          shippingInfo: body.shippingInfo,
+          paymentMethod: body.paymentMethod,
+          note: body.note,
+          status: body.status || "new",
+        },
+      ],
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return orderArr[0];
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    throw err;
+  }
 }
 
 async function getOrderStats() {
