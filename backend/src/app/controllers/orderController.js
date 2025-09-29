@@ -183,6 +183,11 @@ exports.restoreOrder = async (req, res) => {
     if (err.message === "NOT_FOUND") {
       return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
     }
+    if (err.message.startsWith("OUT_OF_STOCK")) {
+      return res
+        .status(400)
+        .json({ message: "Sản phẩm trong đơn đã hết hàng!" });
+    }
     res.status(500).json({ message: "Lỗi khi khôi phục đơn hàng" });
   }
 };

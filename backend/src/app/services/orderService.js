@@ -288,21 +288,51 @@ async function getOrderStats() {
 }
 
 async function restoreOrder(orderId) {
-  const order = await Order.findOneAndUpdate(
-    { _id: orderId, status: "deleted" },
-    { status: "new" }, // hoặc status cũ nếu bạn muốn lưu lại
-    { new: true }
-  );
-  if (!order) throw new Error("NOT_FOUND");
-  return order;
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    // Lấy order đã bị xóa mềm
+    const order = await Order.findOne({
+      _id: orderId,
+      status: "deleted",
+    }).session(session);
+    if (!order) throw new Error("NOT_FOUND");
+
+    // Kiểm tra tồn kho & trừ số lượng
+    for (const item of order.items) {
+      const pid = item.product_id._id ? item.product_id._id : item.product_id;
+
+      const updated = await Product.findOneAndUpdate(
+        { _id: pid, quantity: { $gte: item.quantity } }, // phải còn đủ hàng
+        { $inc: { quantity: -item.quantity } }, // trừ tồn kho
+        { new: true, session }
+      );
+      if (!updated) {
+        throw new Error(`OUT_OF_STOCK:${pid}`);
+      }
+    }
+
+    // Cập nhật lại trạng thái đơn hàng
+    order.status = "new";
+    await order.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return order;
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    throw err;
+  }
 }
 
 async function forceDeleteOrder(orderId) {
   const order = await Order.findById(orderId);
   if (!order) throw new Error("NOT_FOUND");
 
-  // restore stock if order not already cancelled/deleted
-  if (!["cancelled", "deleted"].includes(order.status)) {
+  // ❌ KHÔNG restore stock nếu đơn đã cancel hoặc đã vào thùng rác
+  if (order.status !== "cancelled" && order.status !== "deleted") {
     await restoreStockForItems(order.items);
   }
 
