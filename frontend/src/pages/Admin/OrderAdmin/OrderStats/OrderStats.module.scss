@@ -1,0 +1,154 @@
+/* src/pages/Admin/OrderStats.module.scss */
+.wrapper {
+    padding: 20px;
+    background: #f9fafb;
+    min-height: 100vh;
+
+    h2 {
+        font-size: 2rem;
+        margin-bottom: 20px;
+        font-weight: 700;
+        color: #333;
+    }
+}
+
+.charts-grid {
+    display: flex;
+    flex-direction: column; // xếp dọc
+    gap: 28px;
+    margin-bottom: 40px;
+
+    .chart {
+        width: 100%; // chiếm toàn bộ chiều ngang
+        background: #fff;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        transition: transform 0.2s ease;
+
+        .recharts-wrapper {
+            overflow-x: auto;
+        }
+
+        &:hover {
+            transform: translateY(-4px);
+        }
+
+        h3 {
+            margin-bottom: 15px;
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #444;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    }
+}
+
+.charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    margin-bottom: 40px;
+
+    .chart {
+        background: #fff;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+}
+
+.recent-orders {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+
+    h3 {
+        margin-bottom: 15px;
+        font-size: 1.6rem;
+        font-weight: 600;
+        color: #222;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+
+        th,
+        td {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 1.2rem;
+        }
+
+        thead {
+            background: #f1f3f5;
+            th {
+                font-weight: 600;
+                color: #444;
+            }
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s ease;
+
+            &:hover {
+                background: #fafafa;
+            }
+        }
+
+        td.status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            text-transform: capitalize;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            width: fit-content;
+
+            svg {
+                font-size: 1rem;
+            }
+
+            &.pending {
+                background: #fff3cd;
+                color: #856404;
+            }
+            &.processing {
+                background: #cce5ff;
+                color: #004085;
+            }
+            &.completed {
+                background: #d4edda;
+                color: #155724;
+            }
+            &.cancelled {
+                background: #f8d7da;
+                color: #721c24;
+            }
+        }
+
+        td:last-child {
+            text-align: left; // căn giữa nút xem chi tiết
+        }
+    }
+}
+
+// Responsive styles
+@media (max-width: 768px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 992px) {
+    .charts-row {
+        grid-template-columns: 1fr; // mobile thì xuống 1 cột
+    }
+}

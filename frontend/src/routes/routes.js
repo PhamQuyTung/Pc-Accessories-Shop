@@ -40,7 +40,8 @@ import PromotionDetail from '~/pages/Admin/Promotion/PromotionDetail/PromotionDe
 import AdminStats from '~/pages/Admin/AdminStats/AdminStats';
 import OrdersAdminManagement from '~/pages/Admin/OrderAdmin/OrdersManagement/OrdersManagement';
 import OrderAdminDetail from '~/pages/Admin/OrderAdmin/OrderDetail/OrderDetail';
-import OrderTrash from '~/pages/Admin/OrderAdmin/OrderTrash/OrderTrash'; // <-- thêm import
+import OrderTrash from '~/pages/Admin/OrderAdmin/OrderTrash/OrderTrash'; 
+import OrderStats from '~/pages/Admin/OrderAdmin/OrderStats/OrderStats'; 
 import AdminCreateOrder from '~/pages/Admin/OrderAdmin/AdminCreateOrder/AdminCreateOrder';
 
 // routes thường
@@ -166,6 +167,7 @@ const routes = [
             { path: 'orders', element: <OrdersAdminManagement /> }, // tất cả đơn
             { path: 'orders/trash', element: <OrderTrash /> }, // <-- thêm route cho thùng rác
             { path: 'orders/create', element: <AdminCreateOrder /> }, // admin tạo hóa đơn
+            { path: 'orders/stats', element: <OrderStats /> }, // admin xem thống kê đơn hàng
             { path: 'orders/:id', element: <OrderAdminDetail /> }, // chi tiết đơn
         ],
     },

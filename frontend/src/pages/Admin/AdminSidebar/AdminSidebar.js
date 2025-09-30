@@ -314,6 +314,13 @@ const AdminSidebar = () => {
                                 Tất cả đơn hàng
                             </NavLink>
                             <NavLink
+                                to="/admin/orders/stats"
+                                end
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
+                                Báo cáo đơn hàng
+                            </NavLink>
+                            <NavLink
                                 to="/admin/orders/create"
                                 className={({ isActive }) => cx('link', { active: isActive })}
                             >
