@@ -103,10 +103,16 @@ exports.deleteOrder = async (req, res) => {
   }
 };
 
-// Lấy đơn hàng user
+// Lấy danh sách đơn hàng của user + query param
 exports.getUserOrders = async (req, res) => {
   try {
-    const orders = await orderService.getUserOrders(req.userId);
+    const { search, status, startDate, endDate } = req.query;
+    const orders = await orderService.getUserOrders(req.userId, {
+      search,
+      status,
+      startDate,
+      endDate,
+    });
     res.status(200).json({ orders });
   } catch (err) {
     console.error("🔥 Lỗi lấy orders:", err);
@@ -114,11 +120,11 @@ exports.getUserOrders = async (req, res) => {
   }
 };
 
-// Lấy tất cả đơn hàng (admin)
+// Lấy tất cả đơn (admin) + query param
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await orderService.getAllOrders();
-    res.status(200).json({ orders });
+    const result = await orderService.getAllOrders(req.query);
+    res.status(200).json(result);
   } catch (err) {
     console.error("🔥 Lỗi lấy all orders:", err);
     res.status(500).json({ message: "Lỗi khi lấy đơn hàng" });

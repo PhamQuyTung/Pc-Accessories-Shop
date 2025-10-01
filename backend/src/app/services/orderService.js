@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const Order = require("../models/order");
 const Cart = require("../models/cart");
 const Product = require("../models/product");
+const removeVietnameseTones = require("../../utils/removeVietnameseTones");
 
 const populateFields = "name slug price discountPrice images status deleted";
 
@@ -48,6 +49,7 @@ function calcTotals(orderItems, body) {
 }
 
 // === Services ===
+// Checkout tạo đơn
 async function checkoutOrder(userId, body, session) {
   // Lấy giỏ hàng user + populate sản phẩm
   const cartItems = await Cart.find({ user_id: userId }).populate({
@@ -114,6 +116,7 @@ async function checkoutOrder(userId, body, session) {
   return newOrderArr[0];
 }
 
+// Hủy đơn hàng
 async function cancelOrder(orderId, userId, reason) {
   const order = await Order.findOne({ _id: orderId, user_id: userId });
   if (!order) throw new Error("NOT_FOUND");
@@ -131,6 +134,7 @@ async function cancelOrder(orderId, userId, reason) {
   return order;
 }
 
+// Xóa mềm đơn hàng (chuyển vào thùng rác)
 async function deleteOrder(orderId, userId) {
   const order = await Order.findOne({ _id: orderId, user_id: userId });
   if (!order) throw new Error("NOT_FOUND");
@@ -149,23 +153,134 @@ async function deleteOrder(orderId, userId) {
   );
 }
 
-async function getUserOrders(userId) {
-  return await Order.find({
-    user_id: userId,
-    status: { $ne: "deleted" }, // 👈 bỏ các đơn bị xóa mềm
-  })
-    .populate(
-      "items.product_id",
-      "name slug price discountPrice images status deleted"
-    )
+// User - get own orders + filters
+async function getUserOrders(userId, filters = {}) {
+  const { search, status, startDate, endDate } = filters;
+  const query = { user_id: userId, status: { $ne: "deleted" } };
+
+  if (search) {
+    const normalizedSearch = removeVietnameseTones(search.trim());
+    const safeSearch = normalizedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    query["shippingInfo.searchName"] = { $regex: new RegExp(safeSearch, "i") };
+  }
+
+  if (status) query.status = status;
+
+  if (startDate || endDate) {
+    query.createdAt = {};
+    if (startDate) query.createdAt.$gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      query.createdAt.$lte = end;
+    }
+  }
+
+  return Order.find(query)
+    .collation({ locale: "vi", strength: 2 })
+    .populate("items.product_id", populateFields)
     .sort({ createdAt: -1 });
 }
 
-async function getAllOrders(includeDeleted = false) {
-  const query = includeDeleted ? {} : { status: { $ne: "deleted" } };
-  return Order.find(query)
-    .populate("items.product_id", populateFields)
-    .sort({ createdAt: -1 });
+// Admin - get all orders + filters (nâng cao)
+async function getAllOrders(filters = {}, includeDeleted = false) {
+  const {
+    search,
+    status,
+    startDate,
+    endDate,
+    minAmount,
+    maxAmount,
+    paymentMethod,
+    customerPhone,
+    customerEmail,
+    isPaid,
+    isDelivered,
+    sortField = "createdAt",
+    sortOrder = "desc",
+    page = 1,
+    limit = 20,
+  } = filters;
+
+  const query = {};
+
+  // 🔹 Không lấy order đã xóa nếu không yêu cầu
+  if (!includeDeleted) {
+    query.status = { $ne: "deleted" };
+  }
+
+  // 🔹 Tìm kiếm nâng cao
+  if (search) {
+    const normalizedSearch = removeVietnameseTones(search.trim());
+    const safeSearch = normalizedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(safeSearch, "i");
+
+    if (mongoose.Types.ObjectId.isValid(search)) {
+      query.$or = [{ _id: search }];
+    } else {
+      query.$or = [
+        { "shippingInfo.searchName": regex },
+        { "shippingInfo.phone": regex },
+        { "shippingInfo.email": regex },
+        { "shippingInfo.address": regex },
+      ];
+    }
+  }
+
+  // 🔹 Bộ lọc status, payment, khách hàng
+  if (status) query.status = status;
+  if (paymentMethod) query.paymentMethod = paymentMethod;
+  if (customerPhone) {
+    query["shippingInfo.phone"] = { $regex: customerPhone, $options: "i" };
+  }
+  if (customerEmail) {
+    query["shippingInfo.email"] = { $regex: customerEmail, $options: "i" };
+  }
+
+  // 🔹 Boolean filters
+  if (isPaid !== undefined) query.isPaid = isPaid === "true";
+  if (isDelivered !== undefined) query.isDelivered = isDelivered === "true";
+
+  // 🔹 Lọc theo ngày
+  if (startDate || endDate) {
+    query.createdAt = {};
+    if (startDate) query.createdAt.$gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      query.createdAt.$lte = end;
+    }
+  }
+
+  // 🔹 Lọc theo giá trị đơn hàng
+  if (minAmount || maxAmount) {
+    query.finalAmount = {};
+    if (minAmount) query.finalAmount.$gte = Number(minAmount);
+    if (maxAmount) query.finalAmount.$lte = Number(maxAmount);
+  }
+
+  // 🔹 Sort & Pagination
+  const sortOptions = { [sortField]: sortOrder === "asc" ? 1 : -1 };
+  const skip = (Number(page) - 1) * Number(limit);
+
+  // 🔹 Query + count song song
+  const [orders, total] = await Promise.all([
+    Order.find(query)
+      .collation({ locale: "vi", strength: 2 }) // so sánh không phân biệt dấu
+      .populate("items.product_id", populateFields)
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(Number(limit)),
+    Order.countDocuments(query),
+  ]);
+
+  return {
+    orders,
+    total,
+    page: Number(page),
+    limit: Number(limit),
+    totalPages: Math.ceil(total / limit),
+  };
 }
 
 async function getOrderById(orderId) {

@@ -100,7 +100,7 @@
 
 .actions {
     display: flex;
-    justify-content: center;
+    justify-content: left;
     gap: 10px;
 }
 
@@ -199,4 +199,110 @@
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 13px;
+}
+
+// Sắp xếp
+.sort-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+
+    label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    select {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #d9d9d9;
+        font-size: 14px;
+        cursor: pointer;
+        transition: 0.2s;
+
+        &:hover {
+            border-color: #1677ff;
+        }
+    }
+
+    .sort-order {
+        background: #1677ff;
+        color: #fff;
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: 0.2s;
+
+        &:hover {
+            background: #0958d9;
+        }
+    }
+}
+
+.filters input {
+    padding: 6px 10px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.filters span {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: #666;
+}
+
+.filter-toggle {
+    margin-left: 10px;
+    padding: 6px 12px;
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+
+    &:hover {
+        background: #eee;
+    }
+}
+
+.advanced-filters {
+    margin: 10px 0;
+    padding: 12px;
+    background: #fafafa;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    display: flex;
+    gap: 15px;
+
+    label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+    input {
+        padding: 4px 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+}
+
+.btn.reset {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    margin-left: 10px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+        background: #e0e0e0;
+    }
 }

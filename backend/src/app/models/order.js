@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const removeVietnameseTones = require("../../utils/removeVietnameseTones");
 
 const orderSchema = new mongoose.Schema(
   {
@@ -55,11 +56,21 @@ const orderSchema = new mongoose.Schema(
       name: String,
       phone: String,
       address: String,
+      searchName: { type: String, index: true }, // 👈 thêm field này
     },
 
     note: { type: String, default: "" },
   },
   { timestamps: true }
 );
+
+orderSchema.pre("save", function (next) {
+  if (this.shippingInfo?.name) {
+    this.shippingInfo.searchName = removeVietnameseTones(
+      this.shippingInfo.name
+    );
+  }
+  next();
+});
 
 module.exports = mongoose.model("Order", orderSchema);
