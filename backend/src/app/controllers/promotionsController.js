@@ -6,7 +6,13 @@ const Review = require("../models/review");
 const slugify = require("slugify");
 
 // Chỉ cho phép gán sản phẩm đang "còn hàng trở lên"
-const ELIGIBLE_STATUSES = ["còn hàng", "nhiều hàng", "sản phẩm mới"];
+const ELIGIBLE_STATUSES = [
+  "còn hàng",
+  "nhiều hàng",
+  "sản phẩm mới",
+  "sắp hết hàng",
+  "hàng rất nhiều",
+];
 
 // ===== Helper =====
 async function applyPromotionImmediately(promo) {
@@ -470,10 +476,10 @@ exports.getAvailableProducts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    // BỎ điều kiện status khỏi match
     const match = {
       deleted: false,
-      visible: true, // hiển thị
-      status: { $in: ELIGIBLE_STATUSES }, // 🔥 status trong DB chính là còn hàng / nhiều hàng
+      visible: true,
       $and: [
         {
           $or: [
@@ -494,11 +500,28 @@ exports.getAvailableProducts = async (req, res) => {
     const totalCount = await Product.countDocuments(match);
     const products = await Product.find(match).skip(skip).limit(limit).lean();
 
+    // ✅ Lọc lại theo status động ở đây
+    const { computeProductStatus } = require("../../../../shared/productStatus");
+    const ELIGIBLE_STATUSES = [
+      "còn hàng",
+      "nhiều hàng",
+      "sản phẩm mới",
+      "sắp hết hàng",
+      "hàng rất nhiều",
+    ];
+    const productsWithStatus = products.map((p) => ({
+      ...p,
+      status: computeProductStatus(p, { importing: p.importing }),
+    }));
+    const filtered = productsWithStatus.filter((p) =>
+      ELIGIBLE_STATUSES.includes(String(p.status || "").toLowerCase())
+    );
+
     res.json({
-      products,
-      totalCount,
+      products: filtered,
+      totalCount: filtered.length,
       currentPage: page,
-      totalPages: Math.ceil(totalCount / limit),
+      totalPages: Math.ceil(filtered.length / limit),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

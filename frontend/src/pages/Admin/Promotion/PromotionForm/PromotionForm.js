@@ -6,7 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '~/components/ToastMessager/ToastMessager';
 
 const cx = classNames.bind(styles);
-const ELIGIBLE_STATUSES = ['còn hàng', 'nhiều hàng', 'sản phẩm mới']; // tuỳ hệ thống bạn
+const ELIGIBLE_STATUSES = ['còn hàng', 'nhiều hàng', 'sản phẩm mới', 'sắp hết hàng', 'hàng rất nhiều'];
 
 export default function PromotionForm() {
     const { id } = useParams(); // nếu có id => edit
