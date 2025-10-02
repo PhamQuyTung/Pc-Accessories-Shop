@@ -1,7 +1,7 @@
-// models/product.js
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 const slugify = require("slugify");
+const { computeProductStatus } = require("../../../../shared/productStatus");
 
 // ================= Review Schema =================
 const reviewSchema = new mongoose.Schema(
@@ -58,7 +58,8 @@ const productSchema = new mongoose.Schema({
   price: { type: Number, default: null },
   discountPrice: { type: Number, default: null },
   quantity: { type: Number, default: 0 },
-  // ❌ status bỏ hẳn, chỉ tính động ở controller
+
+  // ❌ Không lưu status, chỉ tính động
   visible: { type: Boolean, default: true },
   specs: { type: Map, of: String },
   category: {
@@ -75,7 +76,6 @@ const productSchema = new mongoose.Schema({
   shortDescription: { type: String, default: "" },
   longDescription: { type: String, default: "" },
 
-  // 🔹 Thuộc tính áp dụng chung cho sản phẩm (giữ reference)
   attributes: [
     {
       attrId: {
@@ -135,5 +135,22 @@ productSchema.pre("findOneAndUpdate", function (next) {
   };
   next();
 });
+
+// ================= Auto attach status =================
+function attachStatus(docs) {
+  if (!docs) return;
+  if (Array.isArray(docs)) {
+    docs.forEach((doc) => {
+      doc.status = computeProductStatus(doc);
+    });
+  } else {
+    docs.status = computeProductStatus(docs);
+  }
+}
+
+productSchema.post("find", attachStatus);
+productSchema.post("findOne", attachStatus);
+productSchema.post("findOneAndUpdate", attachStatus);
+productSchema.post("findById", attachStatus);
 
 module.exports = mongoose.model("Product", productSchema);

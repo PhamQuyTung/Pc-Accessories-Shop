@@ -107,6 +107,8 @@ function Product({ category }) {
                                     switch (product.status?.trim()) {
                                         case 'sản phẩm mới':
                                             return <span className={cx('new-tag')}>Sản phẩm mới</span>;
+                                        case 'hàng rất nhiều':
+                                            return <span className={cx('very-many-tag')}>Hàng rất nhiều</span>; // 👈 Thêm dòng này
                                         case 'nhiều hàng':
                                             return <span className={cx('many-tag')}>Nhiều hàng</span>;
                                         case 'còn hàng':

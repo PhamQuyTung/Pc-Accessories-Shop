@@ -190,11 +190,11 @@ function EditProduct() {
             statusArr.push('đang nhập hàng');
         } else if (qty === 0) {
             statusArr.push('hết hàng');
-        } else if (qty < 15) {
+        } else if (qty < 5) {
             statusArr.push('sắp hết hàng');
-        } else if (qty < 50) {
+        } else if (qty < 10) {
             statusArr.push('còn hàng');
-        } else if (qty < 100) {
+        } else if (qty < 20) {
             statusArr.push('nhiều hàng');
         } else {
             statusArr.push('sản phẩm mới');
