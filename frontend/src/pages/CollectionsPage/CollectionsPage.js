@@ -87,9 +87,12 @@ export default function CollectionsPage() {
         const fetchProductsByCategory = async () => {
             try {
                 const res = await axiosClient.get(`/products/category/${slug}`);
-                setProducts(res.data);
-                setFilteredProducts(res.data);
-                setFilters(extractFilters(res.data));
+
+                // Kiểm tra cấu trúc dữ liệu trả về
+                const productsArr = Array.isArray(res.data.products) ? res.data.products : [];
+                setFilteredProducts(productsArr);
+                setProducts(productsArr);
+                setFilters(extractFilters(productsArr));
             } catch (err) {
                 console.error('Lỗi lấy sản phẩm theo danh mục:', err);
             } finally {
@@ -102,7 +105,7 @@ export default function CollectionsPage() {
 
     // 👉 Hàm xử lý lọc sản phẩm (đã fix)
     const handleFilterChange = (selectedFilters) => {
-        let filtered = [...products];
+        let filtered = Array.isArray(products) ? [...products] : [];    // Đảm bảo products luôn là mảng
 
         // Xử lý nhiều khoảng giá
         if (selectedFilters.price.length > 0) {

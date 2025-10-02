@@ -7,7 +7,8 @@ import ProductCard from '~/components/Product/ProductCard';
 const cx = classNames.bind(styles);
 
 function Container({ products, loading, viewMode, currentPage, itemsPerPage }) {
-    const paginatedProducts = products.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const safeProducts = Array.isArray(products) ? products : [];   // Đảm bảo products luôn là mảng
+    const paginatedProducts = safeProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage); // Phân trang
 
     if (loading) {
         return <p>Đang tải sản phẩm...</p>;
