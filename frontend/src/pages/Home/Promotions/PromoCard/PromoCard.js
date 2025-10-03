@@ -52,7 +52,7 @@ export default function PromoCard({ product, promotionCardImg }) {
                     <span className={cx('rating-count')}>({product.reviewCount || 0} đánh giá)</span>
                 </div>
 
-                <div className={cx('status')}>Vừa mở bán</div>
+                <div className={cx('promo-status')}>Vừa mở bán</div>
             </div>
         </div>
     );
