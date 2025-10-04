@@ -50,6 +50,9 @@ async function applyPromotionImmediately(promo) {
       promoId: promo._id,
       percent,
       appliedAt: new Date(),
+      soldCount: typeof product.promotionApplied?.soldCount === 'number'
+        ? product.promotionApplied.soldCount
+        : 0,
     };
 
     await product.save();
@@ -542,8 +545,24 @@ exports.productsBySlug = async (req, res) => {
 
     // Chỉ lấy sản phẩm còn hiển thị
     const products = promo.assignedProducts
-      .map((ap) => ap.product)
-      .filter((p) => p && !p.deleted && p.visible);
+      .map((ap) => {
+        if (!ap.product || ap.product.deleted || !ap.product.visible) return null;
+        // Lấy soldCount từ chính DB (product.promotionApplied)
+        let soldCount = 0;
+        if (
+          ap.product.promotionApplied &&
+          ap.product.promotionApplied.promoId &&
+          String(ap.product.promotionApplied.promoId) === String(promo._id)
+        ) {
+          soldCount = ap.product.promotionApplied.soldCount || 0;
+        }
+        return {
+          ...ap.product.toObject(),
+          soldCount,
+          promoStatus: promo.status || 'active',
+        };
+      })
+      .filter(Boolean);
 
     res.json(products);
   } catch (err) {

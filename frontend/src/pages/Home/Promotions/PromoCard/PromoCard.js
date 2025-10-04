@@ -15,10 +15,17 @@ export default function PromoCard({ product, promotionCardImg }) {
     const image = normalizeImageUrl(
         product.images?.[0] || product.image || product.thumbnail || '/default-product.jpg',
     );
+
+    // 👉 Dùng trực tiếp các field đã normalize từ BE
     const price = product.price || 0;
-    const promotionPrice = product.discountPrice || product.promotionPrice || price;
-    const discountPercent =
-        product.discountPercent || (price > 0 ? Math.round(((price - promotionPrice) / price) * 100) : 0);
+    const promotionPrice = product.promotionPrice || price;
+    const discountPercent = product.discountPercent || 0;
+    // Lấy đúng field từ BE trả về
+    const stock = product?.quantity ?? null;
+    const soldCount = product?.promotionApplied?.soldCount ?? 0;
+    // Tính % tiến trình bán hàng
+    const total = soldCount + stock;
+    const progressPercent = total > 0 ? Math.min((soldCount / total) * 100, 100) : 0;
 
     return (
         <div className={cx('promo-card')}>
@@ -52,7 +59,13 @@ export default function PromoCard({ product, promotionCardImg }) {
                     <span className={cx('rating-count')}>({product.reviewCount || 0} đánh giá)</span>
                 </div>
 
-                <div className={cx('promo-status')}>Vừa mở bán</div>
+                {/* Thanh tiến trình bán hàng */}
+                <div className={cx('progress-wrapper')}>
+                    <div className={cx('progress-bar')} style={{ width: `${progressPercent}%` }}></div>
+                    <span className={cx('progress-label')}>
+                        {stock <= 0 ? 'Hết hàng' : soldCount === 0 ? 'Vừa mở bán' : `Đã bán ${soldCount}`}
+                    </span>
+                </div>
             </div>
         </div>
     );

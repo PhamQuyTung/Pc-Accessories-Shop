@@ -50,6 +50,17 @@ const variationSchema = new mongoose.Schema(
   { _id: true }
 );
 
+// ================= Promotion Applied Schema =================
+const promotionAppliedSchema = new mongoose.Schema(
+  {
+    promoId: { type: Schema.Types.ObjectId, ref: "Promotion", default: null },
+    percent: { type: Number, default: 0 },
+    appliedAt: { type: Date, default: null },
+    soldCount: { type: Number, default: 0 }, // 👈 THÊM DÒNG NÀY
+  },
+  { _id: false }
+);
+
 // ================= Product Schema =================
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -104,9 +115,8 @@ const productSchema = new mongoose.Schema({
     default: null,
   },
   promotionApplied: {
-    promoId: { type: Schema.Types.ObjectId, ref: "Promotion", default: null },
-    percent: { type: Number, default: 0 },
-    appliedAt: { type: Date, default: null },
+    type: promotionAppliedSchema,
+    default: null,
   },
 
   variations: [variationSchema],

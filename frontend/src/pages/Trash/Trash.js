@@ -16,9 +16,10 @@ function Trash() {
         setLoading(true);
         try {
             const res = await axiosClient.get('/products/trash');
-            setProducts(res.data);
+            setProducts(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             toast('Lỗi khi lấy danh sách thùng rác!', 'error');
+            setProducts([]); // Đảm bảo luôn là mảng khi lỗi
         }
         setLoading(false);
     };

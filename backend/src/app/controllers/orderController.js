@@ -3,8 +3,13 @@ const Order = require("../models/order");
 const Product = require("../models/product");
 const orderService = require("../services/orderService");
 
-const populateFields = "name slug price discountPrice images status deleted";
+// Import helper
+const {
+  populateAndNormalizeOrder,
+  populateFields,
+} = require("../../utils/orderHelpers");
 
+// Hàm emit sự kiện qua Socket.IO
 function emitEvent(req, event, payload) {
   const io = req.app.locals.io;
   if (io) io.emit(event, payload);
@@ -26,9 +31,9 @@ exports.checkoutOrder = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    const order = await Order.findById(newOrderDoc._id).populate(
-      "items.product_id",
-      populateFields
+    // ✅ Dùng helper
+    const order = await populateAndNormalizeOrder(
+      Order.findById(newOrderDoc._id)
     );
 
     emitEvent(req, "order:new", { order });
@@ -67,8 +72,16 @@ exports.cancelOrder = async (req, res) => {
       req.userId,
       req.body.reason
     );
-    emitEvent(req, "order:cancelled", { order });
-    res.status(200).json({ message: "Đơn hàng đã được hủy!", order });
+
+    // Normalize để frontend luôn nhận đủ field
+    const populatedOrder = await populateAndNormalizeOrder(
+      Order.findById(order._id)
+    );
+
+    emitEvent(req, "order:cancelled", { order: populatedOrder });
+    res
+      .status(200)
+      .json({ message: "Đơn hàng đã được hủy!", order: populatedOrder });
   } catch (err) {
     if (err.message === "NOT_FOUND")
       return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
@@ -84,16 +97,14 @@ exports.deleteOrder = async (req, res) => {
   try {
     const order = await orderService.deleteOrder(req.params.id, req.userId);
 
-    // Populate lại cho chắc (nếu frontend cần dùng)
-    const populatedOrder = await Order.findById(order._id).populate(
-      "items.product_id",
-      populateFields
+    const populatedOrder = await populateAndNormalizeOrder(
+      Order.findById(order._id)
     );
 
     emitEvent(req, "order:deleted", { orderId: order._id });
     res.status(200).json({
       message: "Đơn hàng đã bị xóa!",
-      order: populatedOrder, // 👈 trả về đầy đủ + status = deleted
+      order: populatedOrder, // ✅ trả về normalized order
     });
   } catch (err) {
     if (err.message === "NOT_FOUND")
@@ -103,7 +114,7 @@ exports.deleteOrder = async (req, res) => {
   }
 };
 
-// Lấy danh sách đơn hàng của user + query param
+// Lấy danh sách đơn hàng của user
 exports.getUserOrders = async (req, res) => {
   try {
     const { search, status, startDate, endDate } = req.query;
@@ -113,18 +124,31 @@ exports.getUserOrders = async (req, res) => {
       startDate,
       endDate,
     });
-    res.status(200).json({ orders });
+
+    // Normalize toàn bộ
+    const normalizedOrders = await Promise.all(
+      orders.map(
+        (o) => populateAndNormalizeOrder(Order.findById(o._id)) // reuse
+      )
+    );
+
+    res.status(200).json({ orders: normalizedOrders });
   } catch (err) {
     console.error("🔥 Lỗi lấy orders:", err);
     res.status(500).json({ message: "Lỗi khi lấy đơn hàng" });
   }
 };
 
-// Lấy tất cả đơn (admin) + query param
+// Lấy tất cả đơn (admin)
 exports.getAllOrders = async (req, res) => {
   try {
     const result = await orderService.getAllOrders(req.query);
-    res.status(200).json(result);
+
+    const normalizedOrders = await Promise.all(
+      result.orders.map((o) => populateAndNormalizeOrder(Order.findById(o._id)))
+    );
+
+    res.status(200).json({ ...result, orders: normalizedOrders });
   } catch (err) {
     console.error("🔥 Lỗi lấy all orders:", err);
     res.status(500).json({ message: "Lỗi khi lấy đơn hàng" });
@@ -137,7 +161,12 @@ exports.getOrderById = async (req, res) => {
     const order = await orderService.getOrderById(req.params.id);
     if (!order)
       return res.status(404).json({ message: "Không tìm thấy đơn hàng!" });
-    res.status(200).json({ order });
+
+    const populatedOrder = await populateAndNormalizeOrder(
+      Order.findById(order._id)
+    );
+
+    res.status(200).json({ order: populatedOrder });
   } catch (err) {
     console.error("🔥 Lỗi get order:", err);
     res.status(500).json({ message: "Lỗi khi lấy chi tiết đơn hàng" });
@@ -153,7 +182,12 @@ exports.updateOrderStatus = async (req, res) => {
     );
     if (!order)
       return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
-    res.json({ success: true, order });
+
+    const populatedOrder = await populateAndNormalizeOrder(
+      Order.findById(order._id)
+    );
+
+    res.json({ success: true, order: populatedOrder });
   } catch (err) {
     res.status(500).json({ message: "Lỗi server", error: err.message });
   }
@@ -198,7 +232,7 @@ exports.createOrderByAdmin = async (req, res) => {
     // --- TÍNH TOÁN LẠI TỔNG ---
     const subtotal = mergedItems.reduce((sum, i) => sum + i.total, 0);
     const order = new Order({
-      user_id: req.user?.id || null, // Nếu cần thì có thể cho null vì admin tạo
+      user_id: req.user?.id || null,
       items: mergedItems,
       subtotal,
       tax: body.tax,
@@ -215,10 +249,30 @@ exports.createOrderByAdmin = async (req, res) => {
 
     await order.save({ session });
 
+    // Cập nhật soldCount cho sản phẩm trong khuyến mãi
+    for (const item of req.body.items) {
+      const product = await Product.findById(item.product_id || item.product);
+      if (
+        product &&
+        product.promotionApplied &&
+        product.promotionApplied.promoId
+      ) {
+        product.promotionApplied.soldCount =
+          (product.promotionApplied.soldCount || 0) + item.quantity;
+        await product.save();
+      }
+    }
+
     await session.commitTransaction();
     session.endSession();
 
-    res.status(201).json({ message: "Tạo đơn hàng thành công", order });
+    const populatedOrder = await populateAndNormalizeOrder(
+      Order.findById(order._id)
+    );
+
+    res
+      .status(201)
+      .json({ message: "Tạo đơn hàng thành công", order: populatedOrder });
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
@@ -250,7 +304,12 @@ exports.getOrderStats = async (req, res) => {
 exports.restoreOrder = async (req, res) => {
   try {
     const order = await orderService.restoreOrder(req.params.id);
-    res.json({ message: "Đơn hàng đã được khôi phục!", order });
+
+    const populatedOrder = await populateAndNormalizeOrder(
+      Order.findById(order._id)
+    );
+
+    res.json({ message: "Đơn hàng đã được khôi phục!", order: populatedOrder });
   } catch (err) {
     if (err.message === "NOT_FOUND") {
       return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
@@ -281,7 +340,12 @@ exports.forceDeleteOrder = async (req, res) => {
 exports.getDeletedOrders = async (req, res) => {
   try {
     const orders = await orderService.getDeletedOrders();
-    res.status(200).json({ orders });
+
+    const normalizedOrders = await Promise.all(
+      orders.map((o) => populateAndNormalizeOrder(Order.findById(o._id)))
+    );
+
+    res.status(200).json({ orders: normalizedOrders });
   } catch (err) {
     console.error("🔥 Lỗi lấy deleted orders:", err);
     res.status(500).json({ message: "Lỗi khi lấy đơn đã xóa" });

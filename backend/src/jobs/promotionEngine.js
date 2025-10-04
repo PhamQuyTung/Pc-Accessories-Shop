@@ -50,6 +50,10 @@ async function applyPromotionToProduct(promo, pp) {
     promoId: promo._id,
     percent,
     appliedAt: new Date(),
+    soldCount:
+      typeof product.promotionApplied?.soldCount === "number"
+        ? product.promotionApplied.soldCount
+        : 0,
   };
 
   await product.save();

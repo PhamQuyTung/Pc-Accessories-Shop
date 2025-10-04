@@ -5,7 +5,10 @@ const Cart = require("../models/cart");
 const Product = require("../models/product");
 const removeVietnameseTones = require("../../utils/removeVietnameseTones");
 
-const populateFields = "name slug price discountPrice images status deleted";
+const populateFields = `
+  name slug price discountPrice images status deleted quantity lockPromotionId
+  promotionApplied.promoId promotionApplied.percent promotionApplied.soldCount promotionApplied.appliedAt
+`;
 
 // --- helper restore stock ---
 async function restoreStockForItems(items, session = null) {
@@ -13,7 +16,6 @@ async function restoreStockForItems(items, session = null) {
   const ops = items
     .map((item) => {
       if (!item || !item.product_id) return null;
-      // product_id có thể là ObjectId hoặc object populated
       const pid = item.product_id._id ? item.product_id._id : item.product_id;
       if (!pid) return null;
       return Product.findByIdAndUpdate(
@@ -25,6 +27,24 @@ async function restoreStockForItems(items, session = null) {
     .filter(Boolean);
   if (ops.length) {
     await Promise.all(ops);
+  }
+}
+
+// --- helper update sold count ---
+async function updateSoldCountForItems(items, session = null, revert = false) {
+  if (!Array.isArray(items) || items.length === 0) return;
+  for (const item of items) {
+    const pid = item.product_id._id ? item.product_id._id : item.product_id;
+    const product = await Product.findById(pid).session(session);
+    if (product?.promotionApplied?.promoId) {
+      const delta = revert ? -item.quantity : item.quantity;
+      product.promotionApplied.soldCount =
+        (product.promotionApplied.soldCount || 0) + delta;
+      if (product.promotionApplied.soldCount < 0) {
+        product.promotionApplied.soldCount = 0;
+      }
+      await product.save({ session });
+    }
   }
 }
 
@@ -51,14 +71,12 @@ function calcTotals(orderItems, body) {
 // === Services ===
 // Checkout tạo đơn
 async function checkoutOrder(userId, body, session) {
-  // Lấy giỏ hàng user + populate sản phẩm
   const cartItems = await Cart.find({ user_id: userId }).populate({
     path: "product_id",
     select: populateFields,
   });
   if (!cartItems.length) throw new Error("EMPTY_CART");
 
-  // Chỉ cần đảm bảo có product và chưa bị đánh dấu xóa
   const validCartItems = cartItems.filter((c) => {
     const p = c.product_id;
     return p && !p.deleted;
@@ -70,7 +88,6 @@ async function checkoutOrder(userId, body, session) {
     const p = item.product_id;
     const finalPrice = p.discountPrice > 0 ? p.discountPrice : p.price;
 
-    // Rồi để check số lượng khi trừ tồn kho
     const updated = await Product.findOneAndUpdate(
       { _id: p._id, quantity: { $gte: item.quantity } },
       { $inc: { quantity: -item.quantity } },
@@ -93,10 +110,8 @@ async function checkoutOrder(userId, body, session) {
     });
   }
 
-  // Tính tổng tiền
   const totals = calcTotals(orderItems, body);
 
-  // Tạo order
   const newOrderArr = await Order.create(
     [
       {
@@ -110,10 +125,13 @@ async function checkoutOrder(userId, body, session) {
     { session }
   );
 
-  // Xóa giỏ hàng sau khi checkout
+  const newOrder = newOrderArr[0];
+
+  await updateSoldCountForItems(orderItems, session);
+
   await Cart.deleteMany({ user_id: userId }, { session });
 
-  return newOrderArr[0];
+  return newOrder;
 }
 
 // Hủy đơn hàng
@@ -123,9 +141,9 @@ async function cancelOrder(orderId, userId, reason) {
   if (["cancelled", "completed"].includes(order.status))
     throw new Error("CANNOT_CANCEL");
 
-  // restore stock only if it hasn't been returned yet (order wasn't cancelled/deleted)
   if (!["cancelled", "deleted"].includes(order.status)) {
     await restoreStockForItems(order.items);
+    await updateSoldCountForItems(order.items, null, true);
   }
 
   order.status = "cancelled";
@@ -134,26 +152,26 @@ async function cancelOrder(orderId, userId, reason) {
   return order;
 }
 
-// Xóa mềm đơn hàng (chuyển vào thùng rác)
+// Xóa mềm đơn hàng
 async function deleteOrder(orderId, userId) {
   const order = await Order.findOne({ _id: orderId, user_id: userId });
   if (!order) throw new Error("NOT_FOUND");
 
   if (!["cancelled", "deleted"].includes(order.status)) {
     await restoreStockForItems(order.items);
+    await updateSoldCountForItems(order.items, null, true);
   }
 
   order.status = "deleted";
   await order.save();
 
-  // populate lại để trả về cho controller
   return await Order.findById(order._id).populate(
     "items.product_id",
     "name slug price discountPrice images status deleted"
   );
 }
 
-// User - get own orders + filters
+// User - get own orders
 async function getUserOrders(userId, filters = {}) {
   const { search, status, startDate, endDate } = filters;
   const query = { user_id: userId, status: { $ne: "deleted" } };
@@ -182,7 +200,7 @@ async function getUserOrders(userId, filters = {}) {
     .sort({ createdAt: -1 });
 }
 
-// Admin - get all orders + filters (nâng cao)
+// Admin - get all orders
 async function getAllOrders(filters = {}, includeDeleted = false) {
   const {
     search,
@@ -203,13 +221,8 @@ async function getAllOrders(filters = {}, includeDeleted = false) {
   } = filters;
 
   const query = {};
+  if (!includeDeleted) query.status = { $ne: "deleted" };
 
-  // 🔹 Không lấy order đã xóa nếu không yêu cầu
-  if (!includeDeleted) {
-    query.status = { $ne: "deleted" };
-  }
-
-  // 🔹 Tìm kiếm nâng cao
   if (search) {
     const normalizedSearch = removeVietnameseTones(search.trim());
     const safeSearch = normalizedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -227,7 +240,6 @@ async function getAllOrders(filters = {}, includeDeleted = false) {
     }
   }
 
-  // 🔹 Bộ lọc status, payment, khách hàng
   if (status) query.status = status;
   if (paymentMethod) query.paymentMethod = paymentMethod;
   if (customerPhone) {
@@ -237,11 +249,9 @@ async function getAllOrders(filters = {}, includeDeleted = false) {
     query["shippingInfo.email"] = { $regex: customerEmail, $options: "i" };
   }
 
-  // 🔹 Boolean filters
   if (isPaid !== undefined) query.isPaid = isPaid === "true";
   if (isDelivered !== undefined) query.isDelivered = isDelivered === "true";
 
-  // 🔹 Lọc theo ngày
   if (startDate || endDate) {
     query.createdAt = {};
     if (startDate) query.createdAt.$gte = new Date(startDate);
@@ -252,21 +262,18 @@ async function getAllOrders(filters = {}, includeDeleted = false) {
     }
   }
 
-  // 🔹 Lọc theo giá trị đơn hàng
   if (minAmount || maxAmount) {
     query.finalAmount = {};
     if (minAmount) query.finalAmount.$gte = Number(minAmount);
     if (maxAmount) query.finalAmount.$lte = Number(maxAmount);
   }
 
-  // 🔹 Sort & Pagination
   const sortOptions = { [sortField]: sortOrder === "asc" ? 1 : -1 };
   const skip = (Number(page) - 1) * Number(limit);
 
-  // 🔹 Query + count song song
   const [orders, total] = await Promise.all([
     Order.find(query)
-      .collation({ locale: "vi", strength: 2 }) // so sánh không phân biệt dấu
+      .collation({ locale: "vi", strength: 2 })
       .populate("items.product_id", populateFields)
       .sort(sortOptions)
       .skip(skip)
@@ -306,7 +313,6 @@ async function createOrderByAdmin(body, userId) {
       const pid = item.product_id;
       if (!pid) throw new Error("INVALID_PRODUCT");
 
-      // ✅ Trừ tồn kho (giống checkoutOrder)
       const updated = await Product.findOneAndUpdate(
         { _id: pid, quantity: { $gte: item.quantity } },
         { $inc: { quantity: -item.quantity } },
@@ -335,10 +341,8 @@ async function createOrderByAdmin(body, userId) {
       });
     }
 
-    // ✅ Tính tổng tiền
     const totals = calcTotals(orderItems, body);
 
-    // ✅ Tạo order
     const orderArr = await Order.create(
       [
         {
@@ -353,6 +357,8 @@ async function createOrderByAdmin(body, userId) {
       ],
       { session }
     );
+
+    await updateSoldCountForItems(orderItems, session);
 
     await session.commitTransaction();
     session.endSession();
@@ -441,30 +447,26 @@ async function restoreOrder(orderId) {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    // Lấy order đã bị xóa mềm
     const order = await Order.findOne({
       _id: orderId,
       status: "deleted",
     }).session(session);
     if (!order) throw new Error("NOT_FOUND");
 
-    // Kiểm tra tồn kho & trừ số lượng
     for (const item of order.items) {
       const pid = item.product_id._id ? item.product_id._id : item.product_id;
-
       const updated = await Product.findOneAndUpdate(
-        { _id: pid, quantity: { $gte: item.quantity } }, // phải còn đủ hàng
-        { $inc: { quantity: -item.quantity } }, // trừ tồn kho
+        { _id: pid, quantity: { $gte: item.quantity } },
+        { $inc: { quantity: -item.quantity } },
         { new: true, session }
       );
-      if (!updated) {
-        throw new Error(`OUT_OF_STOCK:${pid}`);
-      }
+      if (!updated) throw new Error(`OUT_OF_STOCK:${pid}`);
     }
 
-    // Cập nhật lại trạng thái đơn hàng
     order.status = "new";
     await order.save({ session });
+
+    await updateSoldCountForItems(order.items, session, false);
 
     await session.commitTransaction();
     session.endSession();
@@ -481,9 +483,9 @@ async function forceDeleteOrder(orderId) {
   const order = await Order.findById(orderId);
   if (!order) throw new Error("NOT_FOUND");
 
-  // ❌ KHÔNG restore stock nếu đơn đã cancel hoặc đã vào thùng rác
-  if (order.status !== "cancelled" && order.status !== "deleted") {
+  if (!["cancelled", "deleted"].includes(order.status)) {
     await restoreStockForItems(order.items);
+    await updateSoldCountForItems(order.items, null, true);
   }
 
   await Order.findByIdAndDelete(orderId);
@@ -491,18 +493,14 @@ async function forceDeleteOrder(orderId) {
 }
 
 async function forceDeleteOrderByUser(orderId, userId) {
-  // Tìm order thuộc về user
   const order = await Order.findOne({ _id: orderId, user_id: userId });
   if (!order) throw new Error("NOT_FOUND");
 
-  // Chỉ cho phép xóa vĩnh viễn nếu order đã hủy hoặc đã vào thùng rác
   if (!["cancelled", "deleted"].includes(order.status))
     throw new Error("CANNOT_FORCE_DELETE");
 
-  // Nếu order trước đó chưa trả hàng (status không ở cancelled/deleted) -> restore
-  if (!["cancelled", "deleted"].includes(order.status)) {
-    await restoreStockForItems(order.items);
-  }
+  await restoreStockForItems(order.items);
+  await updateSoldCountForItems(order.items, null, true);
 
   await Order.findByIdAndDelete(orderId);
   return order;
