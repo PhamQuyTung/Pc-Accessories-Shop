@@ -123,6 +123,7 @@ const productSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
   deleted: { type: Boolean, default: false },
+  isBestSeller: { type: Boolean, default: false }, // 👈 Thêm dòng này
 });
 
 // ================= Slug Middleware =================

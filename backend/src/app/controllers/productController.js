@@ -246,6 +246,7 @@ class ProductController {
         weight,
         variations,
         importing, // 👈 nếu bạn có field này
+        isBestSeller, // 👈 Thêm dòng này
       } = req.body;
 
       const product = new Product({
@@ -280,6 +281,7 @@ class ProductController {
               images: v.images || [],
             }))
           : [],
+        isBestSeller: !!isBestSeller, // 👈 Thêm dòng này
       });
 
       // ✅ Tính status dựa trên quantity + variations thay vì lấy từ client
@@ -476,6 +478,10 @@ class ProductController {
           sku: v.sku,
           images: v.images || [],
         }));
+      }
+
+      if (typeof data.isBestSeller !== "undefined") {
+        data.isBestSeller = !!data.isBestSeller;
       }
 
       // 🟢 Tính lại status dựa trên dữ liệu mới

@@ -69,6 +69,7 @@ function EditProduct() {
                     brand: product.brand?._id || product.brand || '',
                     shortDescription: product.shortDescription || '',
                     longDescription: decodedLongDesc || '', // 👈 đảm bảo dạng HTML thật
+                    isBestSeller: !!product.isBestSeller, // 👈 Thêm dòng này
                 });
 
                 setImporting(product.status?.includes('đang nhập hàng') || false);
@@ -211,6 +212,7 @@ function EditProduct() {
                 discountPrice: Number(formData.discountPrice),
                 rating: Number(formData.rating),
                 importing,
+                isBestSeller: !!formData.isBestSeller, // 👈 Thêm dòng này
             };
 
             await axios.put(`http://localhost:5000/api/products/${id}`, payload);
@@ -364,6 +366,23 @@ function EditProduct() {
                             }}
                         />
                         Đang nhập hàng
+                    </label>
+                </div>
+
+                <div className={cx('group')}>
+                    <label className={cx('checkbox-label')}>
+                        <input
+                            type="checkbox"
+                            name="isBestSeller"
+                            checked={formData.isBestSeller}
+                            onChange={(e) =>
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    isBestSeller: e.target.checked,
+                                }))
+                            }
+                        />
+                        Đánh dấu là sản phẩm bán chạy
                     </label>
                 </div>
 

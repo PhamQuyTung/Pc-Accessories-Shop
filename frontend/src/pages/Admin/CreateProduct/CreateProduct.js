@@ -39,6 +39,7 @@ export default function CreateProduct() {
         brand: '',
         category: '',
         specs: {},
+        isBestSeller: false, // 👈 Thêm dòng này
     });
 
     const [categories, setCategories] = useState([]);
@@ -433,6 +434,7 @@ export default function CreateProduct() {
             productType,
             variantAttributes: [],
             variants: [],
+            isBestSeller: !!form.isBestSeller, // 👈 Thêm dòng này
         };
 
         if (productType === 'variable') {
@@ -1040,6 +1042,18 @@ export default function CreateProduct() {
                             >
                                 Hủy
                             </ConfirmNavigate>
+                        </div>
+
+                        <div className={cx('field')}>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="isBestSeller"
+                                    checked={form.isBestSeller}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, isBestSeller: e.target.checked }))}
+                                />
+                                Đánh dấu là sản phẩm bán chạy
+                            </label>
                         </div>
                     </section>
                 </aside>

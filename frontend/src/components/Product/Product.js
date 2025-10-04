@@ -123,6 +123,16 @@ function Product({ category }) {
                                             return null;
                                     }
                                 })()}
+
+                                {/* Góc phải dưới: Bán chạy */}
+                                {product.isBestSeller && (
+                                    <span className={cx('bestseller-tag')}>
+                                        <FireIcon className={cx('icon-fire')} />
+                                        <span className={cx('bestseller-label')}>
+                                            Bán chạy
+                                        </span>
+                                    </span>
+                                )}
                             </div>
 
                             <div className={cx('product-card__des')}>

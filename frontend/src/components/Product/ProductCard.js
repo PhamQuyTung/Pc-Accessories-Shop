@@ -16,6 +16,7 @@ function ProductCard({ product, viewMode }) {
     return (
         <div className={cx('product-card', viewMode === 'list' ? 'list-mode' : 'grid-mode')}>
             <div className={cx('proloop-label--bottom')}>
+                {/* Quà tặng HOT */}
                 {typeof product.status === 'string' && product.status.includes('quà tặng') && (
                     <span className={cx('gift-tag')}>
                         <div className={cx('gift-tag__hot')}>
@@ -55,6 +56,14 @@ function ProductCard({ product, viewMode }) {
                                 return null;
                         }
                     })()}
+
+                    {/* Bán chạy */}
+                    {product.isBestSeller && (
+                        <span className={cx('bestseller-tag')}>
+                            <FireIcon className={cx('icon-fire')} />
+                            <span className={cx('bestseller-label')}>Bán chạy</span>
+                        </span>
+                    )}
                 </div>
 
                 <div className={cx('product-card__des')}>
