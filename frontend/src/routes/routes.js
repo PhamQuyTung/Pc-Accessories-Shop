@@ -43,6 +43,7 @@ import OrderAdminDetail from '~/pages/Admin/OrderAdmin/OrderDetail/OrderDetail';
 import OrderTrash from '~/pages/Admin/OrderAdmin/OrderTrash/OrderTrash'; 
 import OrderStats from '~/pages/Admin/OrderAdmin/OrderStats/OrderStats'; 
 import AdminCreateOrder from '~/pages/Admin/OrderAdmin/AdminCreateOrder/AdminCreateOrder';
+import AdminGiftsManagement from '~/pages/Admin/Gift/AdminGiftsManagerment/AdminGiftsManagerment';
 
 // routes thường
 import ProfileLayout from '~/pages/Profile/ProfileLayout';
@@ -52,8 +53,7 @@ import ProfileOrders from '~/pages/Profile/tabs/ProfileOrders';
 import ProfileViewed from '~/pages/Profile/tabs/ProfileViewed/ProfileViewed';
 import EditPromotion from '~/pages/Admin/Promotion/EditPromotion/EditPromotion';
 import BrandManagement from '~/pages/Admin/BrandsPage/BrandsPage';
-// import CreateBrand from '~/pages/Admin/BrandManagement/CreateBrand';
-// import EditBrand from '~/pages/Admin/BrandManagement/EditBrand';
+
 import PromotionCollectionPage from '~/pages/PromotionsCollectionPage/PromotionsCollectionPage';
 import QuickAccessPage from '~/pages/Admin/QuickAccessPage/QuickAccessPage';
 import PostsPage from '~/pages/Admin/Post/PostsPage/PostsPage';
@@ -68,6 +68,8 @@ import PostPreviewPage from '~/pages/Admin/Post/PostPreviewPage/PostPreviewPage'
 import PostListCategoryPage from '~/pages/PostListCategoryPage/PostListCategoryPage';
 import PostListTagPage from '~/pages/PostListTagPage/PostListTagPage';
 import SearchBlogPage from '~/components/SearchBlogPage/SearchBlogPage';
+import CreateGiftPage from '~/pages/Admin/Gift/CreateGiftPage/CreateGiftPage';
+import EditGiftPage from '~/pages/Admin/Gift/EditGiftPage/EditGiftPage';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -169,6 +171,11 @@ const routes = [
             { path: 'orders/create', element: <AdminCreateOrder /> }, // admin tạo hóa đơn
             { path: 'orders/stats', element: <OrderStats /> }, // admin xem thống kê đơn hàng
             { path: 'orders/:id', element: <OrderAdminDetail /> }, // chi tiết đơn
+
+            // Quản lý quà tặng
+            { path: 'gifts', element: <AdminGiftsManagement /> }, // Tất cả danh sách quà tặng
+            { path: 'gifts/create', element: <CreateGiftPage /> }, // Tạo quà mới
+            { path: 'gifts/:id/edit', element: <EditGiftPage /> }, // Sửa quà tặng
         ],
     },
 

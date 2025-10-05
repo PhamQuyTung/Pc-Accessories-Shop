@@ -23,6 +23,7 @@ import { useToast } from '~/components/ToastMessager';
 import cartEvent from '~/utils/cartEvent';
 import ReviewList from '~/components/ReviewList/ReviewList';
 import ExpandableContent from '~/components/ExpandableContent/ExpandableContent';
+import GiftList from '~/components/GiftList/GiftList';
 
 const cx = classNames.bind(styles);
 
@@ -453,6 +454,9 @@ function ProductDetail() {
                                 <div className={cx('product-info__des')}>
                                     <p>{product.shortDescription || 'Không có mô tả ngắn'}</p>
                                 </div>
+
+                                {/* ✅ Hiển thị quà tặng khuyến mãi */}
+                                <GiftList gifts={product.gifts} />
 
                                 <div className={cx('product-info__actions')}>
                                     <div className={cx('quantity-control')}>

@@ -4,7 +4,7 @@ import styles from './AdminSidebar.module.scss';
 import classNames from 'classnames/bind';
 import { ChevronDown, ChevronRight, LayoutDashboard } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBox, faPalette, faNewspaper, faClipboardList } from '@fortawesome/free-solid-svg-icons';
+import { faBox, faPalette, faNewspaper, faClipboardList, faGift } from '@fortawesome/free-solid-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const cx = classNames.bind(styles);
@@ -14,6 +14,7 @@ const AdminSidebar = () => {
     const [showDashboardMenu, setShowDashboardMenu] = useState(false);
     const [showPostMenu, setShowPostMenu] = useState(false);
     const [showProductMenu, setShowProductMenu] = useState(false);
+    const [showGiftMenu, setShowGiftMenu] = useState(false);
     const [showAppearanceMenu, setShowAppearanceMenu] = useState(false);
     const [showOrderMenu, setShowOrderMenu] = useState(false);
 
@@ -34,7 +35,6 @@ const AdminSidebar = () => {
                 location.pathname.startsWith('/admin/categories') ||
                 location.pathname.startsWith('/admin/tags') ||
                 location.pathname.startsWith('/admin/attributes') ||
-                location.pathname.startsWith('/admin/promotions') ||
                 location.pathname.startsWith('/admin/brands'),
         );
 
@@ -47,6 +47,14 @@ const AdminSidebar = () => {
 
         // Orders
         setShowOrderMenu(location.pathname.startsWith('/admin/orders'));
+
+        // Gift
+        setShowGiftMenu(
+            location.pathname.startsWith('/admin/gifts') ||
+                location.pathname.startsWith('/admin/promotions') ||
+                location.pathname.startsWith('/admin/promotion-gifts') ||
+                location.pathname.startsWith('/admin/promotion-supports'),
+        );
     }, [location.pathname]);
 
     // Dashboard active
@@ -64,7 +72,6 @@ const AdminSidebar = () => {
         location.pathname.startsWith('/admin/categories') ||
         location.pathname.startsWith('/admin/tags') ||
         location.pathname.startsWith('/admin/attributes') ||
-        location.pathname.startsWith('/admin/promotions') ||
         location.pathname.startsWith('/admin/brands');
 
     // Giao diện active
@@ -74,7 +81,15 @@ const AdminSidebar = () => {
         location.pathname.startsWith('/admin/appearance');
 
     // Orders active
-    const isOrderActive = location.pathname.startsWith('/admin/orders');
+    const isOrderActive = 
+        location.pathname.startsWith('/admin/orders');
+
+    // Gift active
+    const isGiftActive =
+        location.pathname.startsWith('/admin/gifts') ||
+        location.pathname.startsWith('/admin/promotions') ||
+        location.pathname.startsWith('/admin/promotion-gifts') ||
+        location.pathname.startsWith('/admin/promotion-supports');
 
     return (
         <div className={cx('AdminSidebar')}>
@@ -231,14 +246,60 @@ const AdminSidebar = () => {
                             >
                                 Các thuộc tính
                             </NavLink>
+                            <NavLink to="/admin/brands" className={({ isActive }) => cx('link', { active: isActive })}>
+                                Thương hiệu sản phẩm
+                            </NavLink>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* Nhóm ưu đãi */}
+            <div className={cx('menu-group')}>
+                <div
+                    className={cx('accordion-header', { active: isGiftActive })}
+                    onClick={() => setShowGiftMenu((prev) => !prev)}
+                >
+                    <span className={cx('group-title')}>
+                        <FontAwesomeIcon icon={faGift} className={cx('custom-iconBox')} />
+                        Ưu đãi
+                    </span>
+                    {showGiftMenu ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                </div>
+
+                <AnimatePresence initial={false}>
+                    {showGiftMenu && (
+                        <motion.div
+                            className={cx('accordion-content')}
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <NavLink
+                                to="/admin/gifts"
+                                end
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
+                                Quà tặng
+                            </NavLink>
                             <NavLink
                                 to="/admin/promotions"
                                 className={({ isActive }) => cx('link', { active: isActive })}
                             >
                                 Chương trình khuyến mãi
                             </NavLink>
-                            <NavLink to="/admin/brands" className={({ isActive }) => cx('link', { active: isActive })}>
-                                Thương hiệu sản phẩm
+                            <NavLink
+                                to="/admin/promotion-gifts"
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
+                                Khuyến mãi đi kèm
+                            </NavLink>
+                            <NavLink
+                                to="/admin/promotion-supports"
+                                className={({ isActive }) => cx('link', { active: isActive })}
+                            >
+                                Ưu đãi hỗ trợ
                             </NavLink>
                         </motion.div>
                     )}

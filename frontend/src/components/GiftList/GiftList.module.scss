@@ -1,0 +1,44 @@
+.gift-box {
+    border: 2px solid #f87171; // viền đỏ nhạt
+    background: #fff5f5; // nền hồng nhạt
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 16px;
+}
+
+.gift-title {
+    color: #dc2626; // đỏ đậm
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.gift-icon {
+    margin-right: 8px;
+}
+
+.gift-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.gift-item {
+    font-size: 14px;
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+
+.gift-value {
+    color: #d97706; // cam vàng
+    font-weight: 500;
+    margin-left: 4px;
+}
+
+.gift-qty {
+    margin-left: 4px;
+    font-weight: 500;
+    color: #2563eb; // xanh dương
+}

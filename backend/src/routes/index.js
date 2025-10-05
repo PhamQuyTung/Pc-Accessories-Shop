@@ -17,6 +17,7 @@ const uploadRoutes = require("./uploadRoutes");
 const postRoutes = require("./postRoutes"); 
 const postCategoryRoutes = require("./postCategoryRoutes"); 
 const postTagRoutes = require("./postTagRoutes"); 
+const giftRoutes = require("./giftRoutes");
 const errorHandle = require('../helpers/error.handle');
 
 function route(app) {
@@ -44,6 +45,7 @@ function route(app) {
     app.use('/api/posts', postRoutes); // 👈 Thêm route cho postRoutes
     app.use('/api/post-categories', postCategoryRoutes); // 👈 Thêm route cho postCategoryRoutes
     app.use('/api/post-tags', postTagRoutes); // 👈 Thêm route cho postTagRoutes
+    app.use('/api/gifts', giftRoutes); // 👈 Thêm route cho giftRoutes
 
     // Middleware xử lý lỗi
     app.use(errorHandle);

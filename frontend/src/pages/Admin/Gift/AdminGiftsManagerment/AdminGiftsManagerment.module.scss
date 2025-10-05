@@ -1,0 +1,101 @@
+.container {
+    display: flex;
+    min-height: 100vh;
+    background: #f5f6fa;
+}
+
+/* Main content */
+.main {
+    flex: 1;
+    padding: 24px;
+}
+
+.pageTitle {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 16px;
+}
+
+/* Card */
+.card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.cardTitle {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+/* Form */
+.formCard {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.input,
+.select {
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 14px;
+    outline: none;
+}
+
+.input:focus,
+.select:focus {
+    border-color: #2563eb;
+}
+
+/* Buttons */
+.btn {
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btnAdd {
+    background: #2563eb;
+    color: #fff;
+}
+
+.btnAdd:hover {
+    background: #1d4ed8;
+}
+
+.btnDelete {
+    background: #ef4444;
+    color: #fff;
+}
+
+.btnDelete:hover {
+    background: #dc2626;
+}
+
+/* Gift List */
+.giftList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.giftItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #fafafa;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
