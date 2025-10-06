@@ -28,6 +28,14 @@ function ProductCard({ product, viewMode }) {
                         </div>
                     </span>
                 )}
+
+                {/* --- NEW: Hiển thị 1 icon/quà nhỏ nếu product.gifts có dữ liệu --- */}
+                {Array.isArray(product.gifts) && product.gifts.length > 0 && (
+                    <span className={cx('gift-badge')}>
+                        <GiftIcon className={cx('icon-gift-small')} />
+                        <span className={cx('gift-badge__text')}>{product.gifts.length > 1 ? `${product.gifts.length} quà` : 'Quà'}</span>
+                    </span>
+                )}
             </div>
 
             <Link to={`/products/${product.slug}`}>

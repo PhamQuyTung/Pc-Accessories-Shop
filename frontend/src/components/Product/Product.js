@@ -96,6 +96,13 @@ function Product({ category }) {
                                         </div>
                                     </span>
                                 )}
+
+                                {/* Hiển thị icon nhỏ nếu product.gifts có quà kèm */}
+                                {Array.isArray(product.gifts) && product.gifts.length > 0 && (
+                                    <span className={cx('gift-badge')}>
+                                        <GiftIcon className={cx('icon-gift-small')} />
+                                    </span>
+                                )}
                             </div>
 
                             <Link to={`/products/${product.slug}`}>

@@ -77,6 +77,13 @@ export default function CreateGiftPage() {
                                 {giftProducts.map((p, idx) => (
                                     <li key={idx}>
                                         {p.productName} (SL: {p.quantity}) – {p.finalPrice.toLocaleString('vi-VN')} ₫
+                                        <button
+                                            type="button"
+                                            className={cx('btn', 'btnDelete')}
+                                            onClick={() => setGiftProducts((prev) => prev.filter((_, i) => i !== idx))}
+                                        >
+                                            ❌
+                                        </button>
                                     </li>
                                 ))}
                             </ul>

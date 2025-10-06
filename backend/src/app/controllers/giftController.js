@@ -4,7 +4,10 @@ const mongoose = require("mongoose");
 // 👉 Lấy tất cả gifts
 exports.getAllGifts = async (req, res) => {
   try {
-    const gifts = await Gift.find().sort({ createdAt: -1 });
+    const gifts = await Gift.find()
+      .sort({ createdAt: -1 })
+      .populate("products.productId", "name images price"); // populate các field cần
+
     res.json(gifts);
   } catch (err) {
     console.error("Lỗi khi lấy gifts:", err);
@@ -15,7 +18,10 @@ exports.getAllGifts = async (req, res) => {
 // 👉 Lấy gift theo ID
 exports.getGiftById = async (req, res) => {
   try {
-    const gift = await Gift.findById(req.params.id);
+    const gift = await Gift.findById(req.params.id).populate(
+      "products.productId",
+      "name images price"
+    );
     if (!gift) return res.status(404).json({ message: "Không tìm thấy gift" });
     res.json(gift);
   } catch (err) {

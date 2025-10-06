@@ -73,7 +73,7 @@ export default function AdminGiftsManagement() {
                                             <ul className={cx('giftProducts')}>
                                                 {gift.products.map((p, idx) => (
                                                     <li key={idx}>
-                                                        • {p.productName} (SL: {p.quantity} –{' '}
+                                                        {p.productName} (SL: {p.quantity} –{' '}
                                                         {p.finalPrice.toLocaleString('vi-VN')} ₫)
                                                     </li>
                                                 ))}

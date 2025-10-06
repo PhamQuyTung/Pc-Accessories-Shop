@@ -28,6 +28,31 @@ function EditProduct() {
 
     const [brands, setBrands] = useState([]);
 
+    const [gifts, setGifts] = useState([]); // tất cả gift trong hệ thống
+    const [selectedGifts, setSelectedGifts] = useState([]);
+
+    useEffect(() => {
+        axios
+            .get('http://localhost:5000/api/gifts')
+            .then((res) => setGifts(res.data))
+            .catch(() => setGifts([]));
+    }, []);
+
+    // Khi load product từ backend
+    useEffect(() => {
+        axios.get(`http://localhost:5000/api/products/edit/${id}`).then((res) => {
+            const product = res.data;
+            setFormData({
+                ...product,
+                hasGifts: !!product.gifts?.length,
+            });
+            // normalize selectedGifts: nếu là id string -> chuyển thành object {_id: id}
+            setSelectedGifts(
+                (product.gifts || []).map((g) => (typeof g === 'string' ? { _id: g } : g)),
+            );
+        });
+    }, [id]);
+
     // Load categories và products để check trùng tên
     useEffect(() => {
         axios
@@ -64,13 +89,29 @@ function EditProduct() {
 
                 setFormData({
                     ...product,
+                    // đảm bảo các field không null để tránh warning "value prop on input should not be null"
+                    name: product.name || '',
+                    images: Array.isArray(product.images)
+                        ? product.images.length > 0 ? product.images : ['']
+                        : product.images
+                        ? [product.images]
+                        : [''],
+                    price: product.price ?? 0,
+                    discountPrice: product.discountPrice ?? 0,
                     // Nếu backend trả populated object thì dùng _id, nếu trả id thì giữ nguyên
                     category: product.category?._id || product.category || '',
                     brand: product.brand?._id || product.brand || '',
                     shortDescription: product.shortDescription || '',
-                    longDescription: decodedLongDesc || '', // 👈 đảm bảo dạng HTML thật
-                    isBestSeller: !!product.isBestSeller, // 👈 Thêm dòng này
+                    longDescription: decodedLongDesc || '', // đảm bảo dạng HTML thật
+                    specs: product.specs || {},
+                    quantity: product.quantity ?? 0,
+                    rating: product.rating ?? 0,
+                    isBestSeller: !!product.isBestSeller,
+                    hasGifts: !!product.gifts?.length,
                 });
+
+                // set selected gifts here as well
+                setSelectedGifts(product.gifts || []);
 
                 setImporting(product.status?.includes('đang nhập hàng') || false);
             })
@@ -79,8 +120,16 @@ function EditProduct() {
 
     // Khi chọn category thì load schema
     useEffect(() => {
-        if (formData?.category) {
-            axios.get(`http://localhost:5000/api/categories/${formData.category}`).then((res) => {
+        const rawCategory = formData?.category;
+        if (!rawCategory) return;
+
+        // Nếu formData.category là object (populated), lấy _id; nếu là string thì dùng luôn
+        const categoryId = typeof rawCategory === 'string' ? rawCategory : rawCategory?._id;
+        if (!categoryId) return;
+
+        axios
+            .get(`http://localhost:5000/api/categories/${categoryId}`)
+            .then((res) => {
                 const attributes = res.data.attributes || [];
                 const schema = attributes.map((attr) => ({
                     label: attr.name,
@@ -98,8 +147,11 @@ function EditProduct() {
                     ...prev,
                     specs: newSpecs,
                 }));
+            })
+            .catch(() => {
+                // không cần crash app khi category không tồn tại
+                setCategorySchema([]);
             });
-        }
     }, [formData?.category]);
 
     // Xử lý thay đổi form
@@ -213,6 +265,7 @@ function EditProduct() {
                 rating: Number(formData.rating),
                 importing,
                 isBestSeller: !!formData.isBestSeller, // 👈 Thêm dòng này
+                gifts: formData.hasGifts ? selectedGifts.map((g) => g._id) : [],
             };
 
             await axios.put(`http://localhost:5000/api/products/${id}`, payload);
@@ -385,6 +438,39 @@ function EditProduct() {
                         Đánh dấu là sản phẩm bán chạy
                     </label>
                 </div>
+
+                <div className={cx('group')}>
+                    <label className={cx('checkbox-label')}>
+                        <input
+                            type="checkbox"
+                            name="hasGifts"
+                            checked={formData.hasGifts}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, hasGifts: e.target.checked }))}
+                        />
+                        Kích hoạt quà tặng
+                    </label>
+                </div>
+
+                {formData.hasGifts && (
+                    <div className={cx('group')}>
+                        <label>Chọn quà tặng</label>
+                        <select
+                            multiple
+                            // support selectedGifts items that may be object {_id} or string
+                            value={selectedGifts.map((g) => (g && (g._id || g)))}
+                            onChange={(e) => {
+                                const selected = Array.from(e.target.selectedOptions, (opt) => opt.value);
+                                setSelectedGifts(gifts.filter((g) => selected.includes(g._id)));
+                            }}
+                        >
+                            {gifts.map((gift) => (
+                                <option key={gift._id} value={gift._id}>
+                                    🎁 {gift.title || gift.name || gift._id}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 <button type="submit" className={cx('submit-btn')}>
                     Cập nhật sản phẩm

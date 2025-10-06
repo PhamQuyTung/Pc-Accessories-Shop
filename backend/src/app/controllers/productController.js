@@ -71,6 +71,15 @@ class ProductController {
           },
         },
         { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
+        // 👇 Thêm lookup gifts
+        {
+          $lookup: {
+            from: "gifts",
+            localField: "gifts",
+            foreignField: "_id",
+            as: "gifts",
+          },
+        },
         {
           $lookup: {
             from: "reviews",
@@ -155,12 +164,21 @@ class ProductController {
         slug: req.params.slug,
         deleted: { $ne: true },
         visible: true,
-      }).lean();
+      })
+        .populate({
+          path: "gifts", // populate danh sách quà
+          populate: {
+            path: "products.productId", // populate tiếp productId bên trong gift
+            select: "name images price discountPrice", // chỉ lấy field cần thiết
+          },
+        })
+        .lean();
 
-      if (!product)
+      if (!product) {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      }
 
-      // Lấy reviews từ collection Review
+      // Lấy reviews
       const reviews = await Review.find({ product: product._id }).lean();
       const reviewCount = reviews.length;
       const averageRating = reviewCount
@@ -171,10 +189,11 @@ class ProductController {
         ...product,
         averageRating: Number((Math.round(averageRating * 10) / 10).toFixed(1)),
         reviewCount,
-        reviews, // Trả về danh sách đánh giá
-        status: computeProductStatus(product, { importing: product.importing }), // ✅ cập nhật status
+        reviews,
+        status: computeProductStatus(product, { importing: product.importing }),
       });
     } catch (err) {
+      console.error("Lỗi getBySlug:", err);
       res.status(500).json({ error: "Lỗi server" });
     }
   }

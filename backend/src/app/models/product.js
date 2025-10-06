@@ -119,6 +119,8 @@ const productSchema = new mongoose.Schema({
     default: null,
   },
 
+  gifts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Gift" }],
+  hasGifts: { type: Boolean, default: false },
   variations: [variationSchema],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

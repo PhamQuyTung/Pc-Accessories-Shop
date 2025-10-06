@@ -1,44 +1,77 @@
 .gift-box {
-    border: 2px solid #f87171; // viền đỏ nhạt
+    border: 1.5px solid #f87171; // đỏ nhạt
     background: #fff5f5; // nền hồng nhạt
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-top: 16px;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: 0.2s ease-in-out;
+
+    &:hover {
+        border-color: #ef4444; // đỏ đậm hơn khi hover
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
 }
 
-.gift-title {
-    color: #dc2626; // đỏ đậm
-    font-weight: 600;
-    font-size: 16px;
-    margin-bottom: 8px;
+.gift-header {
     display: flex;
     align-items: center;
+    font-size: 17px;
+    font-weight: 600;
+    color: #dc2626; // đỏ đậm
+    margin-bottom: 10px;
 }
 
 .gift-icon {
-    margin-right: 8px;
+    margin-right: 10px;
+    font-size: 18px;
+    color: #dc2626;
 }
 
-.gift-list {
+.gift-products {
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-.gift-item {
+.gift-product-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed #fca5a5; // gạch đỏ nhạt
     font-size: 14px;
-    margin-bottom: 4px;
-    line-height: 1.5;
+    color: #374151;
+
+    &:last-child {
+        border-bottom: none;
+    }
 }
 
-.gift-value {
-    color: #d97706; // cam vàng
-    font-weight: 500;
-    margin-left: 4px;
+.gift-index {
+    font-weight: 600;
+    margin-right: 6px;
+    color: #dc2626;
 }
 
-.gift-qty {
-    margin-left: 4px;
+.gift-prod-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.gift-prod-name {
     font-weight: 500;
-    color: #2563eb; // xanh dương
+    color: #111827;
+    margin-bottom: 2px;
+}
+
+.gift-prod-meta {
+    font-size: 13px;
+    color: #6b7280;
+
+    .gift-prod-price {
+        font-weight: 500;
+        color: #d97706; // cam vàng
+        margin-left: 4px;
+    }
 }

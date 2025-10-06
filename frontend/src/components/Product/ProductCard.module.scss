@@ -356,3 +356,23 @@
 .icon-fire {
     vertical-align: middle;
 }
+
+.gift-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    color: #d44;
+    font-size: 12px;
+}
+
+.icon-gift-small {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.gift-badge__text {
+    font-weight: 600;
+    font-size: 12px;
+}
