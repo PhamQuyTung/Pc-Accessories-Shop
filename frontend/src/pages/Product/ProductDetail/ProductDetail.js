@@ -451,12 +451,12 @@ function ProductDetail() {
                                     )}
                                 </div>
 
+                                {/* ✅ Hiển thị quà tặng khuyến mãi */}
+                                <GiftList gifts={product.gifts} />
+
                                 <div className={cx('product-info__des')}>
                                     <p>{product.shortDescription || 'Không có mô tả ngắn'}</p>
                                 </div>
-
-                                {/* ✅ Hiển thị quà tặng khuyến mãi */}
-                                <GiftList gifts={product.gifts} />
 
                                 <div className={cx('product-info__actions')}>
                                     <div className={cx('quantity-control')}>

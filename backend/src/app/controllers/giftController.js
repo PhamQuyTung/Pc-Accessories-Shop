@@ -4,9 +4,10 @@ const mongoose = require("mongoose");
 // 👉 Lấy tất cả gifts
 exports.getAllGifts = async (req, res) => {
   try {
-    const gifts = await Gift.find()
-      .sort({ createdAt: -1 })
-      .populate("products.productId", "name images price"); // populate các field cần
+    const gifts = await Gift.find().sort({ createdAt: -1 }).populate({
+      path: "products.productId",
+      select: "name slug images price discountPrice status",
+    });
 
     res.json(gifts);
   } catch (err) {
@@ -18,10 +19,11 @@ exports.getAllGifts = async (req, res) => {
 // 👉 Lấy gift theo ID
 exports.getGiftById = async (req, res) => {
   try {
-    const gift = await Gift.findById(req.params.id).populate(
-      "products.productId",
-      "name images price"
-    );
+    const gift = await Gift.findById(req.params.id).populate({
+      path: "products.productId",
+      select: "name slug images price discountPrice status",
+    });
+
     if (!gift) return res.status(404).json({ message: "Không tìm thấy gift" });
     res.json(gift);
   } catch (err) {

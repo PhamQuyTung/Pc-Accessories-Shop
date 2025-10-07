@@ -169,7 +169,7 @@ class ProductController {
           path: "gifts", // populate danh sách quà
           populate: {
             path: "products.productId", // populate tiếp productId bên trong gift
-            select: "name images price discountPrice", // chỉ lấy field cần thiết
+            select: "name slug images price discountPrice", // chỉ lấy field cần thiết
           },
         })
         .lean();

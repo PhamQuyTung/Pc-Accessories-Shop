@@ -1,77 +1,87 @@
 .gift-box {
-    border: 1.5px solid #f87171; // đỏ nhạt
-    background: #fff5f5; // nền hồng nhạt
-    border-radius: 10px;
-    padding: 16px 20px;
-    margin-top: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    transition: 0.2s ease-in-out;
+    margin-top: 16px;
+    font-size: 15px;
+    color: #333;
+}
 
-    &:hover {
-        border-color: #ef4444; // đỏ đậm hơn khi hover
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
+.gift-block {
+    margin-bottom: 20px;
+    border: 1px solid #ffe6e6;
+    border-radius: 6px;
 }
 
 .gift-header {
     display: flex;
     align-items: center;
-    font-size: 17px;
+    background: #ffe6e6;
+    padding: 12px 24px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
     font-weight: 600;
-    color: #dc2626; // đỏ đậm
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .gift-icon {
-    margin-right: 10px;
-    font-size: 18px;
-    color: #dc2626;
+    color: #d32f2f; // đỏ đậm
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.gift-title {
+    color: #d32f2f;
+    font-size: 16px;
 }
 
 .gift-products {
     list-style: none;
-    padding: 0;
     margin: 0;
+    padding: 0;
 }
 
 .gift-product-item {
     display: flex;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px dashed #fca5a5; // gạch đỏ nhạt
-    font-size: 14px;
-    color: #374151;
+    align-items: flex-start;
+    padding: 6px 24px;
+    border-bottom: 1px solid #eee;
+    line-height: 1.5;
+}
 
-    &:last-child {
-        border-bottom: none;
-    }
+.gift-product-item:last-child {
+    border-bottom: none;
 }
 
 .gift-index {
-    font-weight: 600;
-    margin-right: 6px;
-    color: #dc2626;
-}
-
-.gift-prod-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.gift-prod-name {
-    font-weight: 500;
-    color: #111827;
-    margin-bottom: 2px;
-}
-
-.gift-prod-meta {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #d32f2f;
+    color: #fff;
     font-size: 13px;
-    color: #6b7280;
+    font-weight: bold;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
 
-    .gift-prod-price {
-        font-weight: 500;
-        color: #d97706; // cam vàng
-        margin-left: 4px;
+.gift-text {
+    flex: 1;
+}
+
+.highlight {
+    color: #d32f2f;
+    font-weight: 600;
+}
+
+.gift-product-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+
+    &:hover {
+        text-decoration: underline;
+        color: #d32f2f !important;
     }
 }
