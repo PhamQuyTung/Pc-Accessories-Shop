@@ -379,13 +379,13 @@ function ProductDetail() {
             {/* Product-detail Main */}
             <div className={cx('product-detail__wraps')}>
                 <Row>
-                    <Col lg={5} md={12} xs={12}>
+                    <Col lg={6} md={12} xs={12}>
                         <div className={cx('product-slider')}>
                             <ProductGallery images={product.images} />
                         </div>
                     </Col>
 
-                    <Col lg={7} md={12} xs={12}>
+                    <Col lg={6} md={12} xs={12}>
                         <div className={cx('product-info')}>
                             <div className={cx('product-info__name')}>
                                 <h1>{product.name}</h1>
@@ -454,10 +454,6 @@ function ProductDetail() {
                                 {/* ✅ Hiển thị quà tặng khuyến mãi */}
                                 <GiftList gifts={product.gifts} />
 
-                                <div className={cx('product-info__des')}>
-                                    <p>{product.shortDescription || 'Không có mô tả ngắn'}</p>
-                                </div>
-
                                 <div className={cx('product-info__actions')}>
                                     <div className={cx('quantity-control')}>
                                         <button onClick={() => setQuantity((prev) => Math.max(prev - 1, 1))}>−</button>
@@ -491,6 +487,11 @@ function ProductDetail() {
                                         />
                                     </button>
                                 </div>
+
+                                <div
+                                    className={cx('product-info__short-desc')}
+                                    dangerouslySetInnerHTML={{ __html: product.shortDescription }}
+                                ></div>
                             </div>
                         </div>
                     </Col>

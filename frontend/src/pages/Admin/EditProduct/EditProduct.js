@@ -8,6 +8,7 @@ import { useToast } from '~/components/ToastMessager';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { quillModules, quillFormats, registerQuillModules } from '~/utils/quillSetup';
+import CustomToolbar from '~/components/Editor/CustomToolbar';
 
 import he from 'he'; // 👉 package decode HTML entity
 
@@ -47,9 +48,7 @@ function EditProduct() {
                 hasGifts: !!product.gifts?.length,
             });
             // normalize selectedGifts: nếu là id string -> chuyển thành object {_id: id}
-            setSelectedGifts(
-                (product.gifts || []).map((g) => (typeof g === 'string' ? { _id: g } : g)),
-            );
+            setSelectedGifts((product.gifts || []).map((g) => (typeof g === 'string' ? { _id: g } : g)));
         });
     }, [id]);
 
@@ -86,22 +85,25 @@ function EditProduct() {
 
                 // Decode nếu bị escaped
                 const decodedLongDesc = he.decode(product.longDescription || '');
+                const decodedShortDesc = he.decode(product.shortDescription || '');
 
                 setFormData({
                     ...product,
                     // đảm bảo các field không null để tránh warning "value prop on input should not be null"
                     name: product.name || '',
                     images: Array.isArray(product.images)
-                        ? product.images.length > 0 ? product.images : ['']
+                        ? product.images.length > 0
+                            ? product.images
+                            : ['']
                         : product.images
-                        ? [product.images]
-                        : [''],
+                          ? [product.images]
+                          : [''],
                     price: product.price ?? 0,
                     discountPrice: product.discountPrice ?? 0,
                     // Nếu backend trả populated object thì dùng _id, nếu trả id thì giữ nguyên
                     category: product.category?._id || product.category || '',
                     brand: product.brand?._id || product.brand || '',
-                    shortDescription: product.shortDescription || '',
+                    shortDescription: decodedShortDesc || '',
                     longDescription: decodedLongDesc || '', // đảm bảo dạng HTML thật
                     specs: product.specs || {},
                     quantity: product.quantity ?? 0,
@@ -329,22 +331,38 @@ function EditProduct() {
 
                 <div className={cx('group')}>
                     <label>Mô tả ngắn</label>
-                    <textarea
-                        name="shortDescription"
+
+                    <CustomToolbar id="toolbar-short" />
+
+                    <ReactQuill
+                        theme="snow"
                         value={formData.shortDescription || ''}
-                        onChange={handleChange}
-                        rows={2}
-                        placeholder="Ví dụ: Màn hình 14 inch FHD IPS, 165Hz..."
+                        onChange={(content) => setFormData((prev) => ({ ...prev, shortDescription: content }))}
+                        modules={{
+                            toolbar: {
+                                container: '#toolbar-short',
+                                handlers: quillModules?.toolbar?.handlers,
+                            },
+                        }}
+                        formats={quillFormats}
                     />
                 </div>
 
                 <div className={cx('group')}>
                     <label>Mô tả chi tiết</label>
+
+                    <CustomToolbar id="toolbar-long" />
+
                     <ReactQuill
                         theme="snow"
                         value={formData.longDescription || ''}
                         onChange={(content) => setFormData((prev) => ({ ...prev, longDescription: content }))}
-                        modules={quillModules}
+                        modules={{
+                            toolbar: {
+                                container: '#toolbar-long',
+                                handlers: quillModules?.toolbar?.handlers,
+                            },
+                        }}
                         formats={quillFormats}
                     />
                 </div>
@@ -457,7 +475,7 @@ function EditProduct() {
                         <select
                             multiple
                             // support selectedGifts items that may be object {_id} or string
-                            value={selectedGifts.map((g) => (g && (g._id || g)))}
+                            value={selectedGifts.map((g) => g && (g._id || g))}
                             onChange={(e) => {
                                 const selected = Array.from(e.target.selectedOptions, (opt) => opt.value);
                                 setSelectedGifts(gifts.filter((g) => selected.includes(g._id)));

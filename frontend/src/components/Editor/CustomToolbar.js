@@ -1,9 +1,9 @@
 import React from 'react';
 import { FaQuoteRight, FaBox } from 'react-icons/fa';
 
-export default function CustomToolbar() {
+export default function CustomToolbar({ id = 'toolbar' }) {
     return (
-        <div id="toolbar">
+        <div id={id}>
             {/* Heading */}
             <span className="ql-formats">
                 <select className="ql-header" defaultValue="">
@@ -30,7 +30,6 @@ export default function CustomToolbar() {
 
             {/* Quote & Code */}
             <span className="ql-formats">
-                {/* <button className="ql-blockquote"></button> */}
                 <button className="ql-code-block"></button>
             </span>
 

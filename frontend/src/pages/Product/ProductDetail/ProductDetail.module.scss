@@ -1,8 +1,6 @@
-.product-slider {
+.product-slider,
+.product-info {
     padding: 12px 24px;
-    // border: none;
-    // border-right: 2px solid #000;
-    // border-radius: 3px;
 }
 
 .product-detail {
@@ -12,7 +10,7 @@
 
 .product-detail__wraps {
     background: #fff;
-    padding: 40px;
+    padding: 24px;
     border-radius: 4px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
@@ -649,4 +647,11 @@
         background: #0056b3;
         text-decoration: none;
     }
+}
+
+.product-info__short-desc {
+    font-size: 1.6rem;
+    color: #444;
+    margin-top: 12px;
+    line-height: 1.6;
 }
