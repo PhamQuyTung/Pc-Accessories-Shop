@@ -17,6 +17,7 @@ import useUnsavedChangesWarning from '~/hooks/useUnsavedChangesWarning';
 import { useToast } from '~/components/ToastMessager';
 import VariantImage from '~/components/VariantImage/VariantImage';
 import { computeProductStatus } from 'shared-utils';
+import CustomToolbar from '~/components/Editor/CustomToolbar';
 
 registerQuillModules();
 
@@ -521,21 +522,38 @@ export default function CreateProduct() {
 
                         <div className={cx('field')}>
                             <label>Mô tả ngắn</label>
-                            <textarea
-                                name="shortDescription"
-                                value={form.shortDescription}
-                                onChange={handleFormChange}
-                                rows={3}
+
+                            <CustomToolbar id="toolbar-short" />
+
+                            <ReactQuill
+                                theme="snow"
+                                value={form.shortDescription || ''}
+                                onChange={(content) => setForm((prev) => ({ ...prev, shortDescription: content }))}
+                                modules={{
+                                    toolbar: {
+                                        container: '#toolbar-short',
+                                        handlers: quillModules?.toolbar?.handlers,
+                                    },
+                                }}
+                                formats={quillFormats}
                             />
                         </div>
 
                         <div className={cx('field')}>
                             <label>Mô tả chi tiết</label>
+
+                            <CustomToolbar id="toolbar-long" />
+
                             <ReactQuill
                                 theme="snow"
-                                value={form.longDescription}
+                                value={form.longDescription || ''}
                                 onChange={(content) => setForm((prev) => ({ ...prev, longDescription: content }))}
-                                modules={quillModules}
+                                modules={{
+                                    toolbar: {
+                                        container: '#toolbar-long',
+                                        handlers: quillModules?.toolbar?.handlers,
+                                    },
+                                }}
                                 formats={quillFormats}
                             />
                         </div>

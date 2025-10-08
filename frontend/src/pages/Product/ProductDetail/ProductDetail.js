@@ -405,6 +405,13 @@ function ProductDetail() {
                                     >
                                         {reviews.length} đánh giá | ⭐ {averageRating.toFixed(1)} / 5
                                     </span>
+
+                                    <button className={cx('favorite-btn')} onClick={toggleFavorite}>
+                                        <FontAwesomeIcon
+                                            icon={isFavorite ? solidHeart : faHeart}
+                                            className={cx({ 'favorite-icon--active': isFavorite })}
+                                        />
+                                    </button>
                                 </div>
 
                                 <div className={cx('product-info__cost')}>
@@ -455,11 +462,11 @@ function ProductDetail() {
                                 <GiftList gifts={product.gifts} />
 
                                 <div className={cx('product-info__actions')}>
-                                    <div className={cx('quantity-control')}>
+                                    {/* <div className={cx('quantity-control')}>
                                         <button onClick={() => setQuantity((prev) => Math.max(prev - 1, 1))}>−</button>
                                         <span>{quantity}</span>
                                         <button onClick={() => setQuantity((prev) => prev + 1)}>+</button>
-                                    </div>
+                                    </div> */}
 
                                     <button
                                         className={cx('add-to-cart')}
@@ -470,21 +477,37 @@ function ProductDetail() {
                                             product.status.includes('đang nhập hàng')
                                         }
                                     >
-                                        <FontAwesomeIcon icon={faShoppingCart} />
+                                        {/* <FontAwesomeIcon icon={faShoppingCart} />
                                         {isAddingToCart
                                             ? ' Đang thêm...'
                                             : product.status.includes('hết hàng')
                                               ? ' Hết hàng'
                                               : product.status.includes('đang nhập hàng')
                                                 ? ' Đang nhập hàng'
-                                                : ' Thêm vào giỏ'}
+                                                : ' Thêm vào giỏ'} */}
+                                        <span className={cx('main-text')}>MUA NGAY</span>
+                                        <span className={cx('sub-text')}>Giao tận nơi/Nhận tại cửa hàng</span>
                                     </button>
 
-                                    <button className={cx('favorite-btn')} onClick={toggleFavorite}>
-                                        <FontAwesomeIcon
-                                            icon={isFavorite ? solidHeart : faHeart}
-                                            className={cx({ 'favorite-icon--active': isFavorite })}
-                                        />
+                                    <button
+                                        className={cx('chat-now')}
+                                        // onClick={handleAddToCart}
+                                        // disabled={
+                                        //     isAddingToCart ||
+                                        //     product.status.includes('hết hàng') ||
+                                        //     product.status.includes('đang nhập hàng')
+                                        // }
+                                    >
+                                        {/* <FontAwesomeIcon icon={faShoppingCart} />
+                                        {isAddingToCart
+                                            ? ' Đang thêm...'
+                                            : product.status.includes('hết hàng')
+                                              ? ' Hết hàng'
+                                              : product.status.includes('đang nhập hàng')
+                                                ? ' Đang nhập hàng'
+                                                : ' Thêm vào giỏ'} */}
+                                        <span className={cx('main-text')}>TƯ VẤN NGAY</span>
+                                        <span className={cx('sub-text')}>Đưa ra đánh giá nhanh, chính xác</span>
                                     </button>
                                 </div>
 

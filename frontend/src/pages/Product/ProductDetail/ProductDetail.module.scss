@@ -272,7 +272,8 @@
 .product-info__actions {
     display: flex;
     align-items: center;
-    gap: 24px;
+    justify-content: space-between;
+    gap: 12px;
     margin-top: 20px;
 
     .quantity-control {
@@ -299,44 +300,46 @@
     }
 
     .add-to-cart {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
         background-color: #ed174a;
         color: white;
         border: none;
-        border-radius: 999px;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        border-radius: 0.5rem;
         cursor: pointer;
-        font-size: 1.8rem !important;
-        font-weight: 700 !important;
-        min-width: auto !important;
-        padding: 8px 30px !important;
+        padding: 10px 50px;
 
-        i {
-            font-size: 16px;
+        .main-text {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .sub-text {
+            font-size: 12px;
+            font-weight: 400;
         }
     }
 
-    .favorite-btn {
-        background-color: #f2f2f2;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        border: none;
+    .chat-now {
         display: flex;
         align-items: center;
-        justify-content: center;
+        flex-direction: column;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
         cursor: pointer;
-        transition: all 0.2s ease;
+        padding: 10px 50px;
 
-        svg {
-            color: #333; // Mặc định
-            transition: color 0.2s ease;
+        .main-text {
+            font-size: 18px;
+            font-weight: 700;
         }
 
-        .favorite-icon--active {
-            color: red; // Khi được yêu thích
+        .sub-text {
+            font-size: 12px;
+            font-weight: 400;
         }
     }
 }
@@ -652,6 +655,22 @@
 .product-info__short-desc {
     font-size: 1.6rem;
     color: #444;
-    margin-top: 12px;
+    margin-top: 20px;
     line-height: 1.6;
+}
+
+.favorite-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    svg {
+        color: #333; // Mặc định
+        transition: color 0.2s ease;
+    }
+
+    .favorite-icon--active {
+        color: red; // Khi được yêu thích
+    }
 }
