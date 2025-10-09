@@ -71,7 +71,9 @@ class ProductController {
           },
         },
         { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
-        // 👇 Thêm lookup gifts
+        // -------------------------
+        // 🎁 Populate quà tặng (gifts -> products -> productData)
+        // -------------------------
         {
           $lookup: {
             from: "gifts",
@@ -80,6 +82,52 @@ class ProductController {
             as: "gifts",
           },
         },
+        { $unwind: { path: "$gifts", preserveNullAndEmptyArrays: true } },
+        {
+          $unwind: {
+            path: "$gifts.products",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "products",
+            localField: "gifts.products.productId",
+            foreignField: "_id",
+            as: "gifts.products.productData",
+          },
+        },
+        {
+          $unwind: {
+            path: "$gifts.products.productData",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $group: {
+            _id: "$_id",
+            doc: { $first: "$$ROOT" },
+            gifts: {
+              $push: {
+                _id: "$gifts._id",
+                title: "$gifts.title",
+                products: {
+                  productId: "$gifts.products.productId",
+                  productData: "$gifts.products.productData",
+                  quantity: "$gifts.products.quantity",
+                },
+              },
+            },
+          },
+        },
+        {
+          $replaceRoot: {
+            newRoot: { $mergeObjects: ["$doc", { gifts: "$gifts" }] },
+          },
+        },
+        // -------------------------
+        // ⭐ Reviews, rating & giá
+        // -------------------------
         {
           $lookup: {
             from: "reviews",
@@ -137,9 +185,10 @@ class ProductController {
       // 👉 Phân trang
       pipeline.push({ $skip: skip }, { $limit: limitNum });
 
+      // 🧩 Chạy pipeline
       const products = await Product.aggregate(pipeline);
 
-      // ✅ Cập nhật status động theo quantity
+      // ✅ Tính status động theo quantity
       const productsWithStatus = products.map((p) => ({
         ...p,
         status: computeProductStatus(p, { importing: p.importing }),
@@ -152,7 +201,7 @@ class ProductController {
         totalPages: Math.ceil(totalCount / limitNum),
       });
     } catch (err) {
-      console.log("Lỗi getAll:", err);
+      console.error("❌ Lỗi getAll:", err);
       res.status(500).json({ message: "Lỗi server", error: err });
     }
   }

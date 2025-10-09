@@ -273,3 +273,33 @@
     background: #dc3545;
     color: #fff;
 }
+
+.gift-row {
+    background-color: #fafafa;
+    font-size: 14px;
+
+    .gift-title {
+        text-align: start;
+        font-weight: 500;
+        margin-bottom: 4px;
+        color: #555;
+        font-size: 1.6rem;
+    }
+
+    .gift-list {
+        list-style: decimal;
+        padding-left: 1.5rem;
+        margin: 0;
+
+        li {
+            color: #dc3545;
+            text-align: start;
+            margin: 2px 0;
+        }
+    }
+
+    .no-gift {
+        color: #999;
+        font-style: italic;
+    }
+}

@@ -117,6 +117,7 @@ const AdminCreateOrder = () => {
                         finalPrice,
                         quantity,
                         total: finalPrice * quantity,
+                        gifts: product.gifts || [],
                     },
                 ],
             }));
@@ -257,24 +258,70 @@ const AdminCreateOrder = () => {
                     </thead>
                     <tbody>
                         {formData.items.map((item, index) => (
-                            <tr key={index}>
-                                <td>{item.productName}</td>
-                                <td className={cx('text-center')}>{item.quantity}</td>
-                                <td className={cx('text-right')}>{item.price.toLocaleString('vi-VN')} ₫</td>
-                                <td className={cx('text-right')}>
-                                    {item.discountPrice > 0 ? item.discountPrice.toLocaleString('vi-VN') + ' ₫' : '—'}
-                                </td>
-                                <td className={cx('text-right')}>{item.finalPrice.toLocaleString('vi-VN')} ₫</td>
-                                <td className={cx('text-right')}>{item.total.toLocaleString('vi-VN')} ₫</td>
-                                <td>
-                                    <button
-                                        className={cx('btn', 'icon', 'danger')}
-                                        onClick={() => handleRemoveItem(index)}
-                                    >
-                                        ❌
-                                    </button>
-                                </td>
-                            </tr>
+                            <React.Fragment key={index}>
+                                <tr>
+                                    <td>{item.productName}</td>
+                                    <td className={cx('text-center')}>{item.quantity}</td>
+                                    <td className={cx('text-right')}>{item.price.toLocaleString('vi-VN')} ₫</td>
+                                    <td className={cx('text-right')}>
+                                        {item.discountPrice > 0
+                                            ? item.discountPrice.toLocaleString('vi-VN') + ' ₫'
+                                            : '—'}
+                                    </td>
+                                    <td className={cx('text-right')}>{item.finalPrice.toLocaleString('vi-VN')} ₫</td>
+                                    <td className={cx('text-right')}>{item.total.toLocaleString('vi-VN')} ₫</td>
+                                    <td>
+                                        <button
+                                            className={cx('btn', 'icon', 'danger')}
+                                            onClick={() => handleRemoveItem(index)}
+                                        >
+                                            ❌
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                {/* ✅ Hiển thị quà tặng */}
+                                <tr className={cx('gift-row')}>
+                                    <td colSpan={7}>
+                                        {Array.isArray(item.gifts) && item.gifts.length > 0 ? (
+                                            <>
+                                                <div className={cx('gift-title')}>🎁 Quà tặng kèm:</div>
+                                                <ul className={cx('gift-list')}>
+                                                    {item.gifts
+                                                        .flatMap((g) => g.products || [])
+                                                        .filter(
+                                                            (gift) =>
+                                                                gift &&
+                                                                gift.productData &&
+                                                                gift.productData.name &&
+                                                                !isNaN(gift.quantity),
+                                                        )
+                                                        .map((gift, i) => (
+                                                            <li key={i}>
+                                                                <span>{gift.productData.name}</span>
+                                                                <span> - số lượng {gift.quantity * item.quantity}</span>
+                                                            </li>
+                                                        ))}
+                                                    {/* Nếu sau khi lọc không còn quà nào hợp lệ */}
+                                                    {item.gifts
+                                                        .flatMap((g) => g.products || [])
+                                                        .filter(
+                                                            (gift) =>
+                                                                gift &&
+                                                                gift.productData &&
+                                                                gift.productData.name &&
+                                                                !isNaN(gift.quantity),
+                                                        ).length === 0 && (
+                                                        <em className={cx('no-gift')}>— Không có quà tặng kèm —</em>
+                                                    )}
+                                                </ul>
+                                            </>
+                                        ) : (
+                                            <em className={cx('no-gift')}>— Không có quà tặng kèm —</em>
+                                        )}
+                                    </td>
+                                </tr>
+                            </React.Fragment>
                         ))}
 
                         <tr>
