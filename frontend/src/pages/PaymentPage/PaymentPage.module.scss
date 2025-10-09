@@ -193,3 +193,29 @@
     font-weight: 600;
     color: #d40000;
 }
+
+.giftList {
+    margin-top: 10px;
+    padding-left: 10px;
+    border-left: 2px solid #eee;
+
+    .giftTitle {
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #d40000;
+    }
+
+    .giftItem {
+        font-size: 14px;
+        color: #444;
+        display: flex;
+        justify-content: space-between;
+        gap: 5px;
+        margin-bottom: 4px;
+        padding-right: 10px;
+        border-bottom: 1px dashed #ddd;
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+}

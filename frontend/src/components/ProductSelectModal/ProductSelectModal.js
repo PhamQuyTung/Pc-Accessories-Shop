@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './ProductSelectModal.module.scss';
 import Swal from 'sweetalert2';
+import axiosClient from '~/utils/axiosClient';
 
 import LoadingSpinner from '../SpinnerLoading/SpinnerLoading';
-import Pagination from '../Pagination/Pagination'; // 👈 import component pagination
+import Pagination from '../Pagination/Pagination';
 
 const cx = classNames.bind(styles);
 
@@ -19,60 +20,67 @@ const ProductSelectModal = ({ onAdd, onClose, currentOrderItems = [] }) => {
     const [closing, setClosing] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    // 👇 state phân trang
+    // Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 5;
 
+    // 🔹 Lấy danh mục
     useEffect(() => {
-        fetch('/api/categories')
-            .then((res) => res.json())
-            .then((data) => setCategories(data));
+        axiosClient
+            .get('/categories')
+            .then((res) => setCategories(res.data || []))
+            .catch((err) => console.error('Lỗi tải danh mục:', err));
     }, []);
 
+    // 🔹 Animation mở modal
     useEffect(() => {
         const timer = setTimeout(() => setOpening(true), 10);
         return () => clearTimeout(timer);
     }, []);
 
+    // 🔹 Lấy danh sách sản phẩm (khi search / chọn danh mục)
     useEffect(() => {
         const delayDebounce = setTimeout(() => {
-            setLoading(true);
-            const url =
-                searchTerm.trim() !== ''
-                    ? `/api/products?search=${encodeURIComponent(searchTerm)}${
-                          selectedCategory ? `&categoryId=${selectedCategory}` : ''
-                      }&limit=9999`
-                    : selectedCategory
-                      ? `/api/products?categoryId=${selectedCategory}&limit=9999`
-                      : `/api/products?limit=9999`;
+            const fetchProducts = async () => {
+                try {
+                    setLoading(true);
 
-            fetch(url)
-                .then((res) => res.json())
-                .then((data) => {
-                    setTimeout(() => {
-                        setProducts(data.products || []);
-                        setLoading(false);
-                        setCurrentPage(1); // reset về trang 1 khi search/filter
-                    }, 500);
-                });
+                    const params = {
+                        limit: 9999,
+                        ...(searchTerm.trim() && { search: searchTerm.trim() }),
+                        ...(selectedCategory && { categoryId: selectedCategory }),
+                    };
+
+                    const res = await axiosClient.get('/products', { params });
+                    setProducts(res.data.products || []);
+                    setCurrentPage(1);
+                } catch (err) {
+                    console.error('Lỗi tải sản phẩm:', err);
+                } finally {
+                    setTimeout(() => setLoading(false), 300);
+                }
+            };
+
+            fetchProducts();
         }, 400);
 
         return () => clearTimeout(delayDebounce);
     }, [searchTerm, selectedCategory]);
 
-    const filteredProducts = (products || []).filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    // 🔹 Lọc sản phẩm theo tên
+    const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
+    // 🔹 Tính phân trang
     const totalPages = Math.ceil(filteredProducts.length / pageSize);
     const paginatedProducts = filteredProducts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
+    // 🔹 Thêm sản phẩm vào đơn hàng
     const handleAdd = () => {
         if (!selectedProduct || quantity <= 0) return;
 
-        // 🔥 Tính số lượng đã có trong order
         const existing = currentOrderItems.find((i) => i.product_id === selectedProduct._id);
         const newQuantity = (existing?.quantity || 0) + parseInt(quantity, 10);
 
-        // ✅ Check tồn kho cộng dồn
         if (newQuantity > (selectedProduct.quantity ?? 0)) {
             Swal.fire({
                 icon: 'error',
@@ -85,11 +93,12 @@ const ProductSelectModal = ({ onAdd, onClose, currentOrderItems = [] }) => {
         const finalPrice = selectedProduct.discountPrice > 0 ? selectedProduct.discountPrice : selectedProduct.price;
 
         onAdd({
-            productId: selectedProduct._id,
-            productName: selectedProduct.name,
-            price: selectedProduct.price,
-            discountPrice: selectedProduct.discountPrice || 0,
-            finalPrice,
+            // productId: selectedProduct._id,
+            // productName: selectedProduct.name,
+            // price: selectedProduct.price,
+            // discountPrice: selectedProduct.discountPrice || 0,
+            // finalPrice,
+            product: selectedProduct, // gửi luôn object sản phẩm
             quantity: parseInt(quantity, 10),
         });
 
@@ -98,12 +107,11 @@ const ProductSelectModal = ({ onAdd, onClose, currentOrderItems = [] }) => {
         handleClose();
     };
 
+    // 🔹 Đóng modal
     const handleClose = () => {
         setClosing(true);
         setOpening(false);
-        setTimeout(() => {
-            onClose();
-        }, 300);
+        setTimeout(() => onClose(), 300);
     };
 
     return (
@@ -181,16 +189,10 @@ const ProductSelectModal = ({ onAdd, onClose, currentOrderItems = [] }) => {
                     </tbody>
                 </table>
 
-                {/* 👇 Thêm pagination */}
                 {totalPages > 1 && (
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={(page) => setCurrentPage(page)}
-                    />
+                    <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
                 )}
 
-                {/* chọn sản phẩm ở footer */}
                 {selectedProduct && (
                     <div className={cx('footer')}>
                         <div className={cx('footer-title')}>

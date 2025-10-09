@@ -428,29 +428,52 @@ function CheckoutPage() {
                         <div className={cx('cart-preview')}>
                             <h3>Giỏ hàng của bạn ({cartItems.length})</h3>
                             <div className={cx('cart-preview__wrap')}>
-                                {cartItems.map((item) => (
-                                    <div className={cx('cart-item')} key={item._id}>
-                                        <img
-                                            src={
-                                                Array.isArray(item.product_id.images)
-                                                    ? item.product_id.images[0]
-                                                    : item.product_id.images
-                                            }
-                                            alt={item.product_id.name}
-                                        />
-                                        <div>
-                                            <p>{item.product_id.name}</p>
-                                            <p>SL: {item.quantity}</p>
-                                            <strong>
-                                                {(item.product_id.discountPrice > 0
-                                                    ? item.product_id.discountPrice
-                                                    : item.product_id.price
-                                                ).toLocaleString()}
-                                                ₫
-                                            </strong>
+                                {cartItems.map((item) => {
+                                    const product = item.product_id;
+                                    const gifts = Array.isArray(product.gifts) ? product.gifts : [];
+
+                                    return (
+                                        <div className={cx('cart-item')} key={item._id}>
+                                            <img
+                                                src={Array.isArray(product.images) ? product.images[0] : product.images}
+                                                alt={product.name}
+                                            />
+                                            <div className={cx('cart-item__info')}>
+                                                <p className={cx('cart-item__name')}>{product.name}</p>
+                                                <p className={cx('cart-item__qty')}>SL: {item.quantity}</p>
+                                                <strong className={cx('cart-item__price')}>
+                                                    {(product.discountPrice > 0
+                                                        ? product.discountPrice
+                                                        : product.price
+                                                    ).toLocaleString()}
+                                                    ₫
+                                                </strong>
+
+                                                {/* ✅ Hiển thị quà tặng nếu có */}
+                                                {product.gifts?.length > 0 && (
+                                                    <div className={cx('gift-list')}>
+                                                        <p className={cx('gift-title')}>🎁 Quà tặng kèm:</p>
+                                                        <ul className={cx('gift-items')}>
+                                                            {product.gifts.map((gift, gIdx) => (
+                                                                <li key={gIdx} className={cx('gift-group')}>
+                                                                    <strong>{gift.title}</strong>
+                                                                    <ul>
+                                                                        {gift.products.map((gItem, i) => (
+                                                                            <li key={i} className={cx('gift-item')}>
+                                                                                <span>{gItem.productId.name}</span>
+                                                                                <span>x{gItem.quantity * item.quantity}</span>
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

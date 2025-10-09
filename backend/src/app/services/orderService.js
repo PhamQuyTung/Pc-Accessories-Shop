@@ -6,7 +6,7 @@ const Product = require("../models/product");
 const removeVietnameseTones = require("../../utils/removeVietnameseTones");
 
 const populateFields = `
-  name slug price discountPrice images status deleted quantity lockPromotionId
+  name slug price discountPrice images status deleted quantity lockPromotionId gifts
   promotionApplied.promoId promotionApplied.percent promotionApplied.soldCount promotionApplied.appliedAt
 `;
 
@@ -27,6 +27,35 @@ async function restoreStockForItems(items, session = null) {
     .filter(Boolean);
   if (ops.length) {
     await Promise.all(ops);
+  }
+}
+
+// --- helper restore gift stock ---
+async function restoreGiftStockForItems(items, session = null) {
+  if (!Array.isArray(items) || items.length === 0) return;
+
+  for (const item of items) {
+    const product =
+      item.product_id && item.product_id._id
+        ? await Product.findById(item.product_id._id)
+        : await Product.findById(item.product_id);
+    if (!product || !Array.isArray(product.gifts)) continue;
+
+    // Duyệt qua các nhóm quà
+    for (const giftGroup of product.gifts) {
+      if (!Array.isArray(giftGroup.products)) continue;
+
+      for (const gItem of giftGroup.products) {
+        const giftId = gItem.productId?._id || gItem.productId;
+        const totalGiftQty = gItem.quantity * item.quantity;
+
+        await Product.findByIdAndUpdate(
+          giftId,
+          { $inc: { quantity: totalGiftQty } },
+          { new: true, session }
+        );
+      }
+    }
   }
 }
 
@@ -69,70 +98,98 @@ function calcTotals(orderItems, body) {
 }
 
 // === Services ===
-// Checkout tạo đơn
+// === Checkout tạo đơn ===
 async function checkoutOrder(userId, body, session) {
+  // 1️⃣ Lấy giỏ hàng người dùng
   const cartItems = await Cart.find({ user_id: userId }).populate({
     path: "product_id",
     select: populateFields,
+    populate: {
+      path: "gifts",
+      select: "title products.productId products.quantity products.productName",
+      populate: { path: "products.productId", select: "name quantity" },
+    },
   });
+
   if (!cartItems.length) throw new Error("EMPTY_CART");
 
-  const validCartItems = cartItems.filter((c) => {
-    const p = c.product_id;
-    return p && !p.deleted;
-  });
+  // 2️⃣ Lọc sản phẩm hợp lệ (còn hiển thị, chưa xóa)
+  const validCartItems = cartItems.filter(
+    (c) => c.product_id && !c.product_id.deleted
+  );
   if (!validCartItems.length) throw new Error("INVALID_CART_ITEMS");
 
+  // 3️⃣ Chuẩn bị danh sách sản phẩm để tạo đơn
   const orderItems = [];
-  for (const item of validCartItems) {
-    const p = item.product_id;
-    const finalPrice = p.discountPrice > 0 ? p.discountPrice : p.price;
 
-    const updated = await Product.findOneAndUpdate(
-      { _id: p._id, quantity: { $gte: item.quantity } },
+  for (const item of validCartItems) {
+    const product = item.product_id;
+    console.log("🎁 Gifts for product:", product.name, product.gifts);
+
+    const finalPrice =
+      product.discountPrice > 0 ? product.discountPrice : product.price;
+
+    // 3.1️⃣ Trừ tồn kho sản phẩm chính
+    const updatedProduct = await Product.findOneAndUpdate(
+      { _id: product._id, quantity: { $gte: item.quantity } },
       { $inc: { quantity: -item.quantity } },
       { new: true, session }
     );
-    if (!updated) {
-      const current = await Product.findById(p._id).select("quantity name");
+
+    if (!updatedProduct) {
+      const current = await Product.findById(product._id).select(
+        "quantity name"
+      );
       throw new Error(
-        `OUT_OF_STOCK:${p.name}:${item.quantity}:${current?.quantity || 0}`
+        `OUT_OF_STOCK:${product.name}:${item.quantity}:${current?.quantity || 0}`
       );
     }
 
+    // 3.2️⃣ Trừ tồn kho quà tặng (nếu có)
+    if (Array.isArray(product.gifts) && product.gifts.length > 0) {
+      for (const giftGroup of product.gifts) {
+        if (
+          Array.isArray(giftGroup.products) &&
+          giftGroup.products.length > 0
+        ) {
+          for (const gItem of giftGroup.products) {
+            const giftId = gItem.productId?._id || gItem.productId;
+            const totalGiftQty = gItem.quantity * item.quantity; // nhân theo số lượng sản phẩm chính
+
+            const giftProduct = await Product.findOneAndUpdate(
+              { _id: giftId, quantity: { $gte: totalGiftQty } },
+              { $inc: { quantity: -totalGiftQty } },
+              { new: true, session }
+            );
+
+            if (!giftProduct) {
+              const currentGift =
+                await Product.findById(giftId).select("quantity name");
+              throw new Error(
+                `OUT_OF_STOCK_GIFT:${currentGift?.name || "Quà tặng"}:${totalGiftQty}:${currentGift?.quantity || 0}`
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // 3.3️⃣ Thêm sản phẩm vào danh sách order
     orderItems.push({
-      product_id: p._id,
+      product_id: product._id,
       quantity: item.quantity,
-      price: p.price,
-      discountPrice: p.discountPrice,
+      price: product.price,
+      discountPrice: product.discountPrice,
       finalPrice,
       total: finalPrice * item.quantity,
     });
   }
 
-  // --- Trừ tồn kho cho quà tặng nếu có ---
-  if (Array.isArray(p.gifts) && p.gifts.length > 0) {
-    for (const gift of p.gifts) {
-      const giftProduct = await Product.findOneAndUpdate(
-        { _id: gift.product_id, quantity: { $gte: gift.quantity } },
-        { $inc: { quantity: -gift.quantity } },
-        { new: true, session }
-      );
-
-      if (!giftProduct) {
-        const currentGift = await Product.findById(gift.product_id).select(
-          "quantity name"
-        );
-        throw new Error(
-          `OUT_OF_STOCK_GIFT:${currentGift?.name || "Quà tặng"}:${gift.quantity}:${currentGift?.quantity || 0}`
-        );
-      }
-    }
-  }
-
+  // 4️⃣ Tính tổng tiền
   const totals = calcTotals(orderItems, body);
 
-  const newOrderArr = await Order.create(
+  // 5️⃣ Tạo đơn hàng
+  const [newOrder] = await Order.create(
     [
       {
         user_id: userId,
@@ -145,10 +202,8 @@ async function checkoutOrder(userId, body, session) {
     { session }
   );
 
-  const newOrder = newOrderArr[0];
-
+  // 6️⃣ Cập nhật soldCount + Xóa giỏ hàng
   await updateSoldCountForItems(orderItems, session);
-
   await Cart.deleteMany({ user_id: userId }, { session });
 
   return newOrder;
@@ -163,6 +218,7 @@ async function cancelOrder(orderId, userId, reason) {
 
   if (!["cancelled", "deleted"].includes(order.status)) {
     await restoreStockForItems(order.items);
+    await restoreGiftStockForItems(order.items);
     await updateSoldCountForItems(order.items, null, true);
   }
 
@@ -179,6 +235,7 @@ async function deleteOrder(orderId, userId) {
 
   if (!["cancelled", "deleted"].includes(order.status)) {
     await restoreStockForItems(order.items);
+    await restoreGiftStockForItems(order.items);
     await updateSoldCountForItems(order.items, null, true);
   }
 
@@ -483,6 +540,32 @@ async function restoreOrder(orderId) {
       if (!updated) throw new Error(`OUT_OF_STOCK:${pid}`);
     }
 
+    // 👉 Trừ tồn quà tặng khi khôi phục đơn
+    await (async () => {
+      for (const item of order.items) {
+        const product =
+          item.product_id && item.product_id._id
+            ? await Product.findById(item.product_id._id).session(session)
+            : await Product.findById(item.product_id).session(session);
+        if (!product || !Array.isArray(product.gifts)) continue;
+
+        for (const giftGroup of product.gifts) {
+          if (!Array.isArray(giftGroup.products)) continue;
+          for (const gItem of giftGroup.products) {
+            const giftId = gItem.productId?._id || gItem.productId;
+            const totalGiftQty = gItem.quantity * item.quantity;
+
+            const giftProduct = await Product.findOneAndUpdate(
+              { _id: giftId, quantity: { $gte: totalGiftQty } },
+              { $inc: { quantity: -totalGiftQty } },
+              { new: true, session }
+            );
+            if (!giftProduct) throw new Error(`OUT_OF_STOCK_GIFT:${giftId}`);
+          }
+        }
+      }
+    })();
+
     order.status = "new";
     await order.save({ session });
 
@@ -505,6 +588,7 @@ async function forceDeleteOrder(orderId) {
 
   if (!["cancelled", "deleted"].includes(order.status)) {
     await restoreStockForItems(order.items);
+    await restoreGiftStockForItems(order.items);
     await updateSoldCountForItems(order.items, null, true);
   }
 
@@ -520,6 +604,7 @@ async function forceDeleteOrderByUser(orderId, userId) {
     throw new Error("CANNOT_FORCE_DELETE");
 
   await restoreStockForItems(order.items);
+  await restoreGiftStockForItems(order.items);
   await updateSoldCountForItems(order.items, null, true);
 
   await Order.findByIdAndDelete(orderId);

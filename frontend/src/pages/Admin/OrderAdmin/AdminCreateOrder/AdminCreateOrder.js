@@ -70,33 +70,31 @@ const AdminCreateOrder = () => {
     }, []);
 
     // Thêm sản phẩm
-    const handleAddToOrder = ({ productId, productName, price, discountPrice, finalPrice, quantity }) => {
-        if (!productName || !finalPrice || quantity <= 0) return;
+    const handleAddToOrder = ({ product, quantity }) => {
+        if (!product || quantity <= 0) return;
 
-        const productInStore = products.find((p) => p._id === productId);
-        if (!productInStore) return;
+        const { _id, name, price, discountPrice, quantity: stockQty } = product;
+        const finalPrice = discountPrice > 0 ? discountPrice : price;
 
-        // 🔥 Tìm sản phẩm đã có trong order
-        const existingItem = formData.items.find((i) => i.product_id === productId);
+        // 🔥 Kiểm tra tồn kho
+        const existingItem = formData.items.find((i) => i.product_id === _id);
+        const newQuantity = (existingItem?.quantity || 0) + quantity;
+
+        if (newQuantity > (stockQty ?? 0)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Không đủ hàng',
+                text: `Sản phẩm "${name}" chỉ còn ${stockQty} cái trong kho.`,
+            });
+            return;
+        }
 
         if (existingItem) {
-            // ✅ Cộng dồn số lượng
-            const newQuantity = existingItem.quantity + quantity;
-
-            // Double check tồn kho
-            if (newQuantity > (productInStore.quantity ?? 0)) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Không đủ hàng',
-                    text: `Sản phẩm "${productName}" chỉ còn ${productInStore.quantity} cái trong kho.`,
-                });
-                return;
-            }
-
+            // ✅ Cộng dồn nếu đã có
             setFormData((prev) => ({
                 ...prev,
                 items: prev.items.map((i) =>
-                    i.product_id === productId
+                    i.product_id === _id
                         ? {
                               ...i,
                               quantity: newQuantity,
@@ -106,30 +104,19 @@ const AdminCreateOrder = () => {
                 ),
             }));
         } else {
-            // ✅ Thêm mới nếu chưa có
-            if (quantity > (productInStore.quantity ?? 0)) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Không đủ hàng',
-                    text: `Sản phẩm "${productName}" chỉ còn ${productInStore.quantity} cái trong kho.`,
-                });
-                return;
-            }
-
-            const itemTotal = finalPrice * quantity;
-
+            // ✅ Thêm mới
             setFormData((prev) => ({
                 ...prev,
                 items: [
                     ...prev.items,
                     {
-                        product_id: productId || null,
-                        productName,
+                        product_id: _id,
+                        productName: name,
                         price,
                         discountPrice,
                         finalPrice,
                         quantity,
-                        total: itemTotal,
+                        total: finalPrice * quantity,
                     },
                 ],
             }));

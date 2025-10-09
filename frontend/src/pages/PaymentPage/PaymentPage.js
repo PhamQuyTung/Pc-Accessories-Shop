@@ -115,6 +115,30 @@ function PaymentPage() {
                                                 Giá: {price.toLocaleString()}₫ × {item.quantity}
                                             </p>
                                             <p className={cx('productTotal')}>Thành tiền: {total.toLocaleString()}₫</p>
+
+                                            {/* === Hiển thị quà tặng kèm === */}
+                                            {product.gifts?.length > 0 && (
+                                                <div className={cx('giftList')}>
+                                                    <ul>
+                                                        {product.gifts.map((gift, gIdx) => (
+                                                            <li key={gIdx} className={cx('giftGroup')}>
+                                                                <p className={cx('giftTitle')}>🎁 {gift.title}:</p>
+
+                                                                <ul>
+                                                                    {gift.products.map((gItem, i) => (
+                                                                        <li key={i} className={cx('giftItem')}>
+                                                                            <span>{gItem.productId?.name}</span>
+                                                                            <span>
+                                                                                x{gItem.quantity * item.quantity}
+                                                                            </span>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
                                         </div>
                                     </li>
                                 );
