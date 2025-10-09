@@ -59,6 +59,13 @@ exports.checkoutOrder = async (req, res) => {
       });
     }
 
+    if (err.message.startsWith("OUT_OF_STOCK_GIFT")) {
+      const [, giftName, requested, available] = err.message.split(":");
+      return res.status(400).json({
+        message: `Quà tặng "${giftName}" chỉ còn ${available} cái, bạn đã đặt ${requested}.`,
+      });
+    }
+
     console.error("🔥 Lỗi khi đặt hàng:", err);
     res.status(500).json({ message: "Lỗi khi đặt hàng" });
   }

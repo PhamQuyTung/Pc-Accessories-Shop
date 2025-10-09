@@ -110,6 +110,26 @@ async function checkoutOrder(userId, body, session) {
     });
   }
 
+  // --- Trừ tồn kho cho quà tặng nếu có ---
+  if (Array.isArray(p.gifts) && p.gifts.length > 0) {
+    for (const gift of p.gifts) {
+      const giftProduct = await Product.findOneAndUpdate(
+        { _id: gift.product_id, quantity: { $gte: gift.quantity } },
+        { $inc: { quantity: -gift.quantity } },
+        { new: true, session }
+      );
+
+      if (!giftProduct) {
+        const currentGift = await Product.findById(gift.product_id).select(
+          "quantity name"
+        );
+        throw new Error(
+          `OUT_OF_STOCK_GIFT:${currentGift?.name || "Quà tặng"}:${gift.quantity}:${currentGift?.quantity || 0}`
+        );
+      }
+    }
+  }
+
   const totals = calcTotals(orderItems, body);
 
   const newOrderArr = await Order.create(

@@ -282,3 +282,88 @@
         text-decoration: none;
     }
 }
+
+.row-wrapper {
+    border-bottom: 1px solid #eee;
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
+.gift-list {
+    margin-left: 40px;
+    margin-top: 8px;
+    background: #fff7f7;
+    border-left: 3px solid #ff4747;
+    padding: 10px 15px;
+    border-radius: 6px;
+
+    .gift-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 15px;
+
+        .gift-icon {
+            color: #ff4747;
+            margin-top: 4px;
+        }
+
+        .gift-content {
+            flex: 1;
+
+            .gift-title {
+                font-weight: 600;
+                color: #d62828;
+                margin-bottom: 4px;
+            }
+
+            .gift-products {
+                padding-left: 0;
+                margin: 0;
+                list-style-type: disc !important;
+
+                li {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-bottom: 4px;
+                    position: relative;
+                    padding-left: 16px;
+
+                    .gift-thumb {
+                        width: 28px;
+                        height: 28px;
+                        object-fit: cover;
+                        border-radius: 4px;
+                    }
+
+                    .gift-product-name {
+                        color: #333;
+                        text-decoration: none;
+
+                        &:hover {
+                            text-decoration: underline;
+                            color: #c8102e;
+                        }
+                    }
+
+                    .gift-qty {
+                        color: #888;
+                        font-size: 14px;
+                    }
+
+                    &::before {
+                        content: '•';
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        color: #ff4747;
+                        font-size: 18px;
+                        line-height: 1.2;
+                    }
+                }
+            }
+        }
+    }
+}

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import axiosClient from '~/utils/axiosClient';
 import styles from './CartPage.module.scss';
 import classNames from 'classnames/bind';
-import { FaTrashAlt } from 'react-icons/fa';
+import { FaTrashAlt, FaGift } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import { useToast } from '~/components/ToastMessager';
 import EmptyCart from '~/assets/images/emptycart/emptyCart.49efd90ea75b10bede28.png';
@@ -15,26 +15,22 @@ const cx = classNames.bind(styles);
 function CartPage() {
     const [cartItems, setCartItems] = useState([]);
     const [quantities, setQuantities] = useState({});
-    const [total, setTotal] = useState(0);
     const [removedItems, setRemovedItems] = useState([]);
-    const [removedHandled, setRemovedHandled] = useState(false); // ✅ chặn thông báo nhiều lần
+    const [removedHandled, setRemovedHandled] = useState(false);
 
     const toast = useToast();
 
+    // === Fetch cart ===
     const fetchCart = async () => {
         try {
             const res = await axiosClient.get('/carts');
             const items = res.data.items || [];
             const removed = res.data.removed || [];
 
-            console.log('✅ items:', items);
-            console.log('⚠️ removed:', removed);
-
             setCartItems(items);
             setRemovedItems(removed);
             setRemovedHandled(false);
 
-            // 🟢 Khởi tạo quantities theo API (fix bug phải bấm + mới set)
             const initialQuantities = {};
             items.forEach((item) => {
                 if (item.product_id?._id) {
@@ -42,13 +38,6 @@ function CartPage() {
                 }
             });
             setQuantities(initialQuantities);
-
-            // Cập nhật tổng tiền
-            const total = items.reduce((sum, item) => {
-                const price = item.product_id?.discountPrice ?? item.product_id?.price ?? 0;
-                return sum + price * item.quantity;
-            }, 0);
-            setTotal(total);
 
             cartEvent.emit('update-cart-count');
         } catch (err) {
@@ -60,6 +49,7 @@ function CartPage() {
         fetchCart();
     }, []);
 
+    // === Hiển thị cảnh báo khi có sản phẩm bị xóa ===
     useEffect(() => {
         if (!removedHandled && removedItems.length > 0) {
             Swal.fire({
@@ -72,41 +62,40 @@ function CartPage() {
                 </ul>`,
                 confirmButtonText: 'Đã hiểu',
             });
-            setRemovedHandled(true); // ✅ Đánh dấu đã xử lý
+            setRemovedHandled(true);
         }
     }, [removedItems, removedHandled]);
 
+    // === Cập nhật số lượng ===
     const updateQuantity = async (productId, delta) => {
         const currentQty = quantities[productId] || 1;
         const newQuantity = currentQty + delta;
         if (newQuantity < 1) return;
 
         try {
-            // 🟢 Gọi API trước để chắc chắn backend cập nhật thành công
             await axiosClient.put('/carts/update', {
                 product_id: productId,
                 quantity: newQuantity,
             });
-
-            // Nếu thành công thì mới cập nhật UI
-            setQuantities((prev) => ({
-                ...prev,
-                [productId]: newQuantity,
-            }));
+            setQuantities((prev) => ({ ...prev, [productId]: newQuantity }));
+            cartEvent.emit('update-cart-count'); // ✅ cập nhật lại CartCount ngay
+            fetchCart(); // ✅ cập nhật lại giỏ hàng
         } catch (error) {
             console.error('❌ Lỗi cập nhật số lượng:', error);
         }
     };
 
+    // === Xóa sản phẩm khỏi giỏ ===
     const removeFromCart = async (productId) => {
         await axiosClient.delete('/carts/remove', {
             data: { product_id: productId },
         });
         toast('Đã xoá sản phẩm khỏi giỏ hàng!', 'success');
         fetchCart();
-        cartEvent.emit('update-cart-count'); // 🔔 Gửi tín hiệu update count
+        cartEvent.emit('update-cart-count');
     };
 
+    // === Tổng tiền ===
     const totalPrice = cartItems.reduce((acc, item) => {
         const product = item.product_id;
         const finalPrice = product.discountPrice > 0 ? product.discountPrice : product.price;
@@ -114,10 +103,11 @@ function CartPage() {
         return acc + finalPrice * quantity;
     }, 0);
 
+    // === Giỏ hàng rỗng ===
     if (cartItems.length === 0) {
         return (
             <div className={cx('empty-cart')}>
-                <img src={EmptyCart} alt="EmptyCart"></img>
+                <img src={EmptyCart} alt="EmptyCart" />
                 <h2>Giỏ hàng của bạn đang trống</h2>
                 <p>Hãy khám phá thêm các sản phẩm hấp dẫn nhé!</p>
                 <a href="/" className={cx('go-home-btn')}>
@@ -129,12 +119,9 @@ function CartPage() {
 
     return (
         <div className={cx('cart')}>
-            {/* Cart Container */}
             <div className={cx('container')}>
-                {/* CheckOut Step List */}
                 <CheckoutStep currentStep={1} />
 
-                {/* Main */}
                 <div className={cx('header')}>
                     <h3>1. GIỎ HÀNG CỦA BẠN</h3>
                     <p>
@@ -143,6 +130,7 @@ function CartPage() {
                 </div>
 
                 <div className={cx('body')}>
+                    {/* Bảng sản phẩm */}
                     <div className={cx('table')}>
                         <div className={cx('header')}>
                             <div>Sản phẩm</div>
@@ -159,51 +147,90 @@ function CartPage() {
                             const finalPrice = product.discountPrice > 0 ? product.discountPrice : product.price;
                             const totalItemPrice = finalPrice * quantity;
 
-                            console.log('✅ item.product_id:', item.product_id);
-
-                            if (!item.product_id || typeof item.product_id !== 'object') return null;
-                            if (!item.product_id.name || !item.product_id.images || !item.product_id.slug) {
-                                console.warn('⚠️ product_id thiếu dữ liệu:', item.product_id);
-                                return null;
-                            }
+                            // ✅ Hiển thị quà tặng
+                            const gifts = Array.isArray(product.gifts) ? product.gifts : [];
 
                             return (
-                                <div className={cx('row')} key={item._id}>
-                                    <div className={cx('product')}>
-                                        <img
-                                            src={Array.isArray(product.images) ? product.images[0] : product.images}
-                                            alt={product.name}
-                                        />
-                                        <Link to={`/products/${product.slug}`} className={cx('product-name')}>
-                                            {product.name}
-                                        </Link>
+                                <div key={item._id} className={cx('row-wrapper')}>
+                                    <div className={cx('row')}>
+                                        <div className={cx('product')}>
+                                            <img
+                                                src={Array.isArray(product.images) ? product.images[0] : product.images}
+                                                alt={product.name}
+                                            />
+                                            <Link to={`/products/${product.slug}`} className={cx('product-name')}>
+                                                {product.name}
+                                            </Link>
+                                        </div>
+
+                                        <div className={cx('price')}>
+                                            {product.discountPrice > 0 && product.discountPrice < product.price && (
+                                                <span className={cx('original')}>
+                                                    {product.price.toLocaleString()}₫
+                                                </span>
+                                            )}
+                                            <div className={cx('final')}>{finalPrice.toLocaleString()}₫</div>
+                                        </div>
+
+                                        <div className={cx('quantity')}>
+                                            <button onClick={() => updateQuantity(productId, -1)}>-</button>
+                                            <span>{quantity}</span>
+                                            <button onClick={() => updateQuantity(productId, 1)}>+</button>
+                                        </div>
+
+                                        <div className={cx('subtotal')}>{totalItemPrice.toLocaleString()}₫</div>
+
+                                        <div>
+                                            <button className={cx('remove')} onClick={() => removeFromCart(productId)}>
+                                                <FaTrashAlt />
+                                            </button>
+                                        </div>
                                     </div>
 
-                                    <div className={cx('price')}>
-                                        {product.discountPrice > 0 && product.discountPrice < product.price && (
-                                            <span className={cx('original')}>{product.price.toLocaleString()}₫</span>
-                                        )}
-                                        <div className={cx('final')}>{finalPrice.toLocaleString()}₫</div>
-                                    </div>
+                                    {/* 🎁 Quà tặng */}
+                                    {product.gifts?.length > 0 && (
+                                        <div className={cx('gift-list')}>
+                                            {product.gifts.map((gift, idx) => (
+                                                <div key={idx} className={cx('gift-item')}>
+                                                    <FaGift className={cx('gift-icon')} />
+                                                    <div className={cx('gift-content')}>
+                                                        <div className={cx('gift-title')}>
+                                                            Tặng kèm: <strong>{gift.title}</strong>
+                                                        </div>
 
-                                    <div className={cx('quantity')}>
-                                        <button onClick={() => updateQuantity(productId, -1)}>-</button>
-                                        <span>{quantities[productId] ?? item.quantity}</span>
-                                        <button onClick={() => updateQuantity(productId, 1)}>+</button>
-                                    </div>
-
-                                    <div className={cx('subtotal')}>{totalItemPrice.toLocaleString()}₫</div>
-
-                                    <div>
-                                        <button className={cx('remove')} onClick={() => removeFromCart(productId)}>
-                                            <FaTrashAlt />
-                                        </button>
-                                    </div>
+                                                        {/* Danh sách sản phẩm trong gói quà */}
+                                                        {Array.isArray(gift.products) && gift.products.length > 0 && (
+                                                            <ul className={cx('gift-products')}>
+                                                                {gift.products.map((p, i) => (
+                                                                    <li key={i}>
+                                                                        <Link
+                                                                            to={`/products/${p.productId?.slug}`}
+                                                                            className={cx('gift-product-name')}
+                                                                        >
+                                                                            {p.productId?.name}
+                                                                        </Link>
+                                                                        <span className={cx('gift-qty')}>
+                                                                            x{p.quantity * quantity}{' '}
+                                                                            {/* ✅ nhân với số lượng chính */}
+                                                                        </span>
+                                                                        <span className={cx('gift-price')}>
+                                                                            trị giá {p.finalPrice?.toLocaleString()}₫
+                                                                        </span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
                     </div>
 
+                    {/* Tóm tắt đơn hàng */}
                     <div className={cx('summary')}>
                         <div className={cx('summary-wrap')}>
                             <h3>Thông tin đơn hàng</h3>
