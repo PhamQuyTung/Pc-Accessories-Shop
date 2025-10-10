@@ -20,39 +20,45 @@ class ProductController {
         limit = 10,
       } = req.query;
 
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
+      const pageNum = Number(page);
+      const limitNum = Number(limit);
       const skip = (pageNum - 1) * limitNum;
 
-      let match = { deleted: { $ne: true } };
+      /** -----------------------------
+       * 🧩 1. Xây điều kiện lọc (match)
+       * ----------------------------- */
+      const match = { deleted: { $ne: true } };
 
-      if (search) {
-        match.name = { $regex: search, $options: "i" };
-      }
+      if (search) match.name = { $regex: search, $options: "i" };
 
+      // Lọc theo categoryId hoặc slug
       if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
         match.category = new mongoose.Types.ObjectId(categoryId);
       } else if (category) {
         const cat = await Category.findOne({ slug: category });
-        if (cat) {
-          match.category = cat._id;
-        }
+        if (cat) match.category = cat._id;
       }
 
+      // Lọc theo visible
       if (visible !== undefined && visible !== "") {
         match.visible = visible === "true";
       }
 
-      if (isAdmin !== "true") {
-        match.visible = true;
-      }
+      // Nếu không phải admin thì chỉ lấy sản phẩm hiển thị
+      if (isAdmin !== "true") match.visible = true;
 
-      // 👉 Tính tổng số sản phẩm trước (không bị ảnh hưởng bởi skip/limit)
+      /** -----------------------------
+       * 📊 2. Tính tổng số sản phẩm
+       * ----------------------------- */
       const totalCount = await Product.countDocuments(match);
 
-      // 👉 Pipeline chính
-      let pipeline = [
+      /** -----------------------------
+       * 🧱 3. Pipeline chính
+       * ----------------------------- */
+      const pipeline = [
         { $match: match },
+
+        // ---- Category ----
         {
           $lookup: {
             from: "categories",
@@ -62,6 +68,8 @@ class ProductController {
           },
         },
         { $unwind: "$category" },
+
+        // ---- Brand ----
         {
           $lookup: {
             from: "brands",
@@ -71,9 +79,8 @@ class ProductController {
           },
         },
         { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
-        // -------------------------
-        // 🎁 Populate quà tặng (gifts -> products -> productData)
-        // -------------------------
+
+        // ---- 🎁 Gifts (populate products) ----
         {
           $lookup: {
             from: "gifts",
@@ -125,9 +132,8 @@ class ProductController {
             newRoot: { $mergeObjects: ["$doc", { gifts: "$gifts" }] },
           },
         },
-        // -------------------------
-        // ⭐ Reviews, rating & giá
-        // -------------------------
+
+        // ---- ⭐ Reviews, rating, giá ----
         {
           $lookup: {
             from: "reviews",
@@ -157,7 +163,9 @@ class ProductController {
         },
       ];
 
-      // 👉 Nếu sort theo giá thì thêm field sortPrice
+      /** -----------------------------
+       * ⚙️ 4. Sort + Phân trang
+       * ----------------------------- */
       if (sort && sort.startsWith("price")) {
         pipeline.push({
           $addFields: {
@@ -172,7 +180,6 @@ class ProductController {
         });
       }
 
-      // 👉 Sort
       if (sort) {
         const [field, order] = sort.split("_");
         const sortValue = order === "asc" ? 1 : -1;
@@ -182,20 +189,35 @@ class ProductController {
         pipeline.push({ $sort: { createdAt: -1 } });
       }
 
-      // 👉 Phân trang
       pipeline.push({ $skip: skip }, { $limit: limitNum });
 
-      // 🧩 Chạy pipeline
+      /** -----------------------------
+       * 🚀 5. Chạy pipeline
+       * ----------------------------- */
       const products = await Product.aggregate(pipeline);
 
-      // ✅ Tính status động theo quantity
-      const productsWithStatus = products.map((p) => ({
-        ...p,
-        status: computeProductStatus(p, { importing: p.importing }),
-      }));
+      /** -----------------------------
+       * 🧹 6. Làm sạch gifts + thêm status
+       * ----------------------------- */
+      const cleanedProducts = products.map((p) => {
+        const validGifts = Array.isArray(p.gifts)
+          ? p.gifts.filter(
+              (g) => g && g._id && g.title && g.title.trim() !== ""
+            )
+          : [];
 
+        return {
+          ...p,
+          gifts: validGifts,
+          status: computeProductStatus(p, { importing: p.importing }),
+        };
+      });
+
+      /** -----------------------------
+       * 📦 7. Trả về kết quả
+       * ----------------------------- */
       res.status(200).json({
-        products: productsWithStatus,
+        products: cleanedProducts,
         totalCount,
         currentPage: pageNum,
         totalPages: Math.ceil(totalCount / limitNum),

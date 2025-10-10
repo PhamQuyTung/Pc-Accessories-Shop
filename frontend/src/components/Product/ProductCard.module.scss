@@ -210,7 +210,7 @@
     align-items: center;
     justify-content: space-between;
     flex-wrap: nowrap;
-    padding-bottom: 5px;
+    margin: 10px 0;
     height: 34px;
     white-space: nowrap;
     // margin-top: -40px;
@@ -230,7 +230,7 @@
     text-align: start;
     // position: absolute;
     // top: 46%;
-    padding: 2px 16px;
+    padding: 5px 16px;
     background: #1e9800;
     color: #fff;
     border-radius: 16px;
@@ -240,7 +240,7 @@
 
 .many-tag {
     display: inline-block;
-    padding: 2px 16px;
+    padding: 5px 16px;
     background: #007bff;
     color: #fff;
     border-radius: 16px;
@@ -251,7 +251,7 @@
 
 .in-stock {
     display: inline-block;
-    padding: 2px 16px;
+    padding: 5px 16px;
     background: #28a745;
     color: #fff;
     border-radius: 16px;
@@ -262,7 +262,7 @@
 
 .low-stock {
     display: inline-block;
-    padding: 2px 16px;
+    padding: 5px 16px;
     background: #ff9800;
     color: #fff;
     border-radius: 16px;
@@ -273,7 +273,7 @@
 
 .out-stock {
     display: inline-block;
-    padding: 2px 16px;
+    padding: 5px 16px;
     background: #dc3545;
     color: #fff;
     border-radius: 16px;
@@ -284,7 +284,7 @@
 
 .importing-tag {
     display: inline-block;
-    padding: 2px 16px;
+    padding: 5px 16px;
     background: #6c757d;
     color: #fff;
     border-radius: 16px;

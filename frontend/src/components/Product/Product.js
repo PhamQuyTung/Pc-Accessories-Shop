@@ -36,6 +36,7 @@ function Product({ category }) {
                 });
 
                 const data = res.data;
+                console.log('🧠 Sample product:', data.products?.[0]);
 
                 if (Array.isArray(data.products)) {
                     setProducts(data.products);
@@ -85,24 +86,26 @@ function Product({ category }) {
                     <SwiperSlide key={product._id} className={cx('custom-slide')}>
                         <div className={cx('product-card')}>
                             <div className={cx('proloop-label--bottom')}>
-                                {product.status.includes('quà tặng') && (
-                                    <span className={cx('gift-tag')}>
-                                        <div className={cx('gift-tag__hot')}>
-                                            <FireIcon className={cx('icon-fire')} />
-                                            Quà tặng HOT
-                                        </div>
-                                        <div className={cx('gift-tag__box')}>
-                                            <GiftIcon className={cx('icon-gift')} />
-                                        </div>
-                                    </span>
-                                )}
+                                {typeof product.status === 'string' &&
+                                    product.status.toLowerCase().includes('quà tặng') && (
+                                        <span className={cx('gift-tag')}>
+                                            <div className={cx('gift-tag__hot')}>
+                                                <FireIcon className={cx('icon-fire')} />
+                                                Quà tặng HOT
+                                            </div>
+                                            <div className={cx('gift-tag__box')}>
+                                                <GiftIcon className={cx('icon-gift')} />
+                                            </div>
+                                        </span>
+                                    )}
 
                                 {/* Hiển thị icon nhỏ nếu product.gifts có quà kèm */}
-                                {Array.isArray(product.gifts) && product.gifts.length > 0 && (
-                                    <span className={cx('gift-badge')}>
-                                        <GiftIcon className={cx('icon-gift-small')} />
-                                    </span>
-                                )}
+                                {Array.isArray(product.gifts) &&
+                                    product.gifts.some((g) => g && Object.keys(g).length > 0) && (
+                                        <span className={cx('gift-badge')}>
+                                            <GiftIcon className={cx('icon-gift-small')} />
+                                        </span>
+                                    )}
                             </div>
 
                             <Link to={`/products/${product.slug}`}>
@@ -135,9 +138,7 @@ function Product({ category }) {
                                 {product.isBestSeller && (
                                     <span className={cx('bestseller-tag')}>
                                         <FireIcon className={cx('icon-fire')} />
-                                        <span className={cx('bestseller-label')}>
-                                            Bán chạy
-                                        </span>
+                                        <span className={cx('bestseller-label')}>Bán chạy</span>
                                     </span>
                                 )}
                             </div>

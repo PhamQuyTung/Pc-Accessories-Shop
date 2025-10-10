@@ -21,6 +21,16 @@ const orderSchema = new mongoose.Schema(
         discountPrice: Number, // giá giảm (nếu có)
         finalPrice: Number, // giá thực tế (price hoặc discountPrice)
         total: Number, // finalPrice * quantity
+        // ⚡️ THÊM PHẦN NÀY ĐỂ LƯU QUÀ TẶNG
+        gifts: [
+          {
+            productId: {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: "Product",
+            },
+            quantity: Number, // số lượng quà
+          },
+        ],
       },
     ],
 

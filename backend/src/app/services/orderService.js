@@ -35,25 +35,72 @@ async function restoreGiftStockForItems(items, session = null) {
   if (!Array.isArray(items) || items.length === 0) return;
 
   for (const item of items) {
+    const productId = item.product_id?._id || item.product_id;
+    const product = await Product.findById(productId);
+    if (!product) continue;
+
+    console.log("🧩 Restoring stock for:", product.name);
+
+    // // 1️⃣ Hoàn stock cho sản phẩm chính
+    // const mainRestoreQty = item.quantity;
+    // await Product.findByIdAndUpdate(
+    //   productId,
+    //   { $inc: { quantity: mainRestoreQty } },
+    //   { session }
+    // );
+    // console.log(
+    //   `✅ Restored ${mainRestoreQty} for main product ${product.name}`
+    // );
+
+    // 2️⃣ Nếu đơn có quà, hoàn lại từng quà
+    if (Array.isArray(item.gifts) && item.gifts.length > 0) {
+      for (const g of item.gifts) {
+        const giftId = g.productId?._id || g.productId;
+        const restoreQty = g.quantity * item.quantity;
+
+        await Product.findByIdAndUpdate(
+          giftId,
+          { $inc: { quantity: restoreQty } },
+          { session }
+        );
+        console.log(`🎁 Restored ${restoreQty} for gift ${giftId}`);
+      }
+    } else {
+      console.log("⚠️ No gifts found in order item:", product.name);
+    }
+  }
+}
+
+// --- helper deduct gift stock (khi restore đơn) ---
+async function deductGiftStockForItems(items, session = null) {
+  if (!Array.isArray(items) || items.length === 0) return;
+
+  for (const item of items) {
     const product =
       item.product_id && item.product_id._id
         ? await Product.findById(item.product_id._id)
         : await Product.findById(item.product_id);
     if (!product || !Array.isArray(product.gifts)) continue;
 
-    // Duyệt qua các nhóm quà
     for (const giftGroup of product.gifts) {
       if (!Array.isArray(giftGroup.products)) continue;
-
       for (const gItem of giftGroup.products) {
         const giftId = gItem.productId?._id || gItem.productId;
         const totalGiftQty = gItem.quantity * item.quantity;
 
-        await Product.findByIdAndUpdate(
-          giftId,
-          { $inc: { quantity: totalGiftQty } },
+        const giftProduct = await Product.findOneAndUpdate(
+          { _id: giftId, quantity: { $gte: totalGiftQty } },
+          { $inc: { quantity: -totalGiftQty } },
           { new: true, session }
         );
+
+        if (!giftProduct) {
+          const currentGift =
+            await Product.findById(giftId).select("name quantity");
+          throw new Error(
+            `OUT_OF_STOCK_GIFT:${currentGift?.name || "Quà tặng"}:${totalGiftQty}:${currentGift?.quantity || 0}`
+          );
+        }
       }
     }
   }
@@ -174,14 +221,27 @@ async function checkoutOrder(userId, body, session) {
       }
     }
 
-    // 3.3️⃣ Thêm sản phẩm vào danh sách order
+    // 3.3️⃣ Gắn danh sách quà tặng snapshot vào orderItem
+    let giftSnapshot = [];
+
+    if (Array.isArray(product.gifts) && product.gifts.length > 0) {
+      giftSnapshot = product.gifts.flatMap((group) =>
+        (group.products || []).map((g) => ({
+          productId: g.productId?._id || g.productId,
+          quantity: g.quantity, // ⚡ chỉ lưu số lượng 1 lần (restoreGiftStockForItems sẽ nhân thêm theo item.quantity)
+        }))
+      );
+    }
+
     orderItems.push({
       product_id: product._id,
+      productName: product.name,
       quantity: item.quantity,
       price: product.price,
       discountPrice: product.discountPrice,
       finalPrice,
       total: finalPrice * item.quantity,
+      gifts: giftSnapshot, // ✅ chỉ lưu mảng gọn gồm { productId, quantity }
     });
   }
 
@@ -230,22 +290,37 @@ async function cancelOrder(orderId, userId, reason) {
 
 // Xóa mềm đơn hàng
 async function deleteOrder(orderId, userId) {
-  const order = await Order.findOne({ _id: orderId, user_id: userId });
-  if (!order) throw new Error("NOT_FOUND");
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const order = await Order.findOne({
+      _id: orderId,
+      user_id: userId,
+    }).session(session);
+    if (!order) throw new Error("NOT_FOUND");
 
-  if (!["cancelled", "deleted"].includes(order.status)) {
-    await restoreStockForItems(order.items);
-    await restoreGiftStockForItems(order.items);
-    await updateSoldCountForItems(order.items, null, true);
+    if (!["cancelled", "deleted"].includes(order.status)) {
+      await restoreStockForItems(order.items, session);
+      await restoreGiftStockForItems(order.items, session);
+      await updateSoldCountForItems(order.items, session, true);
+    }
+
+    order.status = "deleted";
+    await order.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return await Order.findById(order._id).populate(
+      "items.product_id",
+      "name slug price discountPrice images status deleted"
+    );
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("❌ deleteOrder error:", err.message);
+    throw err;
   }
-
-  order.status = "deleted";
-  await order.save();
-
-  return await Order.findById(order._id).populate(
-    "items.product_id",
-    "name slug price discountPrice images status deleted"
-  );
 }
 
 // User - get own orders
@@ -530,6 +605,7 @@ async function restoreOrder(orderId) {
     }).session(session);
     if (!order) throw new Error("NOT_FOUND");
 
+    // 👉 1. Trừ tồn sản phẩm chính
     for (const item of order.items) {
       const pid = item.product_id._id ? item.product_id._id : item.product_id;
       const updated = await Product.findOneAndUpdate(
@@ -537,39 +613,24 @@ async function restoreOrder(orderId) {
         { $inc: { quantity: -item.quantity } },
         { new: true, session }
       );
-      if (!updated) throw new Error(`OUT_OF_STOCK:${pid}`);
+
+      if (!updated) {
+        const p = await Product.findById(pid).select("name quantity");
+        throw new Error(
+          `OUT_OF_STOCK:${p?.name || pid}:${item.quantity}:${p?.quantity ?? 0}`
+        );
+      }
     }
 
-    // 👉 Trừ tồn quà tặng khi khôi phục đơn
-    await (async () => {
-      for (const item of order.items) {
-        const product =
-          item.product_id && item.product_id._id
-            ? await Product.findById(item.product_id._id).session(session)
-            : await Product.findById(item.product_id).session(session);
-        if (!product || !Array.isArray(product.gifts)) continue;
+    // 👉 2. Trừ tồn kho quà tặng (gộp logic thành hàm riêng)
+    await deductGiftStockForItems(order.items, session);
 
-        for (const giftGroup of product.gifts) {
-          if (!Array.isArray(giftGroup.products)) continue;
-          for (const gItem of giftGroup.products) {
-            const giftId = gItem.productId?._id || gItem.productId;
-            const totalGiftQty = gItem.quantity * item.quantity;
+    // 👉 3. Cập nhật số lượng bán ra
+    await updateSoldCountForItems(order.items, session, false);
 
-            const giftProduct = await Product.findOneAndUpdate(
-              { _id: giftId, quantity: { $gte: totalGiftQty } },
-              { $inc: { quantity: -totalGiftQty } },
-              { new: true, session }
-            );
-            if (!giftProduct) throw new Error(`OUT_OF_STOCK_GIFT:${giftId}`);
-          }
-        }
-      }
-    })();
-
+    // 👉 4. Đặt lại trạng thái đơn hàng
     order.status = "new";
     await order.save({ session });
-
-    await updateSoldCountForItems(order.items, session, false);
 
     await session.commitTransaction();
     session.endSession();
@@ -578,22 +639,35 @@ async function restoreOrder(orderId) {
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
+    console.error("❌ Lỗi restoreOrder:", err.message);
     throw err;
   }
 }
 
 async function forceDeleteOrder(orderId) {
-  const order = await Order.findById(orderId);
-  if (!order) throw new Error("NOT_FOUND");
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const order = await Order.findById(orderId).session(session);
+    if (!order) throw new Error("NOT_FOUND");
 
-  if (!["cancelled", "deleted"].includes(order.status)) {
-    await restoreStockForItems(order.items);
-    await restoreGiftStockForItems(order.items);
-    await updateSoldCountForItems(order.items, null, true);
+    if (!["cancelled", "deleted"].includes(order.status)) {
+      await restoreStockForItems(order.items, session);
+      await restoreGiftStockForItems(order.items, session);
+      await updateSoldCountForItems(order.items, session, true);
+    }
+
+    await Order.findByIdAndDelete(orderId).session(session);
+
+    await session.commitTransaction();
+    session.endSession();
+    return order;
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("❌ forceDeleteOrder error:", err.message);
+    throw err;
   }
-
-  await Order.findByIdAndDelete(orderId);
-  return order;
 }
 
 async function forceDeleteOrderByUser(orderId, userId) {
