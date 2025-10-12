@@ -324,3 +324,51 @@
         }
     }
 }
+
+.order-item-block {
+    margin-bottom: 12px;
+}
+
+.gift-section {
+    background: #fff9f4;
+    border: 1px dashed #ff9500;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-top: 6px;
+}
+
+.gift-title {
+    font-weight: 600;
+    color: #ff6b00;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.gift-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.gift-item {
+    background: #fff;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 14px;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.05);
+    list-style-type: auto;
+}
+
+.gift-thumb {
+    width: 30px;
+    height: 30px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.gift-info {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #333;
+}

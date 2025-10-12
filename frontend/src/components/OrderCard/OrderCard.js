@@ -171,6 +171,30 @@ function OrderCard({ order, onCancel, onReorder }) {
                                                 </p>
                                             )}
                                         </div>
+
+                                        {/* Quà tặng kèm */}
+                                        {Array.isArray(item.gifts) && item.gifts.length > 0 && (
+                                            <div className={cx('gift-section')}>
+                                                <div className={cx('gift-title')}>🎁 Quà tặng kèm</div>
+                                                <ul className={cx('gift-list')}>
+                                                    {item.gifts.map((gift, index) => (
+                                                        <li key={index} className={cx('gift-item')}>
+                                                            {/* <img
+                                                                src={getProductImage(gift.productId)}
+                                                                alt={gift.productId?.name || 'Quà tặng'}
+                                                                className={cx('gift-thumb')}
+                                                            /> */}
+                                                            <div className={cx('gift-info')}>
+                                                                <span className={cx('gift-name')}>
+                                                                    {gift.productId?.name}
+                                                                </span>
+                                                                <span className={cx('gift-qty')}> x{gift.quantity * item.quantity}</span>
+                                                            </div>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}

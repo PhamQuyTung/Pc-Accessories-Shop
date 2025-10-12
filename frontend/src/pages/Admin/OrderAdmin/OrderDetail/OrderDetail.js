@@ -4,6 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './OrderDetail.module.scss';
 import axios from 'axios';
+import axiosClient from '~/utils/axiosClient';
 import { useReactToPrint } from 'react-to-print';
 import Invoice from '~/components/Invoice/Invoice';
 
@@ -26,6 +27,22 @@ const OrderDetail = () => {
     const [newStatus, setNewStatus] = useState('');
     const [updating, setUpdating] = useState(false);
 
+    // Ngay trên return hoặc ở đầu component:
+    const [gifts, setGifts] = useState([]);
+
+    // Gọi API lấy quà tặng
+    useEffect(() => {
+        const fetchGifts = async () => {
+            try {
+                const res = await axiosClient.get('/gifts');
+                setGifts(res.data || []);
+            } catch (err) {
+                console.error('Lỗi khi lấy danh sách quà tặng:', err);
+            }
+        };
+        fetchGifts();
+    }, []);
+
     // 👉 ref cho phần in
     const printRef = useRef();
 
@@ -47,7 +64,7 @@ const OrderDetail = () => {
                     setOrder(null);
                     return;
                 }
-                
+
                 setOrder(res.data.order);
                 setNewStatus(res.data.order.status);
             } catch (err) {
@@ -204,6 +221,56 @@ const OrderDetail = () => {
                         })}
                     </tbody>
                 </table>
+
+                {/* Phần quà tặng */}
+                {gifts.length > 0 && (
+                    <div className={cx('gifts')}>
+                        <h3>🎁 Quà tặng kèm</h3>
+                        {gifts.map((gift) => (
+                            <div key={gift._id} className={cx('gift-item')}>
+                                <h4>{gift.title}</h4>
+                                <table className={cx('gift-table')}>
+                                    <thead>
+                                        <tr>
+                                            <th>Sản phẩm</th>
+                                            <th className={cx('text-center')}>Số lượng</th>
+                                            <th className={cx('text-right')}>Giá</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {gift.products.map((p) => {
+                                            const prod = p.productId;
+                                            const img = prod?.images?.[0] || '/no-image.png';
+                                            return (
+                                                <tr key={p.productId?._id || p.productName}>
+                                                    <td className={cx('product-cell')}>
+                                                        <img
+                                                            src={img}
+                                                            alt={prod?.name || p.productName}
+                                                            className={cx('product-img')}
+                                                        />
+                                                        <span>{prod?.name || p.productName}</span>
+                                                    </td>
+                                                    
+                                                    <td className={cx('text-center')}>
+                                                        {p.quantity *
+                                                            order.items.reduce((sum, i) => sum + i.quantity, 0)}
+                                                    </td>
+
+                                                    <td className={cx('text-right')}>
+                                                        {p.finalPrice
+                                                            ? `${p.finalPrice.toLocaleString('vi-VN')} ₫`
+                                                            : '—'}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Tổng cộng */}

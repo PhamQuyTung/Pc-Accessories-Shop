@@ -76,32 +76,27 @@ async function deductGiftStockForItems(items, session = null) {
   if (!Array.isArray(items) || items.length === 0) return;
 
   for (const item of items) {
-    const product =
-      item.product_id && item.product_id._id
-        ? await Product.findById(item.product_id._id)
-        : await Product.findById(item.product_id);
-    if (!product || !Array.isArray(product.gifts)) continue;
+    if (!Array.isArray(item.gifts) || item.gifts.length === 0) continue;
 
-    for (const giftGroup of product.gifts) {
-      if (!Array.isArray(giftGroup.products)) continue;
-      for (const gItem of giftGroup.products) {
-        const giftId = gItem.productId?._id || gItem.productId;
-        const totalGiftQty = gItem.quantity * item.quantity;
+    for (const g of item.gifts) {
+      const giftId = g.productId?._id || g.productId;
+      const totalGiftQty = (g.quantity || 1) * (item.quantity || 1);
 
-        const giftProduct = await Product.findOneAndUpdate(
-          { _id: giftId, quantity: { $gte: totalGiftQty } },
-          { $inc: { quantity: -totalGiftQty } },
-          { new: true, session }
+      const giftProduct = await Product.findOneAndUpdate(
+        { _id: giftId, quantity: { $gte: totalGiftQty } },
+        { $inc: { quantity: -totalGiftQty } },
+        { new: true, session }
+      );
+
+      if (!giftProduct) {
+        const currentGift =
+          await Product.findById(giftId).select("name quantity");
+        throw new Error(
+          `OUT_OF_STOCK_GIFT:${currentGift?.name || "Quà tặng"}:${totalGiftQty}:${currentGift?.quantity || 0}`
         );
-
-        if (!giftProduct) {
-          const currentGift =
-            await Product.findById(giftId).select("name quantity");
-          throw new Error(
-            `OUT_OF_STOCK_GIFT:${currentGift?.name || "Quà tặng"}:${totalGiftQty}:${currentGift?.quantity || 0}`
-          );
-        }
       }
+
+      console.log(`🎁 Deducted ${totalGiftQty} for gift ${giftProduct.name}`);
     }
   }
 }
