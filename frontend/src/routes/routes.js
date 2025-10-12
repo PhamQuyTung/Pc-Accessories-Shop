@@ -70,6 +70,7 @@ import PostListTagPage from '~/pages/PostListTagPage/PostListTagPage';
 import SearchBlogPage from '~/components/SearchBlogPage/SearchBlogPage';
 import CreateGiftPage from '~/pages/Admin/Gift/CreateGiftPage/CreateGiftPage';
 import EditGiftPage from '~/pages/Admin/Gift/EditGiftPage/EditGiftPage';
+import AdminPromotionGift from '~/pages/Admin/AdminPromotionGift/AdminPromotionGift';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -176,6 +177,9 @@ const routes = [
             { path: 'gifts', element: <AdminGiftsManagement /> }, // Tất cả danh sách quà tặng
             { path: 'gifts/create', element: <CreateGiftPage /> }, // Tạo quà mới
             { path: 'gifts/:id/edit', element: <EditGiftPage /> }, // Sửa quà tặng
+
+            // Quản lý khuyến mãi quà tặng
+            { path: 'promotion-gifts', element: <AdminPromotionGift /> }, // Tất cả danh sách khuyến mãi quà tặng
         ],
     },
 

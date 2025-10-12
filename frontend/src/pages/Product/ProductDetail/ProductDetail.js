@@ -61,6 +61,17 @@ function ProductDetail() {
         return date.toLocaleDateString('vi-VN'); // ví dụ: 25/06/2025
     };
 
+    const [promotionGifts, setPromotionGifts] = useState([]);
+
+    useEffect(() => {
+        if (product?._id) {
+            axiosClient
+                .get(`/promotion-gifts/by-product/${product._id}`)
+                .then((res) => setPromotionGifts(res.data || []))
+                .catch((err) => console.error('Lỗi khi lấy khuyến mãi:', err));
+        }
+    }, [product]);
+
     // Logic lấy sản phẩm liên quan
     useEffect(() => {
         if (product) {
@@ -392,6 +403,7 @@ function ProductDetail() {
                             </div>
 
                             <div className={cx('product-info__fsz16')}>
+                                {/* Đánh giá sản phẩm */}
                                 <div className={cx('product-info__rating')}>
                                     <span
                                         className={cx('rating-count')}
@@ -413,7 +425,8 @@ function ProductDetail() {
                                         />
                                     </button>
                                 </div>
-
+                                
+                                {/* Giá sản phẩm */}
                                 <div className={cx('product-info__cost')}>
                                     {product.discountPrice && product.discountPrice < product.price ? (
                                         <>
@@ -433,7 +446,8 @@ function ProductDetail() {
                                         </p>
                                     )}
                                 </div>
-
+                                
+                                {/* Trạng thái sản phẩm */}
                                 <div className={cx('product-info__status')}>
                                     {product.status && product.status.length > 0 ? (
                                         product.status.map((st, idx) => (
@@ -460,7 +474,8 @@ function ProductDetail() {
 
                                 {/* ✅ Hiển thị quà tặng khuyến mãi */}
                                 <GiftList gifts={product.gifts} />
-
+                                
+                                {/* Nút mua sản phẩm & nút chat ngay */}
                                 <div className={cx('product-info__actions')}>
                                     {/* <div className={cx('quantity-control')}>
                                         <button onClick={() => setQuantity((prev) => Math.max(prev - 1, 1))}>−</button>
@@ -511,10 +526,37 @@ function ProductDetail() {
                                     </button>
                                 </div>
 
+                                {/* Mô tả ngắn */}
                                 <div
                                     className={cx('product-info__short-desc')}
                                     dangerouslySetInnerHTML={{ __html: product.shortDescription }}
                                 ></div>
+
+                                {/* ✅ Khuyến mãi kèm theo */}
+                                {promotionGifts.length > 0 && (
+                                    <div className={cx('promotion-section')}>
+                                        <h4>Khuyến mãi</h4>
+                                        <ul className={cx('promotion-list')}>
+                                            {promotionGifts.map((promo) => (
+                                                <li key={promo._id}>
+                                                    <span className={cx('icon')}>✅</span>
+                                                    <span>
+                                                        {promo.title}.{' '}
+                                                        {promo.link && (
+                                                            <a
+                                                                href={promo.link}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                            >
+                                                                (Xem thêm)
+                                                            </a>
+                                                        )}
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </Col>
