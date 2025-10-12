@@ -16,7 +16,7 @@ import OrdersPage from '~/pages/OrdersPage/OrdersPage';
 import SearchResultPage from '~/components/SearchResultPage/SearchResultPage';
 import NotFoundPage from '~/pages/NotFoundPage/NotFoundPage';
 import CollectionsPage from '~/pages/CollectionsPage/CollectionsPage';
-import Promotion from '~/pages/Promotion';
+import Promotion from '~/pages/PromotionLinkProduct/PromotionLinkProduct';
 import Contact from '~/pages/Contact';
 import Blog from '~/pages/BlogPage/BlogPage';
 

@@ -9,6 +9,9 @@ router.get("/", auth, PromotionGiftController.list);
 // ✅ Thêm mới
 router.post("/", auth, PromotionGiftController.create);
 
+// ✅ Cập nhật
+router.patch("/:id", auth, PromotionGiftController.update);
+
 // ✅ Xoá
 router.delete("/:id", auth, PromotionGiftController.remove);
 

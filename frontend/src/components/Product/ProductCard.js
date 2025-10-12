@@ -33,7 +33,7 @@ function ProductCard({ product, viewMode }) {
                 {Array.isArray(product.gifts) && product.gifts.length > 0 && (
                     <span className={cx('gift-badge')}>
                         <GiftIcon className={cx('icon-gift-small')} />
-                        <span className={cx('gift-badge__text')}>{product.gifts.length > 1 ? `${product.gifts.length} quà` : 'Quà'}</span>
+                        {/* <span className={cx('gift-badge__text')}>{product.gifts.length > 1 ? `${product.gifts.length} quà` : 'Quà'}</span> */}
                     </span>
                 )}
             </div>
