@@ -17,7 +17,7 @@ function LTG() {
             <SectionHeading
                 title={category.name}
                 shTitle="Miễn phí giao hàng"
-                link={`/collections/${category.slug}`}
+                link={`/categories/${category.slug}`}
             />
             <div className={cx('LTG-product')}>
                 <ProductList category={category.slug} />

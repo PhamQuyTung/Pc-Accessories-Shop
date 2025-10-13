@@ -17,7 +17,7 @@ function PC() {
             <SectionHeading
                 title={category.name}
                 shTitle="Trả góp 0%"
-                link={`/collections/${category.slug}`}
+                link={`/categories/${category.slug}`}
             />
             <div className={cx('PC-product')}>
                 <ProductList category={category.slug} />

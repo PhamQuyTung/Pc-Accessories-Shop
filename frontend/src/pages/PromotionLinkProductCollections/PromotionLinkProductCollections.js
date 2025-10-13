@@ -2,8 +2,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axiosClient from '~/utils/axiosClient';
-import styles from './PromotionLinkProductCollections.module.scss';
 import classNames from 'classnames/bind';
+import styles from './PromotionLinkProductCollections.module.scss';
+
+import Breadcrumb from '~/components/Breadcrumb/Breadcrumb';
+import ProductCard from '~/components/Product/ProductCard';
+import ExpandableContent from '~/components/ExpandableContent/ExpandableContent';
 
 const cx = classNames.bind(styles);
 
@@ -27,48 +31,64 @@ function PromotionLinkProductCollections() {
         fetchPromotion();
     }, [id]);
 
-    if (loading) return <p className={cx('loading')}>Đang tải chi tiết khuyến mãi...</p>;
-    if (!promotion) return <p className={cx('empty')}>Không tìm thấy khuyến mãi này.</p>;
+    if (loading) return <div className={cx('loading')}>Đang tải khuyến mãi...</div>;
+    if (!promotion) return <div className={cx('empty')}>Không tìm thấy khuyến mãi này.</div>;
 
     return (
-        <div className={cx('wrapper')}>
-            <h1 className={cx('title')}>🎁 {promotion.title}</h1>
-            <p className={cx('desc')}>{promotion.description}</p>
+        <div className={cx('promotion-wrapper')}>
+            <div className={cx('promotion-breadcrumb')}>
+                {/* 🔹 Breadcrumb */}
+                <Breadcrumb
+                    type="promotion"
+                    customData={[
+                        { path: '/', label: 'Trang chủ' },
+                        { path: '/promotion', label: 'Khuyến mãi' },
+                        { path: `/promotion/${promotion._id}`, label: promotion.title },
+                    ]}
+                />
+            </div>
 
-            <div className={cx('mainProduct')}>
-                <h2 className={cx('sectionTitle')}>Sản phẩm chính:</h2>
-                <div className={cx('mainProductInfo')}>
-                    <img
-                        src={promotion.conditionProduct?.images?.[0]}
-                        alt={promotion.conditionProduct?.name}
-                        className={cx('thumb')}
-                    />
-                    <span>{promotion.conditionProduct?.name}</span>
+            <div className={cx('promotion-content')}>
+                {/* 🔹 Header */}
+                <div className={cx('promotion-header')}>
+                    <div className={cx('header-content')}>
+                        <h1 className={cx('promotion-title')}>{promotion.title}</h1>
+                        <ExpandableContent html={promotion.description} previewHeight={800} />
+                    </div>
+                    {/* {promotion.banner && (
+                        <div className={cx('banner')}>
+                            <img src={promotion.banner} alt={promotion.title} />
+                        </div>
+                    )} */}
+                </div>
+
+                {/* 🔹 Sản phẩm chính */}
+                {promotion.conditionProduct && (
+                    <section className={cx('main-product')}>
+                        <h2 className={cx('section-title')}>🎯 Sản phẩm chính</h2>
+                        <div className={cx('main-product-card')}>
+                            <ProductCard product={promotion.conditionProduct} />
+                        </div>
+                    </section>
+                )}
+
+                {/* 🔹 Danh sách sản phẩm mua kèm */}
+                {promotion.relatedProducts?.length > 0 && (
+                    <section className={cx('related-section')}>
+                        <h2 className={cx('section-title')}>🛒 Danh sách sản phẩm mua kèm</h2>
+                        <div className={cx('product-grid')}>
+                            {promotion.relatedProducts.map((item) => (
+                                <ProductCard key={item._id} product={item} />
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* 🔹 Quay lại */}
+                <div className={cx('back-link')}>
+                    <Link to="/promotion">← Quay lại danh sách khuyến mãi</Link>
                 </div>
             </div>
-
-            <h3 className={cx('sectionTitle')}>Danh sách sản phẩm mua kèm:</h3>
-            <div className={cx('grid')}>
-                {promotion.relatedProducts?.map((item) => (
-                    <div key={item._id} className={cx('card')}>
-                        <img src={item.images?.[0]} alt={item.name} className={cx('productImg')} />
-                        <p className={cx('productName')}>{item.name}</p>
-                        <p className={cx('price')}>Giá: {item.price?.toLocaleString('vi-VN')}₫</p>
-
-                        {promotion.discountType === 'amount' ? (
-                            <p className={cx('discount')}>Giảm {promotion.discountValue.toLocaleString('vi-VN')}₫</p>
-                        ) : (
-                            <p className={cx('discount')}>
-                                Giảm {promotion.discountValue}% khi mua cùng sản phẩm chính
-                            </p>
-                        )}
-                    </div>
-                ))}
-            </div>
-
-            <Link to="/promotion" className={cx('backLink')}>
-                ← Quay lại danh sách khuyến mãi
-            </Link>
         </div>
     );
 }

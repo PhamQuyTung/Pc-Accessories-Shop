@@ -18,7 +18,7 @@ function Chuot() {
             <SectionHeading
                 title={category.name}
                 shTitle="Giao hàng toàn quốc"
-                link={`/collections/${category.slug}`}
+                link={`/categories/${category.slug}`}
             />
             <div className={cx('Chuot-product')}>
                 <ProductList category={category.slug} />

@@ -18,7 +18,7 @@ function LT() {
             <SectionHeading
                 title={category.name}
                 shTitle="Miễn phí giao hàng"
-                link={`/collections/${category.slug}`}
+                link={`/categories/${category.slug}`}
             />
             <div className={cx('LT-product')}>
                 <ProductList category={category.slug} />

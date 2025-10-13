@@ -18,7 +18,7 @@ function Screen() {
             <SectionHeading
                 title={category.name}
                 shTitle="Bảo hành 1 đổi 1"
-                link={`/collections/${category.slug}`}
+                link={`/categories/${category.slug}`}
             />
             <div className={cx('Screen-product')}>
                 <ProductList category={category.slug} />
