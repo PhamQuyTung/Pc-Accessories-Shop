@@ -15,11 +15,13 @@ const PromotionGiftSchema = new Schema(
     discountValue: { type: Number, required: true, min: 0 },
 
     // ✅ Sản phẩm chính
-    conditionProduct: {
-      type: Schema.Types.ObjectId,
-      ref: "Product",
-      required: true,
-    },
+    conditionProducts: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Product",
+        required: true,
+      },
+    ],
 
     // ✅ Danh sách sản phẩm mua kèm
     relatedProducts: [

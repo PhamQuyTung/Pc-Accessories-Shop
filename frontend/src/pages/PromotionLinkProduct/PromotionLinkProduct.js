@@ -1,4 +1,3 @@
-// src/pages/PromotionLinkProduct/PromotionLinkProduct.js
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axiosClient from '~/utils/axiosClient';
@@ -30,7 +29,7 @@ function PromotionLinkProduct() {
     return (
         <div className={cx('wrapper')}>
             <h1 className={cx('title')}>🎁 Khuyến mãi sản phẩm</h1>
-            <p className={cx('subtitle')}>Danh sách các chương trình khuyến mãi do admin tạo.</p>
+            <p className={cx('subtitle')}>Danh sách các chương trình khuyến mãi được áp dụng cho sản phẩm.</p>
 
             {promotions.length === 0 ? (
                 <p className={cx('empty')}>Hiện chưa có khuyến mãi nào.</p>
@@ -39,21 +38,54 @@ function PromotionLinkProduct() {
                     {promotions.map((promo) => (
                         <div key={promo._id} className={cx('card')}>
                             <h2 className={cx('cardTitle')}>{promo.title}</h2>
-                            <p className={cx('desc')}>{promo.description}</p>
 
-                            {promo.conditionProduct && (
+                            {/* Sản phẩm chính */}
+                            {promo.conditionProducts?.length > 0 && (
                                 <div className={cx('mainProduct')}>
                                     <p className={cx('label')}>Sản phẩm chính:</p>
-                                    <div className={cx('mainProductInfo')}>
-                                        <img
-                                            src={promo.conditionProduct.images?.[0]}
-                                            alt={promo.conditionProduct.name}
-                                            className={cx('thumb')}
-                                        />
-                                        <span>{promo.conditionProduct.name}</span>
+                                    <div className={cx('mainProductList')}>
+                                        {promo.conditionProducts.map((product) => (
+                                            <div key={product._id} className={cx('productItem')}>
+                                                <img
+                                                    src={product.images?.[0]}
+                                                    alt={product.name}
+                                                    className={cx('thumb')}
+                                                />
+                                                <div>
+                                                    <p className={cx('productName')}>{product.name}</p>
+                                                    <p className={cx('productPrice')}>
+                                                        {product.price?.toLocaleString('vi-VN')}₫
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             )}
+
+                            {/* Sản phẩm được khuyến mãi */}
+                            {/* {promo.relatedProducts?.length > 0 && (
+                                <div className={cx('relatedProducts')}>
+                                    <p className={cx('label')}>Sản phẩm được khuyến mãi:</p>
+                                    <div className={cx('relatedProductList')}>
+                                        {promo.relatedProducts.map((product) => (
+                                            <div key={product._id} className={cx('productItem')}>
+                                                <img
+                                                    src={product.images?.[0]}
+                                                    alt={product.name}
+                                                    className={cx('thumb')}
+                                                />
+                                                <div>
+                                                    <p className={cx('productName')}>{product.name}</p>
+                                                    <p className={cx('productPrice')}>
+                                                        {product.price?.toLocaleString('vi-VN')}₫
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )} */}
 
                             <Link to={`/promotion/${promo._id}`} className={cx('button')}>
                                 Xem chi tiết

@@ -16,7 +16,7 @@ function AdminPromotionGift() {
         description: '',
         discountType: 'percent',
         discountValue: 0,
-        conditionProduct: '',
+        conditionProducts: [],
         relatedProducts: [],
         link: '',
     });
@@ -107,7 +107,9 @@ function AdminPromotionGift() {
             description: promo.description,
             discountType: promo.discountType,
             discountValue: promo.discountValue,
-            conditionProduct: promo.conditionProduct?._id || promo.conditionProduct,
+            conditionProducts: Array.isArray(promo.conditionProducts)
+                ? promo.conditionProducts.map((p) => p._id || p)
+                : [],
             relatedProducts: Array.isArray(promo.relatedProducts)
                 ? promo.relatedProducts.map((p) => p._id || p)
                 : typeof promo.relatedProducts === 'string'
@@ -124,7 +126,7 @@ function AdminPromotionGift() {
             description: '',
             discountType: 'percent',
             discountValue: 0,
-            conditionProduct: '',
+            conditionProducts: [],
             relatedProducts: [],
             link: '',
         });
@@ -188,11 +190,16 @@ function AdminPromotionGift() {
                 <div className={cx('form-group')}>
                     <label>Sản phẩm chính</label>
                     <Select
+                        isMulti
                         options={productOptions}
-                        value={productOptions.find((opt) => opt.value === newPromo.conditionProduct) || null}
-                        onChange={(selected) => setNewPromo({ ...newPromo, conditionProduct: selected?.value || '' })}
+                        value={productOptions.filter((opt) => newPromo.conditionProducts.includes(opt.value))}
+                        onChange={(selected) =>
+                            setNewPromo({
+                                ...newPromo,
+                                conditionProducts: selected.map((s) => s.value),
+                            })
+                        }
                         placeholder="Chọn sản phẩm chính..."
-                        isClearable
                     />
                 </div>
 
@@ -255,24 +262,29 @@ function AdminPromotionGift() {
                         {promotions.map((promo) => (
                             <tr key={promo._id}>
                                 <td>{promo.title}</td>
+
                                 <td>{promo.discountType === 'percent' ? '%' : '₫'}</td>
+
                                 <td>
                                     {promo.discountType === 'percent'
                                         ? `${promo.discountValue}%`
                                         : `${promo.discountValue.toLocaleString('vi-VN')}₫`}
                                 </td>
+
                                 <td>{promo.description}</td>
+
                                 <td>
-                                    {promo.conditionProduct?.name ||
-                                        promo.conditionProduct?._id ||
-                                        promo.conditionProduct ||
-                                        '—'}
+                                    {promo.conditionProducts && promo.conditionProducts.length > 0
+                                        ? promo.conditionProducts.map((p) => p.name || p._id).join(', ')
+                                        : '—'}
                                 </td>
+
                                 <td>
                                     {promo.relatedProducts && promo.relatedProducts.length > 0
                                         ? promo.relatedProducts.map((rp) => rp.name || rp._id).join(', ')
                                         : '—'}
                                 </td>
+
                                 <td className={cx('table-actions')}>
                                     <button onClick={() => handleEdit(promo)} title="Sửa">
                                         ✏️
