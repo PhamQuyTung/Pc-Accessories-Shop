@@ -14,23 +14,23 @@ const PromotionGiftSchema = new Schema(
     },
     discountValue: { type: Number, required: true, min: 0 },
 
-    // Sản phẩm chính phải mua
+    // ✅ Sản phẩm chính
     conditionProduct: {
       type: Schema.Types.ObjectId,
       ref: "Product",
       required: true,
     },
 
-    // Sản phẩm được giảm hoặc tặng
-    relatedProduct: {
-      type: Schema.Types.ObjectId,
-      ref: "Product",
-      required: true,
-    },
+    // ✅ Danh sách sản phẩm mua kèm
+    relatedProducts: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Product",
+        required: true,
+      },
+    ],
 
-    // Link xem thêm (tùy chọn)
     link: { type: String, default: "" },
-
     active: { type: Boolean, default: true },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
   },

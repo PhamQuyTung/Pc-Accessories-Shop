@@ -2,25 +2,29 @@ import React, { useEffect, useState } from 'react';
 import axiosClient from '~/utils/axiosClient';
 import classNames from 'classnames/bind';
 import styles from './AdminPromotionGift.module.scss';
+import Select from 'react-select';
 
 const cx = classNames.bind(styles);
 
 function AdminPromotionGift() {
     const [promotions, setPromotions] = useState([]);
+    const [products, setProducts] = useState([]); // Danh sách sản phẩm để chọn
+    const [editId, setEditId] = useState(null);
+
     const [newPromo, setNewPromo] = useState({
         title: '',
         description: '',
         discountType: 'percent',
         discountValue: 0,
         conditionProduct: '',
-        relatedProduct: '',
+        relatedProducts: [],
         link: '',
     });
 
-    const [editId, setEditId] = useState(null);
-
+    // ✅ Gọi API lấy khuyến mãi & sản phẩm
     useEffect(() => {
         fetchPromotions();
+        fetchProducts();
     }, []);
 
     const fetchPromotions = async () => {
@@ -32,6 +36,29 @@ function AdminPromotionGift() {
         }
     };
 
+    const fetchProducts = async () => {
+        try {
+            let allProducts = [];
+            let currentPage = 1;
+            let totalPages = 1;
+
+            do {
+                const res = await axiosClient.get(`/products?page=${currentPage}`);
+                const { products, totalPages: total } = res.data;
+                allProducts = [...allProducts, ...(products || [])];
+                totalPages = total;
+                currentPage++;
+            } while (currentPage <= totalPages);
+
+            setProducts(allProducts);
+            console.log(`✅ Đã tải tất cả ${allProducts.length} sản phẩm.`);
+        } catch (err) {
+            console.error('Lỗi khi lấy toàn bộ sản phẩm:', err);
+            setProducts([]);
+        }
+    };
+
+    // ✅ Thêm hoặc sửa khuyến mãi
     const handleSubmit = async () => {
         try {
             if (editId) {
@@ -48,7 +75,7 @@ function AdminPromotionGift() {
                 discountType: 'percent',
                 discountValue: 0,
                 conditionProduct: '',
-                relatedProduct: '',
+                relatedProducts: [],
                 link: '',
             });
             setEditId(null);
@@ -59,6 +86,7 @@ function AdminPromotionGift() {
         }
     };
 
+    // ✅ Xóa khuyến mãi
     const handleDelete = async (id) => {
         if (window.confirm('Bạn có chắc muốn xóa khuyến mãi này?')) {
             try {
@@ -72,6 +100,7 @@ function AdminPromotionGift() {
         }
     };
 
+    // ✅ Sửa khuyến mãi
     const handleEdit = (promo) => {
         setNewPromo({
             title: promo.title,
@@ -79,7 +108,11 @@ function AdminPromotionGift() {
             discountType: promo.discountType,
             discountValue: promo.discountValue,
             conditionProduct: promo.conditionProduct?._id || promo.conditionProduct,
-            relatedProduct: promo.relatedProduct?._id || promo.relatedProduct,
+            relatedProducts: Array.isArray(promo.relatedProducts)
+                ? promo.relatedProducts.map((p) => p._id || p)
+                : typeof promo.relatedProducts === 'string'
+                  ? promo.relatedProducts.split(',').map((id) => id.trim())
+                  : [],
             link: promo.link || '',
         });
         setEditId(promo._id);
@@ -92,17 +125,24 @@ function AdminPromotionGift() {
             discountType: 'percent',
             discountValue: 0,
             conditionProduct: '',
-            relatedProduct: '',
+            relatedProducts: [],
             link: '',
         });
         setEditId(null);
     };
+
+    // 👉 Danh sách options cho react-select
+    const productOptions = products.map((p) => ({
+        value: p._id,
+        label: p.name,
+    }));
 
     return (
         <div className={cx('wrap')}>
             <h2 className={cx('title')}>🎁 Quản lý khuyến mãi quà tặng</h2>
 
             <div className={cx('card')}>
+                {/* Tiêu đề */}
                 <div className={cx('form-group')}>
                     <label>Tiêu đề khuyến mãi</label>
                     <input
@@ -112,6 +152,7 @@ function AdminPromotionGift() {
                     />
                 </div>
 
+                {/* Mô tả */}
                 <div className={cx('form-group')}>
                     <label>Mô tả chi tiết</label>
                     <textarea
@@ -120,6 +161,7 @@ function AdminPromotionGift() {
                     />
                 </div>
 
+                {/* Loại giảm & giá trị */}
                 <div className={cx('row')}>
                     <div className={cx('form-group')}>
                         <label>Loại giảm giá</label>
@@ -142,26 +184,36 @@ function AdminPromotionGift() {
                     </div>
                 </div>
 
-                <div className={cx('row')}>
-                    <div className={cx('form-group')}>
-                        <label>ID sản phẩm chính</label>
-                        <input
-                            type="text"
-                            value={newPromo.conditionProduct}
-                            onChange={(e) => setNewPromo({ ...newPromo, conditionProduct: e.target.value })}
-                        />
-                    </div>
-
-                    <div className={cx('form-group')}>
-                        <label>ID sản phẩm mua kèm</label>
-                        <input
-                            type="text"
-                            value={newPromo.relatedProduct}
-                            onChange={(e) => setNewPromo({ ...newPromo, relatedProduct: e.target.value })}
-                        />
-                    </div>
+                {/* Sản phẩm chính */}
+                <div className={cx('form-group')}>
+                    <label>Sản phẩm chính</label>
+                    <Select
+                        options={productOptions}
+                        value={productOptions.find((opt) => opt.value === newPromo.conditionProduct) || null}
+                        onChange={(selected) => setNewPromo({ ...newPromo, conditionProduct: selected?.value || '' })}
+                        placeholder="Chọn sản phẩm chính..."
+                        isClearable
+                    />
                 </div>
 
+                {/* Sản phẩm mua kèm */}
+                <div className={cx('form-group')}>
+                    <label>Sản phẩm mua kèm</label>
+                    <Select
+                        isMulti
+                        options={productOptions}
+                        value={productOptions.filter((opt) => newPromo.relatedProducts.includes(opt.value))}
+                        onChange={(selected) =>
+                            setNewPromo({
+                                ...newPromo,
+                                relatedProducts: selected.map((s) => s.value),
+                            })
+                        }
+                        placeholder="Chọn sản phẩm mua kèm..."
+                    />
+                </div>
+
+                {/* Link thêm */}
                 <div className={cx('form-group')}>
                     <label>Link xem thêm (tuỳ chọn)</label>
                     <input
@@ -171,6 +223,7 @@ function AdminPromotionGift() {
                     />
                 </div>
 
+                {/* Nút hành động */}
                 <div className={cx('actions')}>
                     <button className={cx('btn', 'btn-primary')} onClick={handleSubmit}>
                         {editId ? '💾 Lưu thay đổi' : '➕ Thêm khuyến mãi'}
@@ -183,6 +236,7 @@ function AdminPromotionGift() {
                 </div>
             </div>
 
+            {/* Danh sách khuyến mãi */}
             <div className={cx('list-card')}>
                 <h3>Danh sách khuyến mãi</h3>
                 <table className={cx('table')}>
@@ -201,17 +255,13 @@ function AdminPromotionGift() {
                         {promotions.map((promo) => (
                             <tr key={promo._id}>
                                 <td>{promo.title}</td>
-
                                 <td>{promo.discountType === 'percent' ? '%' : '₫'}</td>
-
                                 <td>
                                     {promo.discountType === 'percent'
                                         ? `${promo.discountValue}%`
                                         : `${promo.discountValue.toLocaleString('vi-VN')}₫`}
                                 </td>
-
                                 <td>{promo.description}</td>
-
                                 <td>
                                     {promo.conditionProduct?.name ||
                                         promo.conditionProduct?._id ||
@@ -219,12 +269,10 @@ function AdminPromotionGift() {
                                         '—'}
                                 </td>
                                 <td>
-                                    {promo.relatedProduct?.name ||
-                                        promo.relatedProduct?._id ||
-                                        promo.relatedProduct ||
-                                        '—'}
+                                    {promo.relatedProducts && promo.relatedProducts.length > 0
+                                        ? promo.relatedProducts.map((rp) => rp.name || rp._id).join(', ')
+                                        : '—'}
                                 </td>
-
                                 <td className={cx('table-actions')}>
                                     <button onClick={() => handleEdit(promo)} title="Sửa">
                                         ✏️

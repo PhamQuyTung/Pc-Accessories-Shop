@@ -1,0 +1,100 @@
+.wrapper {
+    padding: 20px;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #c00;
+    margin-bottom: 10px;
+}
+
+.desc {
+    color: #444;
+    margin-bottom: 16px;
+}
+
+.sectionTitle {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #222;
+}
+
+.mainProduct {
+    margin-bottom: 20px;
+}
+
+.mainProductInfo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.card {
+    border: 1px solid #ddd;
+    border-radius: 16px;
+    padding: 12px;
+    text-align: center;
+    transition: box-shadow 0.3s;
+    background-color: #fff;
+
+    &:hover {
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    }
+}
+
+.productImg {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.productName {
+    font-weight: 500;
+    color: #222;
+    margin-bottom: 4px;
+}
+
+.price {
+    font-size: 14px;
+    color: #666;
+}
+
+.discount {
+    color: #c00;
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+.backLink {
+    display: inline-block;
+    margin-top: 20px;
+    font-size: 14px;
+    color: #0066cc;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.loading,
+.empty {
+    text-align: center;
+    color: #888;
+}

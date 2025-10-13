@@ -16,7 +16,8 @@ import OrdersPage from '~/pages/OrdersPage/OrdersPage';
 import SearchResultPage from '~/components/SearchResultPage/SearchResultPage';
 import NotFoundPage from '~/pages/NotFoundPage/NotFoundPage';
 import CollectionsPage from '~/pages/CollectionsPage/CollectionsPage';
-import Promotion from '~/pages/PromotionLinkProduct/PromotionLinkProduct';
+import PromotionLinkProduct from '~/pages/PromotionLinkProduct/PromotionLinkProduct';
+import PromotionLinkProductCollections from '~/pages/PromotionLinkProductCollections/PromotionLinkProductCollections';
 import Contact from '~/pages/Contact';
 import Blog from '~/pages/BlogPage/BlogPage';
 
@@ -92,7 +93,8 @@ const routes = [
             // 👉 Thêm route cho promotions collections
             // 👉 Chia rõ ràng: nếu là promotion thì vào PromotionCollectionPage
             { path: '/collections/:slug', element: <PromotionCollectionPage /> },
-            { path: '/promotion', element: <Promotion /> },
+            { path: '/promotion', element: <PromotionLinkProduct /> },
+            { path: '/promotion/:id', element: <PromotionLinkProductCollections /> },
             { path: '/contact', element: <Contact /> },
             { path: '/blog', element: <Blog /> },
             { path: '/blog/category/:categorySlug/:postSlug', element: <PostDetailPage /> },
