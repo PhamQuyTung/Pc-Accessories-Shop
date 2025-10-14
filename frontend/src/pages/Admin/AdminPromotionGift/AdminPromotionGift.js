@@ -74,7 +74,7 @@ function AdminPromotionGift() {
                 description: '',
                 discountType: 'percent',
                 discountValue: 0,
-                conditionProduct: '',
+                conditionProducts: [],
                 relatedProducts: [],
                 link: '',
             });

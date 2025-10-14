@@ -63,14 +63,16 @@ function PromotionLinkProductCollections() {
                 </div>
 
                 {/* 🔹 Sản phẩm chính */}
-                {promotion.conditionProduct && (
+                {/* {promotion.conditionProducts?.length > 0 && (
                     <section className={cx('main-product')}>
                         <h2 className={cx('section-title')}>🎯 Sản phẩm chính</h2>
-                        <div className={cx('main-product-card')}>
-                            <ProductCard product={promotion.conditionProduct} />
+                        <div className={cx('product-grid')}>
+                            {promotion.conditionProducts.map((item) => (
+                                <ProductCard key={item._id} product={item} />
+                            ))}
                         </div>
                     </section>
-                )}
+                )} */}
 
                 {/* 🔹 Danh sách sản phẩm mua kèm */}
                 {promotion.relatedProducts?.length > 0 && (

@@ -6,8 +6,8 @@ const Product = require("../models/product");
    🧩 Helper functions
 ============================================================ */
 const populateGift = [
-  { path: "conditionProducts", select: "name price images" },
-  { path: "relatedProducts", select: "name price images" },
+  { path: "conditionProducts", select: "name price images slug" },
+  { path: "relatedProducts", select: "name price images slug" },
 ];
 
 const validateGiftData = (body) => {
