@@ -543,13 +543,12 @@ function ProductDetail() {
                                                     <span>
                                                         {promo.title}.{' '}
                                                         {promo.link && (
-                                                            <a
-                                                                href={promo.link}
-                                                                target="_blank"
+                                                            <Link
+                                                                to={promo.link}
                                                                 rel="noopener noreferrer"
                                                             >
                                                                 (Xem thêm)
-                                                            </a>
+                                                            </Link>
                                                         )}
                                                     </span>
                                                 </li>

@@ -76,7 +76,7 @@ function AdminPromotionGift() {
                 discountValue: 0,
                 conditionProducts: [],
                 relatedProducts: [],
-                link: '',
+                // link: '',
             });
             setEditId(null);
             fetchPromotions();
@@ -221,14 +221,14 @@ function AdminPromotionGift() {
                 </div>
 
                 {/* Link thêm */}
-                <div className={cx('form-group')}>
+                {/* <div className={cx('form-group')}>
                     <label>Link xem thêm (tuỳ chọn)</label>
                     <input
                         type="text"
                         value={newPromo.link}
                         onChange={(e) => setNewPromo({ ...newPromo, link: e.target.value })}
                     />
-                </div>
+                </div> */}
 
                 {/* Nút hành động */}
                 <div className={cx('actions')}>

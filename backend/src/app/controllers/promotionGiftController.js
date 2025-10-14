@@ -43,6 +43,36 @@ const validateGiftData = (body) => {
 };
 
 /* ============================================================
+   🔧 Helper xử lý logic chung
+============================================================ */
+const checkProducts = async (conditionProducts, relatedProducts) => {
+  const [mains, related] = await Promise.all([
+    Product.find({ _id: { $in: conditionProducts } }),
+    Product.find({ _id: { $in: relatedProducts } }),
+  ]);
+
+  if (!mains.length) throw new Error("Không tìm thấy sản phẩm chính");
+  if (!related.length) throw new Error("Không tìm thấy sản phẩm mua kèm");
+
+  return { mains, related };
+};
+
+const validateDiscount = (discountType, discountValue, related) => {
+  const value = Number(discountValue);
+  if (discountType === "amount") {
+    const minPrice = Math.min(...related.map((r) => r.price));
+    if (value > minPrice)
+      throw new Error(
+        `Giá trị giảm (${value.toLocaleString(
+          "vi-VN"
+        )}₫) vượt quá giá sản phẩm thấp nhất (${minPrice.toLocaleString(
+          "vi-VN"
+        )}₫)`
+      );
+  }
+};
+
+/* ============================================================
    📦 Lấy danh sách tất cả khuyến mãi quà tặng
 ============================================================ */
 exports.list = async (req, res) => {
@@ -55,10 +85,11 @@ exports.list = async (req, res) => {
 };
 
 /* ============================================================
-   ➕ Thêm mới khuyến mãi quà tặng
+   ➕ CREATE - Refactor gọn gàng, dùng helper & auto link
 ============================================================ */
 exports.create = async (req, res) => {
   try {
+    // 🧩 Kiểm tra dữ liệu cơ bản
     const error = validateGiftData(req.body);
     if (error) return res.status(400).json({ message: error });
 
@@ -73,43 +104,30 @@ exports.create = async (req, res) => {
     } = req.body;
 
     // 🔍 Kiểm tra tồn tại sản phẩm
-    const [mains, related] = await Promise.all([
-      Product.find({ _id: { $in: conditionProducts } }),
-      Product.find({ _id: { $in: relatedProducts } }),
-    ]);
-    if (!mains.length)
-      return res.status(404).json({ message: "Không tìm thấy sản phẩm chính" });
-    if (!related.length)
-      return res
-        .status(404)
-        .json({ message: "Không tìm thấy sản phẩm mua kèm" });
+    const { related } = await checkProducts(conditionProducts, relatedProducts);
 
-    // ⚠️ Kiểm tra giảm theo số tiền không vượt quá giá thấp nhất
-    const value = Number(discountValue);
-    if (discountType === "amount") {
-      const minPrice = Math.min(...related.map((r) => r.price));
-      if (value > minPrice)
-        return res.status(400).json({
-          message: `Giá trị giảm (${value.toLocaleString(
-            "vi-VN"
-          )}₫) vượt quá giá sản phẩm thấp nhất (${minPrice.toLocaleString(
-            "vi-VN"
-          )}₫)`,
-        });
-    }
+    // ⚙️ Kiểm tra hợp lệ giảm giá
+    validateDiscount(discountType, discountValue, related);
 
-    // ✅ Tạo mới
+    // ✅ Tạo mới khuyến mãi
     const gift = await PromotionGift.create({
       title: title.trim(),
       description: description || "",
       discountType,
-      discountValue: value,
+      discountValue: Number(discountValue),
       conditionProducts,
       relatedProducts,
-      link: link || "",
+      link: link?.trim() || "",
       createdBy: req.user?._id,
     });
 
+    // 🔗 Nếu chưa có link, tự động tạo link theo _id
+    if (!gift.link) {
+      gift.link = `http://localhost:3000/promotion/${gift._id}`;
+      await gift.save();
+    }
+
+    // 🔄 Populate dữ liệu trả về
     const populated = await gift.populate(populateGift);
     res.status(201).json(populated);
   } catch (err) {
@@ -117,8 +135,8 @@ exports.create = async (req, res) => {
   }
 };
 
-/* ============================================================
-   ✏️ Cập nhật khuyến mãi quà tặng
+/* ============================================================ 
+   ✏️ Cập nhật khuyến mãi quà tặng (Refactor)
 ============================================================ */
 exports.update = async (req, res) => {
   try {
@@ -127,6 +145,7 @@ exports.update = async (req, res) => {
     if (!gift)
       return res.status(404).json({ message: "Không tìm thấy khuyến mãi" });
 
+    // 🧩 Kiểm tra dữ liệu đầu vào
     const error = validateGiftData(req.body);
     if (error) return res.status(400).json({ message: error });
 
@@ -140,41 +159,31 @@ exports.update = async (req, res) => {
       link,
     } = req.body;
 
-    // 🔍 Kiểm tra sản phẩm
-    const [mains, related] = await Promise.all([
-      Product.find({ _id: { $in: conditionProducts } }),
-      Product.find({ _id: { $in: relatedProducts } }),
-    ]);
-    if (!mains.length || !related.length)
-      return res.status(404).json({
-        message: "Không tìm thấy sản phẩm chính hoặc sản phẩm mua kèm",
-      });
+    // 🔍 Kiểm tra sản phẩm bằng helper
+    const { related } = await checkProducts(conditionProducts, relatedProducts);
 
-    const value = Number(discountValue);
-    if (discountType === "amount") {
-      const minPrice = Math.min(...related.map((r) => r.price));
-      if (value > minPrice)
-        return res.status(400).json({
-          message: `Giá trị giảm (${value.toLocaleString(
-            "vi-VN"
-          )}₫) vượt quá giá sản phẩm thấp nhất (${minPrice.toLocaleString(
-            "vi-VN"
-          )}₫)`,
-        });
-    }
+    // ⚙️ Kiểm tra giảm giá hợp lệ
+    validateDiscount(discountType, discountValue, related);
 
-    // ✅ Cập nhật dữ liệu
+    // ✅ Gán dữ liệu mới vào bản ghi
     Object.assign(gift, {
       title: title.trim(),
       description: description || "",
       discountType,
-      discountValue: value,
+      discountValue: Number(discountValue),
       conditionProducts,
       relatedProducts,
-      link: link || "",
+      link: link?.trim() || "",
     });
 
+    // 🔗 Nếu link đang trống → tự tạo mới theo _id
+    if (!gift.link) {
+      gift.link = `http://localhost:3000/promotion/${gift._id}`;
+    }
+
     await gift.save();
+
+    // 🔄 Populate để trả về dữ liệu đầy đủ
     const populated = await gift.populate(populateGift);
     res.json(populated);
   } catch (err) {
