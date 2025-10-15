@@ -199,7 +199,6 @@
 .price {
     display: flex;
     flex-direction: column;
-    gap: 4px;
 
     .original {
         text-decoration: line-through;
@@ -207,9 +206,9 @@
         font-size: 14px;
     }
 
-    .final {
-        color: red;
-        font-weight: bold;
+    .discounted {
+        color: #e30019;
+        font-weight: 700;
         font-size: 16px;
     }
 }
@@ -365,5 +364,41 @@
                 }
             }
         }
+    }
+}
+
+.subtotal {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-start;
+
+    .original {
+        text-decoration: line-through;
+        color: #999;
+        font-size: 14px;
+    }
+
+    // .discounted {
+    //     color: #e30019;
+    //     font-weight: bold;
+    //     font-size: 1.6rem;
+    // }
+}
+
+.promo-row {
+    background-color: #fff7f7;
+
+    .promo-tag {
+        font-size: 13px;
+        color: #d62828;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 4px;
+    }
+
+    .gift-icon {
+        color: #ff4747;
     }
 }

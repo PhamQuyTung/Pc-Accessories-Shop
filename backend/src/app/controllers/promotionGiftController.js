@@ -247,3 +247,104 @@ exports.toggleActive = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+/* ============================================================
+   🧮 Áp dụng giảm giá theo giỏ hàng
+============================================================ */
+/* ============================================================
+   🧮 Áp dụng giảm giá theo giỏ hàng (phiên bản GearVN logic)
+============================================================ */
+exports.applyCart = async (req, res) => {
+  try {
+    const { cartItems } = req.body; // [{ product_id, quantity, createdAt }]
+    if (!Array.isArray(cartItems) || cartItems.length === 0)
+      return res.json({ discounts: [], totalDiscount: 0 });
+
+    // 🔍 Lấy tất cả promotion đang active
+    const promotions = await PromotionGift.find({ active: true }).populate([
+      { path: "conditionProducts", select: "_id name price" },
+      { path: "relatedProducts", select: "_id name price" },
+    ]);
+
+    let discounts = [];
+    let totalDiscount = 0;
+
+    // 👉 Sắp xếp cartItems theo thời gian thêm để ưu tiên giảm cho sản phẩm thêm sớm hơn
+    const sortedCartItems = [...cartItems].sort(
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+    );
+
+    // =========================================================
+    // Duyệt từng chương trình khuyến mãi
+    // =========================================================
+    for (const promo of promotions) {
+      const conditionIds = promo.conditionProducts.map((p) => p._id.toString());
+      const relatedIds = promo.relatedProducts.map((p) => p._id.toString());
+
+      // Đếm tổng số lượng sản phẩm chính và sản phẩm liên quan trong giỏ
+      const mainCount = sortedCartItems
+        .filter((i) => conditionIds.includes(i.product_id))
+        .reduce((sum, i) => sum + i.quantity, 0);
+
+      const relatedItems = sortedCartItems.filter((i) =>
+        relatedIds.includes(i.product_id)
+      );
+
+      if (mainCount === 0 || relatedItems.length === 0) continue;
+
+      // Số lượng cặp đủ điều kiện giảm
+      let eligiblePairs = mainCount;
+
+      // =========================================================
+      // Áp dụng cho từng sản phẩm liên quan (có thể nhiều loại)
+      // =========================================================
+      for (const item of relatedItems) {
+        if (eligiblePairs <= 0) break; // Hết lượt giảm
+
+        const relatedProduct = promo.relatedProducts.find(
+          (p) => p._id.toString() === item.product_id
+        );
+        if (!relatedProduct) continue;
+
+        const unitPrice = relatedProduct.price;
+
+        // ✅ Số lượng được giảm và không được giảm
+        const discountedQty = Math.min(item.quantity, eligiblePairs);
+        const normalQty = Math.max(item.quantity - discountedQty, 0);
+
+        // ✅ Tính số tiền giảm
+        let discountAmount = 0;
+        if (promo.discountType === "percent") {
+          discountAmount = (unitPrice * promo.discountValue) / 100;
+        } else {
+          discountAmount = promo.discountValue;
+        }
+
+        const totalItemDiscount = discountAmount * discountedQty;
+
+        // ✅ Push thông tin vào mảng
+        discounts.push({
+          productId: item.product_id,
+          discountPerItem: discountAmount,
+          totalDiscount: totalItemDiscount,
+          promotionTitle: promo.title,
+          discountedQty,
+          normalQty,
+        });
+
+        totalDiscount += totalItemDiscount;
+
+        // Giảm số lượt đủ điều kiện còn lại
+        eligiblePairs -= discountedQty;
+      }
+    }
+
+    // =========================================================
+    // Trả kết quả
+    // =========================================================
+    return res.json({ discounts, totalDiscount });
+  } catch (err) {
+    console.error("❌ applyCart error:", err);
+    return res.status(500).json({ message: err.message });
+  }
+};

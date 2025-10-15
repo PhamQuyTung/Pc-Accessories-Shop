@@ -15,7 +15,10 @@ router.patch("/:id", auth, PromotionGiftController.update);
 // ✅ Xoá
 router.delete("/:id", auth, PromotionGiftController.remove);
 
-// ✅ Lấy danh sách khuyến mãi theo productId (frontend ProductDetail dùng)
+// ✅ Áp dụng khuyến mãi vào giỏ hàng (frontend CartPage dùng)
+router.post("/apply-cart", PromotionGiftController.applyCart);
+
+// ✅ Lấy danh sách khuyến mãi theo productId (frontend ProductDetail dùng) (để cuối cùng)
 router.get("/by-product/:productId", PromotionGiftController.byProduct);
 
 module.exports = router;
