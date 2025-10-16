@@ -72,6 +72,7 @@
     &.btn-primary {
         background: #2563eb;
         color: white;
+
         &:hover {
             background: #1d4ed8;
         }
@@ -80,6 +81,7 @@
     &.btn-secondary {
         background: #e2e8f0;
         color: #1e293b;
+
         &:hover {
             background: #cbd5e1;
         }
@@ -96,10 +98,15 @@
         margin-bottom: 16px;
         font-weight: 600;
     }
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
 }
 
 .table {
     width: 100%;
+    min-width: 900px;
     border-collapse: collapse;
     font-size: 14px;
 
@@ -108,11 +115,13 @@
         padding: 10px;
         text-align: left;
         border-bottom: 1px solid #f1f5f9;
+        vertical-align: top;
     }
 
     th {
         background: #f8fafc;
         font-weight: 600;
+        white-space: nowrap;
     }
 
     tr:hover td {
@@ -137,4 +146,249 @@
     }
 }
 
+.more {
+    color: #2563eb;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    padding: 0;
+    &:hover {
+        text-decoration: underline;
+    }
+}
 
+/* Modal overlay + content */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    width: 480px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    animation: fadeIn 0.2s ease-in-out;
+
+    h4 {
+        margin-bottom: 12px;
+        font-weight: 600;
+    }
+
+    .modal-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 16px 0;
+
+        li {
+            padding: 6px 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+        }
+    }
+}
+
+.btn-close {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+
+    &:hover {
+        background: #1d4ed8;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.expand-row {
+    background: #f8fafc;
+
+    .expand-content {
+        padding: 10px 16px;
+        border-left: 3px solid #2563eb;
+        background: #f9fafb;
+        border-radius: 6px;
+
+        h4 {
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+
+            li {
+                padding: 4px 0;
+                border-bottom: 1px solid #e2e8f0;
+                font-size: 14px;
+            }
+        }
+    }
+}
+
+.product-cell {
+    position: relative;
+
+    .compact-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        li {
+            display: inline-block;
+            margin-right: 4px;
+            &:not(:last-child)::after {
+                content: ',';
+                margin-left: 2px;
+            }
+        }
+    }
+
+    .dropdown-list {
+        list-style: none;
+        margin: 6px 0 0;
+        padding: 8px 10px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        animation: fadeDown 0.2s ease;
+        position: relative;
+        z-index: 1;
+
+        li {
+            padding: 4px 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+            &:last-child {
+                border-bottom: none;
+            }
+        }
+    }
+}
+
+@keyframes fadeDown {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+}
+
+.dropdown-list {
+    animation: fadeDown 0.2s ease forwards;
+
+    &.closing {
+        animation: fadeUp 0.2s ease forwards;
+    }
+}
+
+.dropdown-list {
+    animation: fadeDown 0.2s ease forwards;
+    display: flex;
+    flex-direction: column;
+
+    &.closing {
+        animation: fadeUp 0.2s ease forwards;
+
+        li {
+            animation: fadeItemOut 0.15s ease forwards;
+        }
+    }
+
+    li {
+        opacity: 0;
+        transform: translateY(-3px);
+        animation: fadeItemIn 0.25s ease forwards;
+    }
+
+    // hiệu ứng lần lượt từng item
+    li:nth-child(1) {
+        animation-delay: 0.05s;
+    }
+    li:nth-child(2) {
+        animation-delay: 0.1s;
+    }
+    li:nth-child(3) {
+        animation-delay: 0.15s;
+    }
+    li:nth-child(4) {
+        animation-delay: 0.2s;
+    }
+    li:nth-child(5) {
+        animation-delay: 0.25s;
+    }
+    li:nth-child(6) {
+        animation-delay: 0.3s;
+    }
+    li:nth-child(7) {
+        animation-delay: 0.35s;
+    }
+    li:nth-child(8) {
+        animation-delay: 0.4s;
+    }
+    li:nth-child(9) {
+        animation-delay: 0.45s;
+    }
+    li:nth-child(10) {
+        animation-delay: 0.5s;
+    }
+}
+
+@keyframes fadeItemIn {
+    from {
+        opacity: 0;
+        transform: translateY(-3px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeItemOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-3px);
+    }
+}
