@@ -18,6 +18,7 @@ function CartPage() {
     const [removedItems, setRemovedItems] = useState([]);
     const [removedHandled, setRemovedHandled] = useState(false);
     const [promotionSummary, setPromotionSummary] = useState({ totalDiscount: 0, discounts: [] });
+    const [isUpdating, setIsUpdating] = useState(false);
 
     const toast = useToast();
 
@@ -83,6 +84,9 @@ function CartPage() {
 
     // === Cập nhật số lượng ===
     const updateQuantity = async (productId, delta) => {
+        if (isUpdating) return;
+        setIsUpdating(true);
+
         const currentQty = quantities[productId] || 1;
         const newQuantity = currentQty + delta;
         if (newQuantity < 1) return;
@@ -94,9 +98,12 @@ function CartPage() {
             });
             setQuantities((prev) => ({ ...prev, [productId]: newQuantity }));
             cartEvent.emit('update-cart-count');
-            fetchCart();
+            await fetchCart();  // ✅ Cập nhật lại giỏ hàng để lấy khuyến mãi mới
         } catch (error) {
             console.error('❌ Lỗi cập nhật số lượng:', error);
+        } finally {
+            setIsUpdating(false); // ✅ đảm bảo reset lại sau mỗi thao tác
+
         }
     };
 
@@ -141,89 +148,66 @@ function CartPage() {
 
         // Nếu có khuyến mãi, chia ra 2 dòng
         if (promoItem) {
-            const rows = [];
+            const totalQty = (promoItem.discountedQty || 0) + (promoItem.normalQty || 0);
+            const discountPerItem = promoItem.discountPerItem || 0;
+            const discountedPrice = basePrice - discountPerItem;
 
-            // 1️⃣ Dòng được giảm giá
-            if (promoItem.discountedQty > 0) {
-                const qty = promoItem.discountedQty;
-                const discountPerItem = promoItem.discountPerItem;
-                const discountedPrice = basePrice - discountPerItem;
-                const total = discountedPrice * qty;
+            const totalDiscounted = promoItem.discountedQty * discountedPrice;
+            const totalNormal = promoItem.normalQty * basePrice;
+            const total = totalDiscounted + totalNormal;
 
-                rows.push(
-                    <div key={productId + '-promo'} className={cx('row-wrapper')}>
-                        <div className={cx('row', 'promo-row')}>
-                            <div className={cx('product')}>
-                                <img
-                                    src={Array.isArray(product.images) ? product.images[0] : product.images}
-                                    alt={product.name}
-                                />
-                                <div className={cx('info')}>
-                                    <Link to={`/products/${product.slug}`} className={cx('product-name')}>
-                                        {product.name}
-                                    </Link>
-                                    <div className={cx('promo-tag')}>
-                                        <FaGift /> {promoItem.promotionTitle}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className={cx('price')}>
-                                <span className={cx('original')}>{basePrice.toLocaleString()}₫</span>
-                                <span className={cx('discounted')}>{discountedPrice.toLocaleString()}₫</span>
-                            </div>
-                            <div className={cx('quantity')}>
-                                <span>{qty}</span>
-                            </div>
-                            <div className={cx('subtotal')}>
-                                <span className={cx('discounted')}>{total.toLocaleString()}₫</span>
-                            </div>
-                            <div>
-                                {/* Không hiển thị nút xóa cho dòng khuyến mãi */}
-                                <FaGift className={cx('gift-icon')} />
-                            </div>
-                        </div>
-                    </div>,
-                );
-            }
-
-            // 2️⃣ Dòng không giảm giá (nếu có)
-            if (promoItem.normalQty > 0) {
-                const qty = promoItem.normalQty;
-                const total = basePrice * qty;
-                rows.push(
-                    <div key={productId + '-normal'} className={cx('row-wrapper')}>
-                        <div className={cx('row')}>
-                            <div className={cx('product')}>
-                                <img
-                                    src={Array.isArray(product.images) ? product.images[0] : product.images}
-                                    alt={product.name}
-                                />
+            return (
+                <div key={productId} className={cx('row-wrapper')}>
+                    <div className={cx('row', 'promo-row')}>
+                        <div className={cx('product')}>
+                            <img
+                                src={Array.isArray(product.images) ? product.images[0] : product.images}
+                                alt={product.name}
+                            />
+                            <div className={cx('info')}>
                                 <Link to={`/products/${product.slug}`} className={cx('product-name')}>
                                     {product.name}
                                 </Link>
-                            </div>
-                            <div className={cx('price')}>
-                                <span className={cx('discounted')}>{basePrice.toLocaleString()}₫</span>
-                            </div>
-                            <div className={cx('quantity')}>
-                                <button onClick={() => updateQuantity(productId, -1)}>-</button>
-                                <span>{qty}</span>
-                                <button onClick={() => updateQuantity(productId, 1)}>+</button>
-                            </div>
-                            <div className={cx('subtotal')}>
-                                <span>{total.toLocaleString()}₫</span>
-                            </div>
-                            <div>
-                                <button className={cx('remove')} onClick={() => removeFromCart(productId)}>
-                                    <FaTrashAlt />
-                                </button>
+                                {promoItem.discountedQty > 0 && (
+                                    <div
+                                        className={cx('promo-tag')}
+                                        data-tooltip={`Giảm ${promoItem.discountedQty} sản phẩm, ${promoItem.normalQty} không giảm`}
+                                    >
+                                        <FaGift /> {promoItem.promotionTitle} ({promoItem.discountedQty}/{totalQty})
+                                    </div>
+                                )}
                             </div>
                         </div>
-                    </div>,
-                );
-            }
 
-            return rows;
+                        <div className={cx('price')}>
+                            {promoItem.discountedQty > 0 ? (
+                                <>
+                                    <span className={cx('original')}>{basePrice.toLocaleString()}₫</span>
+                                    <span className={cx('discounted')}>{discountedPrice.toLocaleString()}₫</span>
+                                </>
+                            ) : (
+                                <span>{basePrice.toLocaleString()}₫</span>
+                            )}
+                        </div>
+
+                        <div className={cx('quantity')}>
+                            <button onClick={() => updateQuantity(productId, -1)}>-</button>
+                            <span>{quantities[productId] || totalQty}</span>
+                            <button onClick={() => updateQuantity(productId, 1)}>+</button>
+                        </div>
+
+                        <div className={cx('subtotal')}>
+                            <span className={cx('discounted')}>{total.toLocaleString()}₫</span>
+                        </div>
+
+                        <div>
+                            <button className={cx('remove')} onClick={() => removeFromCart(productId)}>
+                                <FaTrashAlt />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
         }
 
         // Không có khuyến mãi → render bình thường

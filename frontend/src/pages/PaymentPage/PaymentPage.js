@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import styles from './PaymentPage.module.scss';
 import classNames from 'classnames/bind';
@@ -13,64 +13,44 @@ const cx = classNames.bind(styles);
 
 function PaymentPage() {
     const location = useLocation();
-    const state = location.state || JSON.parse(sessionStorage.getItem('checkoutData'));
     const navigate = useNavigate();
     const showToast = useToast();
 
-    // Save state to sessionStorage if it exists
+    const state = location.state || JSON.parse(sessionStorage.getItem('checkoutData'));
+
+    const shippingInfo = state?.shippingInfo || {};
+    const products = state?.products || [];
+
+    const [paymentMethod, setPaymentMethod] = useState('cod');
+    const [discountCode, setDiscountCode] = useState('');
+    const [discountAmount, setDiscountAmount] = useState(0);
+    const [finalTotal, setFinalTotal] = useState(shippingInfo.total || 0);
+    const [promotionSummary, setPromotionSummary] = useState({ totalDiscount: 0, discounts: [] });
+
+    // ✅ Lưu checkoutData vào session để F5 không mất dữ liệu
     if (location.state) {
         sessionStorage.setItem('checkoutData', JSON.stringify(location.state));
     }
 
-    const [paymentMethod, setPaymentMethod] = useState('cod');
-    const [discountCode, setDiscountCode] = useState('');
-    const [finalTotal, setFinalTotal] = useState(state?.total || 0);
-    const [discountAmount, setDiscountAmount] = useState(0);
-
-    const handleApplyDiscount = () => {
-        if (discountCode === 'CODE') {
-            const discount = Math.round(state.total * 0.1); // 10%
-            setDiscountAmount(discount);
-            const newTotal = Math.round(state.total - discount);
-            setFinalTotal(newTotal);
-            showToast('Áp dụng mã giảm giá thành công (giảm 10%)', 'success');
-        } else {
-            setDiscountAmount(0);
-            setFinalTotal(state.total);
-            showToast('Mã giảm giá không hợp lệ', 'error');
-        }
-    };
-
-    const handleConfirmPayment = async () => {
-        try {
-            await axiosClient.post('/orders/checkout', {
-                shippingInfo: {
-                    name: state.fullName,
-                    phone: state.phone,
-                    address: state.address,
-                },
-                subtotal: state.subtotal,
-                tax: state.tax,
-                shippingFee: state.deliveryFee ? 40000 : 0,
-                serviceFee: state.installFee ? 200000 : 0,
-                discount: discountAmount,
-                total: finalTotal,
-                paymentMethod,
-            });
-
-            cartEvent.emit('update-cart-count');
-            showToast('Thanh toán thành công!', 'success', 1200);
-            setTimeout(() => navigate('/orders-success'), 1200);
-        } catch (err) {
-            console.error('Lỗi khi tạo đơn hàng:', err);
-
-            if (err.response?.data?.message) {
-                showToast(err.response.data.message, 'error');
-            } else {
-                showToast('🚨 Lỗi server, vui lòng thử lại sau!', 'error');
+    // ✅ Lấy danh sách khuyến mãi từ API
+    useEffect(() => {
+        const fetchPromotion = async () => {
+            try {
+                if (!products.length) return;
+                const response = await axiosClient.post('/promotion-gifts/apply-cart', {
+                    cartItems: products.map((item) => ({
+                        product_id: item.product_id._id,
+                        quantity: item.quantity,
+                        createdAt: item.createdAt,
+                    })),
+                });
+                setPromotionSummary(response.data || { totalDiscount: 0, discounts: [] });
+            } catch (error) {
+                console.error('Lỗi lấy khuyến mãi:', error);
             }
-        }
-    };
+        };
+        fetchPromotion();
+    }, [products]);
 
     if (!state) {
         return (
@@ -80,11 +60,114 @@ function PaymentPage() {
         );
     }
 
+    // === Áp dụng mã giảm giá ===
+    const handleApplyDiscount = () => {
+        if (discountCode === 'CODE') {
+            const discount = Math.round(shippingInfo.total * 0.1);
+            setDiscountAmount(discount);
+            setFinalTotal(Math.round(shippingInfo.total - discount));
+            showToast('Áp dụng mã giảm giá thành công (giảm 10%)', 'success');
+        } else {
+            setDiscountAmount(0);
+            setFinalTotal(shippingInfo.total);
+            showToast('Mã giảm giá không hợp lệ', 'error');
+        }
+    };
+
+    // === Xác nhận thanh toán ===
+    const handleConfirmPayment = async () => {
+        try {
+            await axiosClient.post('/orders/checkout', {
+                shippingInfo: {
+                    name: shippingInfo.fullName,
+                    phone: shippingInfo.phone,
+                    address: shippingInfo.address,
+                },
+                subtotal: shippingInfo.subtotal,
+                tax: shippingInfo.tax,
+                shippingFee: shippingInfo.deliveryFee ? 40000 : 0,
+                serviceFee: shippingInfo.installFee ? 200000 : 0,
+                discount: discountAmount + (promotionSummary.totalDiscount || 0),
+                total: finalTotal - (promotionSummary.totalDiscount || 0),
+                paymentMethod,
+            });
+
+            cartEvent.emit('update-cart-count');
+            showToast('Thanh toán thành công!', 'success', 1200);
+            setTimeout(() => navigate('/orders-success'), 1200);
+        } catch (err) {
+            console.error('Lỗi khi tạo đơn hàng:', err);
+            const message = err.response?.data?.message || '🚨 Lỗi server, vui lòng thử lại sau!';
+            showToast(message, 'error');
+        }
+    };
+
+    // === Render danh sách sản phẩm + quà tặng (đồng bộ từ CheckoutPage) ===
+    const renderProduct = (item) => {
+        const product = item.product_id;
+        const price = product.discountPrice > 0 ? product.discountPrice : product.price;
+        const total = price * item.quantity;
+
+        // Tìm khuyến mãi tương ứng
+        const promo = promotionSummary.discounts.find((d) => d.productId === product._id);
+
+        return (
+            <li key={item._id} className={cx('productItem')}>
+                <img
+                    src={Array.isArray(product.images) ? product.images[0] : product.images}
+                    alt={product.name}
+                    className={cx('productImage')}
+                />
+                <div className={cx('productInfo')}>
+                    <p className={cx('productName')}>{product.name}</p>
+                    <p className={cx('productDetail')}>Số lượng: {item.quantity}</p>
+                    <p className={cx('productDetail')}>
+                        Giá: {price.toLocaleString()}₫ × {item.quantity}
+                    </p>
+                    <p className={cx('productTotal')}>Thành tiền: {total.toLocaleString()}₫</p>
+
+                    {/* === Quà tặng từ product.gifts === */}
+                    {product.gifts?.length > 0 && (
+                        <div className={cx('giftList')}>
+                            <ul>
+                                {product.gifts.map((gift, gIdx) => (
+                                    <li key={gIdx} className={cx('giftGroup')}>
+                                        <p className={cx('giftTitle')}>🎁 {gift.title}:</p>
+                                        <ul>
+                                            {gift.products.map((gItem, i) => (
+                                                <li key={i} className={cx('giftItem')}>
+                                                    <span>{gItem.productId?.name}</span>
+                                                    <span>x{gItem.quantity * item.quantity}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {/* === Khuyến mãi áp dụng === */}
+                    {promo && (
+                        <div className={cx('promotionTag')}>
+                            <span>🔥 {promo.promotionTitle}</span>
+                            <span>-{promo.discountPerItem?.toLocaleString()}₫/sp</span>
+                        </div>
+                    )}
+                </div>
+            </li>
+        );
+    };
+
+    // === Tổng hợp chi phí ===
+    const promoDiscount = promotionSummary.totalDiscount || 0;
+    const totalWithPromo = finalTotal - promoDiscount;
+
     return (
         <div className={cx('payment')}>
             <CheckoutStep currentStep={3} />
 
-            <Link to="/checkout">
+            <Link to="/checkout" className={cx('backLink')}>
                 <FontAwesomeIcon icon={faAngleLeft} style={{ marginRight: '10px' }} />
                 Quay về thông tin đặt hàng
             </Link>
@@ -93,78 +176,40 @@ function PaymentPage() {
                 <h2>3. THANH TOÁN</h2>
 
                 <div className={cx('wrapper-section')}>
+                    {/* === Danh sách sản phẩm === */}
                     <div className={cx('section')}>
                         <h3 className={cx('heading')}>Thông tin sản phẩm</h3>
                         <ul className={cx('productList')}>
-                            {state.products?.map((item) => {
-                                const product = item.product_id;
-                                const price = product.discountPrice > 0 ? product.discountPrice : product.price;
-                                const total = price * item.quantity;
-
-                                return (
-                                    <li key={item._id} className={cx('productItem')}>
-                                        <img
-                                            src={Array.isArray(product.images) ? product.images[0] : product.images}
-                                            alt={product.name}
-                                            className={cx('productImage')}
-                                        />
-                                        <div className={cx('productInfo')}>
-                                            <p className={cx('productName')}>{product.name}</p>
-                                            <p className={cx('productDetail')}>Số lượng: {item.quantity}</p>
-                                            <p className={cx('productDetail')}>
-                                                Giá: {price.toLocaleString()}₫ × {item.quantity}
-                                            </p>
-                                            <p className={cx('productTotal')}>Thành tiền: {total.toLocaleString()}₫</p>
-
-                                            {/* === Hiển thị quà tặng kèm === */}
-                                            {product.gifts?.length > 0 && (
-                                                <div className={cx('giftList')}>
-                                                    <ul>
-                                                        {product.gifts.map((gift, gIdx) => (
-                                                            <li key={gIdx} className={cx('giftGroup')}>
-                                                                <p className={cx('giftTitle')}>🎁 {gift.title}:</p>
-
-                                                                <ul>
-                                                                    {gift.products.map((gItem, i) => (
-                                                                        <li key={i} className={cx('giftItem')}>
-                                                                            <span>{gItem.productId?.name}</span>
-                                                                            <span>
-                                                                                x{gItem.quantity * item.quantity}
-                                                                            </span>
-                                                                        </li>
-                                                                    ))}
-                                                                </ul>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </li>
-                                );
-                            })}
+                            {products.length > 0 ? products.map(renderProduct) : <p>Không có sản phẩm nào.</p>}
                         </ul>
                     </div>
 
+                    {/* === Chi phí === */}
                     <div className={cx('section')}>
                         <h3>Chi phí</h3>
                         <ul className={cx('list')}>
                             <li>
                                 <span className={cx('label')}>Tạm tính:</span>
-                                <strong>{state.subtotal.toLocaleString()}₫</strong>
+                                <strong>{shippingInfo.subtotal?.toLocaleString() || 0}₫</strong>
                             </li>
                             <li>
                                 <span className={cx('label')}>Phí giao hàng:</span>
-                                <strong>{state.deliveryFee ? '40.000₫' : 'FREE'}</strong>
+                                <strong>{shippingInfo.deliveryFee ? '40.000₫' : 'FREE'}</strong>
                             </li>
                             <li>
                                 <span className={cx('label')}>Phí lắp đặt:</span>
-                                <strong>{state.installFee ? '200.000₫' : 'FREE'}</strong>
+                                <strong>{shippingInfo.installFee ? '200.000₫' : 'FREE'}</strong>
                             </li>
                             <li>
                                 <span className={cx('label')}>Thuế:</span>
-                                <strong>{state.tax.toLocaleString()}₫</strong>
+                                <strong>{shippingInfo.tax?.toLocaleString() || 0}₫</strong>
                             </li>
+                            {promoDiscount > 0 && (
+                                <li>
+                                    <span className={cx('label')}>Khuyến mãi:</span>
+                                    <strong>-{promoDiscount.toLocaleString()}₫</strong>
+                                </li>
+                            )}
                             {discountAmount > 0 && (
                                 <li>
                                     <span className={cx('label')}>Mã giảm giá 10%:</span>
@@ -174,6 +219,7 @@ function PaymentPage() {
                         </ul>
                     </div>
 
+                    {/* === Mã giảm giá === */}
                     <div className={cx('section')}>
                         <h3 className={cx('label')}>Mã giảm giá</h3>
                         <div className={cx('inputGroup')}>
@@ -190,6 +236,7 @@ function PaymentPage() {
                         </div>
                     </div>
 
+                    {/* === Phương thức thanh toán === */}
                     <div className={cx('section')}>
                         <h3 className={cx('label')}>Phương thức thanh toán</h3>
                         <div className={cx('radioGroup')}>
@@ -229,9 +276,10 @@ function PaymentPage() {
                     </div>
                 </div>
 
+                {/* === Tổng tiền cuối === */}
                 <div className={cx('total')}>
                     <p>Tổng tiền:</p>
-                    <span>{finalTotal.toLocaleString()}₫</span>
+                    <span>{totalWithPromo.toLocaleString()}₫</span>
                 </div>
 
                 <button onClick={handleConfirmPayment} className={cx('confirmButton')}>

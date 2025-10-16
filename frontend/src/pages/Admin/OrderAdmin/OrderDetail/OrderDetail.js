@@ -251,11 +251,8 @@ const OrderDetail = () => {
                                                         />
                                                         <span>{prod?.name || p.productName}</span>
                                                     </td>
-                                                    
-                                                    <td className={cx('text-center')}>
-                                                        {p.quantity *
-                                                            order.items.reduce((sum, i) => sum + i.quantity, 0)}
-                                                    </td>
+
+                                                    <td className={cx('text-center')}>{p.quantity}</td>
 
                                                     <td className={cx('text-right')}>
                                                         {p.finalPrice

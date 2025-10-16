@@ -390,15 +390,62 @@
     background-color: #fff7f7;
 
     .promo-tag {
-        font-size: 13px;
-        color: #d62828;
-        display: flex;
+        position: relative;
+        display: inline-flex;
         align-items: center;
         gap: 6px;
-        margin-top: 4px;
+        color: #d62828;
+        font-size: 13px;
+        cursor: help;
+
+        &::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 120%;
+            left: 0;
+            background: #333;
+            color: #fff;
+            padding: 6px 8px;
+            border-radius: 6px;
+            font-size: 13px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(5px);
+            transition:
+                opacity 0.2s,
+                transform 0.2s;
+        }
+
+        &:hover::after {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .gift-icon {
         color: #ff4747;
+    }
+}
+
+.price {
+    display: flex;
+    flex-direction: column;
+
+    .original {
+        text-decoration: line-through;
+        color: #999;
+        font-size: 14px;
+    }
+
+    .discounted {
+        color: #e30019;
+        font-weight: 700;
+        font-size: 16px;
+        transition: color 0.2s;
+    }
+
+    &:hover .discounted {
+        color: #c70013;
     }
 }
