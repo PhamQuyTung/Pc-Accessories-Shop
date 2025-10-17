@@ -5,7 +5,7 @@ import RequireAdmin from '~/components/RequireAdmin/RequireAdmin';
 
 // routes page
 import Home from '~/pages/Home/Home';
-import About from '~/pages/About';
+import AboutUs from '~/pages/AboutUs/AboutUs';
 import Product from '~/pages/Product/Product';
 import ProductDetail from '~/pages/Product/ProductDetail/ProductDetail';
 import CartPage from '~/pages/CartPage/CartPage';
@@ -79,7 +79,7 @@ const routes = [
         element: <MainLayout />,
         children: [
             { path: '/', element: <Home /> },
-            { path: '/about', element: <About /> },
+            { path: '/about-us', element: <AboutUs /> },
             { path: '/product', element: <Product /> },
             { path: '/products/:slug', element: <ProductDetail /> },
             { path: '/products/edit/:id', element: <EditProduct /> },
