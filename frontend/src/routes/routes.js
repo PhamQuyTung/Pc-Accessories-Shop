@@ -18,7 +18,7 @@ import NotFoundPage from '~/pages/NotFoundPage/NotFoundPage';
 import CollectionsPage from '~/pages/CollectionsPage/CollectionsPage';
 import PromotionLinkProduct from '~/pages/PromotionLinkProduct/PromotionLinkProduct';
 import PromotionLinkProductCollections from '~/pages/PromotionLinkProductCollections/PromotionLinkProductCollections';
-import Contact from '~/pages/Contact';
+import Contact from '~/pages/ContactUs/ContactUs';
 import Blog from '~/pages/BlogPage/BlogPage';
 
 import Login from '~/pages/Login/Login';
