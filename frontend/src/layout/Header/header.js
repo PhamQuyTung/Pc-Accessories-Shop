@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import Logo from '~/assets/logo/logo4.png';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
+import { Menu, X } from 'lucide-react'; // icon cho responsive
 import styles from './Header.module.scss';
+
+import Logo from '~/assets/logo/logo4.png';
 import Button from '~/components/Button';
 import SearchBar from './SearchBar/SearchBar';
 import UserMenu from './UserMenu/UserMenu';
@@ -13,40 +15,34 @@ import axiosClient from '~/utils/axiosClient';
 const cx = classNames.bind(styles);
 
 function Header() {
-    const [menus, setMenus] = useState([]);
     const navigate = useNavigate();
 
+    const [menus, setMenus] = useState([]);
     const [cartCount, setCartCount] = useState(0);
+    const [isMenuOpen, setIsMenuOpen] = useState(false); // ✅ Toggle menu responsive
 
     const [user, setUser] = useState(() => {
         const stored = localStorage.getItem('user');
         return stored ? JSON.parse(stored) : null;
     });
 
+    // ✅ Lấy số lượng cart
     useEffect(() => {
         const fetchCartCount = async () => {
             try {
                 const res = await axiosClient.get('/carts/');
-                const items = res.data.items || []; // ✅ Lấy đúng field
+                const items = res.data.items || [];
                 setCartCount(items.length);
-                console.log('API carts response:', res.data);
             } catch (err) {
                 console.error('Lỗi lấy cart count:', err);
             }
         };
-
-        // Gọi ngay khi mount
         fetchCartCount();
-
-        // Lắng nghe sự kiện cập nhật cart
         cartEvent.on('update-cart-count', fetchCartCount);
-
-        return () => {
-            cartEvent.off('update-cart-count', fetchCartCount);
-        };
+        return () => cartEvent.off('update-cart-count', fetchCartCount);
     }, []);
 
-    // Lắng nghe thay đổi localStorage (đa tab)
+    // ✅ Đồng bộ user giữa các tab
     useEffect(() => {
         const handleStorage = () => {
             const stored = localStorage.getItem('user');
@@ -56,16 +52,7 @@ function Header() {
         return () => window.removeEventListener('storage', handleStorage);
     }, []);
 
-    // Theo dõi localStorage hiện tại (trong 1 tab)
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const stored = localStorage.getItem('user');
-            setUser(stored ? JSON.parse(stored) : null);
-        }, 500);
-        return () => clearInterval(interval);
-    }, []);
-
-    // Kiểm tra token hợp lệ
+    // ✅ Kiểm tra token
     useEffect(() => {
         const checkToken = async () => {
             const token = localStorage.getItem('token');
@@ -73,13 +60,8 @@ function Header() {
 
             try {
                 const res = await axiosClient.get('/auth/verify-token');
-
-                if (res.status !== 200) {
-                    localStorage.removeItem('user');
-                    localStorage.removeItem('token');
-                    navigate('/login');
-                }
-            } catch (err) {
+                if (res.status !== 200) throw new Error('Token không hợp lệ');
+            } catch {
                 localStorage.removeItem('user');
                 localStorage.removeItem('token');
                 navigate('/login');
@@ -88,6 +70,7 @@ function Header() {
         checkToken();
     }, [navigate]);
 
+    // ✅ Fetch menu
     useEffect(() => {
         fetchMenus()
             .then(setMenus)
@@ -110,39 +93,50 @@ function Header() {
         );
     }, []);
 
+    const toggleMenu = () => setIsMenuOpen((prev) => !prev);
+
     return (
         <header className={cx('header')}>
             <div className={cx('header-container')}>
-                {/* Header top */}
+                {/* ===== Header Top ===== */}
                 <div className={cx('header__top')}>
                     <Link to="/" className={cx('header__logo')}>
                         <img src={Logo} alt="Logo" />
                     </Link>
 
-                    {/* Search bar  */}
-                    <SearchBar navigate={navigate} />
+                    {/* Ẩn search bar trên mobile */}
+                    <div className={cx('search-wrapper')}>
+                        <SearchBar navigate={navigate} />
+                    </div>
 
-                    {/* UserMenu */}
-                    {user ? (
-                        <UserMenu user={user} onLogout={() => setUser(null)} />
-                    ) : (
-                        <>
-                            <Link to="/login" className={cx('header__text--login')}>
-                                <Button outline Small>
-                                    Đăng nhập
-                                </Button>
-                            </Link>
-                            <Link to="/register" className={cx('header__text--login')}>
-                                <Button primary2 Small>
-                                    Đăng ký
-                                </Button>
-                            </Link>
-                        </>
-                    )}
+                    {/* Toggle Menu Button */}
+                    <button className={cx('menu-toggle')} onClick={toggleMenu}>
+                        {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                    </button>
+
+                    {/* User Actions */}
+                    <div className={cx('user-section')}>
+                        {user ? (
+                            <UserMenu user={user} onLogout={() => setUser(null)} />
+                        ) : (
+                            <>
+                                <Link to="/login">
+                                    <Button outline Small>
+                                        Đăng nhập
+                                    </Button>
+                                </Link>
+                                <Link to="/register">
+                                    <Button primary2 Small>
+                                        Đăng ký
+                                    </Button>
+                                </Link>
+                            </>
+                        )}
+                    </div>
                 </div>
 
-                {/* Header nav */}
-                <div className={cx('header__nav')}>
+                {/* ===== Header Nav ===== */}
+                <nav className={cx('header__nav', { open: isMenuOpen })}>
                     {menus
                         .filter((m) => !m.parent)
                         .map((menu) => {
@@ -153,6 +147,7 @@ function Header() {
                                         to={menu.link}
                                         className={({ isActive }) => cx('header__nav-link', { active: isActive })}
                                         end
+                                        onClick={() => setIsMenuOpen(false)}
                                     >
                                         {menu.name}
                                         {isCartMenu && cartCount > 0 && (
@@ -165,7 +160,7 @@ function Header() {
                                 </div>
                             );
                         })}
-                </div>
+                </nav>
             </div>
         </header>
     );

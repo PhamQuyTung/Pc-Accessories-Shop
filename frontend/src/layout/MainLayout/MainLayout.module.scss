@@ -4,7 +4,13 @@
 }
 
 .header-wrapper {
-    max-width: 1320px;
-    margin: 0 auto;
-    padding: 0 10px;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 888;
+    background: linear-gradient(90deg, #000, #ff0000);
+    border-bottom: 1px solid #ff0000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    height: 155px;
 }
