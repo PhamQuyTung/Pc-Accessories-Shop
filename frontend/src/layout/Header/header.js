@@ -4,13 +4,16 @@ import classNames from 'classnames/bind';
 import { Menu, X } from 'lucide-react'; // icon cho responsive
 import styles from './Header.module.scss';
 
-import Logo from '~/assets/logo/logo4.png';
+import LogoFull from '~/assets/logo/Logo-Full3.png';
+import LogoCompact from '~/assets/logo/Logo-Compact.png';
 import Button from '~/components/Button';
 import SearchBar from './SearchBar/SearchBar';
 import UserMenu from './UserMenu/UserMenu';
 import { fetchMenus } from '~/services/menuService';
 import cartEvent from '~/utils/cartEvent';
 import axiosClient from '~/utils/axiosClient';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCartShopping } from '@fortawesome/free-solid-svg-icons';
 
 const cx = classNames.bind(styles);
 
@@ -98,23 +101,29 @@ function Header() {
     return (
         <header className={cx('header')}>
             <div className={cx('header-container')}>
-                {/* ===== Header Top ===== */}
                 <div className={cx('header__top')}>
-                    <Link to="/" className={cx('header__logo')}>
-                        <img src={Logo} alt="Logo" />
-                    </Link>
-
-                    {/* Ẩn search bar trên mobile */}
-                    <div className={cx('search-wrapper')}>
-                        <SearchBar navigate={navigate} />
-                    </div>
-
-                    {/* Toggle Menu Button */}
+                    {/* Nút menu (bars) */}
                     <button className={cx('menu-toggle')} onClick={toggleMenu}>
                         {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
                     </button>
 
-                    {/* User Actions */}
+                    {/* Logo */}
+                    <Link to="/" className={cx('header__logo')}>
+                        <img src={LogoFull} alt="TechVN" className={cx('logo-full')} />
+                        <img src={LogoCompact} alt="TechVN Compact" className={cx('logo-compact')} />
+                    </Link>
+
+                    {/* Search bar */}
+                    <div className={cx('search-wrapper')}>
+                        <SearchBar navigate={navigate} />
+                    </div>
+
+                    {/* Cart icon (thay menu "Giỏ hàng") */}
+                    <div className={cx('cart-icon')} onClick={() => navigate('/carts')}>
+                        <FontAwesomeIcon icon={faCartShopping} />
+                        {cartCount > 0 && <span className={cx('cart-badge')}>{cartCount}</span>}
+                    </div>
+
                     <div className={cx('user-section')}>
                         {user ? (
                             <UserMenu user={user} onLogout={() => setUser(null)} />
@@ -135,31 +144,25 @@ function Header() {
                     </div>
                 </div>
 
-                {/* ===== Header Nav ===== */}
+                {/* Menu dropdown nav */}
                 <nav className={cx('header__nav', { open: isMenuOpen })}>
+                    {/* Navigation links */}
                     {menus
                         .filter((m) => !m.parent)
-                        .map((menu) => {
-                            const isCartMenu = menu.link === '/carts';
-                            return (
-                                <div key={menu._id} className={cx('nav-item')}>
-                                    <NavLink
-                                        to={menu.link}
-                                        className={({ isActive }) => cx('header__nav-link', { active: isActive })}
-                                        end
-                                        onClick={() => setIsMenuOpen(false)}
-                                    >
-                                        {menu.name}
-                                        {isCartMenu && cartCount > 0 && (
-                                            <span className={cx('cart-badge')}>{cartCount}</span>
-                                        )}
-                                    </NavLink>
-
-                                    {menus.some((m) => String(m.parent) === String(menu._id)) &&
-                                        renderMenuTree(menus, menu._id)}
-                                </div>
-                            );
-                        })}
+                        .map((menu) => (
+                            <div key={menu._id} className={cx('nav-item')}>
+                                <NavLink
+                                    to={menu.link}
+                                    className={({ isActive }) => cx('header__nav-link', { active: isActive })}
+                                    end
+                                    onClick={() => setIsMenuOpen(false)}
+                                >
+                                    {menu.name}
+                                </NavLink>
+                                {menus.some((m) => String(m.parent) === String(menu._id)) &&
+                                    renderMenuTree(menus, menu._id)}
+                            </div>
+                        ))}
                 </nav>
             </div>
         </header>

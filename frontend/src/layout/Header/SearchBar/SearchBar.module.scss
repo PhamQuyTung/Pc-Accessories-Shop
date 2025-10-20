@@ -68,9 +68,14 @@
             }
 
             .info {
+                .link-product {
+                    font-size: 1.6rem;
+                }
+
                 .price {
                     display: flex;
                     gap: 8px;
+                    font-size: 1.4rem;
                 }
                 .discount {
                     color: red;

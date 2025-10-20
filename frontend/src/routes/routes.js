@@ -6,7 +6,6 @@ import RequireAdmin from '~/components/RequireAdmin/RequireAdmin';
 // routes page
 import Home from '~/pages/Home/Home';
 import AboutUs from '~/pages/AboutUs/AboutUs';
-import Product from '~/pages/Product/Product';
 import ProductDetail from '~/pages/Product/ProductDetail/ProductDetail';
 import CartPage from '~/pages/CartPage/CartPage';
 import CheckoutPage from '~/pages/CheckoutPage/CheckoutPage';
@@ -80,7 +79,6 @@ const routes = [
         children: [
             { path: '/', element: <Home /> },
             { path: '/about-us', element: <AboutUs /> },
-            { path: '/product', element: <Product /> },
             { path: '/products/:slug', element: <ProductDetail /> },
             { path: '/products/edit/:id', element: <EditProduct /> },
             { path: '/carts', element: <CartPage /> },

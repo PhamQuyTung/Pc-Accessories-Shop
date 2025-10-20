@@ -67,15 +67,20 @@ function Product({ category }) {
             <Swiper
                 modules={[Navigation, Autoplay]}
                 spaceBetween={10}
-                slidesPerView={5}
-                loop={products.length > 5} // 👉 chỉ bật loop khi đủ slide
+                loop={products.length > 5}
                 autoplay={{ delay: 5000, disableOnInteraction: false }}
                 navigation={{
                     prevEl: `.${cx('prev-btn')}`,
                     nextEl: `.${cx('next-btn')}`,
                 }}
+                breakpoints={{
+                    320: { slidesPerView: 1.2, spaceBetween: 10 },
+                    480: { slidesPerView: 2, spaceBetween: 10 },
+                    768: { slidesPerView: 3, spaceBetween: 15 },
+                    1024: { slidesPerView: 4, spaceBetween: 20 },
+                    1280: { slidesPerView: 5, spaceBetween: 24 },
+                }}
                 onInit={(swiper) => {
-                    // Fix: for custom navigation buttons to work
                     swiper.params.navigation.prevEl = `.${cx('prev-btn')}`;
                     swiper.params.navigation.nextEl = `.${cx('next-btn')}`;
                     swiper.navigation.init();

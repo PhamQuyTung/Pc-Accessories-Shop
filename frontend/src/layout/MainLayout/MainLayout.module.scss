@@ -9,8 +9,15 @@
     top: 0;
     left: 0;
     z-index: 888;
-    background: linear-gradient(90deg, #000, #ff0000);
-    border-bottom: 1px solid #ff0000;
+    // background: linear-gradient(90deg, #000, #ff0000);
+    background-color: #E30019;
+    border-bottom: 1px solid #E30019;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    height: 155px;
+    height: 155px; 
+}
+
+@media (max-width: 992px) {
+    .header-wrapper {
+        height: auto; 
+    }
 }
