@@ -1,0 +1,24 @@
+.wrapper {
+    overflow: hidden;
+    position: relative;
+    // background: linear-gradient(180deg, #ffffff, #f8f9fa 40%, #e9ecef);
+    transition: background 0.6s ease;
+}
+
+// Các section xuất hiện khi scroll
+.section {
+    opacity: 0;
+    transform: translateY(60px);
+    transition: all 0.6s ease-out;
+    will-change: transform, opacity;
+
+    &.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    &.first {
+        transform: none;
+        opacity: 1;
+    }
+}

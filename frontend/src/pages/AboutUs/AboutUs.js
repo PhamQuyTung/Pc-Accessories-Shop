@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import classNames from 'classnames/bind';
+import { motion } from 'framer-motion';
 import styles from './AboutUs.module.scss';
 import { MapPin } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -13,28 +14,36 @@ import slide1 from '../../assets/images/AboutUs/Slides/Slide1.jpg';
 import slide2 from '../../assets/images/AboutUs/Slides/Slide2.jpg';
 import slide3 from '../../assets/images/AboutUs/Slides/Slide3.jpg';
 import slide4 from '../../assets/images/AboutUs/Slides/Slide4.jpg';
-import OnlineShop from '../../assets/images/AboutUs/MuaSamTrucTuyen/OnlineShop.png';
 import { Link } from 'react-router-dom';
 
 const cx = classNames.bind(styles);
 
+const fadeInUp = {
+    hidden: { opacity: 0, y: 60 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.8, ease: 'easeOut' },
+    },
+};
+
 const AboutUs = () => {
     const swiperRef = useRef(null);
 
-    // ✅ Bắt buộc để đảm bảo autoplay khởi chạy sau React mount hoàn toàn
+    // ✅ Fix autoplay issue in React 19
     useEffect(() => {
         const timer = setTimeout(() => {
             if (swiperRef.current && swiperRef.current.autoplay) {
                 swiperRef.current.slideNext(0);
                 swiperRef.current.autoplay.start();
             }
-        }, 600); // React 19 render delay => nên để ~0.6s
+        }, 600);
         return () => clearTimeout(timer);
     }, []);
 
     return (
         <div className={cx('about-container')}>
-            {/* ✅ Hero Section - Swiper Slide */}
+            {/* ✅ HERO SECTION */}
             <section className={cx('hero-slider')}>
                 <Swiper
                     modules={[Autoplay, Pagination, Navigation, EffectFade]}
@@ -88,8 +97,14 @@ const AboutUs = () => {
                 </Swiper>
             </section>
 
-            {/* ✅ Mission Section */}
-            <section className={cx('mission-section')}>
+            {/* ✅ MISSION SECTION */}
+            <motion.section
+                className={cx('mission-section')}
+                variants={fadeInUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+            >
                 <div className={cx('mission-content')}>
                     <h2>Tầm nhìn & Sứ mệnh</h2>
                     <p>
@@ -105,33 +120,43 @@ const AboutUs = () => {
                     </blockquote>
                     <p className={cx('founder')}>— Mr. Nguyễn Minh Tuấn, GearTech Founder</p>
                 </div>
-            </section>
+            </motion.section>
 
-            {/* ✅ Gallery Section */}
-            <section className={cx('gallery-section')}>
+            {/* ✅ GALLERY SECTION */}
+            <motion.section
+                className={cx('gallery-section')}
+                variants={fadeInUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.25 }}
+            >
                 <h2>Không gian trải nghiệm tại GearTech</h2>
                 <div className={cx('gallery-grid')}>
-                    <img
-                        src="https://file.hstatic.net/200000722513/article/z3707883003997_70633b26253118a13b45604dae1c2fed_ecb5525048174d5eaf0000fd2c83ef9d_master.jpg"
-                        alt="Showroom GearTech"
-                    />
-                    <img
-                        src="https://tgs.vn/wp-content/uploads/2021/12/267171517_1278526915999879_3176050536150677032_n-1095x730.jpg"
-                        alt="Gaming Setup"
-                    />
-                    <img
-                        src="https://congngheviet.com/wp-content/uploads/2022/03/gearvn-tran-hung-dao-0722.jpg"
-                        alt="Laptop Display"
-                    />
-                    <img
-                        src="https://thanhnien.mediacdn.vn/Uploaded/baont/2021_12_29/gearvn-kvc-10-9196.jpg"
-                        alt="Customer Service"
-                    />
+                    {[
+                        'https://file.hstatic.net/200000722513/article/z3707883003997_70633b26253118a13b45604dae1c2fed_ecb5525048174d5eaf0000fd2c83ef9d_master.jpg',
+                        'https://tgs.vn/wp-content/uploads/2021/12/267171517_1278526915999879_3176050536150677032_n-1095x730.jpg',
+                        'https://congngheviet.com/wp-content/uploads/2022/03/gearvn-tran-hung-dao-0722.jpg',
+                        'https://thanhnien.mediacdn.vn/Uploaded/baont/2021_12_29/gearvn-kvc-10-9196.jpg',
+                    ].map((src, i) => (
+                        <motion.img
+                            key={i}
+                            src={src}
+                            alt={`Gallery ${i}`}
+                            whileHover={{ scale: 1.05 }}
+                            transition={{ duration: 0.3 }}
+                        />
+                    ))}
                 </div>
-            </section>
+            </motion.section>
 
-            {/* ✅ Testimonials Section */}
-            <section className={cx('testimonials-section')}>
+            {/* ✅ TESTIMONIALS SECTION */}
+            <motion.section
+                className={cx('testimonials-section')}
+                variants={fadeInUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+            >
                 <h2>Khách hàng nói gì về GearTech?</h2>
 
                 <Swiper
@@ -177,21 +202,29 @@ const AboutUs = () => {
                         },
                     ].map((review, i) => (
                         <SwiperSlide key={i}>
-                            <div className={cx('testimonial-card')}>
+                            <motion.div
+                                className={cx('testimonial-card')}
+                                whileHover={{ y: -6, boxShadow: '0 10px 30px rgba(255,60,60,0.2)' }}
+                            >
                                 <img src={review.avatar} alt={review.name} className={cx('avatar')} />
                                 <p className={cx('text')}>"{review.text}"</p>
                                 <h4>{review.name}</h4>
                                 <span className={cx('role')}>{review.role}</span>
-                            </div>
+                            </motion.div>
                         </SwiperSlide>
                     ))}
                 </Swiper>
-            </section>
+            </motion.section>
 
-            {/* ✅ Locations */}
-            <section className={cx('locations-section')}>
+            {/* ✅ LOCATIONS SECTION */}
+            <motion.section
+                className={cx('locations-section')}
+                variants={fadeInUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.25 }}
+            >
                 <h2>Hệ thống Showroom GearTech</h2>
-
                 <div className={cx('location-grid')}>
                     <div>
                         <h3>
@@ -212,10 +245,16 @@ const AboutUs = () => {
                         </ul>
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
-            {/* ✅ Online Section - SteelSeries Banner with Side Image */}
-            <section className={cx('online-banner')}>
+            {/* ✅ ONLINE BANNER SECTION */}
+            <motion.section
+                className={cx('online-banner')}
+                variants={fadeInUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.25 }}
+            >
                 <div className={cx('banner-left')}>
                     <div className={cx('banner-content')}>
                         <img
@@ -250,7 +289,7 @@ const AboutUs = () => {
                         alt="SteelSeries Banner"
                     />
                 </div>
-            </section>
+            </motion.section>
         </div>
     );
 };
