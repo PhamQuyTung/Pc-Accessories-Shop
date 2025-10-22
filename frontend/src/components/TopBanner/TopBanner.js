@@ -1,27 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import styles from './TopBanner.module.scss';
 import classNames from 'classnames/bind';
 import TopBanner1 from '../../assets/images/TopBanner/gearvn-back-to-school-25-topbar.png';
+import useScrollVisibility from '../../hooks/useScrollVisibility';
 
 const cx = classNames.bind(styles);
 
 function TopBanner() {
-    const [visible, setVisible] = useState(true);
-
-    useEffect(() => {
-        const handleScroll = () => {
-            if (window.scrollY > 50) {
-                setVisible(false);
-                document.body.classList.add('banner-hidden'); // 👈 thêm class vào body
-            } else {
-                setVisible(true);
-                document.body.classList.remove('banner-hidden'); // 👈 gỡ class
-            }
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+    const visible = useScrollVisibility(); // 👈 dùng chung hook
 
     return (
         <div className={cx('top-banner', { hidden: !visible })}>

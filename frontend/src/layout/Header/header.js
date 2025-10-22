@@ -22,8 +22,8 @@ function Header() {
     const navigate = useNavigate();
 
     const [menus, setMenus] = useState([]);
-    const [cartCount, setCartCount] = useState(0);
     const [isMenuOpen, setIsMenuOpen] = useState(false); // ✅ Toggle menu responsive
+    const [cartCount, setCartCount] = useState(0);
 
     const [user, setUser] = useState(() => {
         const stored = localStorage.getItem('user');
@@ -173,28 +173,7 @@ function Header() {
                             )}
                         </div>
                     </div>
-                </div>
-
-                {/* Menu dropdown nav */}
-                <nav className={cx('header__nav', { open: isMenuOpen })}>
-                    {/* Navigation links */}
-                    {menus
-                        .filter((m) => !m.parent)
-                        .map((menu) => (
-                            <div key={menu._id} className={cx('nav-item')}>
-                                <NavLink
-                                    to={menu.link}
-                                    className={({ isActive }) => cx('header__nav-link', { active: isActive })}
-                                    end
-                                    onClick={() => setIsMenuOpen(false)}
-                                >
-                                    {menu.name}
-                                </NavLink>
-                                {menus.some((m) => String(m.parent) === String(menu._id)) &&
-                                    renderMenuTree(menus, menu._id)}
-                            </div>
-                        ))}
-                </nav>
+                </div>                
             </div>
         </header>
     );

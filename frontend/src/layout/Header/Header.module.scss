@@ -2,13 +2,14 @@
    🧱 STRUCTURE & LAYOUT
    =============================== */
 .header {
+    background-color: #e30019;
     transition: all 0.4s ease;
 }
 
-   .header-container {
+.header-container {
     max-width: 1320px;
     margin: 0 auto;
-    padding: 10px;
+    padding: 0px 10px;
 }
 
 .header__top {

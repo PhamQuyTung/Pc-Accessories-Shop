@@ -1,0 +1,54 @@
+.subHeader {
+    position: fixed;
+    top: 137px; // 47px banner + 48px header + 1px border
+    left: 0;
+    width: 100%;
+    font-size: 14px;
+    color: #1e293b;
+    background-color: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    transition:
+        transform 0.35s ease,
+        opacity 0.35s ease;
+    z-index: 777;
+
+    &.hidden {
+        transform: translateY(-100%);
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.link {
+    color: #1e293b;
+    font-weight: bold;
+    text-decoration: none;
+    padding: 0 32px;
+    position: relative;
+    transition: color 0.2s ease;
+
+    &::after {
+        content: '|';
+        color: #cbd5e1;
+        position: absolute;
+        right: -6px;
+    }
+
+    &:last-child::after {
+        content: '';
+    }
+
+    &:hover {
+        color: #ef4444;
+    }
+}
