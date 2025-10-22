@@ -1,7 +1,11 @@
 /* ===============================
    🧱 STRUCTURE & LAYOUT
    =============================== */
-.header-container {
+.header {
+    transition: all 0.4s ease;
+}
+
+   .header-container {
     max-width: 1320px;
     margin: 0 auto;
     padding: 10px;
@@ -238,6 +242,59 @@
 
             &:hover {
                 color: #ffe400;
+            }
+        }
+    }
+}
+
+.header__actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+
+    .header__item {
+        display: flex;
+        align-items: center;
+        color: #fff;
+        cursor: pointer;
+        position: relative;
+
+        svg {
+            font-size: 20px;
+            margin-right: 8px;
+            color: #fff;
+        }
+
+        .header__item--text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+            span {
+                font-size: 14px;
+                color: #ffcccc;
+            }
+            strong {
+                font-size: 14px;
+                font-weight: 600;
+                color: #fff;
+            }
+        }
+
+        &.cart {
+            i {
+                color: #ffe400;
+            }
+
+            .cart-badge {
+                position: absolute;
+                top: -6px;
+                right: -8px;
+                background: #fdd835;
+                color: #111;
+                font-weight: bold;
+                font-size: 12px;
+                border-radius: 50%;
+                padding: 2px 5px;
             }
         }
     }

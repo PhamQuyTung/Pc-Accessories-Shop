@@ -1,6 +1,6 @@
 .top-banner {
     width: 100%;
-    background: linear-gradient(90deg, #ff2c2c, #ff7a00);
+    background: rgb(107, 213, 255);
     position: fixed;
     top: 0;
     left: 0;
@@ -9,6 +9,16 @@
     justify-content: center;
     align-items: center;
     height: 47px;
+    transition:
+        transform 0.4s ease,
+        opacity 0.4s ease; // 🌀 hiệu ứng trượt & mờ dần
+
+    // Khi banner bị ẩn (scroll xuống)
+    &.hidden {
+        transform: translateY(-100%);
+        opacity: 0;
+        pointer-events: none;
+    }
 
     .content {
         position: relative;

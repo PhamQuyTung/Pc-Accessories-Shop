@@ -13,7 +13,8 @@ import { fetchMenus } from '~/services/menuService';
 import cartEvent from '~/utils/cartEvent';
 import axiosClient from '~/utils/axiosClient';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCartShopping } from '@fortawesome/free-solid-svg-icons';
+import { faCartShopping, faHeadphones, faLocation } from '@fortawesome/free-solid-svg-icons';
+import { faClipboard } from '@fortawesome/free-regular-svg-icons';
 
 const cx = classNames.bind(styles);
 
@@ -69,7 +70,7 @@ function Header() {
                 localStorage.removeItem('token');
                 navigate('/login');
             }
-        };
+        };  
         checkToken();
     }, [navigate]);
 
@@ -102,45 +103,75 @@ function Header() {
         <header className={cx('header')}>
             <div className={cx('header-container')}>
                 <div className={cx('header__top')}>
-                    {/* Nút menu (bars) */}
-                    <button className={cx('menu-toggle')} onClick={toggleMenu}>
-                        {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
-                    </button>
-
                     {/* Logo */}
                     <Link to="/" className={cx('header__logo')}>
                         <img src={LogoFull} alt="TechVN" className={cx('logo-full')} />
                         <img src={LogoCompact} alt="TechVN Compact" className={cx('logo-compact')} />
                     </Link>
 
-                    {/* Search bar */}
+                    {/* Thanh tìm kiếm */}
                     <div className={cx('search-wrapper')}>
                         <SearchBar navigate={navigate} />
                     </div>
 
-                    {/* Cart icon (thay menu "Giỏ hàng") */}
-                    <div className={cx('cart-icon')} onClick={() => navigate('/carts')}>
-                        <FontAwesomeIcon icon={faCartShopping} />
-                        {cartCount > 0 && <span className={cx('cart-badge')}>{cartCount}</span>}
-                    </div>
+                    {/* Khu vực thông tin bên phải (giống GEARVN) */}
+                    <div className={cx('header__actions')}>
+                        {/* Hotline */}
+                        <div className={cx('header__item')}>
+                            <FontAwesomeIcon icon={faHeadphones} />
+                            <div className={cx('header__item--text')}>
+                                <span>Hotline</span>
+                                <strong>1900.5301</strong>
+                            </div>
+                        </div>
 
-                    <div className={cx('user-section')}>
-                        {user ? (
-                            <UserMenu user={user} onLogout={() => setUser(null)} />
-                        ) : (
-                            <>
-                                <Link to="/login">
-                                    <Button outline Small>
-                                        Đăng nhập
-                                    </Button>
-                                </Link>
-                                <Link to="/register">
-                                    <Button primary2 Small>
-                                        Đăng ký
-                                    </Button>
-                                </Link>
-                            </>
-                        )}
+                        {/* Hệ thống showroom */}
+                        <div className={cx('header__item')}>
+                            <FontAwesomeIcon icon={faLocation} />
+                            <div className={cx('header__item--text')}>
+                                <span>Hệ thống</span>
+                                <strong>Showroom</strong>
+                            </div>
+                        </div>
+
+                        {/* Tra cứu đơn hàng */}
+                        <div className={cx('header__item')} onClick={() => navigate('/profile/orders')}>
+                            <FontAwesomeIcon icon={faClipboard} />
+                            <div className={cx('header__item--text')}>
+                                <span>Tra cứu</span>
+                                <strong>Đơn hàng</strong>
+                            </div>
+                        </div>
+
+                        {/* Giỏ hàng */}
+                        <div className={cx('header__item', 'cart')} onClick={() => navigate('/carts')}>
+                            <FontAwesomeIcon icon={faCartShopping} />
+                            <div className={cx('header__item--text')}>
+                                <span>Giỏ hàng</span>
+                                <strong>{cartCount || 0} sản phẩm</strong>
+                            </div>
+                            {cartCount > 0 && <span className={cx('cart-badge')}>{cartCount}</span>}
+                        </div>
+
+                        {/* User */}
+                        <div className={cx('header__item', 'user')}>
+                            {user ? (
+                                <UserMenu user={user} onLogout={() => setUser(null)} />
+                            ) : (
+                                <>
+                                    <Link to="/login">
+                                        <Button outline Small>
+                                            Đăng nhập
+                                        </Button>
+                                    </Link>
+                                    <Link to="/register">
+                                        <Button primary2 Small>
+                                            Đăng ký
+                                        </Button>
+                                    </Link>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
 

@@ -12,6 +12,16 @@ const cx = classNames.bind(styles);
 function MainLayout() {
     const headerRef = useRef(null);
     const [headerHeight, setHeaderHeight] = useState(0);
+    const [isBannerHidden, setIsBannerHidden] = useState(false);
+
+useEffect(() => {
+    const observer = new MutationObserver(() => {
+        setIsBannerHidden(document.body.classList.contains('banner-hidden'));
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+}, []);
+
 
     useEffect(() => {
         const updateHeight = () => {
@@ -29,13 +39,13 @@ function MainLayout() {
     return (
         <div className={cx('main')}>
             {/* Banner Quảng Cáo */}
-            {/* <TopBanner /> */}
+            <TopBanner />
         
-            <header ref={headerRef} className={cx('header-wrapper')}>
+            <header ref={headerRef} className={cx('header-wrapper', { compact: isBannerHidden })}>
                 <Header />
             </header>
 
-            <main style={{ paddingTop: headerHeight }}>
+            <main style={{ paddingTop: headerHeight + 47 }}>
                 <Outlet />
             </main>
 
