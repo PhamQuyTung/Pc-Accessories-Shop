@@ -52,6 +52,21 @@ function ProductDetail() {
 
     const role = localStorage.getItem('role'); // hoặc lấy từ Redux: state.auth.user.role
 
+    const [posts, setPosts] = useState([]);
+
+    useEffect(() => {
+        axiosClient
+            .get('/posts?limit=4')
+            .then((res) => {
+                const data = res.data;
+                setPosts(Array.isArray(data) ? data : data.posts || []);
+            })
+            .catch((err) => {
+                console.error('Fetch posts error:', err);
+                setPosts([]);
+            });
+    }, []);
+
     const navigate = useNavigate();
 
     const toast = useToast();
@@ -425,7 +440,7 @@ function ProductDetail() {
                                         />
                                     </button>
                                 </div>
-                                
+
                                 {/* Giá sản phẩm */}
                                 <div className={cx('product-info__cost')}>
                                     {product.discountPrice && product.discountPrice < product.price ? (
@@ -446,7 +461,7 @@ function ProductDetail() {
                                         </p>
                                     )}
                                 </div>
-                                
+
                                 {/* Trạng thái sản phẩm */}
                                 <div className={cx('product-info__status')}>
                                     {product.status && product.status.length > 0 ? (
@@ -474,7 +489,7 @@ function ProductDetail() {
 
                                 {/* ✅ Hiển thị quà tặng khuyến mãi */}
                                 <GiftList gifts={product.gifts} />
-                                
+
                                 {/* Nút mua sản phẩm & nút chat ngay */}
                                 <div className={cx('product-info__actions')}>
                                     {/* <div className={cx('quantity-control')}>
@@ -543,10 +558,7 @@ function ProductDetail() {
                                                     <span>
                                                         {promo.title}.{' '}
                                                         {promo.link && (
-                                                            <Link
-                                                                to={promo.link}
-                                                                rel="noopener noreferrer"
-                                                            >
+                                                            <Link to={promo.link} rel="noopener noreferrer">
                                                                 (Xem thêm)
                                                             </Link>
                                                         )}
@@ -562,38 +574,78 @@ function ProductDetail() {
                 </Row>
             </div>
 
-            {/* Tabs section */}
-            <div className={cx('tab-container')}>
-                <div className={cx('tab-buttons')}>
-                    <button
-                        onClick={() => setActiveTab('description')}
-                        className={cx('tab-btn', { active: activeTab === 'description' })}
-                    >
-                        Mô tả
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('additional')}
-                        className={cx('tab-btn', { active: activeTab === 'additional' })}
-                    >
-                        Thông số kĩ thuật
-                    </button>
-                    <button
-                        onClick={() => {
-                            setActiveTab('reviews');
-                            setTimeout(() => {
-                                reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-                            }, 0); // đảm bảo render xong tab content
-                        }}
-                        className={cx('tab-btn', { active: activeTab === 'reviews' })}
-                    >
-                        Đánh giá ({reviews.length})
-                    </button>
-                </div>
-                <br />
-                <div ref={reviewSectionRef} className={cx('tab-content')}>
-                    {renderTabContent()}
-                </div>
-            </div>
+            {/* Tabs + Tin tức section */}
+            <Row className={cx('tab-news-section')}>
+                {/* --- Cột trái: Tabs (8 cột) --- */}
+                <Col lg={8} md={12}>
+                    <div className={cx('tab-container')}>
+                        <div className={cx('tab-buttons')}>
+                            <button
+                                onClick={() => setActiveTab('description')}
+                                className={cx('tab-btn', { active: activeTab === 'description' })}
+                            >
+                                Mô tả
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('additional')}
+                                className={cx('tab-btn', { active: activeTab === 'additional' })}
+                            >
+                                Thông số kĩ thuật
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setActiveTab('reviews');
+                                    setTimeout(() => {
+                                        reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+                                    }, 0);
+                                }}
+                                className={cx('tab-btn', { active: activeTab === 'reviews' })}
+                            >
+                                Đánh giá ({reviews.length})
+                            </button>
+                        </div>
+
+                        <br />
+                        <div ref={reviewSectionRef} className={cx('tab-content')}>
+                            {renderTabContent()}
+                        </div>
+                    </div>
+                </Col>
+
+                {/* --- Cột phải: Bài viết mới nhất (4 cột) --- */}
+                <Col lg={4} md={12}>
+                    <div className={cx('news-section')}>
+                        <h3 className={cx('news-title')}>Bài viết mới nhất</h3>
+
+                        {posts.length === 0 ? (
+                            <p>Không có bài viết nào.</p>
+                        ) : (
+                            <ul className={cx('news-list')}>
+                                {posts.map((post) => (
+                                    <li key={post._id} className={cx('news-item')}>
+                                        <Link
+                                            to={`/blog/category/${post.category?.slug}/${post.slug}`}
+                                            className={cx('news-link')}
+                                        >
+                                            <div className={cx('news-thumb')}>
+                                                {post.image ? (
+                                                    <img src={post.image} alt={post.title} />
+                                                ) : (
+                                                    <div className={cx('no-thumb')}>Không có ảnh</div>
+                                                )}
+                                            </div>
+                                            <div className={cx('news-info')}>
+                                                <h5 className={cx('news-item-title')}>{post.title}</h5>
+                                                <p className={cx('news-date')}>{formatDate(post.createdAt)}</p>
+                                            </div>
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                </Col>
+            </Row>
 
             {/* Related Products Section */}
             <div className={cx('related-products')}>

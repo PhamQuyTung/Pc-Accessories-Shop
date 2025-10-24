@@ -6,6 +6,7 @@ const slugify = require("slugify");
 exports.getPosts = async (req, res) => {
   try {
     const filter = { status: "published" };
+    const limit = parseInt(req.query.limit) || 0; // ✅ đọc limit từ query
 
     // Nếu có query categoryId thì filter theo category
     if (req.query.categoryId) {
@@ -20,7 +21,8 @@ exports.getPosts = async (req, res) => {
       .populate("author", "name firstName lastName avatar")
       .populate("category", "name slug")
       .populate("tags", "name slug")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(limit); 
 
     res.json(posts);
   } catch (err) {
