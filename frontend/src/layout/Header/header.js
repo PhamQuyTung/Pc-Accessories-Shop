@@ -13,8 +13,9 @@ import { fetchMenus } from '~/services/menuService';
 import cartEvent from '~/utils/cartEvent';
 import axiosClient from '~/utils/axiosClient';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCartShopping, faHeadphones, faLocation } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faCartShopping, faHeadphones, faLocation } from '@fortawesome/free-solid-svg-icons';
 import { faClipboard } from '@fortawesome/free-regular-svg-icons';
+import MobileMenuModal from './MobileMenuModal/MobileMenuModal'; // add this import near other imports
 
 const cx = classNames.bind(styles);
 
@@ -70,7 +71,7 @@ function Header() {
                 localStorage.removeItem('token');
                 navigate('/login');
             }
-        };  
+        };
         checkToken();
     }, [navigate]);
 
@@ -103,6 +104,11 @@ function Header() {
         <header className={cx('header')}>
             <div className={cx('header-container')}>
                 <div className={cx('header__top')}>
+                    {/* Bars Display Mobile */}
+                    <button className={cx('menu-toggle')} onClick={toggleMenu}>
+                        {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                    </button>
+
                     {/* Logo */}
                     <Link to="/" className={cx('header__logo')}>
                         <img src={LogoFull} alt="TechVN" className={cx('logo-full')} />
@@ -173,8 +179,11 @@ function Header() {
                             )}
                         </div>
                     </div>
-                </div>                
+                </div>
             </div>
+
+            {/* Mobile modal (slide-in) */}
+            <MobileMenuModal isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} menus={menus} />
         </header>
     );
 }

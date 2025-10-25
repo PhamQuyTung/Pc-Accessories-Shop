@@ -1,0 +1,207 @@
+/* Mobile modal overlay & panel */
+.mobile-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+        background 0.25s ease,
+        opacity 0.25s ease;
+    z-index: 999;
+}
+.mobile-modal-overlay.open {
+    background: rgba(0, 0, 0, 0.45);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.mobile-modal-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 86%;
+    max-width: 420px;
+    background: #fff;
+    transform: translateX(-110%);
+    transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.2, 1);
+    z-index: 1000;
+    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.12);
+    display: flex;
+    flex-direction: column;
+}
+.mobile-modal-panel.open {
+    transform: translateX(0);
+}
+
+/* header inside modal */
+.mobile-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 12px;
+    border-bottom: 1px solid #f1f1f1;
+}
+.mobile-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+}
+.mobile-modal-logo img {
+    height: 28px;
+}
+
+/* body */
+.mobile-modal-body {
+    overflow: auto;
+    padding: 12px;
+    flex: 1;
+}
+
+/* sections */
+.mobile-section {
+    margin-bottom: 16px;
+}
+.mobile-section-title {
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+/* tree */
+.mobile-menu-tree {
+    list-style-type: disc;
+    padding-left: 0;
+    margin: 0;
+}
+.mobile-menu-item {
+    border-radius: 6px;
+    margin-bottom: 2px;
+    overflow: hidden;
+}
+.mobile-menu-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 6px;
+}
+.mobile-menu-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #222;
+    flex: 1;
+    font-size: 1.4rem;
+    padding-right: 8px;
+}
+.mobile-menu-name {
+    font-weight: 400;
+}
+.mobile-menu-toggle {
+    background: transparent;
+    border: none;
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.chev {
+    transition: transform 0.22s ease;
+    color: #666;
+}
+.chev.open {
+    transform: rotate(-180deg);
+    color: #d33;
+}
+
+/* animated submenu wrapper */
+.mobile-subwrap {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.32s cubic-bezier(0.2, 0.9, 0.2, 1);
+    padding-left: 8px;
+    background: #fff;
+}
+.mobile-subwrap.open {
+    max-height: 1200px; /* large enough for nested content */
+}
+
+/* nested level styling */
+.level-1 .mobile-menu-row { padding-left: 8px; }
+.level-2 .mobile-menu-row { padding-left: 16px; }
+.level-3 .mobile-menu-row { padding-left: 24px; }
+
+/* info list */
+.mobile-info-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.mobile-info-list li {
+    margin-bottom: 8px;
+}
+.mobile-info-list a {
+    display: flex;
+    gap: 10px;
+    text-decoration: none;
+    align-items: center;
+    color: #222;
+    padding: 8px;
+    border-radius: 6px;
+}
+.mobile-info-icon {
+    color: #333;
+    width: 22px;
+    height: 22px;
+}
+.mobile-info-text {
+    display: flex;
+    flex-direction: column;
+}
+.mobile-info-title {
+    font-weight: 600;
+    font-size: 14px;
+}
+.mobile-info-sub {
+    font-size: 12px;
+    color: #777;
+}
+
+/* loading */
+.mobile-loading {
+    padding: 8px;
+    color: #666;
+    font-size: 14px;
+}
+
+/* hide on desktop */
+@media (min-width: 992px) {
+    .mobile-modal-overlay,
+    .mobile-modal-panel {
+        display: none;
+    }
+}
+
+/* menu icon */
+.mobile-menu-icon {
+    display: inline-flex;
+    width: 22px;
+    height: 22px;
+    margin-right: 10px;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+}
+
+/* spacer used for child items so text aligns with parents that have icons */
+.mobile-menu-icon.spacer {
+  display: inline-block;
+  width: 22px; /* same as icon width */
+  height: 22px;
+  margin-right: 10px;
+  vertical-align: middle;
+  opacity: 0; /* invisible but occupies space */
+}
