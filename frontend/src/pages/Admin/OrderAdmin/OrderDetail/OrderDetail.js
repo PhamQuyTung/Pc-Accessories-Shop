@@ -222,50 +222,47 @@ const OrderDetail = () => {
                     </tbody>
                 </table>
 
-                {/* Phần quà tặng */}
-                {gifts.length > 0 && (
+                {/* Hiển thị quà tặng cho từng sản phẩm nếu có */}
+                {order.items.some((item) => item.gifts && item.gifts.length > 0) && (
                     <div className={cx('gifts')}>
                         <h3>🎁 Quà tặng kèm</h3>
-                        {gifts.map((gift) => (
-                            <div key={gift._id} className={cx('gift-item')}>
-                                <h4>{gift.title}</h4>
-                                <table className={cx('gift-table')}>
-                                    <thead>
-                                        <tr>
-                                            <th>Sản phẩm</th>
-                                            <th className={cx('text-center')}>Số lượng</th>
-                                            <th className={cx('text-right')}>Giá</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {gift.products.map((p) => {
-                                            const prod = p.productId;
-                                            const img = prod?.images?.[0] || '/no-image.png';
-                                            return (
-                                                <tr key={p.productId?._id || p.productName}>
-                                                    <td className={cx('product-cell')}>
-                                                        <img
-                                                            src={img}
-                                                            alt={prod?.name || p.productName}
-                                                            className={cx('product-img')}
-                                                        />
-                                                        <span>{prod?.name || p.productName}</span>
-                                                    </td>
 
-                                                    <td className={cx('text-center')}>{p.quantity}</td>
-
-                                                    <td className={cx('text-right')}>
-                                                        {p.finalPrice
-                                                            ? `${p.finalPrice.toLocaleString('vi-VN')} ₫`
-                                                            : '—'}
-                                                    </td>
+                        {order.items.map(
+                            (item) =>
+                                item.gifts &&
+                                item.gifts.length > 0 && (
+                                    <div key={item._id} className={cx('gift-item')}>
+                                        <h4>Quà tặng cho: {item.product_id?.name || item.productName}</h4>
+                                        <table className={cx('gift-table')}>
+                                            <thead>
+                                                <tr>
+                                                    <th>Sản phẩm</th>
+                                                    <th className={cx('text-center')}>Số lượng</th>
                                                 </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ))}
+                                            </thead>
+                                            <tbody>
+                                                {item.gifts.map((gift) => {
+                                                    const prod = gift.productId;
+                                                    const img = prod?.images?.[0] || '/no-image.png';
+                                                    return (
+                                                        <tr key={prod?._id}>
+                                                            <td className={cx('product-cell')}>
+                                                                <img
+                                                                    src={img}
+                                                                    alt={prod?.name || 'Quà tặng'}
+                                                                    className={cx('product-img')}
+                                                                />
+                                                                <span>{prod?.name || 'Quà tặng không xác định'}</span>
+                                                            </td>
+                                                            <td className={cx('text-center')}>{gift.quantity}</td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ),
+                        )}
                     </div>
                 )}
             </div>
