@@ -287,11 +287,6 @@
             margin-bottom: 2px;
         }
 
-        .cart-item__price {
-            color: #e4002b;
-            font-weight: 600;
-        }
-
         .promo-tag {
             background: #ffeaea;
             color: #c30024;
@@ -377,6 +372,29 @@
         h4 {
             color: #e4002b;
         }
+    }
+}
+
+.cart-item__price {
+    color: #212529;
+    font-weight: 400;
+    font-size: 14px;
+}
+
+.cart-item__total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #ddd;
+    padding-top: 4px;
+    margin-top: 6px;
+    color: #212529;
+    font-weight: 600;
+    font-size: 14px;
+
+    strong {
+        color: #e4002b;
+        font-weight: 700;
     }
 }
 

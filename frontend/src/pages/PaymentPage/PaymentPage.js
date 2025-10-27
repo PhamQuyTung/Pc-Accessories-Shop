@@ -16,18 +16,17 @@ function PaymentPage() {
     const navigate = useNavigate();
     const showToast = useToast();
 
+    // === Nhận state từ CheckoutPage hoặc session ===
     const state = location.state || JSON.parse(sessionStorage.getItem('checkoutData'));
-
     const shippingInfo = state?.shippingInfo || {};
     const products = state?.products || [];
 
     const [paymentMethod, setPaymentMethod] = useState('cod');
     const [discountCode, setDiscountCode] = useState('');
     const [discountAmount, setDiscountAmount] = useState(0);
-    const [finalTotal, setFinalTotal] = useState(shippingInfo.total || 0);
     const [promotionSummary, setPromotionSummary] = useState({ totalDiscount: 0, discounts: [] });
 
-    // ✅ Lưu checkoutData vào session để F5 không mất dữ liệu
+    // ✅ Lưu lại session để F5 không mất dữ liệu
     if (location.state) {
         sessionStorage.setItem('checkoutData', JSON.stringify(location.state));
     }
@@ -60,18 +59,122 @@ function PaymentPage() {
         );
     }
 
-    // === Áp dụng mã giảm giá ===
+    // === Tính tạm tính sau khuyến mãi ===
+    const calcSubtotalAfterPromotion = () => {
+        return products.reduce((sum, item) => {
+            const product = item.product_id;
+            const basePrice = product.discountPrice > 0 ? product.discountPrice : product.price;
+            const promoItem = promotionSummary.discounts.find((d) => d.productId === product._id);
+
+            if (promoItem) {
+                const discountedPrice = basePrice - promoItem.discountPerItem;
+                const totalDiscounted = promoItem.discountedQty * discountedPrice;
+                const totalNormal = promoItem.normalQty * basePrice;
+                return sum + totalDiscounted + totalNormal;
+            } else {
+                return sum + basePrice * item.quantity;
+            }
+        }, 0);
+    };
+
+    const subtotal = calcSubtotalAfterPromotion();
+    const deliveryFee = shippingInfo.deliveryFee ? 40000 : 0;
+    const installFee = shippingInfo.installFee ? 200000 : 0;
+    const tax = shippingInfo.tax || 0;
+    const promoDiscount = promotionSummary.totalDiscount || 0;
+
+    // === Áp dụng mã giảm giá (giảm 10%) ===
     const handleApplyDiscount = () => {
-        if (discountCode === 'CODE') {
-            const discount = Math.round(shippingInfo.total * 0.1);
+        if (discountCode.trim().toUpperCase() === 'CODE') {
+            const discount = Math.round(subtotal * 0.1);
             setDiscountAmount(discount);
-            setFinalTotal(Math.round(shippingInfo.total - discount));
             showToast('Áp dụng mã giảm giá thành công (giảm 10%)', 'success');
         } else {
             setDiscountAmount(0);
-            setFinalTotal(shippingInfo.total);
             showToast('Mã giảm giá không hợp lệ', 'error');
         }
+    };
+
+    // === Tổng cuối cùng ===
+    const totalFinal = subtotal + deliveryFee + installFee + tax - discountAmount;
+
+    // === Render từng sản phẩm ===
+    const renderProduct = (item) => {
+        const product = item.product_id;
+        const productId = product._id;
+        const basePrice = product.discountPrice > 0 ? product.discountPrice : product.price;
+        const promoItem = promotionSummary.discounts.find((d) => d.productId === productId);
+        const rows = [];
+
+        if (promoItem) {
+            if (promoItem.discountedQty > 0) {
+                const discountedPrice = basePrice - promoItem.discountPerItem;
+                rows.push(
+                    <li key={`${productId}-promo`} className={cx('productItem', 'promoRow')}>
+                        <img
+                            src={Array.isArray(product.images) ? product.images[0] : product.images}
+                            alt={product.name}
+                            className={cx('productImage')}
+                        />
+                        <div className={cx('productInfo')}>
+                            <p className={cx('productName')}>{product.name}</p>
+                            <div className={cx('promotionTag')}>🎁 {promoItem.promotionTitle}</div>
+                            <p className={cx('productDetail')}>Số lượng: {promoItem.discountedQty}</p>
+                            <p className={cx('productDetail')}>
+                                Giá sau giảm: {discountedPrice.toLocaleString()}₫ × {promoItem.discountedQty}
+                            </p>
+                            <p className={cx('productTotal')}>
+                                Thành tiền: {(discountedPrice * promoItem.discountedQty).toLocaleString()}₫
+                            </p>
+                        </div>
+                    </li>,
+                );
+            }
+
+            if (promoItem.normalQty > 0) {
+                rows.push(
+                    <li key={`${productId}-normal`} className={cx('productItem')}>
+                        <img
+                            src={Array.isArray(product.images) ? product.images[0] : product.images}
+                            alt={product.name}
+                            className={cx('productImage')}
+                        />
+                        <div className={cx('productInfo')}>
+                            <p className={cx('productName')}>{product.name}</p>
+                            <p className={cx('productDetail')}>Số lượng: {promoItem.normalQty}</p>
+                            <p className={cx('productDetail')}>
+                                Giá: {basePrice.toLocaleString()}₫ × {promoItem.normalQty}
+                            </p>
+                            <p className={cx('productTotal')}>
+                                Thành tiền: {(basePrice * promoItem.normalQty).toLocaleString()}₫
+                            </p>
+                        </div>
+                    </li>,
+                );
+            }
+        } else {
+            rows.push(
+                <li key={productId} className={cx('productItem')}>
+                    <img
+                        src={Array.isArray(product.images) ? product.images[0] : product.images}
+                        alt={product.name}
+                        className={cx('productImage')}
+                    />
+                    <div className={cx('productInfo')}>
+                        <p className={cx('productName')}>{product.name}</p>
+                        <p className={cx('productDetail')}>Số lượng: {item.quantity}</p>
+                        <p className={cx('productDetail')}>
+                            Giá: {basePrice.toLocaleString()}₫ × {item.quantity}
+                        </p>
+                        <p className={cx('productTotal')}>
+                            Thành tiền: {(basePrice * item.quantity).toLocaleString()}₫
+                        </p>
+                    </div>
+                </li>,
+            );
+        }
+
+        return rows;
     };
 
     // === Xác nhận thanh toán ===
@@ -83,12 +186,12 @@ function PaymentPage() {
                     phone: shippingInfo.phone,
                     address: shippingInfo.address,
                 },
-                subtotal: shippingInfo.subtotal,
-                tax: shippingInfo.tax,
-                shippingFee: shippingInfo.deliveryFee ? 40000 : 0,
-                serviceFee: shippingInfo.installFee ? 200000 : 0,
-                discount: discountAmount + (promotionSummary.totalDiscount || 0),
-                total: finalTotal - (promotionSummary.totalDiscount || 0),
+                subtotal,
+                tax,
+                shippingFee: deliveryFee,
+                serviceFee: installFee,
+                discount: discountAmount + promoDiscount,
+                total: totalFinal,
                 paymentMethod,
             });
 
@@ -101,67 +204,6 @@ function PaymentPage() {
             showToast(message, 'error');
         }
     };
-
-    // === Render danh sách sản phẩm + quà tặng (đồng bộ từ CheckoutPage) ===
-    const renderProduct = (item) => {
-        const product = item.product_id;
-        const price = product.discountPrice > 0 ? product.discountPrice : product.price;
-        const total = price * item.quantity;
-
-        // Tìm khuyến mãi tương ứng
-        const promo = promotionSummary.discounts.find((d) => d.productId === product._id);
-
-        return (
-            <li key={item._id} className={cx('productItem')}>
-                <img
-                    src={Array.isArray(product.images) ? product.images[0] : product.images}
-                    alt={product.name}
-                    className={cx('productImage')}
-                />
-                <div className={cx('productInfo')}>
-                    <p className={cx('productName')}>{product.name}</p>
-                    <p className={cx('productDetail')}>Số lượng: {item.quantity}</p>
-                    <p className={cx('productDetail')}>
-                        Giá: {price.toLocaleString()}₫ × {item.quantity}
-                    </p>
-                    <p className={cx('productTotal')}>Thành tiền: {total.toLocaleString()}₫</p>
-
-                    {/* === Quà tặng từ product.gifts === */}
-                    {product.gifts?.length > 0 && (
-                        <div className={cx('giftList')}>
-                            <ul>
-                                {product.gifts.map((gift, gIdx) => (
-                                    <li key={gIdx} className={cx('giftGroup')}>
-                                        <p className={cx('giftTitle')}>🎁 {gift.title}:</p>
-                                        <ul>
-                                            {gift.products.map((gItem, i) => (
-                                                <li key={i} className={cx('giftItem')}>
-                                                    <span>{gItem.productId?.name}</span>
-                                                    <span>x{gItem.quantity * item.quantity}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {/* === Khuyến mãi áp dụng === */}
-                    {promo && (
-                        <div className={cx('promotionTag')}>
-                            <span>🔥 {promo.promotionTitle}</span>
-                            <span>-{promo.discountPerItem?.toLocaleString()}₫/sp</span>
-                        </div>
-                    )}
-                </div>
-            </li>
-        );
-    };
-
-    // === Tổng hợp chi phí ===
-    const promoDiscount = promotionSummary.totalDiscount || 0;
-    const totalWithPromo = finalTotal - promoDiscount;
 
     return (
         <div className={cx('payment')}>
@@ -190,26 +232,26 @@ function PaymentPage() {
                         <ul className={cx('list')}>
                             <li>
                                 <span className={cx('label')}>Tạm tính:</span>
-                                <strong>{shippingInfo.subtotal?.toLocaleString() || 0}₫</strong>
+                                <strong>{subtotal.toLocaleString()}₫</strong>
                             </li>
                             <li>
                                 <span className={cx('label')}>Phí giao hàng:</span>
-                                <strong>{shippingInfo.deliveryFee ? '40.000₫' : 'FREE'}</strong>
+                                <strong>{deliveryFee ? `${deliveryFee.toLocaleString()}₫` : 'FREE'}</strong>
                             </li>
                             <li>
                                 <span className={cx('label')}>Phí lắp đặt:</span>
-                                <strong>{shippingInfo.installFee ? '200.000₫' : 'FREE'}</strong>
+                                <strong>{installFee ? `${installFee.toLocaleString()}₫` : 'FREE'}</strong>
                             </li>
                             <li>
                                 <span className={cx('label')}>Thuế:</span>
-                                <strong>{shippingInfo.tax?.toLocaleString() || 0}₫</strong>
+                                <strong>{tax.toLocaleString()}₫</strong>
                             </li>
-                            {promoDiscount > 0 && (
+                            {/* {promoDiscount > 0 && (
                                 <li>
                                     <span className={cx('label')}>Khuyến mãi:</span>
                                     <strong>-{promoDiscount.toLocaleString()}₫</strong>
                                 </li>
-                            )}
+                            )} */}
                             {discountAmount > 0 && (
                                 <li>
                                     <span className={cx('label')}>Mã giảm giá 10%:</span>
@@ -279,7 +321,7 @@ function PaymentPage() {
                 {/* === Tổng tiền cuối === */}
                 <div className={cx('total')}>
                     <p>Tổng tiền:</p>
-                    <span>{totalWithPromo.toLocaleString()}₫</span>
+                    <span>{totalFinal.toLocaleString()}₫</span>
                 </div>
 
                 <button onClick={handleConfirmPayment} className={cx('confirmButton')}>

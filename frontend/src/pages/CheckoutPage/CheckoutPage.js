@@ -46,6 +46,24 @@ function CheckoutPage() {
     const tax = Math.round(afterDiscount * 0.15);
     const total = afterDiscount + tax + installFee + (form.deliveryMethod === 'express' ? 40000 : 0);
 
+    // === Tính tổng phụ sau khi áp dụng khuyến mãi (từng sản phẩm) ===
+    const calcSubtotalAfterPromotion = () => {
+        return cartItems.reduce((sum, item) => {
+            const product = item.product_id;
+            const basePrice = product.discountPrice > 0 ? product.discountPrice : product.price;
+            const promoItem = promotionSummary.discounts.find((d) => d.productId === product._id);
+
+            if (promoItem) {
+                const discountedPrice = basePrice - promoItem.discountPerItem;
+                const totalDiscounted = promoItem.discountedQty * discountedPrice;
+                const totalNormal = promoItem.normalQty * basePrice;
+                return sum + totalDiscounted + totalNormal;
+            } else {
+                return sum + basePrice * item.quantity;
+            }
+        }, 0);
+    };
+
     // === Lấy giỏ hàng + khuyến mãi ===
     useEffect(() => {
         const fetchCart = async () => {
@@ -131,10 +149,13 @@ function CheckoutPage() {
         const promoItem = promotionSummary.discounts.find((d) => d.productId === productId);
 
         const rows = [];
+
         if (promoItem) {
             // Dòng khuyến mãi
             if (promoItem.discountedQty > 0) {
                 const discountedPrice = basePrice - promoItem.discountPerItem;
+                const totalDiscounted = promoItem.discountedQty * discountedPrice;
+
                 rows.push(
                     <div key={`${productId}-promo`} className={cx('cart-item', 'promo-row')}>
                         <img
@@ -145,13 +166,20 @@ function CheckoutPage() {
                             <p className={cx('cart-item__name')}>{product.name}</p>
                             <div className={cx('promo-tag')}>🎁 {promoItem.promotionTitle}</div>
                             <p className={cx('cart-item__qty')}>SL: {promoItem.discountedQty}</p>
-                            <strong className={cx('cart-item__price')}>{discountedPrice.toLocaleString()}₫</strong>
+                            <p className={cx('cart-item__price')}>Đơn giá: {discountedPrice.toLocaleString()}₫</p>
+                            <div className={cx('cart-item__total')}>
+                                <span>Thành tiền:</span>
+                                <strong>{totalDiscounted.toLocaleString()}₫</strong>
+                            </div>
                         </div>
                     </div>,
                 );
             }
+
             // Dòng thường
             if (promoItem.normalQty > 0) {
+                const totalNormal = promoItem.normalQty * basePrice;
+
                 rows.push(
                     <div key={`${productId}-normal`} className={cx('cart-item')}>
                         <img
@@ -161,23 +189,35 @@ function CheckoutPage() {
                         <div className={cx('cart-item__info')}>
                             <p className={cx('cart-item__name')}>{product.name}</p>
                             <p className={cx('cart-item__qty')}>SL: {promoItem.normalQty}</p>
-                            <strong className={cx('cart-item__price')}>{basePrice.toLocaleString()}₫</strong>
+                            <p className={cx('cart-item__price')}>Đơn giá: {basePrice.toLocaleString()}₫</p>
+                            <div className={cx('cart-item__total')}>
+                                <span>Thành tiền:</span>
+                                <strong>{totalNormal.toLocaleString()}₫</strong>
+                            </div>
                         </div>
                     </div>,
                 );
             }
         } else {
+            // Không có khuyến mãi
+            const totalNormal = basePrice * item.quantity;
+
             rows.push(
                 <div key={productId} className={cx('cart-item')}>
                     <img src={Array.isArray(product.images) ? product.images[0] : product.images} alt={product.name} />
                     <div className={cx('cart-item__info')}>
                         <p className={cx('cart-item__name')}>{product.name}</p>
                         <p className={cx('cart-item__qty')}>SL: {item.quantity}</p>
-                        <strong className={cx('cart-item__price')}>{basePrice.toLocaleString()}₫</strong>
+                        <p className={cx('cart-item__price')}>Đơn giá: {basePrice.toLocaleString()}₫</p>
+                        <div className={cx('cart-item__total')}>
+                            <span>Thành tiền:</span>
+                            <strong>{totalNormal.toLocaleString()}₫</strong>
+                        </div>
                     </div>
                 </div>,
             );
         }
+
         return rows;
     };
 
@@ -277,12 +317,8 @@ function CheckoutPage() {
                             <h3>Tóm tắt đơn hàng</h3>
                             <div className={cx('summary-section__details')}>
                                 <div className={cx('summary-item')}>
-                                    <span>Tổng phụ</span>
-                                    <span>{subtotal.toLocaleString()}₫</span>
-                                </div>
-                                <div className={cx('summary-item')}>
-                                    <span>Khuyến mãi</span>
-                                    <span>- {totalDiscount.toLocaleString()}₫</span>
+                                    <span>Tổng phụ (đã bao gồm khuyến mãi)</span>
+                                    <span>{calcSubtotalAfterPromotion().toLocaleString()}₫</span>
                                 </div>
                                 <div className={cx('summary-item')}>
                                     <span>Phí ship</span>
