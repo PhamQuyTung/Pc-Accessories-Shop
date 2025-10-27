@@ -342,3 +342,39 @@
         padding: 6px;
     }
 }
+
+.promo-row {
+    background: #fffbe6;
+}
+
+.promo-tag {
+    color: #d48806;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.gift-row {
+    background: #f6ffed;
+}
+
+.gift-list {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-left: 40px;
+}
+
+.gift-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 1.4rem;
+}
+
+.gift-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover;
+}

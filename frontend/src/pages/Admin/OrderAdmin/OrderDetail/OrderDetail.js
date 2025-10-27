@@ -104,6 +104,75 @@ const OrderDetail = () => {
     if (order.status === 'completed') currentStageIndex = 6;
     if (order.status === 'cancelled') currentStageIndex = 1;
 
+    // === Tách sản phẩm khuyến mãi và thường ===
+    const generateDisplayItems = (orderData) => {
+        if (!orderData?.items || !Array.isArray(orderData.items)) return [];
+
+        const items = orderData.items;
+        const promotionSummary = orderData.promotionSummary || { discounts: [] };
+        const displayRows = [];
+
+        items.forEach((item) => {
+            const product = item.product_id;
+            const productId = product?._id || item._id;
+            const productName = product?.name || item.productName;
+            const basePrice = item.finalPrice || product.discountPrice || product.price;
+            const promoItem = promotionSummary.discounts.find((d) => d.productId === productId);
+
+            if (promoItem) {
+                // 🎯 Dòng khuyến mãi
+                if (promoItem.discountedQty > 0) {
+                    const discountedPrice = basePrice - promoItem.discountPerItem;
+                    const totalDiscounted = promoItem.discountedQty * discountedPrice;
+
+                    displayRows.push({
+                        key: `${productId}-promo`,
+                        img: product.images?.[0] || '/no-image.png',
+                        name: productName,
+                        quantity: promoItem.discountedQty,
+                        price: discountedPrice,
+                        total: totalDiscounted,
+                        isPromo: true,
+                        promotionTitle: promoItem.promotionTitle,
+                        gifts: item.gifts || [],
+                    });
+                }
+
+                // 🎯 Dòng không khuyến mãi
+                if (promoItem.normalQty > 0) {
+                    const totalNormal = promoItem.normalQty * basePrice;
+                    displayRows.push({
+                        key: `${productId}-normal`,
+                        img: product.images?.[0] || '/no-image.png',
+                        name: productName,
+                        quantity: promoItem.normalQty,
+                        price: basePrice,
+                        total: totalNormal,
+                        isPromo: false,
+                        gifts: item.gifts || [],
+                    });
+                }
+            } else {
+                // 🧱 Không khuyến mãi
+                const total = basePrice * item.quantity;
+                displayRows.push({
+                    key: productId,
+                    img: product.images?.[0] || '/no-image.png',
+                    name: productName,
+                    quantity: item.quantity,
+                    price: basePrice,
+                    total,
+                    isPromo: false,
+                    gifts: item.gifts || [],
+                });
+            }
+        });
+
+        return displayRows;
+    };
+
+    const displayItems = generateDisplayItems(order);
+
     return (
         <div className={cx('order-detail')}>
             {/* 👉 Ẩn invoice chỉ để in, không hiện trên UI */}
@@ -198,32 +267,54 @@ const OrderDetail = () => {
                     </thead>
 
                     <tbody>
-                        {order.items.map((item) => {
-                            const product = item.product_id;
-                            const imageUrl = product?.images?.length > 0 ? product.images[0] : '/no-image.png';
-                            return (
-                                <tr key={item._id}>
+                        {displayItems.map((row) => (
+                            <React.Fragment key={row.key}>
+                                <tr className={cx({ 'promo-row': row.isPromo })}>
                                     <td className={cx('product-cell')}>
-                                        <img
-                                            src={imageUrl}
-                                            alt={product?.name || item.productName}
-                                            className={cx('product-img')}
-                                        />
-                                        <span>{product?.name || item.productName}</span>
+                                        <img src={row.img} alt={row.name} className={cx('product-img')} />
+                                        <div>
+                                            <span>{row.name}</span>
+                                            {row.isPromo && (
+                                                <div className={cx('promo-tag')}>
+                                                    🎁 {row.promotionTitle || 'Áp dụng khuyến mãi'}
+                                                </div>
+                                            )}
+                                        </div>
                                     </td>
-                                    <td className={cx('text-center')}>{item.quantity}</td>
-                                    <td className={cx('text-right')}>{item.price.toLocaleString('vi-VN')} ₫</td>
-                                    <td className={cx('text-right')}>
-                                        {(item.price * item.quantity).toLocaleString('vi-VN')} ₫
-                                    </td>
+                                    <td className={cx('text-center')}>{row.quantity}</td>
+                                    <td className={cx('text-right')}>{row.price.toLocaleString('vi-VN')} ₫</td>
+                                    <td className={cx('text-right')}>{row.total.toLocaleString('vi-VN')} ₫</td>
                                 </tr>
-                            );
-                        })}
+
+                                {/* Quà tặng kèm nếu có */}
+                                {row.gifts?.length > 0 && (
+                                    <tr className={cx('gift-row')}>
+                                        <td colSpan={4}>
+                                            <div className={cx('gift-list')}>
+                                                {row.gifts.map((gift, index) => (
+                                                    <div key={index} className={cx('gift-item')}>
+                                                        <img
+                                                            src={gift.productId?.images?.[0] || '/no-image.png'}
+                                                            alt={gift.productId?.name || 'Quà tặng'}
+                                                            className={cx('gift-img')}
+                                                        />
+                                                        <span>
+                                                            🎁 {gift.productId?.name || 'Quà tặng'} (SL: {gift.quantity}
+                                                            )
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </React.Fragment>
+                        ))}
                     </tbody>
                 </table>
 
                 {/* Hiển thị quà tặng cho từng sản phẩm nếu có */}
-                {order.items.some((item) => item.gifts && item.gifts.length > 0) && (
+                {/* {order.items.some((item) => item.gifts && item.gifts.length > 0) && (
                     <div className={cx('gifts')}>
                         <h3>🎁 Quà tặng kèm</h3>
 
@@ -264,7 +355,7 @@ const OrderDetail = () => {
                                 ),
                         )}
                     </div>
-                )}
+                )} */}
             </div>
 
             {/* Tổng cộng */}
