@@ -5,6 +5,36 @@ const Review = require("../models/review");
 const mongoose = require("mongoose");
 const { computeProductStatus } = require("../../../../shared/productStatus");
 
+// 🔧 Hàm sinh tổ hợp biến thể từ attributes
+const generateVariations = (attributes, baseSku = "SP") => {
+  if (!attributes || !attributes.length) return [];
+
+  // sinh combination từ mảng attributes
+  const combine = (arr) =>
+    arr.reduce(
+      (acc, cur) => {
+        const res = [];
+        acc.forEach((a) => {
+          cur.terms.forEach((t) => {
+            res.push([...a, { attrId: cur.attrId, termId: t }]);
+          });
+        });
+        return res;
+      },
+      [[]]
+    );
+
+  const combinations = combine(attributes);
+  return combinations.map((combo, index) => ({
+    sku: `${baseSku}-${index + 1}`,
+    price: null,
+    discountPrice: null,
+    quantity: 0,
+    attributes: combo,
+    images: [],
+  }));
+};
+
 class ProductController {
   // Lấy tất cả sản phẩm
   async getAll(req, res) {
@@ -335,9 +365,20 @@ class ProductController {
         dimensions,
         weight,
         variations,
-        importing, // 👈 nếu bạn có field này
-        isBestSeller, // 👈 Thêm dòng này
+        importing,
+        isBestSeller,
       } = req.body;
+
+      // 🧩 Nếu là sản phẩm biến thể, tự sinh variations từ attributes
+      if (
+        req.body.productType === "variable" &&
+        Array.isArray(req.body.attributes)
+      ) {
+        req.body.variations = generateVariations(
+          req.body.attributes,
+          req.body.sku || "SP"
+        );
+      }
 
       const product = new Product({
         name,
@@ -361,6 +402,7 @@ class ProductController {
           value: weight?.value || 0,
           unit: weight?.unit || "kg",
         },
+        attributes: Array.isArray(req.body.attributes) ? req.body.attributes : [],
         variations: Array.isArray(variations)
           ? variations.map((v) => ({
               attributes: v.attributes || [],
@@ -539,6 +581,11 @@ class ProductController {
       // ✅ Bỏ status client gửi, ta sẽ tính lại
       delete data.status;
 
+      // 🧩 Nếu là sản phẩm biến thể, tự sinh variations từ attributes
+      if (data.productType === "variable" && Array.isArray(data.attributes)) {
+        data.variations = generateVariations(data.attributes, data.sku || "SP");
+      }
+
       // đảm bảo luôn có shortDescription & longDescription
       data.shortDescription = data.shortDescription || "";
       data.longDescription = data.longDescription || "";
@@ -589,9 +636,10 @@ class ProductController {
       res.json(updated);
     } catch (err) {
       console.error("❌ Lỗi updateProduct:", err);
-      res
-        .status(500)
-        .json({ error: "Lỗi khi cập nhật sản phẩm", details: err.message });
+      res.status(500).json({
+        error: "Lỗi khi cập nhật sản phẩm",
+        details: err.message,
+      });
     }
   }
 

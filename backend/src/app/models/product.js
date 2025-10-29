@@ -29,11 +29,7 @@ const variationSchema = new mongoose.Schema(
           ref: "Attribute",
           required: true,
         },
-        termId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "AttributeTerm",
-          required: true,
-        },
+        terms: [{ type: mongoose.Schema.Types.ObjectId, ref: "AttributeTerm" }], // 👈 đổi tên từ termIds → terms
       },
     ],
     dimensions: {
@@ -94,7 +90,7 @@ const productSchema = new mongoose.Schema({
         ref: "Attribute",
         required: true,
       },
-      termIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "AttributeTerm" }],
+      terms: [{ type: mongoose.Schema.Types.ObjectId, ref: "AttributeTerm" }],
     },
   ],
 

@@ -433,18 +433,37 @@ export default function CreateProduct() {
             importing: !!form.importing,
             status: statusArr,
             productType,
-            variantAttributes: [],
-            variants: [],
-            isBestSeller: !!form.isBestSeller, // 👈 Thêm dòng này
+            isBestSeller: !!form.isBestSeller, // 👈 giữ lại
         };
 
         if (productType === 'variable') {
-            payload.variantAttributes = productAttributes.filter((a) => a.useForVariations).map((a) => a.attrId);
-            payload.variants = variants.map((v) => ({
-                attributes: v.attributes.map((a) => ({ attribute: a.attributeId, term: a.termId })),
+            // --- attributes: gửi lên để backend tự sinh tổ hợp (format backend mong đợi) ---
+            payload.attributes = productAttributes
+                .filter((a) => a.useForVariations)
+                .map((a) => ({
+                    attrId: a.attrId,
+                    // đổi 'termIds' -> 'terms' và filter bỏ null
+                    terms: (a.terms || [])
+                        .map((t) => (typeof t === 'object' ? t._id : t))
+                        .filter(Boolean),
+                    useForVariations: true, // thêm để backend biết đây là thuộc tính dùng cho biến thể
+                }));
+
+            // --- variations: nếu bạn đã chỉnh từng biến thể (giá/sku/qty), gửi chi tiết theo schema backend ---
+            payload.variations = variants.map((v) => ({
+                // each variation.attributes is array of { attrId, termId }
+                attributes: (v.attributes || []).map((a) => ({
+                    attrId: a.attributeId ?? a.attrId, // support both keys just in case
+                    termId: a.termId ?? (a.term && a.term._id) ?? a.termId,
+                })),
                 price: Number(v.price),
                 discountPrice: Number(v.discountPrice || 0),
                 quantity: Number(v.quantity || 0),
+                sku: v.sku || '',
+                images: v.images || [],
+                // optional: dimensions, weight, etc if you capture them on UI
+                dimensions: v.dimensions || undefined,
+                weight: v.weight || undefined,
             }));
         }
 
