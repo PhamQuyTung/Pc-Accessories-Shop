@@ -16,7 +16,7 @@ function Trash() {
         setLoading(true);
         try {
             const res = await axiosClient.get('/products/trash');
-            setProducts(Array.isArray(res.data) ? res.data : []);
+            setProducts(Array.isArray(res.data.products) ? res.data.products : []);
         } catch (err) {
             toast('Lỗi khi lấy danh sách thùng rác!', 'error');
             setProducts([]); // Đảm bảo luôn là mảng khi lỗi
@@ -90,7 +90,7 @@ function Trash() {
                         {products.map((product) => (
                             <tr key={product._id}>
                                 <td>{product.name}</td>
-                                <td>{product.category}</td>
+                                <td>{product.category?.name || 'Không có'}</td>
                                 <td>{product.price?.toLocaleString()}₫</td>
                                 <td>
                                     {product.discountPrice ? product.discountPrice.toLocaleString() + '₫' : 'Không có'}

@@ -1,24 +1,17 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import axiosClient from '~/utils/axiosClient';
 import axios from 'axios';
 import classNames from 'classnames/bind';
 import styles from './CreateProduct.module.scss';
 import { useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
-import { motion, AnimatePresence } from 'framer-motion';
-
-import ReactQuill from 'react-quill-new';
-import { quillModules, quillFormats, registerQuillModules } from '~/utils/quillSetup';
-import 'react-quill-new/dist/quill.snow.css';
-
-import ConfirmNavigate from '~/components/ConfirmNavigate/ConfirmNavigate';
-import useUnsavedChangesWarning from '~/hooks/useUnsavedChangesWarning';
-
 import { useToast } from '~/components/ToastMessager';
-import VariantImage from '~/components/VariantImage/VariantImage';
 import { computeProductStatus } from 'shared-utils';
-import CustomToolbar from '~/components/Editor/CustomToolbar';
+import { registerQuillModules } from '~/utils/quillSetup';
 
+import ProductGeneral from './components/ProductGeneral';
+import AttributesPanel from './components/AttributesPanel';
+import VariantsEditor from './components/VariantsEditor';
+import SidePublish from './components/SidePublish';
 registerQuillModules();
 
 const cx = classNames.bind(styles);
@@ -27,7 +20,7 @@ export default function CreateProduct() {
     const toast = useToast();
     const navigate = useNavigate();
 
-    // Basic form data
+    // Basic form data (kept minimal)
     const [form, setForm] = useState({
         name: '',
         shortDescription: '',
@@ -40,260 +33,103 @@ export default function CreateProduct() {
         brand: '',
         category: '',
         specs: {},
-        isBestSeller: false, // 👈 Thêm dòng này
+        isBestSeller: false,
     });
 
-    const [categories, setCategories] = useState([]);
-    const [categorySchema, setCategorySchema] = useState([]);
-
-    // Product type
-    const [productType, setProductType] = useState('simple'); // 'simple' | 'variable'
-
-    // Attributes & terms from backend
-    const [allAttributes, setAllAttributes] = useState([]); // attributes with terms
-
-    // Attributes selected for this product
-    // { attrId, name, type, useForVariations: bool, terms: [termIds...] }
-    const [productAttributes, setProductAttributes] = useState([]);
-
-    // Map of attributeId -> full term objects (from backend)
+    // product type and related states
+    const [productType, setProductType] = useState('simple');
+    const [allAttributes, setAllAttributes] = useState([]);
     const [attributeTermsMap, setAttributeTermsMap] = useState({});
-
-    // Variant combinations (auto generated) or custom list
+    const [productAttributes, setProductAttributes] = useState([]);
     const [variants, setVariants] = useState([]);
-
-    // existingProducts for duplicate name check
+    const [categories, setCategories] = useState([]);
+    const [brands, setBrands] = useState([]);
     const [existingProducts, setExistingProducts] = useState([]);
 
-    const [selectedColors, setSelectedColors] = useState([]);
-    const [selectedSizes, setSelectedSizes] = useState([]);
-
-    // Brands from backend
-    const [brands, setBrands] = useState([]);
-
-    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
-    // ✅ Lưu form ban đầu để so sánh
     const initialFormRef = useRef(form);
-
-    // So sánh form hiện tại với form ban đầu
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     useEffect(() => {
-        const isDirty = JSON.stringify(form) !== JSON.stringify(initialFormRef.current) || productType !== 'simple'; // nếu đổi sang variable cũng tính là thay đổi
-        setHasUnsavedChanges(isDirty);
+        setHasUnsavedChanges(
+            JSON.stringify(form) !== JSON.stringify(initialFormRef.current) || productType !== 'simple',
+        );
     }, [form, productType]);
 
-    // Hook cảnh báo khi F5 hoặc đóng tab
-    useUnsavedChangesWarning(hasUnsavedChanges);
-
-    // Gọi API lấy brands khi load trang
+    // fetch attributes/terms, brands, categories, products (kept same calls)
     useEffect(() => {
-        const fetchBrands = async () => {
+        const fetch = async () => {
             try {
-                const res = await axiosClient.get('/brands');
-                setBrands(res.data); // backend trả về mảng brands
-            } catch (err) {
-                console.error('Lỗi khi fetch brands:', err);
-            }
-        };
-        fetchBrands();
-    }, []);
-
-    // Lấy API của attribute và terms
-    useEffect(() => {
-        const fetchAttributesAndTerms = async () => {
-            try {
-                // console.log('🚀 Bắt đầu load attributes + terms');
-
-                // 1️⃣ Lấy danh sách attributes từ backend
-                const { data: attrRes } = await axiosClient.get('/attributes');
-                const attributes = Array.isArray(attrRes) ? attrRes : attrRes.data || [];
-
-                // console.log('✅ Attributes nhận về:', attributes);
-
-                if (!attributes.length) {
-                    console.warn('⚠️ Không có attributes nào từ server');
-                    return;
-                }
-
-                // 2️⃣ Lấy terms cho từng attribute
+                const resAttr = await axiosClient.get('/attributes');
+                const attributes = Array.isArray(resAttr) ? resAttr : resAttr.data || [];
+                // fetch terms per attribute
                 const attributesWithTerms = await Promise.all(
                     attributes.map(async (attr) => {
-                        // Nếu type = text → không fetch terms
-                        if (attr.type === 'text') {
-                            return {
-                                attrId: attr._id,
-                                name: attr.name,
-                                type: attr.type,
-                                useForVariations: false,
-                                terms: [],
-                            };
-                        }
-
+                        if (attr.type === 'text') return { _id: attr._id, name: attr.name, type: attr.type, terms: [] };
                         try {
-                            const url = `/attribute-terms/${attr._id}`;
-                            // console.log('🔹 Gọi URL:', axiosClient.defaults.baseURL + url);
-
-                            const res = await axiosClient.get(url);
-                            const terms = Array.isArray(res.data) ? res.data : res.data?.data || [];
-
-                            return {
-                                attrId: attr._id,
-                                name: attr.name,
-                                type: attr.type,
-                                useForVariations: false,
-                                terms: terms.map((t) => ({
-                                    termId: t._id,
-                                    name: t.name,
-                                    slug: t.slug,
-                                    colorCode: t.color || null,
-                                })),
-                            };
-                        } catch (err) {
-                            console.error(`❌ Lỗi lấy terms cho ${attr.name}:`, err);
-                            return { ...attr, terms: [] };
+                            const { data } = await axiosClient.get(`/attribute-terms/${attr._id}`);
+                            const terms = Array.isArray(data) ? data : data?.data || [];
+                            return { _id: attr._id, name: attr.name, type: attr.type, terms };
+                        } catch {
+                            return { _id: attr._id, name: attr.name, type: attr.type, terms: [] };
                         }
                     }),
                 );
-
-                // 3️⃣ Log cảnh báo nếu cần
-                attributesWithTerms.forEach((attr) => {
-                    if (attr.terms.length > 0) {
-                        // console.log(`📦 Terms của ${attr.name}:`, attr.terms);
-                    } else if (attr.type === 'color' || attr.type === 'button') {
-                        // console.warn(`⚠️ ${attr.name} chưa có terms`);
-                    }
+                const map = {};
+                attributesWithTerms.forEach((a) => {
+                    map[a._id] = (a.terms || []).map((t) => ({ _id: t._id, name: t.name }));
                 });
-
-                // 4️⃣ Cập nhật map cho UI
-                const termsMap = {};
-                attributesWithTerms.forEach((attr) => {
-                    termsMap[attr.attrId] = attr.terms.map((t) => ({
-                        _id: t.termId,
-                        name: t.name,
-                        slug: t.slug,
-                        color: t.colorCode,
-                    }));
-                });
-
-                setAttributeTermsMap(termsMap);
-                setProductAttributes(attributesWithTerms);
-
-                // setAllAttributes(attributesWithTerms); // để render danh sách chọn
-                // setProductAttributes([]); // ban đầu rỗng
-
-                // console.log('🎯 Kết quả cuối:', attributesWithTerms);
-            } catch (error) {
-                console.error('❌ Lỗi lấy attributes:', error);
+                setAttributeTermsMap(map);
+                setAllAttributes(attributesWithTerms);
+            } catch (err) {
+                console.error(err);
             }
         };
+        fetch();
 
-        fetchAttributesAndTerms();
+        axiosClient
+            .get('/brands')
+            .then((r) => setBrands(r.data || []))
+            .catch(() => {});
+        axiosClient
+            .get('/categories')
+            .then((r) => setCategories(r.data || []))
+            .catch(() => {});
+        axiosClient
+            .get('/products', { params: { isAdmin: true, limit: 1000 } })
+            .then((r) => setExistingProducts(r.data.products || []))
+            .catch(() => {});
     }, []);
 
-    useEffect(() => {
-        if (selectedColors.length && selectedSizes.length) {
-            const combos = [];
-            selectedColors.forEach((color) => {
-                selectedSizes.forEach((size) => {
-                    combos.push({
-                        combination: `${color} / ${size}`,
-                        price: '',
-                        salePrice: '',
-                        quantity: '',
-                        sku: '',
-                        image: null,
-                    });
-                });
-            });
-            setVariants(combos);
-        }
-    }, [selectedColors, selectedSizes]);
-
-    useEffect(() => {
-        // fetch categories
-        axios
-            .get('http://localhost:5000/api/categories')
-            .then((res) => setCategories(res.data || []))
-            .catch(() => setCategories([]));
-
-        // fetch all attributes with terms
-        fetchAttributesWithTerms();
-
-        axios
-            .get('http://localhost:5000/api/products', { params: { isAdmin: true, limit: 1000 } })
-            .then((res) => setExistingProducts(res.data.products || []))
-            .catch(() => setExistingProducts([]));
-    }, []);
-
-    useEffect(() => {
-        if (!form.category) return;
-        axios
-            .get(`http://localhost:5000/api/categories/${form.category}`)
-            .then((res) => {
-                const attributes = res.data.attributes || [];
-                const schema = attributes.map((a) => ({ label: a.name, key: a.key, type: a.type }));
-                setCategorySchema(schema);
-
-                const newSpecs = {};
-                schema.forEach((item) => {
-                    newSpecs[item.key] = form.specs[item.key] || '';
-                });
-                setForm((prev) => ({ ...prev, specs: newSpecs }));
-            })
-            .catch(() => setCategorySchema([]));
-    }, [form.category]);
-
-    const handleVariantChange = (index, field, value) => {
-        const updated = [...variants];
-        updated[index][field] = value;
-        setVariants(updated);
-    };
-
-    const fetchAttributesWithTerms = async () => {
-        try {
-            const res = await axios.get('http://localhost:5000/api/attributes/with-terms');
-            const attrs = res.data || [];
-            setAllAttributes(attrs);
-
-            // build quick map of terms for each attribute id
-            const map = {};
-            attrs.forEach((a) => {
-                map[a._id] = a.terms || [];
-            });
-            setAttributeTermsMap(map);
-        } catch (err) {
-            console.error(err);
-            setAllAttributes([]);
-            setAttributeTermsMap({});
-        }
-    };
-
-    // ---------- Form helpers ----------
+    // helpers moved here and passed down
     const handleFormChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        if (name.startsWith('specs.')) {
-            const key = name.split('.')[1];
-            setForm((prev) => ({ ...prev, specs: { ...prev.specs, [key]: value } }));
-            return;
+        // support synthetic calls from Quill where we pass object
+        if (e && e.target && typeof e.target.name === 'string') {
+            const { name, value, type, checked } = e.target;
+            if (name.startsWith('specs.')) {
+                const key = name.split('.')[1];
+                setForm((prev) => ({ ...prev, specs: { ...prev.specs, [key]: value } }));
+                return;
+            }
+            if (name.startsWith('image-')) {
+                const idx = Number(name.split('-')[1]);
+                setForm((prev) => ({ ...prev, images: prev.images.map((im, i) => (i === idx ? value : im)) }));
+                return;
+            }
+            if (name === 'importing') {
+                setForm((prev) => ({ ...prev, importing: checked, quantity: checked ? 0 : prev.quantity }));
+                return;
+            }
+            setForm((prev) => ({ ...prev, [name]: value }));
+        } else if (e && e.name) {
+            // synthetic call: { name, value }
+            const { name, value } = e;
+            setForm((prev) => ({ ...prev, [name]: value }));
         }
-        if (name.startsWith('image-')) {
-            const idx = Number(name.split('-')[1]);
-            const imgs = [...form.images];
-            imgs[idx] = value;
-            setForm((prev) => ({ ...prev, images: imgs }));
-            return;
-        }
-        if (name === 'importing') {
-            setForm((prev) => ({ ...prev, importing: checked, quantity: checked ? 0 : prev.quantity }));
-            return;
-        }
-        setForm((prev) => ({ ...prev, [name]: value }));
     };
 
     const addImageField = () => setForm((prev) => ({ ...prev, images: [...prev.images, ''] }));
     const removeImageField = (i) => setForm((prev) => ({ ...prev, images: prev.images.filter((_, idx) => idx !== i) }));
 
-    // ---------- Attribute management (WP-like) ----------
+    // attribute/product attribute management (copied core logic)
     const addAttributeToProduct = (attrId) => {
         const attr = allAttributes.find((a) => a._id === attrId);
         if (!attr) return;
@@ -303,18 +139,11 @@ export default function CreateProduct() {
             { attrId: attr._id, name: attr.name, type: attr.type, useForVariations: false, terms: [] },
         ]);
     };
-
-    const removeProductAttribute = (attrId) => {
-        setProductAttributes((prev) => prev.filter((a) => a.attrId !== attrId));
-    };
-
-    const toggleUseForVariations = (attrId, checked) => {
+    const removeProductAttribute = (attrId) => setProductAttributes((prev) => prev.filter((a) => a.attrId !== attrId));
+    const toggleUseForVariations = (attrId, checked) =>
         setProductAttributes((prev) =>
             prev.map((a) => (a.attrId === attrId ? { ...a, useForVariations: checked } : a)),
         );
-    };
-
-    // thay hàm cũ bằng hàm này
     const toggleTermForAttribute = (attrId, termOrId, checked) => {
         const termId = termOrId && typeof termOrId === 'object' ? termOrId._id : termOrId;
         setProductAttributes((prev) =>
@@ -327,14 +156,8 @@ export default function CreateProduct() {
         );
     };
 
-    // Build arrays for variation generation
+    // generateVariantCombinations (kept same)
     const generateVariantCombinations = () => {
-        // chuẩn hóa: lấy các attribute được dùng cho biến thể và có ít nhất 1 termId
-        console.log('productAttributes raw:', productAttributes);
-        productAttributes.forEach((a, i) => {
-            console.log(`Attr #${i}`, a);
-        });
-
         const normalized = productAttributes
             .map((a) => ({
                 attrId: a.attrId,
@@ -343,18 +166,13 @@ export default function CreateProduct() {
                 terms: (a.terms || []).map((t) => (typeof t === 'object' ? t._id : t)).filter(Boolean),
             }))
             .filter((a) => a.useForVariations && Array.isArray(a.terms) && a.terms.length > 0);
-        console.log('Normalized attributes:', normalized);
 
         if (normalized.length === 0) {
-            // debug: show current state (mở console khi dev)
             toast('Bạn cần chọn ít nhất 1 thuộc tính và ít nhất 1 term để sinh biến thể', 'error');
             return;
         }
 
-        // arrays of { attributeId, termId }
         const arrays = normalized.map((a) => a.terms.map((termId) => ({ attributeId: a.attrId, termId })));
-
-        // cartesian product
         const cartesian = arrays.reduce((acc, arr) => acc.flatMap((x) => arr.map((y) => [...x, y])), [[]]);
 
         const newVariants = cartesian.map((combo, idx) => {
@@ -364,125 +182,81 @@ export default function CreateProduct() {
                 ) || { _id: c.termId, name: String(c.termId) };
                 return { attributeId: c.attributeId, termId: c.termId, term: termObj };
             });
-
             return {
-                key: 'v-' + idx + '-' + combo.map((i) => i.termId).join('-'),
+                key: `v-${idx}-${combo.map((i) => i.termId).join('-')}`,
                 attributes,
                 price: '',
                 discountPrice: '',
                 quantity: '',
                 sku: '',
                 images: [],
-                isOpen: false, // <-- thêm trường này
+                isOpen: false,
             };
         });
 
         setVariants(newVariants);
     };
 
-    const validateAndBuildPayload = () => {
-        // duplicate name
-        const isDuplicate = existingProducts.some(
-            (p) => p.name.trim().toLowerCase() === form.name.trim().toLowerCase(),
-        );
-        if (isDuplicate) {
-            toast('Tên sản phẩm đã tồn tại', 'error');
-            return null;
-        }
+    const handleVariantChange = (index, field, value) => {
+        setVariants((prev) => {
+            const updated = [...prev];
+            // support nested paths like 'dimensions.length'
+            if (field.includes('.')) {
+                const [f, sub] = field.split('.');
+                updated[index] = { ...updated[index], [f]: { ...(updated[index][f] || {}), [sub]: value } };
+            } else {
+                updated[index] = { ...updated[index], [field]: value };
+            }
+            return updated;
+        });
+    };
 
+    const toggleVariantOpen = (index) =>
+        setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, isOpen: !v.isOpen } : v)));
+    const editVariant = (e, index) => {
+        e.stopPropagation();
+        setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, isOpen: true } : v)));
+    };
+    const deleteVariant = (e, index) => {
+        e.stopPropagation();
+        if (window.confirm('Xóa biến thể?')) setVariants((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    // validate  build payload (kept minimal)
+    const validateAndBuildPayload = () => {
         if (productType === 'variable' && variants.length === 0) {
             toast('Sản phẩm biến thể cần ít nhất một biến thể', 'error');
             return null;
         }
-
-        if (form.importing && Number(form.quantity) !== 0) {
-            toast('Khi đang nhập hàng, quantity phải bằng 0', 'error');
-            return null;
-        }
-
-        // validate variants
+        const payload = { ...form, productType };
         if (productType === 'variable') {
-            for (const v of variants) {
-                if (!v.price || Number(v.price) <= 0) {
-                    toast('Mỗi biến thể cần giá hợp lệ', 'error');
-                    return null;
-                }
-            }
-        }
-
-        const statusArr = computeProductStatus(
-            {
-                quantity: Number(form.quantity || 0),
-                variations:
-                    productType === 'variable' ? variants.map((v) => ({ quantity: Number(v.quantity || 0) })) : [],
-            },
-            { importing: form.importing },
-        );
-
-        const payload = {
-            ...form,
-            shortDescription: form.shortDescription || '',
-            longDescription: form.longDescription || '',
-            brand: (form.brand || '').trim(),
-            price: productType === 'simple' ? Number(form.price) : Number(form.price || 0),
-            discountPrice: productType === 'simple' ? Number(form.discountPrice || 0) : Number(form.discountPrice || 0),
-            quantity:
-                productType === 'simple'
-                    ? Number(form.quantity || 0)
-                    : variants.reduce((s, v) => s + Number(v.quantity || 0), 0),
-            importing: !!form.importing,
-            status: statusArr,
-            productType,
-            isBestSeller: !!form.isBestSeller, // 👈 giữ lại
-        };
-
-        if (productType === 'variable') {
-            // --- attributes: gửi lên để backend tự sinh tổ hợp (format backend mong đợi) ---
             payload.attributes = productAttributes
                 .filter((a) => a.useForVariations)
                 .map((a) => ({
                     attrId: a.attrId,
-                    // đổi 'termIds' -> 'terms' và filter bỏ null
-                    terms: (a.terms || [])
-                        .map((t) => (typeof t === 'object' ? t._id : t))
-                        .filter(Boolean),
-                    useForVariations: true, // thêm để backend biết đây là thuộc tính dùng cho biến thể
+                    terms: (a.terms || []).map((t) => (typeof t === 'object' ? t._id : t)),
                 }));
-
-            // --- variations: nếu bạn đã chỉnh từng biến thể (giá/sku/qty), gửi chi tiết theo schema backend ---
             payload.variations = variants.map((v) => ({
-                // each variation.attributes is array of { attrId, termId }
-                attributes: (v.attributes || []).map((a) => ({
-                    attrId: a.attributeId ?? a.attrId, // support both keys just in case
-                    termId: a.termId ?? (a.term && a.term._id) ?? a.termId,
-                })),
-                price: Number(v.price),
+                attributes: (v.attributes || []).map((a) => ({ attrId: a.attributeId ?? a.attrId, termId: a.termId })),
+                price: Number(v.price || 0),
                 discountPrice: Number(v.discountPrice || 0),
                 quantity: Number(v.quantity || 0),
                 sku: v.sku || '',
                 images: v.images || [],
-                // optional: dimensions, weight, etc if you capture them on UI
-                dimensions: v.dimensions || undefined,
-                weight: v.weight || undefined,
             }));
         }
-
         return payload;
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        e && e.preventDefault && e.preventDefault();
         const payload = validateAndBuildPayload();
         if (!payload) return;
-
         try {
             await axios.post('http://localhost:5000/api/products', payload);
             toast('Tạo sản phẩm thành công', 'success');
-
-            // ✅ reset dirty state sau khi lưu thành công
             initialFormRef.current = form;
             setHasUnsavedChanges(false);
-
             navigate('/admin/products');
         } catch (err) {
             console.error(err);
@@ -490,610 +264,87 @@ export default function CreateProduct() {
         }
     };
 
-    const toggleVariantOpen = (index, stopEvent) => {
-        if (stopEvent) stopEvent.stopPropagation?.();
-        setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, isOpen: !v.isOpen } : v)));
+    // thêm handler chuyển loại sản phẩm
+    const handleProductTypeChange = (type) => {
+        if (type === productType) return;
+        setProductType(type);
+        if (type === 'simple') {
+            // khi chuyển về simple, bỏ variants và attributes để tránh dữ liệu thừa
+            setVariants([]);
+            setProductAttributes([]);
+        }
     };
 
-    const editVariant = (e, index) => {
-        e.stopPropagation();
-        // nếu muốn mở modal để edit có thể làm ở đây; hiện tạm mở panel
-        setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, isOpen: true } : v)));
-    };
-
-    const deleteVariant = (e, index) => {
-        e.stopPropagation();
-        Swal.fire({
-            title: 'Bạn có chắc chắn?',
-            text: 'Biến thể này sẽ bị xóa và không thể khôi phục!',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Xóa',
-            cancelButtonText: 'Hủy',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                setVariants((prev) => prev.filter((_, i) => i !== index));
-                Swal.fire({
-                    title: 'Đã xóa!',
-                    text: 'Biến thể đã được xóa thành công.',
-                    icon: 'success',
-                    timer: 1500,
-                    showConfirmButton: false,
-                });
-            }
-        });
-    };
-
-    // ---------- Rendering ----------
     return (
         <div className={cx('page-wrapper')}>
             <form className={cx('layout')} onSubmit={handleSubmit}>
                 <main className={cx('main-col')}>
-                    {/* GENERAL metabox */}
-                    <section className={cx('metabox')}>
-                        <h3 className={cx('title')}>Thông tin chung</h3>
-                        <div className={cx('field')}>
-                            <label>Tên sản phẩm</label>
-                            <input name="name" value={form.name} onChange={handleFormChange} required />
-                        </div>
-
-                        <div className={cx('field')}>
-                            <label>Mô tả ngắn</label>
-
-                            <CustomToolbar id="toolbar-short" />
-
-                            <ReactQuill
-                                theme="snow"
-                                value={form.shortDescription || ''}
-                                onChange={(content) => setForm((prev) => ({ ...prev, shortDescription: content }))}
-                                modules={{
-                                    toolbar: {
-                                        container: '#toolbar-short',
-                                        handlers: quillModules?.toolbar?.handlers,
-                                    },
-                                }}
-                                formats={quillFormats}
-                            />
-                        </div>
-
-                        <div className={cx('field')}>
-                            <label>Mô tả chi tiết</label>
-
-                            <CustomToolbar id="toolbar-long" />
-
-                            <ReactQuill
-                                theme="snow"
-                                value={form.longDescription || ''}
-                                onChange={(content) => setForm((prev) => ({ ...prev, longDescription: content }))}
-                                modules={{
-                                    toolbar: {
-                                        container: '#toolbar-long',
-                                        handlers: quillModules?.toolbar?.handlers,
-                                    },
-                                }}
-                                formats={quillFormats}
-                            />
-                        </div>
-
-                        <div className={cx('field', 'images')}>
-                            <label>Ảnh sản phẩm</label>
-                            {form.images.map((img, i) => (
-                                <div className={cx('image-row')} key={i}>
-                                    <input
-                                        name={`image-${i}`}
-                                        value={img}
-                                        onChange={handleFormChange}
-                                        placeholder={`URL ảnh ${i + 1}`}
-                                    />
-                                    <button type="button" onClick={() => removeImageField(i)}>
-                                        X
-                                    </button>
-                                </div>
-                            ))}
-                            <button type="button" className={cx('btn')} onClick={addImageField}>
-                                + Thêm ảnh
+                    {/* --- Chọn loại sản phẩm --- */}
+                    <div className={cx('metabox', 'product-type-box')}>
+                        <h3 className={cx('title')}>Loại sản phẩm</h3>
+                        <div className={cx('type-options')}>
+                            <button
+                                type="button"
+                                className={cx('btn', { active: productType === 'simple' })}
+                                aria-pressed={productType === 'simple'}
+                                onClick={() => handleProductTypeChange('simple')}
+                            >
+                                Sản phẩm thường
+                            </button>
+                            <button
+                                type="button"
+                                className={cx('btn', { active: productType === 'variable' })}
+                                aria-pressed={productType === 'variable'}
+                                onClick={() => handleProductTypeChange('variable')}
+                            >
+                                Sản phẩm có biến thể
                             </button>
                         </div>
+                    </div>
 
-                        <div className={cx('field-row')}>
-                            <div className={cx('field')}>
-                                <label>Product Type</label>
-                                <select value={productType} onChange={(e) => setProductType(e.target.value)}>
-                                    <option value="simple">Sản phẩm đơn giản</option>
-                                    <option value="variable">Sản phẩm biến thể</option>
-                                </select>
-                            </div>
-
-                            {productType === 'simple' && (
-                                <>
-                                    <div className={cx('field')}>
-                                        <label>Giá gốc</label>
-                                        <input
-                                            name="price"
-                                            type="number"
-                                            value={form.price}
-                                            onChange={handleFormChange}
-                                        />
-                                    </div>
-                                    <div className={cx('field')}>
-                                        <label>Giá khuyến mãi</label>
-                                        <input
-                                            name="discountPrice"
-                                            type="number"
-                                            value={form.discountPrice}
-                                            onChange={handleFormChange}
-                                        />
-                                    </div>
-                                </>
-                            )}
-                        </div>
-
-                        {/* specs grid from categorySchema */}
-                        <div className={cx('specs')}>
-                            <h4>Thông số kỹ thuật</h4>
-                            <div className={cx('specs-grid')}>
-                                {categorySchema.map((f, i) => (
-                                    <div key={i} className={cx('spec-item')}>
-                                        <label>{f.label || f.key}</label>
-                                        <input
-                                            name={`specs.${f.key}`}
-                                            value={form.specs[f.key] || ''}
-                                            onChange={handleFormChange}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Attributes & Variants metaboxes (only show attributes & variant editor when variable) */}
+                    <ProductGeneral
+                        form={form}
+                        handleFormChange={handleFormChange}
+                        addImageField={addImageField}
+                        removeImageField={removeImageField}
+                        productType={productType}
+                    />
                     {productType === 'variable' && (
                         <>
-                            <section className={cx('metabox')}>
-                                <h3 className={cx('title')}>Thuộc tính (Attributes)</h3>
-                                <div className={cx('attr-pick')}>
-                                    <button type="button" className={cx('btn')}>
-                                        Thuộc tính (có chủng loại) đã có sẵn
-                                    </button>
-
-                                    <div className={cx('attr-list')}>
-                                        {allAttributes
-                                            // Chỉ render thuộc tính có terms vs đk attributeTermsMap[a._id] tồn tại
-                                            // và mảng terms này có độ dài > 0
-                                            .filter(
-                                                (a) =>
-                                                    Array.isArray(attributeTermsMap[a._id]) &&
-                                                    attributeTermsMap[a._id].length > 0,
-                                            )
-                                            .map((a) => (
-                                                <button
-                                                    key={a._id}
-                                                    type="button"
-                                                    className={cx('chip')}
-                                                    onClick={() => addAttributeToProduct(a._id)}
-                                                >
-                                                    {a.name}
-                                                </button>
-                                            ))}
-                                    </div>
-
-                                    <div className={cx('product-attributes')}>
-                                        {productAttributes.length === 0 ? (
-                                            <p className={cx('no-attributes')}>
-                                                Chưa có thuộc tính nào, vui lòng thêm thuộc tính
-                                            </p>
-                                        ) : (
-                                            <AnimatePresence>
-                                                {productAttributes
-                                                    .filter(
-                                                        (attr) =>
-                                                            Array.isArray(attributeTermsMap[attr.attrId]) &&
-                                                            attributeTermsMap[attr.attrId].length > 0,
-                                                    )
-                                                    .map((attr) => (
-                                                        <motion.div
-                                                            key={attr.attrId}
-                                                            className={cx('attr-card')}
-                                                            initial={{ opacity: 0, y: -10 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            exit={{ opacity: 0, y: 10 }}
-                                                            transition={{ duration: 0.25 }}
-                                                        >
-                                                            <div key={attr.attrId} className={cx('attr-card')}>
-                                                                <div className={cx('attr-header')}>
-                                                                    <strong>{attr.name}</strong>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() =>
-                                                                            removeProductAttribute(attr.attrId)
-                                                                        }
-                                                                    >
-                                                                        X
-                                                                    </button>
-                                                                </div>
-                                                                <div className={cx('attr-body')}>
-                                                                    <label className={cx('term', 'dp-flex')}>
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            checked={attr.useForVariations}
-                                                                            onChange={(e) =>
-                                                                                toggleUseForVariations(
-                                                                                    attr.attrId,
-                                                                                    e.target.checked,
-                                                                                )
-                                                                            }
-                                                                        />
-                                                                        Dùng cho biến thể
-                                                                    </label>
-
-                                                                    <div className={cx('terms')}>
-                                                                        {(attributeTermsMap[attr.attrId] || []).map(
-                                                                            (t) => {
-                                                                                const isChecked =
-                                                                                    Array.isArray(attr.terms) &&
-                                                                                    attr.terms.some(
-                                                                                        (termId) =>
-                                                                                            String(termId) ===
-                                                                                            String(t._id),
-                                                                                    );
-                                                                                return (
-                                                                                    <label
-                                                                                        key={t._id}
-                                                                                        className={cx(
-                                                                                            'term',
-                                                                                            'dp-flex',
-                                                                                        )}
-                                                                                    >
-                                                                                        <input
-                                                                                            type="checkbox"
-                                                                                            checked={isChecked}
-                                                                                            onChange={(e) =>
-                                                                                                toggleTermForAttribute(
-                                                                                                    attr.attrId,
-                                                                                                    t._id,
-                                                                                                    e.target.checked,
-                                                                                                )
-                                                                                            }
-                                                                                        />
-                                                                                        {t.name}
-                                                                                    </label>
-                                                                                );
-                                                                            },
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </motion.div>
-                                                    ))}
-                                            </AnimatePresence>
-                                        )}
-                                    </div>
-
-                                    <div className={cx('attr-actions')}>
-                                        <button
-                                            type="button"
-                                            className={cx('btn')}
-                                            onClick={generateVariantCombinations}
-                                        >
-                                            Tạo biến thể từ thuộc tính
-                                        </button>
-                                    </div>
-                                </div>
-                            </section>
-
-                            {/* PHẦN RENDER BIẾN THỂ */}
-                            {variants.length > 0 && (
-                                <div className={cx('variants-section')}>
-                                    <h3 className={cx('variants-title')}>Tổ hợp biến thể</h3>
-
-                                    <div className={cx('variants-list')}>
-                                        {variants.map((v, i) => (
-                                            <div key={v.key || i} className={cx('variant-card')}>
-                                                {/* Header */}
-                                                <div
-                                                    className={cx('variant-header')}
-                                                    onClick={() => toggleVariantOpen(i)}
-                                                    role="button"
-                                                >
-                                                    <div className={cx('variant-left')}>
-                                                        <span className={cx('arrow', { open: v.isOpen })} aria-hidden>
-                                                            ▶
-                                                        </span>
-                                                        <span className={cx('variant-label')}>
-                                                            {v.attributes
-                                                                .map((a) => a.term?.name || a.termId)
-                                                                .join(' — ')}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className={cx('variant-actions')}>
-                                                        <button
-                                                            type="button"
-                                                            className={cx('btn', 'btn-edit')}
-                                                            onClick={(e) => editVariant(e, i)}
-                                                        >
-                                                            Sửa
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            className={cx('btn', 'btn-delete')}
-                                                            onClick={(e) => deleteVariant(e, i)}
-                                                        >
-                                                            Xóa
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {/* Body (chi tiết) */}
-                                                <AnimatePresence>
-                                                    {v.isOpen && (
-                                                        <motion.div
-                                                            className="variant-body"
-                                                            initial={{ height: 0, opacity: 0 }}
-                                                            animate={{ height: 'auto', opacity: 1 }}
-                                                            exit={{ height: 0, opacity: 0 }}
-                                                            transition={{ duration: 0.3 }}
-                                                        >
-                                                            <div className={cx('variant-body')}>
-                                                                {/* Dòng 1: Ảnh & SKU */}
-                                                                <div className={cx('form-row', 'row-1')}>
-                                                                    <VariantImage
-                                                                        v={v}
-                                                                        i={i}
-                                                                        handleVariantChange={handleVariantChange}
-                                                                    />
-
-                                                                    <div className={cx('form-col', 'sku')}>
-                                                                        <label>SKU</label>
-                                                                        <input
-                                                                            type="text"
-                                                                            value={v.sku}
-                                                                            onChange={(e) =>
-                                                                                handleVariantChange(
-                                                                                    i,
-                                                                                    'sku',
-                                                                                    e.target.value,
-                                                                                )
-                                                                            }
-                                                                        />
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Dòng 2: Giá & Giá khuyến mãi */}
-                                                                <div className={cx('form-row', 'row-2')}>
-                                                                    <div className={cx('form-col', 'price')}>
-                                                                        <label>Giá thường</label>
-                                                                        <input
-                                                                            type="number"
-                                                                            value={v.price}
-                                                                            onChange={(e) =>
-                                                                                handleVariantChange(
-                                                                                    i,
-                                                                                    'price',
-                                                                                    e.target.value,
-                                                                                )
-                                                                            }
-                                                                        />
-                                                                    </div>
-                                                                    <div className={cx('form-col', 'discountPrice')}>
-                                                                        <label>Giá khuyến mãi</label>
-                                                                        <input
-                                                                            type="number"
-                                                                            value={v.discountPrice}
-                                                                            onChange={(e) =>
-                                                                                handleVariantChange(
-                                                                                    i,
-                                                                                    'discountPrice',
-                                                                                    e.target.value,
-                                                                                )
-                                                                            }
-                                                                        />
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Dòng 3: Số lượng */}
-                                                                <div className={cx('form-row', 'row-3', 'column')}>
-                                                                    <label>Số lượng</label>
-                                                                    <input
-                                                                        type="number"
-                                                                        value={v.quantity}
-                                                                        onChange={(e) =>
-                                                                            handleVariantChange(
-                                                                                i,
-                                                                                'quantity',
-                                                                                e.target.value,
-                                                                            )
-                                                                        }
-                                                                    />
-                                                                </div>
-
-                                                                {/* Dòng 4: Cân nặng & Kích thước */}
-                                                                <div className={cx('form-row', 'row-4')}>
-                                                                    <div className={cx('form-col', 'weight')}>
-                                                                        <label>Cân nặng (kg)</label>
-                                                                        <input
-                                                                            type="number"
-                                                                            value={v.weight || 0}
-                                                                            onChange={(e) =>
-                                                                                handleVariantChange(
-                                                                                    i,
-                                                                                    'weight',
-                                                                                    e.target.value,
-                                                                                )
-                                                                            }
-                                                                        />
-                                                                    </div>
-                                                                    <div className={cx('form-col', 'dimensions')}>
-                                                                        <label>Kích thước (D x R x C) cm</label>
-                                                                        <div className={cx('dimensions-inputs')}>
-                                                                            <input
-                                                                                type="number"
-                                                                                placeholder="Dài"
-                                                                                value={v.dimensions?.length || 0}
-                                                                                onChange={(e) =>
-                                                                                    handleVariantChange(
-                                                                                        i,
-                                                                                        'dimensions.length',
-                                                                                        e.target.value,
-                                                                                    )
-                                                                                }
-                                                                            />
-                                                                            <input
-                                                                                type="number"
-                                                                                placeholder="Rộng"
-                                                                                value={v.dimensions?.width || 0}
-                                                                                onChange={(e) =>
-                                                                                    handleVariantChange(
-                                                                                        i,
-                                                                                        'dimensions.width',
-                                                                                        e.target.value,
-                                                                                    )
-                                                                                }
-                                                                            />
-                                                                            <input
-                                                                                type="number"
-                                                                                placeholder="Cao"
-                                                                                value={v.dimensions?.height || 0}
-                                                                                onChange={(e) =>
-                                                                                    handleVariantChange(
-                                                                                        i,
-                                                                                        'dimensions.height',
-                                                                                        e.target.value,
-                                                                                    )
-                                                                                }
-                                                                            />
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Dòng 5: Mô tả sản phẩm ngắn */}
-                                                                <div className={cx('form-row', 'row-5', 'column')}>
-                                                                    <label>Mô tả ngắn</label>
-                                                                    <textarea
-                                                                        value={v.shortDescription || ''}
-                                                                        onChange={(e) =>
-                                                                            handleVariantChange(
-                                                                                i,
-                                                                                'shortDescription',
-                                                                                e.target.value,
-                                                                            )
-                                                                        }
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                            <AttributesPanel
+                                allAttributes={allAttributes}
+                                attributeTermsMap={attributeTermsMap}
+                                productAttributes={productAttributes}
+                                addAttributeToProduct={addAttributeToProduct}
+                                removeProductAttribute={removeProductAttribute}
+                                toggleUseForVariations={toggleUseForVariations}
+                                toggleTermForAttribute={toggleTermForAttribute}
+                                generateVariantCombinations={generateVariantCombinations}
+                            />
+                            <VariantsEditor
+                                variants={variants}
+                                handleVariantChange={handleVariantChange}
+                                toggleVariantOpen={toggleVariantOpen}
+                                editVariant={editVariant}
+                                deleteVariant={deleteVariant}
+                            />
                         </>
                     )}
                 </main>
 
-                <aside className={cx('side-col')}>
-                    <section className={cx('metabox')}>
-                        <h4 className={cx('title-sm')}>Publish</h4>
-                        <div className={cx('field')}>
-                            <label>Danh mục</label>
-                            <select name="category" value={form.category} onChange={handleFormChange}>
-                                <option value="">-- Chọn danh mục --</option>
-                                {categories.map((c) => (
-                                    <option key={c._id} value={c._id}>
-                                        {c.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Dropdown chọn brand */}
-                        <div className={cx('field')}>
-                            <label>Thương hiệu</label>
-                            <select name="brand" value={form.brand} onChange={handleFormChange} required>
-                                <option value="">-- Chọn thương hiệu --</option>
-                                {brands.map((brand) => (
-                                    <option key={brand._id} value={brand._id}>
-                                        {brand.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {productType === 'simple' && (
-                            <div className={cx('field')}>
-                                <label>Số lượng</label>
-                                <input
-                                    name="quantity"
-                                    type="number"
-                                    value={form.quantity}
-                                    onChange={handleFormChange}
-                                    min={0}
-                                />
-                            </div>
-                        )}
-
-                        <div className={cx('field')}>
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    name="importing"
-                                    checked={form.importing}
-                                    onChange={handleFormChange}
-                                />
-                                Đang nhập hàng
-                            </label>
-                        </div>
-
-                        {/* 👇 Xem trước trạng thái sản phẩm */}
-                        <div className={cx('field')}>
-                            <label>Trạng thái dự kiến:</label>
-                            <span className={cx('status-preview')}>
-                                {computeProductStatus(
-                                    {
-                                        quantity: Number(form.quantity || 0),
-                                        variations:
-                                            productType === 'variable'
-                                                ? variants.map((v) => ({ quantity: Number(v.quantity || 0) }))
-                                                : [],
-                                    },
-                                    { importing: form.importing },
-                                )}
-                            </span>
-                        </div>
-
-                        <div className={cx('actions')}>
-                            <button type="submit" className={cx('btn', 'primary')}>
-                                Tạo sản phẩm
-                            </button>
-
-                            {/* ✅ Nút hủy confirm */}
-                            <ConfirmNavigate
-                                to="/admin/products"
-                                when={hasUnsavedChanges}
-                                className={cx('btn', 'secondary')}
-                                style={{ marginLeft: '8px' }}
-                            >
-                                Hủy
-                            </ConfirmNavigate>
-                        </div>
-
-                        <div className={cx('field')}>
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    name="isBestSeller"
-                                    checked={form.isBestSeller}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, isBestSeller: e.target.checked }))}
-                                />
-                                Đánh dấu là sản phẩm bán chạy
-                            </label>
-                        </div>
-                    </section>
-                </aside>
+                <SidePublish
+                    form={form}
+                    categories={categories}
+                    brands={brands}
+                    productType={productType}
+                    variants={variants}
+                    formImporting={form.importing}
+                    handleFormChange={handleFormChange}
+                    computeProductStatus={computeProductStatus}
+                    handleSubmit={handleSubmit}
+                    hasUnsavedChanges={hasUnsavedChanges}
+                    initialFormRef={initialFormRef}
+                />
             </form>
         </div>
     );

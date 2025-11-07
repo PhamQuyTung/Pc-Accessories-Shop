@@ -35,7 +35,7 @@ export const quillModules = {
                 const price = prompt('Giá sản phẩm');
                 const link = prompt('Link sản phẩm (tùy chọn)');
                 const range = this.quill.getSelection();
-                
+
                 if (range) {
                     this.quill.insertEmbed(range.index, 'product', { name, image, price, link }, Quill.sources.USER);
                 }
