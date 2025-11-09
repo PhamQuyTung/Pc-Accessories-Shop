@@ -50,6 +50,11 @@ function ProductDetail() {
 
     const reviewSectionRef = useRef(null);
 
+    const [promotionGifts, setPromotionGifts] = useState([]);
+
+    const [selectedAttributes, setSelectedAttributes] = useState({});
+    const [activeVariation, setActiveVariation] = useState(null);
+
     const role = localStorage.getItem('role'); // hoặc lấy từ Redux: state.auth.user.role
 
     const [posts, setPosts] = useState([]);
@@ -76,7 +81,13 @@ function ProductDetail() {
         return date.toLocaleDateString('vi-VN'); // ví dụ: 25/06/2025
     };
 
-    const [promotionGifts, setPromotionGifts] = useState([]);
+    // Hàm chọn thuộc tính
+    const handleSelectAttribute = (attrId, termId) => {
+        setSelectedAttributes((prev) => ({
+            ...prev,
+            [attrId]: termId,
+        }));
+    };
 
     useEffect(() => {
         if (product?._id) {
@@ -162,6 +173,30 @@ function ProductDetail() {
         checkFavorite();
     }, [product]);
 
+    // Cập nhật biến thể đang hoạt động khi người dùng chọn thuộc tính
+    useEffect(() => {
+        if (!product?.variations || Object.keys(selectedAttributes).length === 0) return;
+
+        const match = product.variations.find((variation) => {
+            return variation.attributes.every((va) => {
+                // Lấy _id chuẩn (phòng trường hợp attrId là object hoặc string)
+                const attrId = typeof va.attrId === 'object' ? va.attrId._id : va.attrId;
+                const variationTermId = typeof va.terms?.[0] === 'object' ? va.terms[0]._id : va.terms?.[0];
+                const selectedTermId = selectedAttributes[attrId];
+
+                return selectedTermId && selectedTermId === variationTermId;
+            });
+        });
+
+        setActiveVariation(match || null);
+    }, [selectedAttributes, product]);
+
+    useEffect(() => {
+        console.log('🟡 Selected:', selectedAttributes);
+        console.log('🟢 product.variations:', product?.variations);
+        console.log('🟣 Active variation:', activeVariation);
+    }, [selectedAttributes, activeVariation]);
+
     useEffect(() => {
         if (product) {
             console.log('✅ product loaded:', product);
@@ -174,10 +209,13 @@ function ProductDetail() {
     // Hàm xử lý thêm sản phẩm vào giỏ hàng
     const handleAddToCart = async () => {
         const token = localStorage.getItem('token');
-        console.log('Token:', token);
-
         if (!token) {
             toast('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng', 'warning');
+            return;
+        }
+
+        if (!activeVariation) {
+            toast('Vui lòng chọn đầy đủ biến thể trước khi mua', 'warning');
             return;
         }
 
@@ -188,6 +226,7 @@ function ProductDetail() {
                 '/carts/add',
                 {
                     product_id: product._id,
+                    variation_id: activeVariation._id,
                     quantity: quantity,
                 },
                 {
@@ -197,17 +236,11 @@ function ProductDetail() {
                     },
                 },
             );
-
-            // Giữ trạng thái loading ít nhất 700ms để người dùng thấy rõ
-            setTimeout(() => {
-                toast(response.data.message || 'Đã thêm vào giỏ hàng', 'success');
-                cartEvent.emit('update-cart-count'); // ✅ Gọi để Header cập nhật cartCount ngay
-                setIsAddingToCart(false);
-            }, 700);
+            toast(response.data.message || 'Đã thêm vào giỏ hàng', 'success');
         } catch (error) {
-            console.error('Lỗi khi thêm sản phẩm vào giỏ hàng:', error);
             toast('Không thể thêm sản phẩm vào giỏ hàng', 'error');
-            setIsAddingToCart(false); // vẫn phải tắt loading ngay nếu lỗi
+        } finally {
+            setIsAddingToCart(false);
         }
     };
 
@@ -407,7 +440,9 @@ function ProductDetail() {
                 <Row>
                     <Col lg={6} md={12} xs={12}>
                         <div className={cx('product-slider')}>
-                            <ProductGallery images={product.images} />
+                            <ProductGallery
+                                images={activeVariation?.images?.length ? activeVariation.images : product.images}
+                            />
                         </div>
                     </Col>
 
@@ -441,24 +476,61 @@ function ProductDetail() {
                                     </button>
                                 </div>
 
+                                {product.attributes?.map((attr) => (
+                                    <div key={attr.attrId._id} className={cx('product-attribute')}>
+                                        <p className={cx('attr-label')}>{attr.attrId.name}:</p>
+                                        <div className={cx('attr-options')}>
+                                            {attr.terms?.map((term) => (
+                                                <button
+                                                    key={term._id}
+                                                    onClick={() => handleSelectAttribute(attr.attrId._id, term._id)}
+                                                    className={cx('attr-option', {
+                                                        active: selectedAttributes[attr.attrId._id] === term._id,
+                                                    })}
+                                                >
+                                                    {term.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+
                                 {/* Giá sản phẩm */}
                                 <div className={cx('product-info__cost')}>
-                                    {product.discountPrice && product.discountPrice < product.price ? (
+                                    {activeVariation ? (
                                         <>
-                                            <p className={cx('product-info__discountPrice')}>
-                                                {product.discountPrice.toLocaleString()}₫
-                                            </p>
-                                            <p className={cx('product-info__price')}>
-                                                {product.price.toLocaleString()}₫
-                                            </p>
-                                            <span className={cx('product-info__discount-percent')}>
-                                                -{Math.round((1 - product.discountPrice / product.price) * 100)}%
-                                            </span>
+                                            {activeVariation.discountPrice ? (
+                                                <>
+                                                    <p className={cx('product-info__discountPrice')}>
+                                                        {activeVariation.discountPrice.toLocaleString()}₫
+                                                    </p>
+                                                    <p className={cx('product-info__price')}>
+                                                        {activeVariation.price.toLocaleString()}₫
+                                                    </p>
+                                                </>
+                                            ) : (
+                                                <p className={cx('product-info__discountPrice')}>
+                                                    {activeVariation.price.toLocaleString()}₫
+                                                </p>
+                                            )}
                                         </>
                                     ) : (
-                                        <p className={cx('product-info__discountPrice')}>
-                                            {product.price.toLocaleString()}₫
-                                        </p>
+                                        <>
+                                            {product.discountPrice ? (
+                                                <>
+                                                    <p className={cx('product-info__discountPrice')}>
+                                                        {product.discountPrice.toLocaleString()}₫
+                                                    </p>
+                                                    <p className={cx('product-info__price')}>
+                                                        {product.price.toLocaleString()}₫
+                                                    </p>
+                                                </>
+                                            ) : (
+                                                <p className={cx('product-info__discountPrice')}>
+                                                    {product.price.toLocaleString()}₫
+                                                </p>
+                                            )}
+                                        </>
                                     )}
                                 </div>
 
@@ -505,9 +577,7 @@ function ProductDetail() {
                                         <span className={cx('sub-text')}>Giao tận nơi/Nhận tại cửa hàng</span>
                                     </button>
 
-                                    <button
-                                        className={cx('chat-now')}
-                                    >
+                                    <button className={cx('chat-now')}>
                                         <span className={cx('main-text')}>TƯ VẤN NGAY</span>
                                         <span className={cx('sub-text')}>Đưa ra đánh giá nhanh, chính xác</span>
                                     </button>

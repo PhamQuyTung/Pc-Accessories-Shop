@@ -269,9 +269,27 @@ class ProductController {
         .populate({
           path: "gifts", // populate danh sách quà
           populate: {
-            path: "products.productId", // populate tiếp productId bên trong gift
-            select: "name slug images price discountPrice", // chỉ lấy field cần thiết
+            path: "products.productId",
+            select: "name slug images price discountPrice",
           },
+        })
+        // 🧩 Thêm phần populate cho thuộc tính sản phẩm
+        .populate({
+          path: "attributes.attrId",
+          select: "name slug",
+        })
+        .populate({
+          path: "attributes.terms",
+          select: "name slug",
+        })
+        // 🧩 Thêm phần populate cho thuộc tính trong biến thể
+        .populate({
+          path: "variations.attributes.attrId",
+          select: "name slug",
+        })
+        .populate({
+          path: "variations.attributes.terms",
+          select: "name slug",
         })
         .lean();
 
@@ -402,15 +420,24 @@ class ProductController {
           value: weight?.value || 0,
           unit: weight?.unit || "kg",
         },
-        attributes: Array.isArray(req.body.attributes) ? req.body.attributes : [],
+        attributes: Array.isArray(req.body.attributes)
+          ? req.body.attributes
+          : [],
         variations: Array.isArray(variations)
           ? variations.map((v) => ({
-              attributes: v.attributes || [],
+              sku: v.sku,
               price: v.price,
               discountPrice: v.discountPrice,
               quantity: v.quantity,
-              sku: v.sku,
               images: v.images || [],
+              attributes: (v.attributes || []).map((a) => ({
+                attrId: a.attrId,
+                terms: Array.isArray(a.terms)
+                  ? a.terms.filter(Boolean) // giữ các termId hợp lệ
+                  : a.termId
+                    ? [a.termId] // fallback nếu client gửi termId đơn
+                    : [],
+              })),
             }))
           : [],
         isBestSeller: !!isBestSeller, // 👈 Thêm dòng này
@@ -608,12 +635,19 @@ class ProductController {
 
       if (Array.isArray(data.variations)) {
         data.variations = data.variations.map((v) => ({
-          attributes: v.attributes || [],
+          sku: v.sku,
           price: v.price,
           discountPrice: v.discountPrice,
           quantity: v.quantity,
-          sku: v.sku,
           images: v.images || [],
+          attributes: (v.attributes || []).map((a) => ({
+            attrId: a.attrId,
+            terms: Array.isArray(a.terms)
+              ? a.terms.filter(Boolean)
+              : a.termId
+                ? [a.termId]
+                : [],
+          })),
         }));
       }
 

@@ -9,7 +9,6 @@ export default function VariantImage({ v, i, handleVariantChange }) {
 
     return (
         <div className={cx('form-col', 'image')}>
-            <label>Hình ảnh</label>
             <div className={cx('image-upload')}>
                 {v.imagePreview ? (
                     <div className={cx('image-preview')} onClick={() => fileInputRef.current.click()}>

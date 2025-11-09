@@ -224,11 +224,24 @@ export default function CreateProduct() {
 
     // validate  build payload (kept minimal)
     const validateAndBuildPayload = () => {
+        if (!form.name.trim()) {
+            toast('Tên sản phẩm không được để trống', 'error');
+            return null;
+        }
+
         if (productType === 'variable' && variants.length === 0) {
             toast('Sản phẩm biến thể cần ít nhất một biến thể', 'error');
             return null;
         }
-        const payload = { ...form, productType };
+
+        const payload = {
+            ...form,
+            price: Number(form.price || 0),
+            discountPrice: Number(form.discountPrice || 0),
+            quantity: Number(form.quantity || 0),
+            productType,
+        };
+
         if (productType === 'variable') {
             payload.attributes = productAttributes
                 .filter((a) => a.useForVariations)
@@ -236,15 +249,20 @@ export default function CreateProduct() {
                     attrId: a.attrId,
                     terms: (a.terms || []).map((t) => (typeof t === 'object' ? t._id : t)),
                 }));
+
             payload.variations = variants.map((v) => ({
-                attributes: (v.attributes || []).map((a) => ({ attrId: a.attributeId ?? a.attrId, termId: a.termId })),
+                attributes: (v.attributes || []).map((a) => ({
+                    attrId: a.attributeId ?? a.attrId,
+                    termId: a.termId ?? a.term?._id,
+                })),
                 price: Number(v.price || 0),
                 discountPrice: Number(v.discountPrice || 0),
                 quantity: Number(v.quantity || 0),
                 sku: v.sku || '',
-                images: v.images || [],
+                images: v.images?.filter(Boolean) || [],
             }));
         }
+
         return payload;
     };
 
