@@ -1,0 +1,145 @@
+.create-page {
+    padding: 24px;
+    background: #fafafa;
+    min-height: 100vh;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    h2 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .btn-back {
+        padding: 8px 14px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #333;
+        transition: 0.15s ease;
+
+        &:hover {
+            background: #f5f5f5;
+        }
+    }
+}
+
+/* Form */
+.form {
+    background: #fff;
+    padding: 24px;
+    border-radius: 10px;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+
+    .form-group {
+        margin-bottom: 22px;
+
+        label {
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: block;
+            font-size: 14px;
+            color: #444;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #dcdcdc;
+            border-radius: 6px;
+            background: #fff;
+            font-size: 14px;
+            transition: 0.15s ease;
+
+            &:focus {
+                border-color: #ee4d2d;
+                box-shadow: 0 0 0 3px rgba(238, 76, 45, 0.15);
+                outline: none;
+            }
+        }
+    }
+
+    /* Buttons */
+    .actions {
+        margin-top: 30px;
+        display: flex;
+        gap: 14px;
+
+        .btn-submit {
+            background: #ee4d2d;
+            color: #fff;
+            padding: 10px 22px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: 0.15s ease;
+
+            &:hover {
+                background: #d73211;
+            }
+
+            &:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+        }
+
+        .btn-cancel {
+            padding: 10px 22px;
+            background: #f2f2f2;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #333;
+            border: 1px solid #ddd;
+            transition: 0.15s ease;
+
+            &:hover {
+                background: #e8e8e8;
+            }
+        }
+    }
+}
+
+/* Group các nút chọn màu / size */
+.option-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.option-btn {
+    padding: 8px 14px;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.15s ease;
+
+    &:hover {
+        border-color: #ee4d2d;
+        background: #fff7f5;
+    }
+
+    &.active {
+        border-color: #ee4d2d;
+        background: #ffe9e4;
+        color: #ee4d2d;
+        font-weight: 600;
+    }
+}
+
+/* Ẩn select cũ */
+.hidden-select {
+    display: none;
+}

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { FaPencilAlt, FaTrashAlt, FaClone } from 'react-icons/fa';
 import axios from 'axios';
 import classNames from 'classnames/bind';
 import styles from './ProductManagement.module.scss';
-import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { useToast } from '~/components/ToastMessager';
 import Pagination from '~/components/Pagination/Pagination';
@@ -24,6 +25,8 @@ const ProductManagement = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const limit = 10; // Số sản phẩm mỗi trang
+
+    const [variantCounts, setVariantCounts] = useState({});
 
     const toast = useToast();
 
@@ -55,6 +58,30 @@ const ProductManagement = () => {
             console.error('Lỗi khi tải sản phẩm:', err);
         }
     };
+
+    // Lấy số lượng biến thể cho mỗi sản phẩm
+    useEffect(() => {
+        const fetchVariantCounts = async () => {
+            const counts = {};
+
+            await Promise.all(
+                products.map(async (product) => {
+                    try {
+                        const res = await axios.get(`http://localhost:5000/api/variants/${product._id}/count`);
+                        counts[product._id] = res.data.count || 0;
+                    } catch (err) {
+                        counts[product._id] = 0;
+                    }
+                }),
+            );
+
+            setVariantCounts(counts);
+        };
+
+        if (products.length > 0) {
+            fetchVariantCounts();
+        }
+    }, [products]);
 
     // Khi người dùng thay đổi bộ lọc, tự động load lại
     useEffect(() => {
@@ -248,6 +275,7 @@ const ProductManagement = () => {
                         <th>Giá thực tế</th>
                         <th>Danh mục</th>
                         <th>Số lượng</th>
+                        <th>Số lượng biến thể</th>
                         <th>Trạng thái</th>
                         <th>Ngày tạo</th>
                         <th>Hành động</th>
@@ -281,7 +309,7 @@ const ProductManagement = () => {
 
                             <td>{product.price != null ? formatCurrency(product.price) : 'N/A'}</td>
                             <td>{product.discountPrice != null ? formatCurrency(product.discountPrice) : 'N/A'}</td>
-                            
+
                             <td>
                                 {formatCurrency(
                                     typeof product.discountPrice === 'number' && product.discountPrice > 0
@@ -289,11 +317,13 @@ const ProductManagement = () => {
                                         : product.price,
                                 )}
                             </td>
+
                             <td>
                                 {typeof product.category === 'object' && product.category?.name
                                     ? product.category.name
                                     : 'Không có danh mục'}
                             </td>
+
                             <td>
                                 {typeof product.status === 'string' && product.status.includes('đang nhập hàng')
                                     ? 'Đang nhập hàng'
@@ -301,6 +331,9 @@ const ProductManagement = () => {
                                       ? product.quantity
                                       : 'N/A'}
                             </td>
+
+                            <td>{variantCounts[product._id] ?? '...'}</td>
+
                             <td>
                                 <button
                                     className={cx('toggle-btn', product.visible ? 'active' : 'inactive')}
@@ -309,14 +342,31 @@ const ProductManagement = () => {
                                     {product.visible ? '👁️ Hiển thị' : '🙈 Đang ẩn'}
                                 </button>
                             </td>
+
                             <td>{formatDate(product.createdAt)}</td>
+
                             <td>
                                 <div className={cx('action-buttons')}>
+                                    {/* Edit */}
                                     <Link to={`/products/edit/${product._id}`} className={cx('btn-edit-link')}>
-                                        <button className={cx('btn-edit')}>✏️</button>
+                                        <button className={cx('btn-edit')}>
+                                            <FaPencilAlt size={14} />
+                                        </button>
                                     </Link>
+
+                                    {/* Variant icon */}
+                                    <Link
+                                        to={`/admin/products/${product._id}/variants`}
+                                        className={cx('btn-edit-link')}
+                                    >
+                                        <button className={cx('btn-variant')}>
+                                            <FaClone size={14} />
+                                        </button>
+                                    </Link>
+
+                                    {/* Delete */}
                                     <button className={cx('btn-delete')} onClick={() => handleSoftDelete(product._id)}>
-                                        🗑️
+                                        <FaTrashAlt size={14} />
                                     </button>
                                 </div>
                             </td>

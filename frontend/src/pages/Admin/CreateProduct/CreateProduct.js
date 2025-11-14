@@ -309,14 +309,14 @@ export default function CreateProduct() {
                             >
                                 Sản phẩm thường
                             </button>
-                            <button
+                            {/* <button
                                 type="button"
                                 className={cx('btn', { active: productType === 'variable' })}
                                 aria-pressed={productType === 'variable'}
                                 onClick={() => handleProductTypeChange('variable')}
                             >
                                 Sản phẩm có biến thể
-                            </button>
+                            </button> */}
                         </div>
                     </div>
 
@@ -327,7 +327,7 @@ export default function CreateProduct() {
                         removeImageField={removeImageField}
                         productType={productType}
                     />
-                    {productType === 'variable' && (
+                    {/* {productType === 'variable' && (
                         <>
                             <AttributesPanel
                                 allAttributes={allAttributes}
@@ -347,7 +347,7 @@ export default function CreateProduct() {
                                 deleteVariant={deleteVariant}
                             />
                         </>
-                    )}
+                    )} */}
                 </main>
 
                 <SidePublish

@@ -794,3 +794,45 @@
         }
     }
 }
+
+.product-attributes {
+    margin: 15px 0;
+}
+
+.product-attribute {
+    margin-bottom: 12px;
+
+    .attr-label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 16px;
+    }
+
+    .attr-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .attr-option {
+        padding: 8px 16px;
+        background: #fff;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.25s all ease;
+        font-size: 15px;
+
+        &:hover {
+            border-color: #ff424e;
+            color: #ff424e;
+        }
+
+        &.active {
+            border-color: #ff424e;
+            background: #ffe6e9;
+            color: #ff424e;
+            font-weight: 600;
+        }
+    }
+}

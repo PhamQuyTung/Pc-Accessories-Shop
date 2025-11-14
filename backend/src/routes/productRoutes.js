@@ -26,8 +26,6 @@ router.get('/stats', ProductController.getProductStats); // Thống kê chi ti�
 router.post("/:id/decrease-stock", ProductController.decreaseStock); // 📉 Giảm tồn kho khi có order
 router.patch("/:id/increase-stock", ProductController.increaseStock); // 📈 Tăng tồn kho (hủy đơn, trả hàng)
 
-
-
 // ─────────────────────────────────────────────────────────────────────────────
 // ➕ Create, 🖊️ Update, 🗑️ Delete
 router.post("/", ProductController.createProduct);                // Tạo sản phẩm
@@ -36,6 +34,9 @@ router.delete("/soft/:id", ProductController.softDeleteProduct);  // Xóa tạm
 router.delete("/force/:id", ProductController.forceDeleteProduct);// Xóa vĩnh viễn
 router.patch("/restore/:id", ProductController.restoreProduct);   // Khôi phục
 router.patch("/toggle-visible/:id", ProductController.toggleVisible); // Toggle hiển thị
+
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch("/:id/attributes", ProductController.updateAttributes); // Cập nhật attributes của sản phẩm sau khi thêm/xóa biến thể
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ✍️ Reviews

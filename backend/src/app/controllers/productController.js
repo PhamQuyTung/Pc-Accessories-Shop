@@ -455,6 +455,38 @@ class ProductController {
     }
   }
 
+  // ===============================
+  // Cập nhật attributes cho sản phẩm
+  // ===============================
+  async updateAttributes(req, res) {
+    try {
+      const { id } = req.params;
+      const { attributes } = req.body;
+
+      const product = await Product.findByIdAndUpdate(
+        id,
+        { attributes },
+        { new: true }
+      );
+
+      if (!product) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Không tìm thấy sản phẩm" });
+      }
+
+      res.json({ success: true, product });
+    } catch (error) {
+      console.error("Lỗi updateAttributes:", error);
+      res
+        .status(500)
+        .json({
+          success: false,
+          message: "Lỗi server khi cập nhật attributes",
+        });
+    }
+  }
+
   // Lấy sản phẩm liên quan
   async getRelatedProducts(req, res) {
     const { category, exclude } = req.query;

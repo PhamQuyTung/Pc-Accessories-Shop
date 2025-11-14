@@ -1,0 +1,84 @@
+.variant-page {
+    padding: 20px;
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+
+        h2 {
+            font-size: 22px;
+            font-weight: bold;
+
+            .name {
+                color: #2563eb;
+            }
+        }
+
+        .btn-add {
+            padding: 8px 16px;
+            background-color: #2563eb;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+
+            &:hover {
+                background-color: #1e40af;
+            }
+        }
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+        }
+    }
+
+    .thumb {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 6px;
+    }
+
+    .actions {
+        display: flex;
+        gap: 10px;
+
+        .btn-edit,
+        .btn-delete {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            color: white;
+        }
+
+        .btn-edit {
+            background-color: #f59e0b;
+
+            &:hover {
+                background-color: #d97706;
+            }
+        }
+
+        .btn-delete {
+            background-color: #dc2626;
+
+            &:hover {
+                background-color: #b91c1c;
+            }
+        }
+    }
+}

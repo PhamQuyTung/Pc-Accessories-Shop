@@ -426,10 +426,10 @@ function ProductDetail() {
                 {role === 'admin' && (
                     <div className={cx('admin-actions')}>
                         <Link to={`/products/edit/${product._id}`} className={cx('btn-admin__link')}>
-                            ✏️ Chỉnh sửa
+                            ✏️
                         </Link>
                         <Link to="/admin/products/create" className={cx('btn-admin__link')}>
-                            ➕ Thêm sản phẩm
+                            ➕
                         </Link>
                     </div>
                 )}
@@ -476,7 +476,7 @@ function ProductDetail() {
                                     </button>
                                 </div>
 
-                                {product.attributes?.map((attr) => (
+                                {/* {product.attributes?.map((attr) => (
                                     <div key={attr.attrId._id} className={cx('product-attribute')}>
                                         <p className={cx('attr-label')}>{attr.attrId.name}:</p>
                                         <div className={cx('attr-options')}>
@@ -493,7 +493,34 @@ function ProductDetail() {
                                             ))}
                                         </div>
                                     </div>
-                                ))}
+                                ))} */}
+
+                                {product.attributes && product.attributes.length > 0 && (
+                                    <div className={cx('product-attributes')}>
+                                        {product.attributes.map((attr) => (
+                                            <div key={attr.attrId._id} className={cx('product-attribute')}>
+                                                <p className={cx('attr-label')}>{attr.attrId.name}:</p>
+
+                                                <div className={cx('attr-options')}>
+                                                    {attr.terms?.map((term) => (
+                                                        <button
+                                                            key={term._id}
+                                                            onClick={() =>
+                                                                handleSelectAttribute(attr.attrId._id, term._id)
+                                                            }
+                                                            className={cx('attr-option', {
+                                                                active:
+                                                                    selectedAttributes[attr.attrId._id] === term._id,
+                                                            })}
+                                                        >
+                                                            {term.name}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
 
                                 {/* Giá sản phẩm */}
                                 <div className={cx('product-info__cost')}>
@@ -533,6 +560,12 @@ function ProductDetail() {
                                         </>
                                     )}
                                 </div>
+
+                                {activeVariation && (
+                                    <p className={cx('sku-tag')}>
+                                        Mã biến thể: <strong>{activeVariation.sku}</strong>
+                                    </p>
+                                )}
 
                                 {/* Trạng thái sản phẩm */}
                                 <div className={cx('product-info__status')}>

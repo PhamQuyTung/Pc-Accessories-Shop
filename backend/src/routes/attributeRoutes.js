@@ -8,6 +8,9 @@ router.get('/', attributeController.getAll);
 // GET /api/attributes/with-terms
 router.get('/with-terms', attributeController.getAttributesWithTerms);
 
+// GET /api/attributes/key/:key
+router.get('/key/:key', attributeController.getByKey);
+
 router.get('/:id', attributeController.getAttributeById);
 
 router.post('/', attributeController.create);

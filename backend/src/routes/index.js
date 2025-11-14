@@ -19,6 +19,7 @@ const postCategoryRoutes = require("./postCategoryRoutes");
 const postTagRoutes = require("./postTagRoutes"); 
 const giftRoutes = require("./giftRoutes");
 const promotionGiftRoutes = require("./promotionGiftRoutes");
+const variantRoutes = require("./variantRoutes");
 const errorHandle = require('../helpers/error.handle');
 
 function route(app) {
@@ -48,6 +49,7 @@ function route(app) {
     app.use('/api/post-tags', postTagRoutes); // 👈 Thêm route cho postTagRoutes
     app.use('/api/gifts', giftRoutes); // 👈 Thêm route cho giftRoutes
     app.use('/api/promotion-gifts', promotionGiftRoutes); // 👈 Thêm route cho promotionGiftRoutes
+    app.use('/api/variants', variantRoutes); // 👈 Thêm route cho variantRoutes
 
     // Middleware xử lý lỗi
     app.use(errorHandle);

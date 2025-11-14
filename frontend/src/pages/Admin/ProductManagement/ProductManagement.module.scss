@@ -226,3 +226,18 @@ select:disabled {
         text-decoration: underline;
     }
 }
+
+.btn-variant {
+    background-color: #4f46e5; // tím đẹp
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        background-color: #4338ca;
+    }
+}

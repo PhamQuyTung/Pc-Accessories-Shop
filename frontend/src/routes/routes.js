@@ -71,6 +71,8 @@ import SearchBlogPage from '~/components/SearchBlogPage/SearchBlogPage';
 import CreateGiftPage from '~/pages/Admin/Gift/CreateGiftPage/CreateGiftPage';
 import EditGiftPage from '~/pages/Admin/Gift/EditGiftPage/EditGiftPage';
 import AdminPromotionGift from '~/pages/Admin/AdminPromotionGift/AdminPromotionGift';
+import ProductVariantManagement from '~/pages/Admin/ProductVariants/ProductVariantManagement/ProductVariantManagement';
+import CreateVariant from '~/pages/Admin/ProductVariants/CreateVariant/CreateVariant';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -138,6 +140,8 @@ const routes = [
             { path: 'stats', element: <AdminStats /> },
             { path: 'products', element: <ProductManagement /> },
             { path: 'products/create', element: <CreateProduct /> },
+            { path: 'products/:productId/variants', element: <ProductVariantManagement /> },
+            { path: 'products/:productId/variants/create', element: <CreateVariant /> },
             { path: 'products/trash', element: <Trash /> },
             { path: 'users', element: <UserManagement /> },
             { path: 'categories', element: <CategoryManagement /> },
