@@ -3,6 +3,32 @@ const Attribute = require("../models/attribute");
 const AttributeTerm = require("../models/attributeTerm");
 const mongoose = require("mongoose");
 
+function normalizeAttrs(attrs = []) {
+  // Trả về object: { [attrId]: termId } (so sánh dựa trên term đầu tiên)
+  const map = {};
+  attrs.forEach((a) => {
+    const attrId = String(a.attrId);
+    const termId = Array.isArray(a.terms)
+      ? String(a.terms[0])
+      : String(a.terms);
+    map[attrId] = termId;
+  });
+  return map;
+}
+
+function isSameAttrs(aMap, bMap) {
+  // Hai map giống nếu có cùng keys và cùng termId tương ứng
+  const aKeys = Object.keys(aMap);
+  const bKeys = Object.keys(bMap);
+  if (aKeys.length !== bKeys.length) return false;
+  // ensure same keys
+  for (let k of aKeys) {
+    if (!bMap.hasOwnProperty(k)) return false;
+    if (String(aMap[k]) !== String(bMap[k])) return false;
+  }
+  return true;
+}
+
 module.exports = {
   // ================= GET VARIANTS OF ONE PRODUCT =================
   getVariantsByProduct: async (req, res) => {
@@ -64,30 +90,36 @@ module.exports = {
           .json({ message: "SKU đã tồn tại trong sản phẩm này." });
       }
 
+      // build variant.attributes
+      const attrs = [];
+      if (data.colorAttrId && data.colorTermId) {
+        attrs.push({ attrId: data.colorAttrId, terms: [data.colorTermId] });
+      }
+      if (data.sizeAttrId && data.sizeTermId) {
+        attrs.push({ attrId: data.sizeAttrId, terms: [data.sizeTermId] });
+      }
+
+      // Kiểm tra trùng (so sánh attrId -> termId)
+      const newMap = normalizeAttrs(attrs);
+      const duplicate = product.variations.find((v) => {
+        const vMap = normalizeAttrs(v.attributes || []);
+        return isSameAttrs(vMap, newMap);
+      });
+
+      if (duplicate) {
+        return res.status(400).json({
+          message:
+            "Biến thể với cặp thuộc tính này đã tồn tại (ví dụ: màu + size).",
+        });
+      }
+
       const variant = {
         sku: data.sku,
         price: data.price,
         quantity: data.quantity,
         image: data.image || "",
-
-        attributes: [],
+        attributes: attrs,
       };
-
-      // ========== MÀU ==========
-      if (data.colorAttrId && data.colorTermId) {
-        variant.attributes.push({
-          attrId: data.colorAttrId,
-          terms: [data.colorTermId],
-        });
-      }
-
-      // ========== SIZE ==========
-      if (data.sizeAttrId && data.sizeTermId) {
-        variant.attributes.push({
-          attrId: data.sizeAttrId,
-          terms: [data.sizeTermId],
-        });
-      }
 
       product.variations.push(variant);
 
@@ -142,11 +174,28 @@ module.exports = {
         return res.status(404).json({ message: "Biến thể không tồn tại." });
       }
 
+      // Normalize update.attributes
       if (update.attributes) {
         update.attributes = update.attributes.map((a) => ({
           attrId: a.attrId,
           terms: Array.isArray(a.terms) ? a.terms : [a.terms],
         }));
+
+        const newMap = normalizeAttrs(update.attributes);
+
+        // Check duplicates against other variants (exclude itself)
+        const otherDuplicate = product.variations.find((v) => {
+          if (String(v._id) === String(variantId)) return false;
+          const vMap = normalizeAttrs(v.attributes || []);
+          return isSameAttrs(vMap, newMap);
+        });
+
+        if (otherDuplicate) {
+          return res.status(400).json({
+            message:
+              "Không thể cập nhật: đã tồn tại biến thể với cặp thuộc tính này.",
+          });
+        }
       }
 
       Object.assign(variant, update);
@@ -188,7 +237,7 @@ module.exports = {
         }
       }
 
-      // Convert
+      // Convert và kiểm tra trùng
       const convertedVariants = variants.map((v) => ({
         sku: v.sku,
         price: v.price,
@@ -207,6 +256,47 @@ module.exports = {
         },
         weight: v.weight || { value: 0, unit: "kg" },
       }));
+
+      // Build existing attribute maps set
+      const existingMaps = product.variations.map((v) =>
+        normalizeAttrs(v.attributes || [])
+      );
+
+      // Check duplicates: with existing and within batch
+      const dupErrors = [];
+      const batchMaps = [];
+
+      convertedVariants.forEach((cv, idx) => {
+        const cvMap = normalizeAttrs(cv.attributes || []);
+        // with existing
+        const dupExisting = existingMaps.find((m) => isSameAttrs(m, cvMap));
+        if (dupExisting) {
+          dupErrors.push({
+            index: idx,
+            sku: cv.sku,
+            reason: "trùng với biến thể đã có",
+          });
+          return;
+        }
+        // within batch (previous ones)
+        const dupBatch = batchMaps.find((m) => isSameAttrs(m, cvMap));
+        if (dupBatch) {
+          dupErrors.push({
+            index: idx,
+            sku: cv.sku,
+            reason: "trùng lặp nội bộ trong batch",
+          });
+          return;
+        }
+        batchMaps.push(cvMap);
+      });
+
+      if (dupErrors.length > 0) {
+        return res.status(400).json({
+          message: "Phát hiện biến thể trùng (với existing hoặc nội bộ batch).",
+          details: dupErrors,
+        });
+      }
 
       // Push vào DB
       product.variations.push(...convertedVariants);

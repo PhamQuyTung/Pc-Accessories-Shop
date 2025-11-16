@@ -38,12 +38,16 @@ function EditVariant() {
     const [colorAttrId, setColorAttrId] = useState(null);
     const [sizeAttrId, setSizeAttrId] = useState(null);
 
+    // STATE CHỨA TẤT CẢ VARIANTS
+    const [allVariants, setAllVariants] = useState([]);
+
     // load product variants then find the one
     const fetchVariant = async () => {
         setLoading(true);
         try {
             const res = await getVariantsByProduct(productId);
             const variants = res.data.variants || [];
+            setAllVariants(variants); // LƯU TẤT CẢ VARIANTS VÀO STATE
             const found = variants.find((v) => v._id === variantId || v._id === String(variantId));
             if (!found) {
                 toast('Không tìm thấy biến thể', 'error');
@@ -128,7 +132,19 @@ function EditVariant() {
         if (!form.sku.trim()) return toast('SKU không được để trống', 'error');
         if (!form.price || Number(form.price) <= 0) return toast('Giá phải > 0', 'error');
 
+        // --- CHECK TRÙNG SKU NGAY TẠI FE ---
+        const skuExists = allVariants.some(
+            (v) => v.sku === form.sku && v._id !== variantId, // exclude biến thể hiện tại
+        );
+
+        if (skuExists) {
+            toast('SKU đã tồn tại trong sản phẩm!', 'error');
+            return; // ⛔ CHẶN SUBMIT
+        }
+
+        // tiếp tục submit nếu không trùng
         setSaving(true);
+        
         try {
             // prepare payload — match back-end expected shape
             const payload = {
