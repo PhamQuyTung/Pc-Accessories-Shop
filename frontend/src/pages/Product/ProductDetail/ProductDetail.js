@@ -55,6 +55,11 @@ function ProductDetail() {
     const [selectedAttributes, setSelectedAttributes] = useState({});
     const [activeVariation, setActiveVariation] = useState(null);
 
+    const [variations, setVariations] = useState([]);
+
+    // map chứa các term bị disable theo attrId: { [attrId]: Set(termId, ...) }
+    const [disabledOptions, setDisabledOptions] = useState({});
+
     const role = localStorage.getItem('role'); // hoặc lấy từ Redux: state.auth.user.role
 
     const [posts, setPosts] = useState([]);
@@ -83,11 +88,83 @@ function ProductDetail() {
 
     // Hàm chọn thuộc tính
     const handleSelectAttribute = (attrId, termId) => {
-        setSelectedAttributes((prev) => ({
-            ...prev,
-            [attrId]: termId,
-        }));
+        setSelectedAttributes((prev) => {
+            // nếu bấm lại cùng term => bỏ chọn (toggle)
+            const already = prev[attrId] === termId;
+            const next = { ...prev };
+            if (already) {
+                delete next[attrId];
+            } else {
+                next[attrId] = termId;
+            }
+            return next;
+        });
     };
+
+    useEffect(() => {
+        if (!product?.variations || !Array.isArray(product.variations)) {
+            setDisabledOptions({});
+            return;
+        }
+
+        // chuẩn hoá biến thể: lấy mảng { attrId: string, termId: string } từ mỗi variation
+        const normalizedVariations = product.variations.map((v) => {
+            const attrs = {};
+            (v.attributes || []).forEach((a) => {
+                const id = typeof a.attrId === 'object' ? a.attrId._id : a.attrId;
+                const t = Array.isArray(a.terms) ? a.terms[0] : a.terms;
+                const termId = typeof t === 'object' && t?._id ? t._id : t;
+                attrs[id] = termId;
+            });
+            return attrs; // object map attrId -> termId
+        });
+
+        // Lấy tất cả attrId hiện có trên product (dùng product.attributes nếu có)
+        const attrIds = (product.attributes || []).map((a) => (typeof a.attrId === 'object' ? a.attrId._id : a.attrId));
+
+        // Khởi tạo map enable/disable tạm thời
+        const newDisabled = {};
+
+        // Với mỗi attr A và mỗi term T của A, kiểm tra:
+        // có tồn tại variation mà:
+        //   - variation[A] === T
+        //   - và với mọi lựa chọn hiện tại selectedAttributes (ngoại trừ attr A),
+        //     variation[selectedAttrId] === selectedAttributes[selectedAttrId]
+        attrIds.forEach((attrId) => {
+            // terms của attr từ product.attributes
+            const attr = (product.attributes || []).find((a) => {
+                const id = typeof a.attrId === 'object' ? a.attrId._id : a.attrId;
+                return id === attrId;
+            });
+
+            const terms = (attr?.terms || []).map((t) => (typeof t === 'object' ? t._id : t));
+            newDisabled[attrId] = new Set();
+
+            terms.forEach((termId) => {
+                // Kiểm tra tồn tại variation thỏa điều kiện
+                const exists = normalizedVariations.some((vAttrs) => {
+                    // điều kiện: vAttrs[attrId] === termId
+                    if (vAttrs[attrId] !== termId) return false;
+
+                    // với tất cả các lựa chọn khác đang được chọn
+                    for (const [selAttrId, selTermId] of Object.entries(selectedAttributes)) {
+                        if (selAttrId === attrId) continue; // skip tự so sánh
+                        if (!vAttrs[selAttrId] || vAttrs[selAttrId] !== selTermId) {
+                            return false;
+                        }
+                    }
+                    // ok
+                    return true;
+                });
+
+                if (!exists) {
+                    newDisabled[attrId].add(termId);
+                }
+            });
+        });
+
+        setDisabledOptions(newDisabled);
+    }, [product, selectedAttributes]);
 
     useEffect(() => {
         if (product?._id) {
@@ -175,21 +252,38 @@ function ProductDetail() {
 
     // Cập nhật biến thể đang hoạt động khi người dùng chọn thuộc tính
     useEffect(() => {
-        if (!product?.variations || Object.keys(selectedAttributes).length === 0) return;
+        if (!product?.variations || !Array.isArray(product.variations)) {
+            setActiveVariation(null);
+            return;
+        }
 
+        const requiredAttrIds = (product.attributes || []).map((a) =>
+            typeof a.attrId === 'object' ? a.attrId._id : a.attrId,
+        );
+
+        // Nếu chưa chọn đủ tất cả attribute -> không set activeVariation (null)
+        const selectedKeys = Object.keys(selectedAttributes);
+        if (selectedKeys.length !== requiredAttrIds.length) {
+            setActiveVariation(null);
+            return;
+        }
+
+        // Tìm variation khớp với toàn bộ selectedAttributes
         const match = product.variations.find((variation) => {
-            return variation.attributes.every((va) => {
-                // Lấy _id chuẩn (phòng trường hợp attrId là object hoặc string)
-                const attrId = typeof va.attrId === 'object' ? va.attrId._id : va.attrId;
-                const variationTermId = typeof va.terms?.[0] === 'object' ? va.terms[0]._id : va.terms?.[0];
-                const selectedTermId = selectedAttributes[attrId];
-
-                return selectedTermId && selectedTermId === variationTermId;
+            const attrs = {};
+            (variation.attributes || []).forEach((a) => {
+                const id = typeof a.attrId === 'object' ? a.attrId._id : a.attrId;
+                const t = Array.isArray(a.terms) ? a.terms[0] : a.terms;
+                const termId = typeof t === 'object' && t?._id ? t._id : t;
+                attrs[id] = termId;
             });
+
+            // kiểm tra mọi selectedAttributes khớp
+            return Object.entries(selectedAttributes).every(([k, v]) => attrs[k] === v);
         });
 
         setActiveVariation(match || null);
-    }, [selectedAttributes, product]);
+    }, [product, selectedAttributes]);
 
     useEffect(() => {
         console.log('🟡 Selected:', selectedAttributes);
@@ -502,20 +596,44 @@ function ProductDetail() {
                                                 <p className={cx('attr-label')}>{attr.attrId.name}:</p>
 
                                                 <div className={cx('attr-options')}>
-                                                    {attr.terms?.map((term) => (
-                                                        <button
-                                                            key={term._id}
-                                                            onClick={() =>
-                                                                handleSelectAttribute(attr.attrId._id, term._id)
-                                                            }
-                                                            className={cx('attr-option', {
-                                                                active:
-                                                                    selectedAttributes[attr.attrId._id] === term._id,
-                                                            })}
-                                                        >
-                                                            {term.name}
-                                                        </button>
-                                                    ))}
+                                                    {attr.terms?.map((term) => {
+                                                        const termId = typeof term === 'object' ? term._id : term;
+                                                        const isActive = selectedAttributes[attr.attrId._id] === termId;
+                                                        const isDisabled = !!(
+                                                            disabledOptions &&
+                                                            disabledOptions[attr.attrId._id] &&
+                                                            disabledOptions[attr.attrId._id].has(termId)
+                                                        );
+                                                        return (
+                                                            <button
+                                                                key={termId}
+                                                                onClick={() => {
+                                                                    if (isDisabled) {
+                                                                        // tùy chọn: show tooltip/toast khi bấm vào disabled
+                                                                        toast &&
+                                                                            toast('Biến thể này không có sẵn', 'info');
+                                                                        return;
+                                                                    }
+                                                                    handleSelectAttribute(attr.attrId._id, termId);
+                                                                }}
+                                                                className={cx('attr-option', {
+                                                                    active: isActive,
+                                                                    disabled: isDisabled,
+                                                                })}
+                                                                disabled={isDisabled}
+                                                                aria-disabled={isDisabled}
+                                                                title={
+                                                                    isDisabled
+                                                                        ? 'Biến thể này không tồn tại'
+                                                                        : typeof term === 'object'
+                                                                          ? term.name
+                                                                          : term
+                                                                }
+                                                            >
+                                                                {typeof term === 'object' ? term.name : term}
+                                                            </button>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         ))}

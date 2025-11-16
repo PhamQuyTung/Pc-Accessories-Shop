@@ -233,7 +233,7 @@ function EditVariant() {
                             <hr />
 
                             {/* Attributes selects */}
-                            <div className={cx('attr-group')}>
+                            {/* <div className={cx('attr-group')}>
                                 <label>Màu</label>
                                 <select
                                     value={getSelectedTermId(colorAttrId) || ''}
@@ -261,7 +261,7 @@ function EditVariant() {
                                         </option>
                                     ))}
                                 </select>
-                            </div>
+                            </div> */}
                         </div>
                     </div>
 

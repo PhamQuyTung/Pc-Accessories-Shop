@@ -22,7 +22,7 @@ module.exports = {
           id: product._id,
           name: product.name,
         },
-        variants: product.variations,
+        variants: product.variations || [],
       });
     } catch (err) {
       console.error("Lỗi lấy biến thể:", err);
