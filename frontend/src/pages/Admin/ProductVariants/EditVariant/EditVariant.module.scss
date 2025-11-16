@@ -1,0 +1,138 @@
+.edit-variant-page {
+    padding: 20px;
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        'Segoe UI',
+        Roboto,
+        'Helvetica Neue',
+        Arial;
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+
+        h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+
+            .btn-back,
+            .btn-delete {
+                background: transparent;
+                border: 1px solid transparent;
+                padding: 8px 12px;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+
+            .btn-delete {
+                border-color: #ff6b6b;
+                color: #b00020;
+                &:hover {
+                    background: rgba(176, 0, 32, 0.06);
+                }
+            }
+        }
+    }
+
+    .loading {
+        padding: 40px;
+        text-align: center;
+    }
+
+    .form {
+        background: #fff;
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: 0 6px 20px rgba(20, 20, 40, 0.04);
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 18px;
+            align-items: start;
+        }
+
+        .card {
+            background: #fbfbfd;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+
+            label {
+                font-size: 13px;
+                color: #444;
+            }
+            input,
+            select {
+                padding: 10px;
+                border-radius: 8px;
+                border: 1px solid #e6e6f0;
+                outline: none;
+                font-size: 14px;
+            }
+
+            .image-preview {
+                margin-top: 8px;
+                img {
+                    width: 100%;
+                    max-width: 320px;
+                    height: auto;
+                    border-radius: 8px;
+                    border: 1px solid #eee;
+                }
+            }
+        }
+
+        .attr-group {
+            margin-top: 6px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            align-items: center;
+
+            .btn-save {
+                background: linear-gradient(90deg, #4f46e5, #06b6d4);
+                color: #fff;
+                padding: 10px 16px;
+                border-radius: 10px;
+                border: none;
+                cursor: pointer;
+            }
+
+            .btn-cancel {
+                padding: 10px 14px;
+                border-radius: 10px;
+                border: 1px solid #e6e6f0;
+                background: transparent;
+                text-decoration: none;
+                color: #333;
+            }
+        }
+    }
+}
+
+/* responsive */
+@media (max-width: 900px) {
+    .edit-variant-page {
+        .form {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    }
+}

@@ -27,6 +27,7 @@ const ProductVariantManagement = () => {
             const res = await getVariantsByProduct(productId);
 
             const newVariants = res.data.variants || [];
+            console.log('FE nhận variants:', res.data.variants);
             setVariants(newVariants);
 
             setProductName(res.data.product?.name || '');
@@ -91,6 +92,14 @@ const ProductVariantManagement = () => {
         }));
     };
 
+    const getAttrName = (variant, key) => {
+        const attr = variant.attributes?.find((a) => a.attrId?.key === key);
+        if (!attr) return '—';
+
+        const term = attr.terms?.[0];
+        return term?.name ?? '—';
+    };
+
     if (loading)
         return (
             <div className={cx('loading')}>
@@ -143,9 +152,8 @@ const ProductVariantManagement = () => {
                                 attributes: [{ attrId: {...}, terms: {...} }]
                                 thì ở đây bạn đổi theo format mới
                             */}
-                            <td>{v.attributes?.find((a) => a.attrId?.key === 'mau-sac')?.terms?.[0]?.name || '—'}</td>
-
-                            <td>{v.attributes?.find((a) => a.attrId?.key === 'size-ao')?.terms?.[0]?.name || '—'}</td>
+                            <td>{getAttrName(v, 'mau-sac')}</td>
+                            <td>{getAttrName(v, 'size-ao')}</td>
 
                             <td>{v.sku || '—'}</td>
                             <td>{v.price?.toLocaleString('vi-VN')}đ</td>
@@ -153,7 +161,7 @@ const ProductVariantManagement = () => {
 
                             <td>
                                 <div className={cx('actions')}>
-                                    <Link to={`/admin/variants/${v._id}/edit`}>
+                                    <Link to={`/admin/products/${productId}/variants/${v._id}/edit`}>
                                         <button className={cx('btn-edit')}>✏️</button>
                                     </Link>
 

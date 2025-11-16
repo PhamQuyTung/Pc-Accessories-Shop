@@ -40,8 +40,8 @@ import PromotionDetail from '~/pages/Admin/Promotion/PromotionDetail/PromotionDe
 import AdminStats from '~/pages/Admin/AdminStats/AdminStats';
 import OrdersAdminManagement from '~/pages/Admin/OrderAdmin/OrdersManagement/OrdersManagement';
 import OrderAdminDetail from '~/pages/Admin/OrderAdmin/OrderDetail/OrderDetail';
-import OrderTrash from '~/pages/Admin/OrderAdmin/OrderTrash/OrderTrash'; 
-import OrderStats from '~/pages/Admin/OrderAdmin/OrderStats/OrderStats'; 
+import OrderTrash from '~/pages/Admin/OrderAdmin/OrderTrash/OrderTrash';
+import OrderStats from '~/pages/Admin/OrderAdmin/OrderStats/OrderStats';
 import AdminCreateOrder from '~/pages/Admin/OrderAdmin/AdminCreateOrder/AdminCreateOrder';
 import AdminGiftsManagement from '~/pages/Admin/Gift/AdminGiftsManagerment/AdminGiftsManagerment';
 
@@ -73,6 +73,7 @@ import EditGiftPage from '~/pages/Admin/Gift/EditGiftPage/EditGiftPage';
 import AdminPromotionGift from '~/pages/Admin/AdminPromotionGift/AdminPromotionGift';
 import ProductVariantManagement from '~/pages/Admin/ProductVariants/ProductVariantManagement/ProductVariantManagement';
 import CreateVariant from '~/pages/Admin/ProductVariants/CreateVariant/CreateVariant';
+import EditVariant from '~/pages/Admin/ProductVariants/EditVariant/EditVariant';
 
 const routes = [
     // ----- Front site (luôn có Header/Footer vì bọc MainLayout) -----
@@ -142,6 +143,7 @@ const routes = [
             { path: 'products/create', element: <CreateProduct /> },
             { path: 'products/:productId/variants', element: <ProductVariantManagement /> },
             { path: 'products/:productId/variants/create', element: <CreateVariant /> },
+            { path: 'products/:productId/variants/:variantId/edit', element: <EditVariant /> },
             { path: 'products/trash', element: <Trash /> },
             { path: 'users', element: <UserManagement /> },
             { path: 'categories', element: <CategoryManagement /> },

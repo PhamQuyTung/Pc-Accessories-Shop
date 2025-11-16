@@ -142,10 +142,26 @@ module.exports = {
         return res.status(404).json({ message: "Biến thể không tồn tại." });
       }
 
+      if (update.attributes) {
+        update.attributes = update.attributes.map((a) => ({
+          attrId: a.attrId,
+          terms: Array.isArray(a.terms) ? a.terms : [a.terms],
+        }));
+      }
+
       Object.assign(variant, update);
       await product.save();
 
-      res.json({ message: "Đã cập nhật biến thể", variant });
+      // Populate lại trước khi trả về
+      await product.populate("variations.attributes.attrId");
+      await product.populate("variations.attributes.terms");
+
+      const updatedVariant = product.variations.id(variantId);
+
+      res.json({
+        message: "Đã cập nhật biến thể",
+        variant: updatedVariant,
+      });
     } catch (err) {
       console.error("Lỗi cập nhật biến thể:", err);
       res.status(500).json({ message: "Lỗi server", error: err });

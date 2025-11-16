@@ -3,11 +3,11 @@ const router = express.Router();
 const authMiddleware = require("../app/middlewares/authMiddleware");
 const variantController = require("../app/controllers/variantController");
 
-// Lấy danh sách biến thể của 1 sản phẩm
-router.get("/:productId", variantController.getVariantsByProduct);
-
 // Lấy số lượng biến thể
 router.get("/:productId/count", variantController.getVariantCount);
+
+// Lấy danh sách biến thể của 1 sản phẩm
+router.get("/:productId", variantController.getVariantsByProduct);
 
 // // Tạo biến thể (single)
 // router.post("/:productId", authMiddleware, variantController.createVariant);
