@@ -144,7 +144,11 @@ const ProductVariantManagement = () => {
                     {variants.map((v) => (
                         <tr key={v._id}>
                             <td>
-                                <img src={v.images?.[0] || '/placeholder.jpg'} alt="variant" className={cx('thumb')} />
+                                <img
+                                    src={v.thumbnail || v.images?.[0] || '/placeholder.jpg'}
+                                    alt="variant"
+                                    className={cx('thumb')}
+                                />
                             </td>
 
                             {/* 

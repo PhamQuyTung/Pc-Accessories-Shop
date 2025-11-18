@@ -13,13 +13,11 @@ registerQuillModules(); // ✅ gọi duy nhất 1 lần
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
-    <React.StrictMode>
-        <ToastMessagerProvider>
-            <GlobalStyles>
-                <App />
-            </GlobalStyles>
-        </ToastMessagerProvider>
-    </React.StrictMode>,
+    <ToastMessagerProvider>
+        <GlobalStyles>
+            <App />
+        </GlobalStyles>
+    </ToastMessagerProvider>,
 );
 
 reportWebVitals();

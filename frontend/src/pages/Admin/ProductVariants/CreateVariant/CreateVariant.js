@@ -4,8 +4,11 @@ import classNames from 'classnames/bind';
 import styles from './CreateVariant.module.scss';
 import { useToast } from '~/components/ToastMessager';
 import axiosClient from '~/utils/axiosClient';
+import { updateProductAttributes } from '~/services/productService';
 
 const cx = classNames.bind(styles);
+
+let isUploadingNow = false; // GLOBAL FLAG chống gọi 2 lần
 
 const CreateVariant = () => {
     const { productId } = useParams();
@@ -20,11 +23,13 @@ const CreateVariant = () => {
     const [selectedColors, setSelectedColors] = useState([]);
     const [selectedSizes, setSelectedSizes] = useState([]);
 
+    const [uploading, setUploading] = useState(false);
+
     const [matrix, setMatrix] = useState([]);
 
-    // --------------------------------------------------
-    // Load attribute terms by key
-    // --------------------------------------------------
+    // ===========================================================
+    // Load attribute terms
+    // ===========================================================
     const loadAttributeTerms = async (key) => {
         const attr = await axiosClient.get(`/attributes/key/${key}`);
         const terms = await axiosClient.get(`/attribute-terms/by-attribute/${attr.data._id}`);
@@ -49,76 +54,115 @@ const CreateVariant = () => {
         fetchAttributes();
     }, []);
 
-    // --------------------------------------------------
-    // Toggle multi-select
-    // --------------------------------------------------
-    const toggle = (list, setter, name) => {
-        setter((prev) => (prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]));
+    // ===========================================================
+    // Select toggle
+    // ===========================================================
+    const toggleSelect = (list, setter, value) => {
+        setter((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
     };
 
-    const toggleColor = (name) => toggle(selectedColors, setSelectedColors, name);
-    const toggleSize = (name) => toggle(selectedSizes, setSelectedSizes, name);
-
-    // --------------------------------------------------
-    // Auto build matrix: Color × Size
-    // --------------------------------------------------
+    // ===========================================================
+    // Build variant matrix
+    // ===========================================================
     useEffect(() => {
-        const result = [];
+        setMatrix((prev) => {
+            const result = [];
 
-        selectedColors.forEach((color) => {
-            selectedSizes.forEach((size) => {
-                result.push({
-                    color,
-                    size,
-                    sku: '',
-                    price: '',
-                    quantity: '',
-                    image: '',
+            selectedColors.forEach((color) => {
+                selectedSizes.forEach((size) => {
+                    const existing = prev.find((v) => v.color === color && v.size === size);
+
+                    result.push(
+                        existing || {
+                            color,
+                            size,
+                            sku: '',
+                            price: '',
+                            quantity: '',
+                            images: [], // giữ nguyên
+                        },
+                    );
                 });
             });
-        });
 
-        setMatrix(result);
+            return result;
+        });
     }, [selectedColors, selectedSizes]);
 
-    // --------------------------------------------------
-    // Update matrix item
-    // --------------------------------------------------
+    // ===========================================================
+    // Update matrix row
+    // ===========================================================
     const updateMatrix = (index, field, value) => {
         setMatrix((prev) => {
-            const updated = [...prev];
-            updated[index][field] = value;
-            return updated;
+            const clone = [...prev];
+            clone[index][field] = value;
+            return clone;
         });
     };
 
-    // --------------------------------------------------
-    // Submit bulk variants
-    // --------------------------------------------------
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    // ===========================================================
+    // Upload many images
+    // ===========================================================
+    const handleUploadImages = async (e, index) => {
+        if (isUploadingNow) return;
+        isUploadingNow = true;
 
-        if (matrix.length === 0) {
-            toast('Vui lòng chọn màu và size!', 'error');
+        const files = Array.from(e.target.files);
+        if (files.length === 0) {
+            isUploadingNow = false;
             return;
         }
 
+        const uploadedUrls = [];
+
+        try {
+            for (let file of files) {
+                const fd = new FormData();
+                fd.append('file', file);
+
+                const res = await axiosClient.post('/upload', fd, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+
+                uploadedUrls.push(res.data.url);
+            }
+
+            setMatrix((prev) => {
+                const updated = [...prev];
+                updated[index].images = [...updated[index].images, ...uploadedUrls];
+                return updated;
+            });
+        } catch (error) {
+            toast('Upload ảnh thất bại!', 'error');
+        } finally {
+            e.target.value = '';
+            isUploadingNow = false;
+        }
+    };
+
+    // ===========================================================
+    // Submit
+    // ===========================================================
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (matrix.length === 0) return toast('Vui lòng chọn màu và size!', 'error');
+
+        // Validation
         for (let item of matrix) {
-            if (!item.sku.trim()) return toast('SKU không được để trống', 'error');
-            if (!item.price || Number(item.price) <= 0) return toast('Giá phải > 0', 'error');
+            if (!item.sku.trim()) return toast('SKU không được để trống!', 'error');
+            if (!item.price || Number(item.price) <= 0) return toast('Giá phải lớn hơn 0!', 'error');
         }
 
         setLoading(true);
 
         try {
-            // Get attribute IDs
             const colorAttr = await axiosClient.get('/attributes/key/mau-sac');
             const sizeAttr = await axiosClient.get('/attributes/key/size-ao');
 
             const colorAttrId = colorAttr.data._id;
             const sizeAttrId = sizeAttr.data._id;
 
-            // Create variants bulk
+            // Create variants
             await axiosClient.post(`/variants/${productId}/bulk`, {
                 variants: matrix.map((v) => {
                     const colorTerm = colors.find((c) => c.name === v.color);
@@ -131,25 +175,19 @@ const CreateVariant = () => {
                         ],
                         sku: v.sku,
                         price: Number(v.price),
-                        discountPrice: 0,
                         quantity: Number(v.quantity),
-                        images: v.image ? [v.image] : [],
+                        discountPrice: 0,
+                        images: v.images, // MULTI
                     };
                 }),
             });
 
-            // --------------------------------------------------
-            // Update Product Attributes (IMPORTANT)
-            // --------------------------------------------------
-            try {
-                await axiosClient.patch(`/products/${productId}/update-attributes`, {
-                    attributes: [{ attrId: colorAttrId }, { attrId: sizeAttrId }],
-                });
-            } catch (err) {
-                console.warn('Cập nhật attribute vào product thất bại:', err);
-            }
+            // Save product attributes
+            updateProductAttributes(productId, {
+                attributes: [{ attrId: colorAttrId }, { attrId: sizeAttrId }],
+            });
 
-            toast('Tạo các biến thể thành công!', 'success');
+            toast('Tạo biến thể thành công!', 'success');
             navigate(`/admin/products/${productId}/variants`);
         } catch (err) {
             toast(err.response?.data?.message || 'Lỗi tạo biến thể!', 'error');
@@ -158,9 +196,9 @@ const CreateVariant = () => {
         }
     };
 
-    // ==================================================
+    // ===========================================================
     // UI
-    // ==================================================
+    // ===========================================================
     return (
         <div className={cx('create-page')}>
             <div className={cx('header')}>
@@ -182,7 +220,7 @@ const CreateVariant = () => {
                                 className={cx('option-btn', {
                                     active: selectedColors.includes(c.name),
                                 })}
-                                onClick={() => toggleColor(c.name)}
+                                onClick={() => toggleSelect(selectedColors, setSelectedColors, c.name)}
                             >
                                 {c.name}
                             </button>
@@ -201,7 +239,7 @@ const CreateVariant = () => {
                                 className={cx('option-btn', {
                                     active: selectedSizes.includes(s.name),
                                 })}
-                                onClick={() => toggleSize(s.name)}
+                                onClick={() => toggleSelect(selectedSizes, setSelectedSizes, s.name)}
                             >
                                 {s.name}
                             </button>
@@ -209,7 +247,7 @@ const CreateVariant = () => {
                     </div>
                 </div>
 
-                {/* MATRIX */}
+                {/* MATRIX TABLE */}
                 {matrix.length > 0 && (
                     <div className={cx('matrix-wrapper')}>
                         <h3>Danh sách biến thể</h3>
@@ -222,19 +260,20 @@ const CreateVariant = () => {
                                     <th>SKU *</th>
                                     <th>Giá *</th>
                                     <th>Số lượng</th>
-                                    <th>Ảnh (URL)</th>
+                                    <th>Ảnh</th>
                                 </tr>
                             </thead>
+
                             <tbody>
-                                {matrix.map((item, index) => (
+                                {matrix.map((v, index) => (
                                     <tr key={index}>
-                                        <td>{item.color}</td>
-                                        <td>{item.size}</td>
+                                        <td>{v.color}</td>
+                                        <td>{v.size}</td>
 
                                         <td>
                                             <input
                                                 type="text"
-                                                value={item.sku}
+                                                value={v.sku}
                                                 onChange={(e) => updateMatrix(index, 'sku', e.target.value)}
                                             />
                                         </td>
@@ -243,7 +282,7 @@ const CreateVariant = () => {
                                             <input
                                                 type="number"
                                                 min="0"
-                                                value={item.price}
+                                                value={v.price}
                                                 onChange={(e) => updateMatrix(index, 'price', e.target.value)}
                                             />
                                         </td>
@@ -252,18 +291,29 @@ const CreateVariant = () => {
                                             <input
                                                 type="number"
                                                 min="0"
-                                                value={item.quantity}
+                                                value={v.quantity}
                                                 onChange={(e) => updateMatrix(index, 'quantity', e.target.value)}
                                             />
                                         </td>
 
                                         <td>
                                             <input
-                                                type="text"
-                                                value={item.image}
-                                                onChange={(e) => updateMatrix(index, 'image', e.target.value)}
-                                                placeholder="https://..."
+                                                type="file"
+                                                multiple
+                                                accept="image/*"
+                                                onChange={(e) => handleUploadImages(e, index)}
                                             />
+
+                                            <div className={cx('img-count')}>
+                                                {v.images.length > 0 && <span>{v.images.length} ảnh đã upload</span>}
+                                            </div>
+
+                                            {/* PREVIEW */}
+                                            <div className={cx('img-preview')}>
+                                                {v.images.map((img, i) => (
+                                                    <img key={i} src={img} alt="" />
+                                                ))}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -272,7 +322,7 @@ const CreateVariant = () => {
                     </div>
                 )}
 
-                {/* BUTTONS */}
+                {/* ACTIONS */}
                 <div className={cx('actions')}>
                     <button type="submit" disabled={loading} className={cx('btn-submit')}>
                         {loading ? 'Đang tạo...' : 'Tạo tất cả biến thể'}

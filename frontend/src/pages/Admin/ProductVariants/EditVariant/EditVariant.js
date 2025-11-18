@@ -14,6 +14,8 @@ import axiosClient from '~/utils/axiosClient';
 
 const cx = classNames.bind(styles);
 
+let isUploadingNow = false;
+
 function EditVariant() {
     const { productId, variantId } = useParams();
     const navigate = useNavigate();
@@ -22,32 +24,37 @@ function EditVariant() {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
 
-    // variant form state
+    // Dữ liệu form
     const [form, setForm] = useState({
         sku: '',
         price: '',
         discountPrice: '',
         quantity: '',
-        image: '',
-        attributes: [], // { attrId, terms: [...] }
+        images: [], // MULTI IMAGES
+        thumbnail: '',
+        attributes: [],
     });
 
-    // attributes data (color / size)
     const [colors, setColors] = useState([]);
     const [sizes, setSizes] = useState([]);
     const [colorAttrId, setColorAttrId] = useState(null);
     const [sizeAttrId, setSizeAttrId] = useState(null);
 
-    // STATE CHỨA TẤT CẢ VARIANTS
+    const [dragIndex, setDragIndex] = useState(null);
+
     const [allVariants, setAllVariants] = useState([]);
 
-    // load product variants then find the one
+    // -------------------------------------------------
+    // FETCH: Variant
+    // -------------------------------------------------
     const fetchVariant = async () => {
         setLoading(true);
         try {
             const res = await getVariantsByProduct(productId);
             const variants = res.data.variants || [];
-            setAllVariants(variants); // LƯU TẤT CẢ VARIANTS VÀO STATE
+
+            setAllVariants(variants);
+
             const found = variants.find((v) => v._id === variantId || v._id === String(variantId));
             if (!found) {
                 toast('Không tìm thấy biến thể', 'error');
@@ -55,44 +62,42 @@ function EditVariant() {
                 return;
             }
 
-            // map variant to form
             setForm({
                 sku: found.sku || '',
                 price: found.price || '',
                 discountPrice: found.discountPrice || '',
                 quantity: found.quantity || 0,
-                image: found.image || found.images?.[0] || '',
+                images: found.images || [], // MULTI IMAGES
+                thumbnail: found.thumbnail || found.images?.[0] || '',
                 attributes: found.attributes || [],
             });
         } catch (err) {
-            console.error(err);
             toast('Lỗi khi tải dữ liệu biến thể', 'error');
         } finally {
             setLoading(false);
         }
     };
 
-    // load attributes (màu, size)
+    // -------------------------------------------------
+    // FETCH: Attributes (Color / Size)
+    // -------------------------------------------------
     const fetchAttributes = async () => {
         try {
-            const colorAttrRes = await getAttributeByKey('mau-sac');
-            const sizeAttrRes = await getAttributeByKey('size-ao');
+            const colorAttr = await getAttributeByKey('mau-sac');
+            const sizeAttr = await getAttributeByKey('size-ao');
 
-            const colorId = colorAttrRes.data._id;
-            const sizeId = sizeAttrRes.data._id;
+            setColorAttrId(colorAttr.data._id);
+            setSizeAttrId(sizeAttr.data._id);
 
-            setColorAttrId(colorId);
-            setSizeAttrId(sizeId);
-
-            const [colorTermsRes, sizeTermsRes] = await Promise.all([
-                getAttributeTerms(colorId),
-                getAttributeTerms(sizeId),
+            const [colorTerms, sizeTerms] = await Promise.all([
+                getAttributeTerms(colorAttr.data._id),
+                getAttributeTerms(sizeAttr.data._id),
             ]);
 
-            setColors(colorTermsRes.data || []);
-            setSizes(sizeTermsRes.data || []);
+            setColors(colorTerms.data || []);
+            setSizes(sizeTerms.data || []);
         } catch (err) {
-            console.warn('Lỗi tải attribute terms', err);
+            console.warn('Lỗi tải thuộc tính', err);
         }
     };
 
@@ -102,89 +107,168 @@ function EditVariant() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [productId, variantId]);
 
+    // -------------------------------------------------
+    // Helpers
+    // -------------------------------------------------
     const updateField = (field, value) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
 
-    // helper to read selected term id for attr
     const getSelectedTermId = (attrId) => {
         const attr = form.attributes.find((a) => String(a.attrId) === String(attrId));
-        return attr?.terms?.[0] || null;
+        return attr?.terms?.[0] || '';
     };
 
     const setSelectedTerm = (attrId, termId) => {
         setForm((prev) => {
-            const attributes = [...(prev.attributes || [])];
-            const idx = attributes.findIndex((a) => String(a.attrId) === String(attrId));
-            if (idx >= 0) {
-                attributes[idx] = { ...attributes[idx], terms: [termId] };
-            } else {
-                attributes.push({ attrId, terms: [termId] });
-            }
-            return { ...prev, attributes };
+            const attrs = [...prev.attributes];
+            const index = attrs.findIndex((a) => String(a.attrId) === String(attrId));
+
+            if (index >= 0) attrs[index] = { ...attrs[index], terms: [termId] };
+            else attrs.push({ attrId, terms: [termId] });
+
+            return { ...prev, attributes: attrs };
         });
     };
 
+    // -------------------------------------------------
+    // UPLOAD MULTIPLE IMAGES (Giống CreateVariant)
+    // -------------------------------------------------
+    const handleUploadImages = async (e) => {
+        if (isUploadingNow) return;
+        isUploadingNow = true;
+
+        const files = Array.from(e.target.files);
+        if (files.length === 0) {
+            isUploadingNow = false;
+            return;
+        }
+
+        const uploadedUrls = [];
+
+        try {
+            for (let file of files) {
+                const fd = new FormData();
+                fd.append('file', file);
+
+                const res = await axiosClient.post('/upload', fd, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+
+                uploadedUrls.push(res.data.url);
+            }
+
+            // Append ảnh mới vào form.images
+            setForm((prev) => ({
+                ...prev,
+                images: [...prev.images, ...uploadedUrls],
+            }));
+        } catch (err) {
+            toast('Upload ảnh thất bại!', 'error');
+        } finally {
+            e.target.value = '';
+            isUploadingNow = false;
+        }
+    };
+
+    // -------------------------------------------------
+    // SAVE
+    // -------------------------------------------------
     const handleSave = async (e) => {
         e.preventDefault();
 
-        // validation
         if (!form.sku.trim()) return toast('SKU không được để trống', 'error');
         if (!form.price || Number(form.price) <= 0) return toast('Giá phải > 0', 'error');
 
-        // --- CHECK TRÙNG SKU NGAY TẠI FE ---
-        const skuExists = allVariants.some(
-            (v) => v.sku === form.sku && v._id !== variantId, // exclude biến thể hiện tại
-        );
+        // Check trùng SKU FE
+        const skuExists = allVariants.some((v) => v.sku === form.sku && v._id !== variantId);
 
         if (skuExists) {
             toast('SKU đã tồn tại trong sản phẩm!', 'error');
-            return; // ⛔ CHẶN SUBMIT
+            return;
         }
 
-        // tiếp tục submit nếu không trùng
         setSaving(true);
-        
+
         try {
-            // prepare payload — match back-end expected shape
             const payload = {
                 sku: form.sku,
                 price: Number(form.price),
                 discountPrice: form.discountPrice ? Number(form.discountPrice) : null,
                 quantity: Number(form.quantity),
-                image: form.image || '',
-                attributes: form.attributes.map((a) => ({
-                    attrId: a.attrId,
-                    terms: a.terms,
-                })),
+                images: form.images, // MULTI-IMAGES gửi lên BE
+                thumbnail: form.thumbnail || form.images[0] || '',
+                attributes: form.attributes,
             };
 
             await updateVariant(variantId, payload);
+
             toast('Cập nhật biến thể thành công', 'success');
             navigate(`/admin/products/${productId}/variants`);
         } catch (err) {
-            console.error(err);
             toast(err.response?.data?.message || 'Lỗi khi cập nhật', 'error');
         } finally {
             setSaving(false);
         }
     };
 
+    // -------------------------------------------------
+    // DELETE
+    // -------------------------------------------------
     const handleDelete = async () => {
         if (!window.confirm('Bạn có chắc chắn muốn xoá biến thể này?')) return;
+
         try {
             await deleteVariant(variantId);
             toast('Xoá biến thể thành công', 'success');
             navigate(`/admin/products/${productId}/variants`);
         } catch (err) {
-            console.error(err);
             toast('Xoá thất bại', 'error');
         }
     };
 
-    // preview image url
-    const imagePreview = form.image ? form.image : null;
+    // -------------------------------------------------
+    // REMOVE ONE IMAGE
+    // -------------------------------------------------
+    const handleRemoveImage = (url) => {
+        setForm((prev) => ({
+            ...prev,
+            images: prev.images.filter((img) => img !== url),
+        }));
+    };
 
+    // -------------------------------------------------
+    // DRAG & DROP REORDER
+    // -------------------------------------------------
+    const handleDragStart = (index) => {
+        setDragIndex(index);
+    };
+
+    const handleDrop = (index) => {
+        if (dragIndex === null) return;
+
+        const newImages = [...form.images];
+        const draggedItem = newImages[dragIndex];
+
+        newImages.splice(dragIndex, 1);
+        newImages.splice(index, 0, draggedItem);
+
+        setForm((prev) => ({ ...prev, images: newImages }));
+        setDragIndex(null);
+    };
+
+    const handleSetThumbnail = (url) => {
+        setForm((prev) => ({ ...prev, thumbnail: url }));
+    };
+
+    const handleRemoveAllImages = () => {
+        if (!window.confirm('Xoá hết toàn bộ ảnh?')) return;
+        setForm((prev) => ({ ...prev, images: [], thumbnail: '' }));
+    };
+
+    // -------------------------------------------------
+    // UI
+    // -------------------------------------------------
     return (
         <div className={cx('edit-variant-page')}>
             <div className={cx('header')}>
@@ -204,6 +288,7 @@ function EditVariant() {
             ) : (
                 <form className={cx('form')} onSubmit={handleSave}>
                     <div className={cx('grid')}>
+                        {/* LEFT FORM CARD */}
                         <div className={cx('card')}>
                             <label>SKU *</label>
                             <input value={form.sku} onChange={(e) => updateField('sku', e.target.value)} />
@@ -228,31 +313,82 @@ function EditVariant() {
                             <input
                                 type="number"
                                 min="0"
-                                value={form.quantity || 0}
+                                value={form.quantity}
                                 onChange={(e) => updateField('quantity', e.target.value)}
                             />
                         </div>
 
+                        {/* RIGHT FORM CARD */}
                         <div className={cx('card')}>
-                            <label>Ảnh (URL)</label>
-                            <input
-                                value={form.image}
-                                onChange={(e) => updateField('image', e.target.value)}
-                                placeholder="https://..."
-                            />
-                            {imagePreview && (
-                                <div className={cx('image-preview')}>
-                                    <img src={imagePreview} alt="preview" />
-                                </div>
-                            )}
+                            <label>Upload ảnh (nhiều ảnh)</label>
+                            <input type="file" multiple accept="image/*" onChange={handleUploadImages} />
+
+                            <div className={cx('img-count')}>
+                                {form.images.length > 0 && <span>{form.images.length} ảnh đã upload</span>}
+                            </div>
+
+                            {/* PREVIEW */}
+                            <div className={cx('image-preview-actions')}>
+                                {form.images.length > 0 && (
+                                    <button
+                                        type="button"
+                                        className={cx('btn-delete-all')}
+                                        onClick={handleRemoveAllImages}
+                                    >
+                                        Xoá tất cả ảnh
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className={cx('image-preview-list')}>
+                                {form.images.map((img, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={cx(
+                                            'image-preview-item',
+                                            form.thumbnail === img && 'thumbnail',
+                                            dragIndex === idx && 'dragging',
+                                        )}
+                                        draggable
+                                        onDragStart={() => handleDragStart(idx)}
+                                        onDragOver={(e) => e.preventDefault()}
+                                        onDrop={() => handleDrop(idx)}
+                                    >
+                                        {/* Remove button */}
+                                        <button
+                                            type="button"
+                                            className={cx('remove-btn')}
+                                            onClick={() => handleRemoveImage(img)}
+                                        >
+                                            ✕
+                                        </button>
+
+                                        {/* Thumbnail badge */}
+                                        {form.thumbnail === img && (
+                                            <div className={cx('thumbnail-badge')}>Thumbnail</div>
+                                        )}
+
+                                        {/* Thumbnail select */}
+                                        <button
+                                            type="button"
+                                            className={cx('thumbnail-select')}
+                                            onClick={() => handleSetThumbnail(img)}
+                                        >
+                                            Đặt làm thumbnail
+                                        </button>
+
+                                        <img src={img} alt="" />
+                                    </div>
+                                ))}
+                            </div>
 
                             <hr />
 
-                            {/* Attributes selects */}
+                            {/* COLOR */}
                             {/* <div className={cx('attr-group')}>
                                 <label>Màu</label>
                                 <select
-                                    value={getSelectedTermId(colorAttrId) || ''}
+                                    value={getSelectedTermId(colorAttrId)}
                                     onChange={(e) => setSelectedTerm(colorAttrId, e.target.value)}
                                 >
                                     <option value="">— Chọn màu —</option>
@@ -262,12 +398,13 @@ function EditVariant() {
                                         </option>
                                     ))}
                                 </select>
-                            </div>
+                            </div> */}
 
-                            <div className={cx('attr-group')}>
+                            {/* SIZE */}
+                            {/* <div className={cx('attr-group')}>
                                 <label>Size</label>
                                 <select
-                                    value={getSelectedTermId(sizeAttrId) || ''}
+                                    value={getSelectedTermId(sizeAttrId)}
                                     onChange={(e) => setSelectedTerm(sizeAttrId, e.target.value)}
                                 >
                                     <option value="">— Chọn size —</option>

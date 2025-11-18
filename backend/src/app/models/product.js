@@ -21,6 +21,7 @@ const variationSchema = new mongoose.Schema(
     price: { type: Number, required: true },
     discountPrice: { type: Number, default: null },
     quantity: { type: Number, default: 0 },
+    thumbnail: { type: String, default: "" },
     images: [String],
     attributes: [
       {
