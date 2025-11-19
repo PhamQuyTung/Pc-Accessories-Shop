@@ -10,6 +10,10 @@ import 'swiper/css/navigation';
 import { Row, Col } from 'react-bootstrap';
 import styles from './ProductDetail.module.scss';
 import classNames from 'classnames/bind';
+import Tippy from '@tippyjs/react';
+import 'tippy.js/dist/tippy.css';
+import 'tippy.js/animations/scale.css';
+import namer from 'color-namer';
 import Breadcrumb from '~/components/Breadcrumb/Breadcrumb';
 import ProductGallery from './ProductGallery';
 // import BasicRating from '~/components/Rating/Rating';
@@ -26,6 +30,14 @@ import ExpandableContent from '~/components/ExpandableContent/ExpandableContent'
 import GiftList from '~/components/GiftList/GiftList';
 
 const cx = classNames.bind(styles);
+
+const COLOR_MAP = {
+    Đen: '#000000',
+    Trắng: '#FFFFFF',
+    Hồng: '#FF69B4',
+    Đỏ: '#FF0000',
+    Xanh: '#1E90FF',
+};
 
 function ProductDetail() {
     const { slug } = useParams();
@@ -84,6 +96,17 @@ function ProductDetail() {
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('vi-VN'); // ví dụ: 25/06/2025
+    };
+
+    const getColorHex = (name) => {
+        // namer() trả về nhiều nhóm kết quả: basic, html, x11...
+        // Mình dùng nhóm 'html' cho ổn định
+        try {
+            const result = namer(name);
+            return result.html[0]?.hex || null;
+        } catch (e) {
+            return null;
+        }
     };
 
     // Hàm chọn thuộc tính
@@ -591,52 +614,101 @@ function ProductDetail() {
 
                                 {product.attributes && product.attributes.length > 0 && (
                                     <div className={cx('product-attributes')}>
-                                        {product.attributes.map((attr) => (
-                                            <div key={attr.attrId._id} className={cx('product-attribute')}>
-                                                <p className={cx('attr-label')}>{attr.attrId.name}:</p>
+                                        {product.attributes.map((attr) => {
+                                            const attrId = attr.attrId._id;
+                                            const isColorAttr =
+                                                attr.attrId.name.toLowerCase().includes('màu') ||
+                                                attr.attrId.name.toLowerCase().includes('color');
 
-                                                <div className={cx('attr-options')}>
-                                                    {attr.terms?.map((term) => {
-                                                        const termId = typeof term === 'object' ? term._id : term;
-                                                        const isActive = selectedAttributes[attr.attrId._id] === termId;
-                                                        const isDisabled = !!(
-                                                            disabledOptions &&
-                                                            disabledOptions[attr.attrId._id] &&
-                                                            disabledOptions[attr.attrId._id].has(termId)
-                                                        );
-                                                        return (
-                                                            <button
-                                                                key={termId}
-                                                                onClick={() => {
-                                                                    if (isDisabled) {
-                                                                        // tùy chọn: show tooltip/toast khi bấm vào disabled
-                                                                        toast &&
-                                                                            toast('Biến thể này không có sẵn', 'info');
-                                                                        return;
-                                                                    }
-                                                                    handleSelectAttribute(attr.attrId._id, termId);
-                                                                }}
-                                                                className={cx('attr-option', {
-                                                                    active: isActive,
-                                                                    disabled: isDisabled,
-                                                                })}
-                                                                disabled={isDisabled}
-                                                                aria-disabled={isDisabled}
-                                                                title={
-                                                                    isDisabled
-                                                                        ? 'Biến thể này không tồn tại'
-                                                                        : typeof term === 'object'
-                                                                          ? term.name
-                                                                          : term
+                                            return (
+                                                <div key={attrId} className={cx('product-attribute')}>
+                                                    <p className={cx('attr-label')}>{attr.attrId.name}:</p>
+
+                                                    <div className={cx('attr-options')}>
+                                                        {attr.terms?.map((term) => {
+                                                            const termId = term._id;
+                                                            const isActive = selectedAttributes[attrId] === termId;
+                                                            const isDisabled = disabledOptions[attrId]?.has(termId);
+
+                                                            // --- Nếu là màu, xử lý bằng color-namer ---
+                                                            let colorCode =
+                                                                term.colorCode || COLOR_MAP[term.name] || null;
+                                                            let autoColorName = null;
+
+                                                            if (colorCode) {
+                                                                try {
+                                                                    const result = namer(colorCode);
+                                                                    autoColorName = result.basic[0]?.name || term.name;
+                                                                } catch (e) {
+                                                                    autoColorName = term.name;
                                                                 }
-                                                            >
-                                                                {typeof term === 'object' ? term.name : term}
-                                                            </button>
-                                                        );
-                                                    })}
+                                                            }
+
+                                                            if (isColorAttr) {
+                                                                return (
+                                                                    <div
+                                                                        key={termId}
+                                                                        className={cx('attr-option', 'color-option', {
+                                                                            active: isActive,
+                                                                            disabled: isDisabled,
+                                                                        })}
+                                                                        onClick={() =>
+                                                                            !isDisabled &&
+                                                                            handleSelectAttribute(attrId, termId)
+                                                                        }
+                                                                    >
+                                                                        <button
+                                                                            className={cx(
+                                                                                'attr-option',
+                                                                                'attr-option__color',
+                                                                                'color-option',
+                                                                                {
+                                                                                    active: isActive,
+                                                                                    disabled: isDisabled,
+                                                                                },
+                                                                            )}
+                                                                            style={{
+                                                                                backgroundColor: colorCode || '#ccc',
+                                                                                // border: isActive
+                                                                                //     ? '2px solid #000'
+                                                                                //     : '1px solid #ddd',
+                                                                                // opacity: isDisabled ? 0.4 : 1,
+                                                                            }}
+                                                                        ></button>
+
+                                                                        {/* ⭐ Hiển thị tên màu bên cạnh */}
+                                                                        <span
+                                                                            className={cx('color-name', {
+                                                                                disabled: isDisabled,
+                                                                            })}
+                                                                        >
+                                                                            {term.name}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            }
+
+                                                            // --- Nếu không phải màu (text, size, v.v) ---
+                                                            return (
+                                                                <button
+                                                                    key={termId}
+                                                                    onClick={() =>
+                                                                        !isDisabled &&
+                                                                        handleSelectAttribute(attrId, termId)
+                                                                    }
+                                                                    className={cx('attr-option', {
+                                                                        active: isActive,
+                                                                        disabled: isDisabled,
+                                                                    })}
+                                                                >
+                                                                    {term.name}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 )}
 
