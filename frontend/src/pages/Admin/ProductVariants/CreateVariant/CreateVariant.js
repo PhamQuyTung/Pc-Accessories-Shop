@@ -68,22 +68,58 @@ const CreateVariant = () => {
         setMatrix((prev) => {
             const result = [];
 
-            selectedColors.forEach((color) => {
-                selectedSizes.forEach((size) => {
-                    const existing = prev.find((v) => v.color === color && v.size === size);
-
+            // Trường hợp chỉ chọn màu
+            if (selectedColors.length > 0 && selectedSizes.length === 0) {
+                selectedColors.forEach((color) => {
+                    const existing = prev.find((v) => v.color === color && !v.size);
                     result.push(
                         existing || {
                             color,
+                            size: null,
+                            sku: '',
+                            price: '',
+                            quantity: '',
+                            images: [],
+                        },
+                    );
+                });
+            }
+
+            // Trường hợp chỉ chọn size
+            if (selectedSizes.length > 0 && selectedColors.length === 0) {
+                selectedSizes.forEach((size) => {
+                    const existing = prev.find((v) => v.size === size && !v.color);
+                    result.push(
+                        existing || {
+                            color: null,
                             size,
                             sku: '',
                             price: '',
                             quantity: '',
-                            images: [], // giữ nguyên
+                            images: [],
                         },
                     );
                 });
-            });
+            }
+
+            // Trường hợp có cả 2 → ma trận
+            if (selectedColors.length > 0 && selectedSizes.length > 0) {
+                selectedColors.forEach((color) => {
+                    selectedSizes.forEach((size) => {
+                        const existing = prev.find((v) => v.color === color && v.size === size);
+                        result.push(
+                            existing || {
+                                color,
+                                size,
+                                sku: '',
+                                price: '',
+                                quantity: '',
+                                images: [],
+                            },
+                        );
+                    });
+                });
+            }
 
             return result;
         });
@@ -145,7 +181,7 @@ const CreateVariant = () => {
     // ===========================================================
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (matrix.length === 0) return toast('Vui lòng chọn màu và size!', 'error');
+        if (matrix.length === 0) return toast('Vui lòng chọn ít nhất 1 thuộc tính!', 'error');
 
         // Validation
         for (let item of matrix) {
@@ -170,8 +206,8 @@ const CreateVariant = () => {
 
                     return {
                         attributes: [
-                            { attrId: colorAttrId, termId: colorTerm?._id },
-                            { attrId: sizeAttrId, termId: sizeTerm?._id },
+                            ...(v.color ? [{ attrId: colorAttrId, termId: colorTerm?._id }] : []),
+                            ...(v.size ? [{ attrId: sizeAttrId, termId: sizeTerm?._id }] : []),
                         ],
                         sku: v.sku,
                         price: Number(v.price),

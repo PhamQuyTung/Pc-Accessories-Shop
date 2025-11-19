@@ -266,6 +266,11 @@ class ProductController {
         deleted: { $ne: true },
         visible: true,
       })
+        // 🧩 Thêm phần populate cho category
+        .populate({
+          path: "category",
+          select: "name slug",
+        })
         .populate({
           path: "gifts", // populate danh sách quà
           populate: {
@@ -478,12 +483,10 @@ class ProductController {
       res.json({ success: true, product });
     } catch (error) {
       console.error("Lỗi updateAttributes:", error);
-      res
-        .status(500)
-        .json({
-          success: false,
-          message: "Lỗi server khi cập nhật attributes",
-        });
+      res.status(500).json({
+        success: false,
+        message: "Lỗi server khi cập nhật attributes",
+      });
     }
   }
 

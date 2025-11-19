@@ -10,17 +10,17 @@ import 'swiper/css/navigation';
 import { Row, Col } from 'react-bootstrap';
 import styles from './ProductDetail.module.scss';
 import classNames from 'classnames/bind';
-import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/animations/scale.css';
 import namer from 'color-namer';
-import Breadcrumb from '~/components/Breadcrumb/Breadcrumb';
-import ProductGallery from './ProductGallery';
-// import BasicRating from '~/components/Rating/Rating';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleLeft, faAngleRight, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 import { faHeart } from '@fortawesome/free-regular-svg-icons';
 import { faHeart as solidHeart } from '@fortawesome/free-solid-svg-icons';
+import { useLocation } from 'react-router-dom';
+
+import ProductGallery from './ProductGallery';
+import Breadcrumb from '~/components/Breadcrumb/Breadcrumb';
 import ProductCard from '~/components/Product/ProductCard';
 import SpinnerLoading from '~/components/SpinnerLoading/SpinnerLoading';
 import { useToast } from '~/components/ToastMessager';
@@ -75,6 +75,7 @@ function ProductDetail() {
     const role = localStorage.getItem('role'); // hoặc lấy từ Redux: state.auth.user.role
 
     const [posts, setPosts] = useState([]);
+    const location = useLocation();
 
     useEffect(() => {
         axiosClient
@@ -532,15 +533,46 @@ function ProductDetail() {
         }
     };
 
+    // Hàm lấy tên hiển thị sản phẩm với biến thể
+    const getProductDisplayName = () => {
+        if (!activeVariation) return product.name;
+
+        let variantText = [];
+
+        // duyệt tất cả attributes của product
+        product.attributes.forEach((attr) => {
+            const attrId = attr.attrId._id;
+            const termId = selectedAttributes[attrId];
+
+            if (termId) {
+                const termObj = attr.terms.find((t) => t._id === termId);
+                if (termObj) {
+                    variantText.push(`${attr.attrId.name}: ${termObj.name}`);
+                }
+            }
+        });
+
+        return `${product.name} ${variantText.join(' - ')}`;
+    };
+
     console.log('🔑 Role in localStorage:', role);
 
     return (
         <div className={cx('product-detail')}>
             <div className={cx('breadcrumb-wrap')}>
                 {/* Breadcrumb */}
-                <Breadcrumb />
+                {product.category && (
+                    <Breadcrumb
+                        customData={[
+                            { path: '/', label: 'Trang chủ' },
+                            { path: `/categories/${product.category.slug}`, label: product.category.name },
+                            { path: location.pathname, label: getProductDisplayName() },
+                        ]}
+                    />
+                )}
+
                 {/* ✅ Nút chỉ admin mới thấy */}
-                {role === 'admin' && (
+                {/* {role === 'admin' && (
                     <div className={cx('admin-actions')}>
                         <Link to={`/products/edit/${product._id}`} className={cx('btn-admin__link')}>
                             ✏️
@@ -549,7 +581,7 @@ function ProductDetail() {
                             ➕
                         </Link>
                     </div>
-                )}
+                )} */}
             </div>
 
             {/* Product-detail Main */}
@@ -566,7 +598,7 @@ function ProductDetail() {
                     <Col lg={6} md={12} xs={12}>
                         <div className={cx('product-info')}>
                             <div className={cx('product-info__name')}>
-                                <h1>{product.name}</h1>
+                                <h1>{getProductDisplayName()}</h1>
                             </div>
 
                             <div className={cx('product-info__fsz16')}>
@@ -592,25 +624,6 @@ function ProductDetail() {
                                         />
                                     </button>
                                 </div>
-
-                                {/* {product.attributes?.map((attr) => (
-                                    <div key={attr.attrId._id} className={cx('product-attribute')}>
-                                        <p className={cx('attr-label')}>{attr.attrId.name}:</p>
-                                        <div className={cx('attr-options')}>
-                                            {attr.terms?.map((term) => (
-                                                <button
-                                                    key={term._id}
-                                                    onClick={() => handleSelectAttribute(attr.attrId._id, term._id)}
-                                                    className={cx('attr-option', {
-                                                        active: selectedAttributes[attr.attrId._id] === term._id,
-                                                    })}
-                                                >
-                                                    {term.name}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))} */}
 
                                 {product.attributes && product.attributes.length > 0 && (
                                     <div className={cx('product-attributes')}>
