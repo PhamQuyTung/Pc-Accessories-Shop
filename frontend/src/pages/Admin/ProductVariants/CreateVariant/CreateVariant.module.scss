@@ -153,3 +153,121 @@
     font-size: 13px;
     color: #555;
 }
+
+.form-group {
+    margin-bottom: 24px;
+
+    h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .hint {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 12px;
+    }
+
+    .no-attrs {
+        color: #999;
+        font-style: italic;
+    }
+}
+
+.attr-checkbox-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    input[type='checkbox'] {
+        cursor: pointer;
+    }
+
+    &:hover {
+        background: #f9f9f9;
+        border-color: #bbb;
+    }
+
+    span {
+        flex: 1;
+    }
+
+    .term-count {
+        font-size: 12px;
+        color: #999;
+    }
+}
+
+.attr-terms-section {
+    margin-top: 16px;
+    padding: 12px;
+    background: #f9f9f9;
+    border-radius: 6px;
+
+    .section-title {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .terms-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 8px;
+    }
+
+    .term-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+
+        input[type='checkbox'] {
+            cursor: pointer;
+        }
+
+        &:hover {
+            background: #fff;
+        }
+    }
+}
+
+.attr-value {
+    display: inline-block;
+    padding: 4px 8px;
+    background: #f0f0f0;
+    border-radius: 3px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.attr-chip {
+    display: inline-block;
+    padding: 4px 10px;
+    background: #e3f2fd;
+    border-radius: 12px;
+    font-size: 12px;
+    color: #1976d2;
+    margin: 2px;
+}
+
+.no-attr {
+    color: #ccc;
+}

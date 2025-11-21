@@ -110,6 +110,20 @@ function ProductDetail() {
         }
     };
 
+    // ================= THÊM: Hàm handle bấm vào variation =================
+    const handleSelectVariation = (variation) => {
+        if (!variation.attributes || variation.attributes.length === 0) return;
+
+        const attrs = {};
+        variation.attributes.forEach((a) => {
+            const attrId = typeof a.attrId === 'object' ? a.attrId._id : a.attrId;
+            const termId = Array.isArray(a.terms) ? a.terms[0]._id : a.terms?._id;
+            attrs[attrId] = termId;
+        });
+
+        setSelectedAttributes(attrs);
+    };
+
     // Hàm chọn thuộc tính
     const handleSelectAttribute = (attrId, termId) => {
         setSelectedAttributes((prev) => {
@@ -124,71 +138,6 @@ function ProductDetail() {
             return next;
         });
     };
-
-    useEffect(() => {
-        if (!product?.variations || !Array.isArray(product.variations)) {
-            setDisabledOptions({});
-            return;
-        }
-
-        // chuẩn hoá biến thể: lấy mảng { attrId: string, termId: string } từ mỗi variation
-        const normalizedVariations = product.variations.map((v) => {
-            const attrs = {};
-            (v.attributes || []).forEach((a) => {
-                const id = typeof a.attrId === 'object' ? a.attrId._id : a.attrId;
-                const t = Array.isArray(a.terms) ? a.terms[0] : a.terms;
-                const termId = typeof t === 'object' && t?._id ? t._id : t;
-                attrs[id] = termId;
-            });
-            return attrs; // object map attrId -> termId
-        });
-
-        // Lấy tất cả attrId hiện có trên product (dùng product.attributes nếu có)
-        const attrIds = (product.attributes || []).map((a) => (typeof a.attrId === 'object' ? a.attrId._id : a.attrId));
-
-        // Khởi tạo map enable/disable tạm thời
-        const newDisabled = {};
-
-        // Với mỗi attr A và mỗi term T của A, kiểm tra:
-        // có tồn tại variation mà:
-        //   - variation[A] === T
-        //   - và với mọi lựa chọn hiện tại selectedAttributes (ngoại trừ attr A),
-        //     variation[selectedAttrId] === selectedAttributes[selectedAttrId]
-        attrIds.forEach((attrId) => {
-            // terms của attr từ product.attributes
-            const attr = (product.attributes || []).find((a) => {
-                const id = typeof a.attrId === 'object' ? a.attrId._id : a.attrId;
-                return id === attrId;
-            });
-
-            const terms = (attr?.terms || []).map((t) => (typeof t === 'object' ? t._id : t));
-            newDisabled[attrId] = new Set();
-
-            terms.forEach((termId) => {
-                // Kiểm tra tồn tại variation thỏa điều kiện
-                const exists = normalizedVariations.some((vAttrs) => {
-                    // điều kiện: vAttrs[attrId] === termId
-                    if (vAttrs[attrId] !== termId) return false;
-
-                    // với tất cả các lựa chọn khác đang được chọn
-                    for (const [selAttrId, selTermId] of Object.entries(selectedAttributes)) {
-                        if (selAttrId === attrId) continue; // skip tự so sánh
-                        if (!vAttrs[selAttrId] || vAttrs[selAttrId] !== selTermId) {
-                            return false;
-                        }
-                    }
-                    // ok
-                    return true;
-                });
-
-                if (!exists) {
-                    newDisabled[attrId].add(termId);
-                }
-            });
-        });
-
-        setDisabledOptions(newDisabled);
-    }, [product, selectedAttributes]);
 
     useEffect(() => {
         if (product?._id) {
@@ -281,18 +230,18 @@ function ProductDetail() {
             return;
         }
 
-        const requiredAttrIds = (product.attributes || []).map((a) =>
-            typeof a.attrId === 'object' ? a.attrId._id : a.attrId,
-        );
-
-        // Nếu chưa chọn đủ tất cả attribute -> không set activeVariation (null)
+        // Không yêu cầu chọn đủ tất cả attributes
+        // Chỉ cần tìm variation match tất cả selectedAttributes hiện tại
         const selectedKeys = Object.keys(selectedAttributes);
-        if (selectedKeys.length !== requiredAttrIds.length) {
+
+        if (selectedKeys.length === 0) {
             setActiveVariation(null);
             return;
         }
 
-        // Tìm variation khớp với toàn bộ selectedAttributes
+        // Tìm variation mà:
+        // - tất cả selectedAttributes đều khớp
+        // - không cần chọn tất cả attributes của product
         const match = product.variations.find((variation) => {
             const attrs = {};
             (variation.attributes || []).forEach((a) => {
@@ -302,7 +251,7 @@ function ProductDetail() {
                 attrs[id] = termId;
             });
 
-            // kiểm tra mọi selectedAttributes khớp
+            // Kiểm tra mọi selectedAttributes khớp
             return Object.entries(selectedAttributes).every(([k, v]) => attrs[k] === v);
         });
 
@@ -320,6 +269,24 @@ function ProductDetail() {
             console.log('✅ product loaded:', product);
         }
     }, [product]);
+
+    // Thêm vào ProductDetail.js (debug)
+    useEffect(() => {
+        console.log('📊 Total product.attributes:', product?.attributes?.length);
+        console.log('📊 Selected count:', Object.keys(selectedAttributes).length);
+
+        // Log structure của variations
+        product?.variations?.forEach((v, i) => {
+            console.log(`Variation ${i}:`, {
+                sku: v.sku,
+                attributeCount: v.attributes?.length,
+                attributes: v.attributes?.map((a) => ({
+                    attrId: typeof a.attrId === 'object' ? a.attrId._id : a.attrId,
+                    termId: Array.isArray(a.terms) ? a.terms[0] : a.terms,
+                })),
+            });
+        });
+    }, [product, selectedAttributes]);
 
     if (error) return <div>{error}</div>;
     if (loading) return <SpinnerLoading />;
@@ -625,9 +592,44 @@ function ProductDetail() {
                                     </button>
                                 </div>
 
-                                {product.attributes && product.attributes.length > 0 && (
+                                {product.variations && product.variations.length > 0 ? (
+                                    <div className={cx('product-variations-grouped')}>
+                                        <p className={cx('variations-label')}>Chọn biến thể:</p>
+                                        <div className={cx('variations-grid')}>
+                                            {getSortedVariations(product.variations).map((variation) => {
+                                                const isActive = isVariationMatching(variation, selectedAttributes);
+                                                const label = getVariationLabel(variation);
+
+                                                return (
+                                                    <button
+                                                        key={variation._id}
+                                                        onClick={() => handleSelectVariation(variation)}
+                                                        className={cx('variation-btn', {
+                                                            active: isActive,
+                                                        })}
+                                                        title={label}
+                                                    >
+                                                        <span className={cx('variation-text')}>{label}</span>
+                                                        {variation.price && (
+                                                            <span className={cx('variation-price')}>
+                                                                {variation.discountPrice
+                                                                    ? variation.discountPrice.toLocaleString()
+                                                                    : variation.price.toLocaleString()}
+                                                                ₫
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* ✅ Hiển thị quà tặng khuyến mãi */}
+                                        <GiftList gifts={product.gifts} />
+                                    </div>
+                                ) : product.attributes && product.attributes.length > 0 ? (
+                                    // Fallback: nếu không có variations nhưng có attributes, render attributes cũ
                                     <div className={cx('product-attributes')}>
-                                        {product.attributes.map((attr) => {
+                                        {getSortedAttributes(product.attributes).map((attr) => {
                                             const attrId = attr.attrId._id;
                                             const isColorAttr =
                                                 attr.attrId.name.toLowerCase().includes('màu') ||
@@ -641,21 +643,9 @@ function ProductDetail() {
                                                         {attr.terms?.map((term) => {
                                                             const termId = term._id;
                                                             const isActive = selectedAttributes[attrId] === termId;
-                                                            const isDisabled = disabledOptions[attrId]?.has(termId);
 
-                                                            // --- Nếu là màu, xử lý bằng color-namer ---
                                                             let colorCode =
                                                                 term.colorCode || COLOR_MAP[term.name] || null;
-                                                            let autoColorName = null;
-
-                                                            if (colorCode) {
-                                                                try {
-                                                                    const result = namer(colorCode);
-                                                                    autoColorName = result.basic[0]?.name || term.name;
-                                                                } catch (e) {
-                                                                    autoColorName = term.name;
-                                                                }
-                                                            }
 
                                                             if (isColorAttr) {
                                                                 return (
@@ -663,10 +653,8 @@ function ProductDetail() {
                                                                         key={termId}
                                                                         className={cx('attr-option', 'color-option', {
                                                                             active: isActive,
-                                                                            disabled: isDisabled,
                                                                         })}
                                                                         onClick={() =>
-                                                                            !isDisabled &&
                                                                             handleSelectAttribute(attrId, termId)
                                                                         }
                                                                     >
@@ -677,41 +665,27 @@ function ProductDetail() {
                                                                                 'color-option',
                                                                                 {
                                                                                     active: isActive,
-                                                                                    disabled: isDisabled,
                                                                                 },
                                                                             )}
                                                                             style={{
                                                                                 backgroundColor: colorCode || '#ccc',
-                                                                                // border: isActive
-                                                                                //     ? '2px solid #000'
-                                                                                //     : '1px solid #ddd',
-                                                                                // opacity: isDisabled ? 0.4 : 1,
                                                                             }}
                                                                         ></button>
-
-                                                                        {/* ⭐ Hiển thị tên màu bên cạnh */}
-                                                                        <span
-                                                                            className={cx('color-name', {
-                                                                                disabled: isDisabled,
-                                                                            })}
-                                                                        >
+                                                                        <span className={cx('color-name')}>
                                                                             {term.name}
                                                                         </span>
                                                                     </div>
                                                                 );
                                                             }
 
-                                                            // --- Nếu không phải màu (text, size, v.v) ---
                                                             return (
                                                                 <button
                                                                     key={termId}
                                                                     onClick={() =>
-                                                                        !isDisabled &&
                                                                         handleSelectAttribute(attrId, termId)
                                                                     }
                                                                     className={cx('attr-option', {
                                                                         active: isActive,
-                                                                        disabled: isDisabled,
                                                                     })}
                                                                 >
                                                                     {term.name}
@@ -722,8 +696,10 @@ function ProductDetail() {
                                                 </div>
                                             );
                                         })}
+
+                                        <GiftList gifts={product.gifts} />
                                     </div>
-                                )}
+                                ) : null}
 
                                 {/* Giá sản phẩm */}
                                 <div className={cx('product-info__cost')}>
@@ -794,9 +770,6 @@ function ProductDetail() {
                                         </span>
                                     )}
                                 </div>
-
-                                {/* ✅ Hiển thị quà tặng khuyến mãi */}
-                                <GiftList gifts={product.gifts} />
 
                                 {/* Nút mua sản phẩm & nút chat ngay */}
                                 <div className={cx('product-info__actions')}>
@@ -872,7 +845,7 @@ function ProductDetail() {
                             </button>
                             <button
                                 onClick={() => {
-                                    setActiveTab('reviews');
+                                    setActiveTab('newreviews');
                                     setTimeout(() => {
                                         reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
                                     }, 0);
@@ -968,3 +941,68 @@ function ProductDetail() {
 }
 
 export default ProductDetail;
+
+// Hàm định nghĩa thứ tự ưu tiên của các attribute
+const getAttributePriority = (attrName) => {
+    const lowerName = attrName.toLowerCase();
+    if (lowerName.includes('màu') || lowerName.includes('color')) return 0;
+    if (lowerName.includes('size') || lowerName.includes('kích')) return 1;
+    if (lowerName.includes('chất') || lowerName.includes('material')) return 2;
+    return 999; // các attribute khác cuối cùng
+};
+
+// Hàm sort attributes theo thứ tự ưu tiên
+const getSortedAttributes = (attrs) => {
+    if (!Array.isArray(attrs)) return attrs;
+    return [...attrs].sort((a, b) => {
+        const aPriority = getAttributePriority(a.attrId.name);
+        const bPriority = getAttributePriority(b.attrId.name);
+        return aPriority - bPriority;
+    });
+};
+
+// ================= THAY THẾ: Từ render individual attributes → render grouped variations =================
+// Thêm hàm helper để tạo label variation
+const getVariationLabel = (variation) => {
+    if (!variation.attributes || variation.attributes.length === 0) {
+        return 'Chưa xác định';
+    }
+
+    return variation.attributes
+        .map((attr) => {
+            const attrName = attr.attrId?.name || 'Attr';
+            const termName = attr.terms
+                ? Array.isArray(attr.terms)
+                    ? attr.terms[0]?.name
+                    : attr.terms?.name
+                : attr.termId;
+            return `${attrName}: ${termName}`;
+        })
+        .join(' - ');
+};
+
+// Thêm hàm để xác định xem variation này có match selectedAttributes không
+const isVariationMatching = (variation, selectedAttributes) => {
+    if (!variation.attributes || variation.attributes.length === 0) {
+        return false;
+    }
+
+    const attrs = {};
+    (variation.attributes || []).forEach((a) => {
+        const attrId = typeof a.attrId === 'object' ? a.attrId._id : a.attrId;
+        const termId = Array.isArray(a.terms) ? a.terms[0]._id : a.terms?._id;
+        attrs[attrId] = termId;
+    });
+
+    return Object.entries(selectedAttributes).every(([k, v]) => attrs[k] === v);
+};
+
+// Thêm hàm để sort variations (optional - sắp xếp theo attributes order)
+const getSortedVariations = (variations) => {
+    if (!Array.isArray(variations)) return variations;
+    return [...variations].sort((a, b) => {
+        const labelA = getVariationLabel(a);
+        const labelB = getVariationLabel(b);
+        return labelA.localeCompare(labelB);
+    });
+};

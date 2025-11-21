@@ -119,14 +119,14 @@ const ProductVariantManagement = () => {
                 </Link>
             </div>
 
-            <table className={cx('table')}>
+            <table className={cx('variants-table')}>
                 <thead>
                     <tr>
-                        <th>Ảnh</th>
-                        <th>Màu</th>
-                        <th>Size</th>
+                        <th>Hình</th>
+                        <th>Thuộc tính</th>
                         <th>SKU</th>
                         <th>Giá</th>
+                        <th>Giá KM</th>
                         <th>Số lượng</th>
                         <th>Hành động</th>
                     </tr>
@@ -150,17 +150,38 @@ const ProductVariantManagement = () => {
                                     className={cx('thumb')}
                                 />
                             </td>
-
                             {/* 
                                 Nếu backend trả về dạng:
                                 attributes: [{ attrId: {...}, terms: {...} }]
                                 thì ở đây bạn đổi theo format mới
                             */}
-                            <td>{getAttrName(v, 'mau-sac')}</td>
-                            <td>{getAttrName(v, 'size-ao')}</td>
+                            <td>
+                                <div className={cx('attr-display')}>
+                                    {(v.attributes || []).map((attr, i) => {
+                                        const attrName = attr.attrId?.name || 'Thuộc tính';
+                                        const termName = attr.terms?.[0]?.name || '—';
 
+                                        return (
+                                            <div key={i} className={cx('attr-row')}>
+                                                <div className={cx('attr-title')}>{attrName}:</div>
+                                                <div className={cx('attr-value')}>{termName}</div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    {(v.attributes || []).length === 0 && <div className={cx('no-attr')}>—</div>}
+                                </div>
+                            </td>
                             <td>{v.sku || '—'}</td>
+
                             <td>{v.price?.toLocaleString('vi-VN')}đ</td>
+
+                            <td>
+                                {v.discountPrice && v.discountPrice > 0
+                                    ? v.discountPrice.toLocaleString('vi-VN') + 'đ'
+                                    : '—'}
+                            </td>
+
                             <td>{v.quantity}</td>
 
                             <td>
