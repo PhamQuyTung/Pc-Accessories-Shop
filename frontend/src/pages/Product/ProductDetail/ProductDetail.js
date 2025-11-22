@@ -19,7 +19,7 @@ import { faHeart } from '@fortawesome/free-regular-svg-icons';
 import { faHeart as solidHeart } from '@fortawesome/free-solid-svg-icons';
 import { useLocation } from 'react-router-dom';
 
-import ProductGallery from './ProductGallery';
+import ProductGallery from './components/ProductGallery/ProductGallery';
 import Breadcrumb from '~/components/Breadcrumb/Breadcrumb';
 import ProductCard from '~/components/Product/ProductCard';
 import SpinnerLoading from '~/components/SpinnerLoading/SpinnerLoading';
