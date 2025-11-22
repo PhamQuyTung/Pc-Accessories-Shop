@@ -21,4 +21,17 @@ function computeProductStatus(product, options = {}) {
   return status; // 👈 luôn string
 }
 
-module.exports = { computeProductStatus };
+function computeVariationStatus(variation, importing = false) {
+  const qty = Number(variation.quantity || 0);
+
+  if (importing) return "đang nhập hàng";
+  if (qty === 0) return "hết hàng";
+  if (qty > 0 && qty < 5) return "sắp hết hàng";
+  if (qty >= 5 && qty < 10) return "còn hàng";
+  if (qty >= 10 && qty < 15) return "nhiều hàng";
+  if (qty >= 15) return "sản phẩm mới";
+
+  return "hết hàng";
+}
+
+module.exports = { computeProductStatus, computeVariationStatus };

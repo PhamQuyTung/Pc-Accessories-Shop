@@ -39,6 +39,20 @@ const COLOR_MAP = {
     Xanh: '#1E90FF',
 };
 
+const getVariationStatus = (variation) => {
+    if (!variation) return 'không có';
+
+    const qty = Number(variation.quantity) || 0;
+
+    if (qty === 0) return 'hết hàng';
+    if (qty > 0 && qty < 5) return 'sắp hết hàng';
+    if (qty >= 5 && qty < 10) return 'còn hàng';
+    if (qty >= 10 && qty < 15) return 'nhiều hàng';
+    if (qty >= 15) return 'sản phẩm mới';
+
+    return 'không có';
+};
+
 function ProductDetail() {
     const { slug } = useParams();
     const [product, setProduct] = useState(null);
@@ -746,24 +760,22 @@ function ProductDetail() {
                                     </p>
                                 )}
 
-                                {/* Trạng thái sản phẩm */}
+                                {/* Trạng thái sản phẩm theo biến thể */}
                                 <div className={cx('product-info__status')}>
-                                    {product.status && product.status.length > 0 ? (
-                                        product.status.map((st, idx) => (
-                                            <span
-                                                key={idx}
-                                                className={cx('product-info__status--badge', {
-                                                    'badge-new': st === 'sản phẩm mới',
-                                                    'badge-many': st === 'nhiều hàng',
-                                                    'badge-instock': st === 'còn hàng',
-                                                    'badge-low': st === 'sắp hết hàng',
-                                                    'badge-out': st === 'hết hàng',
-                                                    'badge-importing': st === 'đang nhập hàng',
-                                                })}
-                                            >
-                                                {st}
-                                            </span>
-                                        ))
+                                    {activeVariation ? (
+                                        <span
+                                            className={cx('product-info__status--badge', {
+                                                'badge-new': getVariationStatus(activeVariation) === 'sản phẩm mới',
+                                                'badge-many': getVariationStatus(activeVariation) === 'nhiều hàng',
+                                                'badge-instock': getVariationStatus(activeVariation) === 'còn hàng',
+                                                'badge-low': getVariationStatus(activeVariation) === 'sắp hết hàng',
+                                                'badge-out': getVariationStatus(activeVariation) === 'hết hàng',
+                                                'badge-importing':
+                                                    getVariationStatus(activeVariation) === 'đang nhập hàng',
+                                            })}
+                                        >
+                                            {getVariationStatus(activeVariation)}
+                                        </span>
                                     ) : (
                                         <span className={cx('product-info__status--badge', 'badge-default')}>
                                             Không có
