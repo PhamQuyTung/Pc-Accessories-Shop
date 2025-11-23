@@ -1,0 +1,36 @@
+.tabsWrapper {
+    margin-top: 30px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.tabsHeader {
+    display: flex;
+    border-bottom: 1px solid #eee;
+}
+
+.tabBtn {
+    flex: 1;
+    padding: 14px 0;
+    background: #f8f8f8;
+    border: none;
+    font-size: 1.6rem;
+    cursor: pointer;
+    transition: 0.2s;
+    font-weight: 500;
+
+    &:hover {
+        background: #eee;
+    }
+}
+
+.active {
+    background: #fff;
+    border-bottom: 2px solid #e30019;
+    color: #e30019;
+}
+
+.tabContent {
+    padding: 20px;
+}

@@ -75,3 +75,28 @@ exports.getFavorites = async (req, res) => {
       .json({ message: "Lỗi khi lấy danh sách sản phẩm yêu thích" });
   }
 };
+
+exports.toggleFavorite = async (req, res) => {
+  const user_id = req.user?.id;
+  const product_id = req.params.productId;
+
+  try {
+    // Kiểm tra sản phẩm đã thích chưa
+    const exists = await Favorite.findOne({ user_id, product_id });
+
+    if (exists) {
+      // Nếu đã thích → bỏ thích
+      await Favorite.deleteOne({ user_id, product_id });
+      return res.status(200).json({ isFavorite: false });
+    }
+
+    // Nếu chưa thích → thêm vào yêu thích
+    await Favorite.create({ user_id, product_id });
+    res.status(200).json({ isFavorite: true });
+
+  } catch (error) {
+    console.error("toggleFavorite error:", error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+

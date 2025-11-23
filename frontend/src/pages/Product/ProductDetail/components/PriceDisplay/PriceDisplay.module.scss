@@ -1,0 +1,32 @@
+.productInfoCost {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.productInfoDiscountPrice {
+    font-size: 3.2rem;
+    line-height: 40px;
+    font-weight: 600;
+    color: #e30019;
+}
+
+.productInfoPrice {
+    font-size: 1.8rem;
+    line-height: 22px;
+    color: #6d6e72;
+    font-weight: 400;
+    text-decoration: line-through;
+}
+
+.productInfoDiscountPercent {
+    padding: 0 4px;
+    background: #ffeded;
+    border-radius: 2px;
+    color: #e30019;
+    border: 1px solid #e30019;
+    line-height: 16px;
+    font-size: 13px;
+    margin-left: 10px;
+}

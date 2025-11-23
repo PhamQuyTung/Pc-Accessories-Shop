@@ -14,9 +14,7 @@ import 'tippy.js/dist/tippy.css';
 import 'tippy.js/animations/scale.css';
 import namer from 'color-namer';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faAngleLeft, faAngleRight, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
-import { faHeart } from '@fortawesome/free-regular-svg-icons';
-import { faHeart as solidHeart } from '@fortawesome/free-solid-svg-icons';
+import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons';
 import { useLocation } from 'react-router-dom';
 
 import ProductGallery from './components/ProductGallery/ProductGallery';
@@ -27,7 +25,19 @@ import { useToast } from '~/components/ToastMessager';
 import cartEvent from '~/utils/cartEvent';
 import ReviewList from '~/components/ReviewList/ReviewList';
 import ExpandableContent from '~/components/ExpandableContent/ExpandableContent';
-import GiftList from '~/components/GiftList/GiftList';
+import ProductRating from './components/ProductRating/ProductRating';
+import FavoriteButton from './components/FavoriteButton/FavoriteButton';
+import VariationSelector from './components/VariationSelector/VariationSelector';
+import PriceDisplay from './components/PriceDisplay/PriceDisplay';
+import SKUDisplay from './components/SKUDisplay/SKUDisplay';
+import ProductStockStatus from './components/ProductStockStatus/ProductStockStatus';
+import ProductActions from './components/ProductActions/ProductActions';
+import ProductShortDescription from './components/ProductShortDescription/ProductShortDescription';
+import PromotionSection from './components/PromotionSection/PromotionSection';
+import ProductTabs from './components/ProductTabs/ProductTabs';
+import NewsSection from './components/NewsSection/NewsSection';
+import RelatedProductsSlider from './components/RelatedProductsSlider/RelatedProductsSlider';
+import ProductName from './components/ProductName/ProductName';
 
 const cx = classNames.bind(styles);
 
@@ -166,7 +176,9 @@ function ProductDetail() {
     useEffect(() => {
         if (product) {
             axios
-                .get(`http://localhost:5000/api/products/related?category=${product.category}&exclude=${product._id}`)
+                .get(
+                    `http://localhost:5000/api/products/related?category=${product.category._id}&exclude=${product._id}`,
+                )
                 .then((res) => setRelatedProducts(res.data))
                 .catch((err) => console.error('Lỗi khi lấy sản phẩm liên quan:', err));
         }
@@ -578,259 +590,69 @@ function ProductDetail() {
 
                     <Col lg={6} md={12} xs={12}>
                         <div className={cx('product-info')}>
-                            <div className={cx('product-info__name')}>
-                                <h1>{getProductDisplayName()}</h1>
-                            </div>
+                            <ProductName
+                                product={product}
+                                activeVariation={activeVariation}
+                                selectedAttributes={selectedAttributes}
+                            />
 
                             <div className={cx('product-info__fsz16')}>
                                 {/* Đánh giá sản phẩm */}
                                 <div className={cx('product-info__rating')}>
-                                    <span
-                                        className={cx('rating-count')}
-                                        onClick={() => {
+                                    <ProductRating
+                                        averageRating={averageRating}
+                                        reviewCount={reviews.length}
+                                        onClickRatings={() => {
                                             setActiveTab('reviews');
                                             setTimeout(() => {
                                                 reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
                                             }, 0);
                                         }}
-                                        style={{ cursor: 'pointer' }}
-                                    >
-                                        {reviews.length} đánh giá | ⭐ {averageRating.toFixed(1)} / 5
-                                    </span>
+                                    />
 
-                                    <button className={cx('favorite-btn')} onClick={toggleFavorite}>
-                                        <FontAwesomeIcon
-                                            icon={isFavorite ? solidHeart : faHeart}
-                                            className={cx({ 'favorite-icon--active': isFavorite })}
-                                        />
-                                    </button>
+                                    <FavoriteButton productId={product._id} />
                                 </div>
 
-                                {product.variations && product.variations.length > 0 ? (
-                                    <div className={cx('product-variations-grouped')}>
-                                        <p className={cx('variations-label')}>Chọn biến thể:</p>
-                                        <div className={cx('variations-grid')}>
-                                            {getSortedVariations(product.variations).map((variation) => {
-                                                const isActive = isVariationMatching(variation, selectedAttributes);
-                                                const label = getVariationLabel(variation);
-
-                                                return (
-                                                    <button
-                                                        key={variation._id}
-                                                        onClick={() => handleSelectVariation(variation)}
-                                                        className={cx('variation-btn', {
-                                                            active: isActive,
-                                                        })}
-                                                        title={label}
-                                                    >
-                                                        <span className={cx('variation-text')}>{label}</span>
-                                                        {variation.price && (
-                                                            <span className={cx('variation-price')}>
-                                                                {variation.discountPrice
-                                                                    ? variation.discountPrice.toLocaleString()
-                                                                    : variation.price.toLocaleString()}
-                                                                ₫
-                                                            </span>
-                                                        )}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-
-                                        {/* ✅ Hiển thị quà tặng khuyến mãi */}
-                                        <GiftList gifts={product.gifts} />
-                                    </div>
-                                ) : product.attributes && product.attributes.length > 0 ? (
-                                    // Fallback: nếu không có variations nhưng có attributes, render attributes cũ
-                                    <div className={cx('product-attributes')}>
-                                        {getSortedAttributes(product.attributes).map((attr) => {
-                                            const attrId = attr.attrId._id;
-                                            const isColorAttr =
-                                                attr.attrId.name.toLowerCase().includes('màu') ||
-                                                attr.attrId.name.toLowerCase().includes('color');
-
-                                            return (
-                                                <div key={attrId} className={cx('product-attribute')}>
-                                                    <p className={cx('attr-label')}>{attr.attrId.name}:</p>
-
-                                                    <div className={cx('attr-options')}>
-                                                        {attr.terms?.map((term) => {
-                                                            const termId = term._id;
-                                                            const isActive = selectedAttributes[attrId] === termId;
-
-                                                            let colorCode =
-                                                                term.colorCode || COLOR_MAP[term.name] || null;
-
-                                                            if (isColorAttr) {
-                                                                return (
-                                                                    <div
-                                                                        key={termId}
-                                                                        className={cx('attr-option', 'color-option', {
-                                                                            active: isActive,
-                                                                        })}
-                                                                        onClick={() =>
-                                                                            handleSelectAttribute(attrId, termId)
-                                                                        }
-                                                                    >
-                                                                        <button
-                                                                            className={cx(
-                                                                                'attr-option',
-                                                                                'attr-option__color',
-                                                                                'color-option',
-                                                                                {
-                                                                                    active: isActive,
-                                                                                },
-                                                                            )}
-                                                                            style={{
-                                                                                backgroundColor: colorCode || '#ccc',
-                                                                            }}
-                                                                        ></button>
-                                                                        <span className={cx('color-name')}>
-                                                                            {term.name}
-                                                                        </span>
-                                                                    </div>
-                                                                );
-                                                            }
-
-                                                            return (
-                                                                <button
-                                                                    key={termId}
-                                                                    onClick={() =>
-                                                                        handleSelectAttribute(attrId, termId)
-                                                                    }
-                                                                    className={cx('attr-option', {
-                                                                        active: isActive,
-                                                                    })}
-                                                                >
-                                                                    {term.name}
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-
-                                        <GiftList gifts={product.gifts} />
-                                    </div>
-                                ) : null}
+                                {/* Biến thể sản phẩm */}
+                                <VariationSelector
+                                    product={product}
+                                    selectedAttributes={selectedAttributes}
+                                    activeVariation={activeVariation}
+                                    onSelectVariation={handleSelectVariation}
+                                    onSelectAttribute={handleSelectAttribute}
+                                    getSortedVariations={getSortedVariations}
+                                    getVariationLabel={getVariationLabel}
+                                    isVariationMatching={isVariationMatching}
+                                    getSortedAttributes={getSortedAttributes}
+                                    COLOR_MAP={COLOR_MAP}
+                                />
 
                                 {/* Giá sản phẩm */}
-                                <div className={cx('product-info__cost')}>
-                                    {activeVariation ? (
-                                        <>
-                                            {activeVariation.discountPrice ? (
-                                                <>
-                                                    <p className={cx('product-info__discountPrice')}>
-                                                        {activeVariation.discountPrice.toLocaleString()}₫
-                                                    </p>
-                                                    <p className={cx('product-info__price')}>
-                                                        {activeVariation.price.toLocaleString()}₫
-                                                    </p>
-                                                </>
-                                            ) : (
-                                                <p className={cx('product-info__discountPrice')}>
-                                                    {activeVariation.price.toLocaleString()}₫
-                                                </p>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <>
-                                            {product.discountPrice ? (
-                                                <>
-                                                    <p className={cx('product-info__discountPrice')}>
-                                                        {product.discountPrice.toLocaleString()}₫
-                                                    </p>
-                                                    <p className={cx('product-info__price')}>
-                                                        {product.price.toLocaleString()}₫
-                                                    </p>
-                                                </>
-                                            ) : (
-                                                <p className={cx('product-info__discountPrice')}>
-                                                    {product.price.toLocaleString()}₫
-                                                </p>
-                                            )}
-                                        </>
-                                    )}
-                                </div>
+                                <PriceDisplay activeVariation={activeVariation} product={product} />
 
-                                {activeVariation && (
-                                    <p className={cx('sku-tag')}>
-                                        Mã biến thể: <strong>{activeVariation.sku}</strong>
-                                    </p>
-                                )}
+                                {/* Mã SKU sản phẩm */}
+                                <SKUDisplay activeVariation={activeVariation} />
 
                                 {/* Trạng thái sản phẩm theo biến thể */}
-                                <div className={cx('product-info__status')}>
-                                    {activeVariation ? (
-                                        <span
-                                            className={cx('product-info__status--badge', {
-                                                'badge-new': getVariationStatus(activeVariation) === 'sản phẩm mới',
-                                                'badge-many': getVariationStatus(activeVariation) === 'nhiều hàng',
-                                                'badge-instock': getVariationStatus(activeVariation) === 'còn hàng',
-                                                'badge-low': getVariationStatus(activeVariation) === 'sắp hết hàng',
-                                                'badge-out': getVariationStatus(activeVariation) === 'hết hàng',
-                                                'badge-importing':
-                                                    getVariationStatus(activeVariation) === 'đang nhập hàng',
-                                            })}
-                                        >
-                                            {getVariationStatus(activeVariation)}
-                                        </span>
-                                    ) : (
-                                        <span className={cx('product-info__status--badge', 'badge-default')}>
-                                            Không có
-                                        </span>
-                                    )}
-                                </div>
+                                <ProductStockStatus
+                                    activeVariation={activeVariation}
+                                    product={product}
+                                    getVariationStatus={getVariationStatus}
+                                />
 
                                 {/* Nút mua sản phẩm & nút chat ngay */}
-                                <div className={cx('product-info__actions')}>
-                                    <button
-                                        className={cx('add-to-cart')}
-                                        onClick={handleAddToCart}
-                                        disabled={
-                                            isAddingToCart ||
-                                            product.status.includes('hết hàng') ||
-                                            product.status.includes('đang nhập hàng')
-                                        }
-                                    >
-                                        <span className={cx('main-text')}>MUA NGAY</span>
-                                        <span className={cx('sub-text')}>Giao tận nơi/Nhận tại cửa hàng</span>
-                                    </button>
-
-                                    <button className={cx('chat-now')}>
-                                        <span className={cx('main-text')}>TƯ VẤN NGAY</span>
-                                        <span className={cx('sub-text')}>Đưa ra đánh giá nhanh, chính xác</span>
-                                    </button>
-                                </div>
+                                <ProductActions
+                                    isAddingToCart={isAddingToCart}
+                                    product={product}
+                                    activeVariation={activeVariation}
+                                    onAddToCart={handleAddToCart}
+                                />
 
                                 {/* Mô tả ngắn */}
-                                <div
-                                    className={cx('product-info__short-desc')}
-                                    dangerouslySetInnerHTML={{ __html: product.shortDescription }}
-                                ></div>
+                                <ProductShortDescription shortDescription={product.shortDescription} />
 
                                 {/* ✅ Khuyến mãi kèm theo */}
-                                {promotionGifts.length > 0 && (
-                                    <div className={cx('promotion-section')}>
-                                        <h4>Khuyến mãi</h4>
-                                        <ul className={cx('promotion-list')}>
-                                            {promotionGifts.map((promo) => (
-                                                <li key={promo._id}>
-                                                    <span className={cx('icon')}>✅</span>
-                                                    <span>
-                                                        {promo.title}.{' '}
-                                                        {promo.link && (
-                                                            <Link to={promo.link} rel="noopener noreferrer">
-                                                                (Xem thêm)
-                                                            </Link>
-                                                        )}
-                                                    </span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
+                                <PromotionSection promotions={product.promotions} />
                             </div>
                         </div>
                     </Col>
@@ -841,113 +663,17 @@ function ProductDetail() {
             <Row className={cx('tab-news-section')}>
                 {/* --- Cột trái: Tabs (8 cột) --- */}
                 <Col lg={8} md={12}>
-                    <div className={cx('tab-container')}>
-                        <div className={cx('tab-buttons')}>
-                            <button
-                                onClick={() => setActiveTab('description')}
-                                className={cx('tab-btn', { active: activeTab === 'description' })}
-                            >
-                                Mô tả
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('additional')}
-                                className={cx('tab-btn', { active: activeTab === 'additional' })}
-                            >
-                                Thông số kĩ thuật
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setActiveTab('newreviews');
-                                    setTimeout(() => {
-                                        reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-                                    }, 0);
-                                }}
-                                className={cx('tab-btn', { active: activeTab === 'reviews' })}
-                            >
-                                Đánh giá ({reviews.length})
-                            </button>
-                        </div>
-
-                        <br />
-                        <div ref={reviewSectionRef} className={cx('tab-content')}>
-                            {renderTabContent()}
-                        </div>
-                    </div>
+                    <ProductTabs activeTab={activeTab} onChangeTab={setActiveTab} renderTabContent={renderTabContent} />
                 </Col>
 
                 {/* --- Cột phải: Bài viết mới nhất (4 cột) --- */}
                 <Col lg={4} md={12}>
-                    <div className={cx('news-section')}>
-                        <h3 className={cx('news-title')}>Bài viết mới nhất</h3>
-
-                        {posts.length === 0 ? (
-                            <p>Không có bài viết nào.</p>
-                        ) : (
-                            <ul className={cx('news-list')}>
-                                {posts.map((post) => (
-                                    <li key={post._id} className={cx('news-item')}>
-                                        <Link
-                                            to={`/blog/category/${post.category?.slug}/${post.slug}`}
-                                            className={cx('news-link')}
-                                        >
-                                            <div className={cx('news-thumb')}>
-                                                {post.image ? (
-                                                    <img src={post.image} alt={post.title} />
-                                                ) : (
-                                                    <div className={cx('no-thumb')}>Không có ảnh</div>
-                                                )}
-                                            </div>
-                                            <div className={cx('news-info')}>
-                                                <h5 className={cx('news-item-title')}>{post.title}</h5>
-                                                <p className={cx('news-date')}>{formatDate(post.createdAt)}</p>
-                                            </div>
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
+                    <NewsSection news={posts} />
                 </Col>
             </Row>
 
             {/* Related Products Section */}
-            <div className={cx('related-products')}>
-                <h2>Sản phẩm liên quan</h2>
-                <div className={cx('swiper-wrapper-fix')}>
-                    <Swiper
-                        modules={[Navigation, Autoplay]}
-                        spaceBetween={10}
-                        slidesPerView={5}
-                        loop={true}
-                        autoplay={{ delay: 5000, disableOnInteraction: false }}
-                        navigation={{
-                            prevEl: `.${cx('prev-btn')}`,
-                            nextEl: `.${cx('next-btn')}`,
-                        }}
-                        onInit={(swiper) => {
-                            // Fix: for custom navigation buttons to work
-                            swiper.params.navigation.prevEl = `.${cx('prev-btn')}`;
-                            swiper.params.navigation.nextEl = `.${cx('next-btn')}`;
-                            swiper.navigation.init();
-                            swiper.navigation.update();
-                        }}
-                    >
-                        {relatedProducts.map((item) => (
-                            <SwiperSlide key={item._id}>
-                                <ProductCard product={item} />
-                            </SwiperSlide>
-                        ))}
-                    </Swiper>
-
-                    {/* Button prev next */}
-                    <button className={cx('prev-btn')}>
-                        <FontAwesomeIcon icon={faAngleLeft} />
-                    </button>
-                    <button className={cx('next-btn')}>
-                        <FontAwesomeIcon icon={faAngleRight} />
-                    </button>
-                </div>
-            </div>
+            <RelatedProductsSlider relatedProducts={relatedProducts} />
         </div>
     );
 }

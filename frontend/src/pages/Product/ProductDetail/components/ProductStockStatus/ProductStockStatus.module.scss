@@ -1,0 +1,47 @@
+.statusWrapper {
+    margin: 8px 0 14px 0;
+}
+
+.statusBadge {
+    padding: 4px 10px;
+    font-size: 1.3rem;
+    border-radius: 4px;
+    display: inline-block;
+    font-weight: 500;
+}
+
+/* Màu state */
+.badgeNew {
+    background: #e6f3ff;
+    color: #006edc;
+}
+
+.badgeMany {
+    background: #e6ffe6;
+    color: #0a8a00;
+}
+
+.badgeInstock {
+    background: #f0fff0;
+    color: #2b8a3e;
+}
+
+.badgeLow {
+    background: #fff8e6;
+    color: #d48400;
+}
+
+.badgeOut {
+    background: #ffe9e9;
+    color: #d40000;
+}
+
+.badgeImporting {
+    background: #fff2e6;
+    color: #c46b00;
+}
+
+.badgeDefault {
+    background: #f2f2f2;
+    color: #666;
+}

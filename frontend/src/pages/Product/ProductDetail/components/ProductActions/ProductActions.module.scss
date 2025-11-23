@@ -1,0 +1,63 @@
+.actionsWrapper {
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.addToCart {
+    width: 100%;
+    background: #e30019;
+    color: #fff;
+    padding: 14px 18px;
+    border-radius: 6px;
+    font-size: 1.8rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: 0.25s ease-in-out;
+
+    &:hover:not(:disabled) {
+        background: #c40015;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .mainText {
+        display: block;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    .subText {
+        display: block;
+        font-size: 1.3rem;
+        opacity: 0.9;
+    }
+}
+
+.chatNow {
+    width: 100%;
+    background: #0072ff;
+    color: #fff;
+    padding: 14px 18px;
+    border-radius: 6px;
+    font-size: 1.8rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+
+    .mainText {
+        display: block;
+        font-size: 1.8rem;
+    }
+
+    .subText {
+        display: block;
+        font-size: 1.3rem;
+        opacity: 0.9;
+    }
+}

@@ -1,0 +1,23 @@
+.favorite-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    transition: 0.15s ease;
+
+    .icon {
+        font-size: 22px;
+        transition: transform 0.2s ease;
+    }
+
+    &:hover .icon {
+        transform: scale(1.15);
+    }
+
+    &.active {
+        .icon {
+            color: #ff2d55;
+            transform: scale(1.15);
+        }
+    }
+}

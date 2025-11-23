@@ -5,7 +5,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/thumbs';
 
-import styles from './ProductDetail.module.scss';
+import styles from '../../ProductDetail.module.scss';
 import classNames from 'classnames/bind';
 
 const cx = classNames.bind(styles);

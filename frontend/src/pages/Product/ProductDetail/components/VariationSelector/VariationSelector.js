@@ -1,115 +1,128 @@
-import { useState, useRef } from 'react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Thumbs, Autoplay } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/thumbs';
-
-import styles from './ProductDetail.module.scss';
+import React from 'react';
 import classNames from 'classnames/bind';
+import styles from './VariationSelector.module.scss';
+import GiftList from '~/components/GiftList/GiftList';
 
 const cx = classNames.bind(styles);
 
-export default function ProductGallery({ images }) {
-    const [thumbsSwiper, setThumbsSwiper] = useState(null);
-    const [activeIndex, setActiveIndex] = useState(0);
-    const zoomRefs = useRef([]);
-
-    const handleZoom = (e, index) => {
-        const container = zoomRefs.current[index];
-        const img = container.querySelector('img');
-
-        const rect = container.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-
-        img.style.transformOrigin = `${x}% ${y}%`;
-        img.style.transform = 'scale(2)';
-    };
-
-    const handleZoomOut = () => {
-        zoomRefs.current.forEach((container) => {
-            if (!container) return;
-            const img = container.querySelector('img');
-            img.style.transform = 'scale(1)';
-            img.style.transformOrigin = 'center';
-        });
-    };
+const VariationSelector = ({
+    product,
+    selectedAttributes,
+    activeVariation,
+    onSelectVariation,
+    onSelectAttribute,
+    getSortedVariations,
+    getVariationLabel,
+    isVariationMatching,
+    getSortedAttributes,
+    COLOR_MAP,
+}) => {
+    const hasVariations = product.variations && product.variations.length > 0;
+    const hasAttributes = product.attributes && product.attributes.length > 0;
 
     return (
-        <div className={cx('gallery')}>
-            {/* Slider ảnh lớn */}
-            <Swiper
-                spaceBetween={10}
-                // navigation={true}
-                thumbs={{ swiper: thumbsSwiper }}
-                modules={[Navigation, Thumbs, Autoplay]}
-                autoplay={{ delay: 5000, disableOnInteraction: false }}
-                navigation={{
-                    prevEl: `.${cx('prev-btn')}`,
-                    nextEl: `.${cx('next-btn')}`,
-                }}
-                onInit={(swiper) => {
-                    // Fix: for custom navigation buttons to work
-                    swiper.params.navigation.prevEl = `.${cx('prev-btn')}`;
-                    swiper.params.navigation.nextEl = `.${cx('next-btn')}`;
-                    swiper.navigation.init();
-                    swiper.navigation.update();
-                }}
-                onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
-                className={cx('mainSwiper')}
-            >
-                {images?.map((img, index) => (
-                    <SwiperSlide key={index}>
-                        <div
-                            className={cx('zoom-container')}
-                            onMouseMove={(e) => handleZoom(e, index)}
-                            onMouseLeave={handleZoomOut}
-                            ref={(el) => (zoomRefs.current[index] = el)}
-                        >
-                            <img src={img} alt={`Slide ${index}`} />
-                        </div>
-                    </SwiperSlide>
-                ))}
-            </Swiper>
+        <>
+            {hasVariations ? (
+                <div className={cx('product-variations-grouped')}>
+                    <p className={cx('variations-label')}>Chọn biến thể:</p>
 
-            {/* Slider thumbnail */}
-            <div className={cx('slider-thumb')}>
-                <Swiper
-                    onSwiper={setThumbsSwiper}
-                    spaceBetween={10}
-                    slidesPerView={5}
-                    watchSlidesProgress
-                    modules={[Thumbs, Navigation]}
-                    // navigation={{
-                    //     prevEl: `.${cx('thumb-prev')}`,
-                    //     nextEl: `.${cx('thumb-next')}`,
-                    // }}
-                    // onInit={(swiper) => {
-                    //     swiper.params.navigation.prevEl = `.${cx('thumb-prev')}`;
-                    //     swiper.params.navigation.nextEl = `.${cx('thumb-next')}`;
-                    //     swiper.navigation.init();
-                    //     swiper.navigation.update();
-                    // }}
-                    className={cx('thumbSwiper')}
-                >
-                    {images?.map((img, index) => (
-                        <SwiperSlide key={index}>
-                            <span
-                                className={cx('thumb-box', {
-                                    active: index === activeIndex,
-                                })}
-                            >
-                                <img src={img} alt={`Thumb ${index}`} />
-                            </span>
-                        </SwiperSlide>
-                    ))}
-                </Swiper>
+                    <div className={cx('variations-grid')}>
+                        {getSortedVariations(product.variations).map((variation) => {
+                            const isActive = isVariationMatching(variation, selectedAttributes);
+                            const label = getVariationLabel(variation);
 
-                {/* Button next prev */}
-                {/* <button className={cx('thumb-prev')}>←</button>
-                <button className={cx('thumb-next')}>→</button> */}
-            </div>
-        </div>
+                            return (
+                                <button
+                                    key={variation._id}
+                                    onClick={() => onSelectVariation(variation)}
+                                    className={cx('variation-btn', {
+                                        active: isActive,
+                                    })}
+                                    title={label}
+                                >
+                                    <span className={cx('variation-text')}>{label}</span>
+
+                                    {variation.price && (
+                                        <span className={cx('variation-price')}>
+                                            {variation.discountPrice
+                                                ? variation.discountPrice.toLocaleString()
+                                                : variation.price.toLocaleString()}
+                                            ₫
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Quà tặng khuyến mãi */}
+                    <GiftList gifts={product.gifts} />
+                </div>
+            ) : hasAttributes ? (
+                <div className={cx('product-attributes')}>
+                    {getSortedAttributes(product.attributes).map((attr) => {
+                        const attrId = attr.attrId._id;
+
+                        const isColorAttr =
+                            attr.attrId.name.toLowerCase().includes('màu') ||
+                            attr.attrId.name.toLowerCase().includes('color');
+
+                        return (
+                            <div key={attrId} className={cx('product-attribute')}>
+                                <p className={cx('attr-label')}>{attr.attrId.name}:</p>
+
+                                <div className={cx('attr-options')}>
+                                    {attr.terms?.map((term) => {
+                                        const termId = term._id;
+                                        const isActive = selectedAttributes[attrId] === termId;
+
+                                        const colorCode = term.colorCode || COLOR_MAP?.[term.name] || null;
+
+                                        // Render dạng màu sắc
+                                        if (isColorAttr) {
+                                            return (
+                                                <div
+                                                    key={termId}
+                                                    className={cx('attr-option', 'color-option', { active: isActive })}
+                                                    onClick={() => onSelectAttribute(attrId, termId)}
+                                                >
+                                                    <button
+                                                        className={cx('attr-option__color', {
+                                                            active: isActive,
+                                                        })}
+                                                        style={{
+                                                            backgroundColor: colorCode || '#ccc',
+                                                        }}
+                                                    ></button>
+
+                                                    <span className={cx('color-name')}>{term.name}</span>
+                                                </div>
+                                            );
+                                        }
+
+                                        // Render dạng text
+                                        return (
+                                            <button
+                                                key={termId}
+                                                onClick={() => onSelectAttribute(attrId, termId)}
+                                                className={cx('attr-option', {
+                                                    active: isActive,
+                                                })}
+                                            >
+                                                {term.name}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    <GiftList gifts={product.gifts} />
+                </div>
+            ) : null}
+        </>
     );
-}
+};
+
+export default VariationSelector;

@@ -1,0 +1,35 @@
+.promotionBox {
+    margin-top: 20px;
+    padding: 16px;
+    background: #fff7f7;
+    border: 1px solid #ffdcdc;
+    border-radius: 6px;
+}
+
+.promotionHeader {
+    display: flex;
+    align-items: center;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #e30019;
+}
+
+.promotionIcon {
+    margin-right: 8px;
+}
+
+.promotionList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.promotionItem {
+    font-size: 1.5rem;
+    padding: 6px 0;
+    line-height: 1.4;
+    color: #333;
+    display: flex;
+    align-items: flex-start;
+}

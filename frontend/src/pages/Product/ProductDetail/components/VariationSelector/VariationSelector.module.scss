@@ -1,0 +1,188 @@
+/* ================================
+   Variation Selector Styles
+   ================================ */
+
+/* ---- Product Attributes (Fallback) ---- */
+.product-attributes {
+    margin: 15px 0;
+}
+
+.product-attribute {
+    margin-bottom: 12px;
+
+    .attr-label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 16px;
+    }
+
+    .attr-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .attr-option {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: #fff;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.25s all ease;
+        font-size: 14px;
+
+        &:hover {
+            border-color: #ff424e;
+            color: #ff424e;
+        }
+
+        &:hover .color-name {
+            color: #ff424e;
+        }
+
+        &.active {
+            border-color: #ff424e;
+            background: #ffe6e9;
+            color: #ff424e;
+            font-weight: 600;
+        }
+
+        &.active .color-name {
+            color: #ff424e;
+        }
+
+        &.disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+    }
+}
+
+/* ---- Attribute Color Circle ---- */
+.attr-option__color {
+    width: 30px;
+    height: 30px;
+    border-radius: 50% !important;
+    border: 1px solid #eaecf0 !important;
+    cursor: pointer;
+
+    &.disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+}
+
+.color-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid #ddd;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: 0.2s;
+
+    &.active {
+        border: 3px solid #ff4d4f;
+    }
+
+    &.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+}
+
+.color-option.disabled {
+    cursor: not-allowed;
+}
+
+.color-name {
+    color: #333;
+
+    &.disabled {
+        opacity: 0.4;
+    }
+}
+
+/* ================================
+   Grouped Variations (variation-by-variation)
+   ================================ */
+.product-variations-grouped {
+    margin: 12px 0;
+}
+
+.variations-label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.variations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.variation-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 10px 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.4;
+
+    &:hover {
+        border-color: #0073aa;
+        background: #f9f9f9;
+    }
+
+    &.active {
+        border-color: #0073aa;
+        background: #e3f2fd;
+        font-weight: 600;
+    }
+
+    .variation-text {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        width: 100%;
+        color: #333;
+    }
+
+    .variation-price {
+        display: block;
+        color: #d32f2f;
+        font-weight: 700;
+        font-size: 13px;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .variations-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .variation-btn {
+        padding: 8px 10px;
+        font-size: 12px;
+
+        .variation-price {
+            font-size: 12px;
+        }
+    }
+}

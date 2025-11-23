@@ -1,0 +1,70 @@
+.related-products {
+    margin-top: 40px;
+    max-width: none;
+    width: 100%;
+    background: #fff;
+    padding: 40px;
+    border-radius: 4px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.swiper-wrapper-fix {
+    position: relative;
+    margin-top: 25px;
+
+    &:hover .prev-btn,
+    &:hover .next-btn {
+        display: block;
+    }
+}
+
+.prev-btn {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    z-index: 2;
+    background-color: #ececec;
+    color: #333;
+    border: none;
+    border-radius: 50%;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 18px;
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+
+    &:hover {
+        color: #f00000;
+    }
+}
+
+.next-btn {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    z-index: 2;
+    background-color: #ececec;
+    color: #333;
+    border: none;
+    border-radius: 50%;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 18px;
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+
+    &:hover {
+        color: #f00000;
+    }
+}
+
+/* Animation */
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
