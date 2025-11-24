@@ -118,7 +118,13 @@ const productSchema = new mongoose.Schema({
 
   gifts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Gift" }],
   hasGifts: { type: Boolean, default: false },
+  
   variations: [variationSchema],
+  defaultVariantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    default: null,
+  },
+
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
   deleted: { type: Boolean, default: false },

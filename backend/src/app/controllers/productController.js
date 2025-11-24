@@ -110,7 +110,82 @@ class ProductController {
         },
         { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
 
-        // ---- 🎁 Gifts (populate products) ----
+        // ---- VARIATIONS POPULATE ----
+        {
+          $lookup: {
+            from: "attributes",
+            localField: "variations.attributes.attrId",
+            foreignField: "_id",
+            as: "variationAttrData",
+          },
+        },
+        {
+          $lookup: {
+            from: "attributeterms",
+            localField: "variations.attributes.terms",
+            foreignField: "_id",
+            as: "variationTermData",
+          },
+        },
+        {
+          $addFields: {
+            variations: {
+              $map: {
+                input: "$variations",
+                as: "var",
+                in: {
+                  $mergeObjects: [
+                    "$$var",
+                    {
+                      attributes: {
+                        $map: {
+                          input: "$$var.attributes",
+                          as: "attr",
+                          in: {
+                            attrId: {
+                              $arrayElemAt: [
+                                {
+                                  $filter: {
+                                    input: "$variationAttrData",
+                                    cond: {
+                                      $eq: ["$$this._id", "$$attr.attrId"],
+                                    },
+                                  },
+                                },
+                                0,
+                              ],
+                            },
+                            terms: {
+                              $map: {
+                                input: "$$attr.terms",
+                                as: "termId",
+                                in: {
+                                  $arrayElemAt: [
+                                    {
+                                      $filter: {
+                                        input: "$variationTermData",
+                                        cond: {
+                                          $eq: ["$$this._id", "$$termId"],
+                                        },
+                                      },
+                                    },
+                                    0,
+                                  ],
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+
+        // ---- GIFT POPULATE ----
         {
           $lookup: {
             from: "gifts",
@@ -119,47 +194,50 @@ class ProductController {
             as: "gifts",
           },
         },
-        { $unwind: { path: "$gifts", preserveNullAndEmptyArrays: true } },
-        {
-          $unwind: {
-            path: "$gifts.products",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
         {
           $lookup: {
             from: "products",
             localField: "gifts.products.productId",
             foreignField: "_id",
-            as: "gifts.products.productData",
+            as: "giftProducts",
           },
         },
         {
-          $unwind: {
-            path: "$gifts.products.productData",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $group: {
-            _id: "$_id",
-            doc: { $first: "$$ROOT" },
+          $addFields: {
             gifts: {
-              $push: {
-                _id: "$gifts._id",
-                title: "$gifts.title",
-                products: {
-                  productId: "$gifts.products.productId",
-                  productData: "$gifts.products.productData",
-                  quantity: "$gifts.products.quantity",
+              $map: {
+                input: "$gifts",
+                as: "g",
+                in: {
+                  _id: "$$g._id",
+                  title: "$$g.title",
+                  products: {
+                    $map: {
+                      input: "$$g.products",
+                      as: "gp",
+                      in: {
+                        productId: "$$gp.productId",
+                        productName: "$$gp.productName",
+                        quantity: "$$gp.quantity",
+                        finalPrice: "$$gp.finalPrice",
+
+                        productData: {
+                          $arrayElemAt: [
+                            {
+                              $filter: {
+                                input: "$giftProducts",
+                                cond: { $eq: ["$$this._id", "$$gp.productId"] },
+                              },
+                            },
+                            0,
+                          ],
+                        },
+                      },
+                    },
+                  },
                 },
               },
             },
-          },
-        },
-        {
-          $replaceRoot: {
-            newRoot: { $mergeObjects: ["$doc", { gifts: "$gifts" }] },
           },
         },
 
@@ -230,16 +308,17 @@ class ProductController {
        * 🧹 6. Làm sạch gifts + thêm status
        * ----------------------------- */
       const cleanedProducts = products.map((p) => {
-        const validGifts = Array.isArray(p.gifts)
-          ? p.gifts.filter(
-              (g) => g && g._id && g.title && g.title.trim() !== ""
-            )
-          : [];
+        const convertedVariations = (p.variations || []).map((v) => ({
+          ...v,
+          _id: v._id?.toString(),
+          attributes: v.attributes || [],
+        }));
 
         return {
           ...p,
-          gifts: validGifts,
-          status: computeProductStatus(p, { importing: p.importing }),
+          _id: p._id?.toString(),
+          defaultVariantId: p.defaultVariantId?.toString(),
+          variations: convertedVariations,
         };
       });
 
@@ -447,6 +526,12 @@ class ProductController {
           : [],
         isBestSeller: !!isBestSeller, // 👈 Thêm dòng này
       });
+
+      // Nếu có biến thể, thiết lập defaultVariantId
+      if (product.variations?.length > 0) {
+        product.defaultVariantId =
+          product.defaultVariantId || product.variations[0]._id;
+      }
 
       // ✅ Tính status dựa trên quantity + variations thay vì lấy từ client
       product.status = computeProductStatus(product, { importing });
@@ -841,6 +926,8 @@ class ProductController {
             visible: true,
           },
         },
+
+        // ---------- Gắn review ----------
         {
           $lookup: {
             from: "reviews",
@@ -849,8 +936,45 @@ class ProductController {
             as: "reviews",
           },
         },
+
+        // ---------- Lấy defaultVariant từ variations ----------
         {
           $addFields: {
+            defaultVariant: {
+              $first: {
+                $filter: {
+                  input: "$variations",
+                  as: "v",
+                  cond: { $eq: ["$$v._id", "$defaultVariantId"] },
+                },
+              },
+            },
+          },
+        },
+
+        // Nếu defaultVariantId không khớp → dùng biến thể đầu tiên
+        {
+          $addFields: {
+            defaultVariant: {
+              $ifNull: [
+                "$defaultVariant",
+                { $arrayElemAt: ["$variations", 0] },
+              ],
+            },
+          },
+        },
+
+        // ---------- Tính giá ----------
+        {
+          $addFields: {
+            finalPrice: {
+              $cond: {
+                if: { $gt: ["$defaultVariant.discountPrice", 0] },
+                then: "$defaultVariant.discountPrice",
+                else: "$defaultVariant.price",
+              },
+            },
+
             averageRating: {
               $cond: [
                 { $gt: [{ $size: "$reviews" }, 0] },
@@ -858,21 +982,16 @@ class ProductController {
                 0,
               ],
             },
+
             reviewCount: { $size: "$reviews" },
-            finalPrice: {
-              $cond: {
-                if: { $gt: ["$discountPrice", 0] },
-                then: "$discountPrice",
-                else: "$price",
-              },
-            },
           },
         },
+
         { $skip: skip },
         { $limit: limitNum },
       ]);
 
-      // ✅ cập nhật status động
+      // ✔ gắn status động
       const productsWithStatus = products.map((p) => ({
         ...p,
         status: computeProductStatus(p, { importing: p.importing }),

@@ -12,6 +12,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons';
 import { FireIcon, GiftIcon } from '../Icons/Icons';
 import BasicRating from '~/components/Rating/Rating';
+import { getDisplayName } from '~/pages/Product/ProductDetail/utils/productHelpers';
 
 const cx = classNames.bind(styles);
 
@@ -19,29 +20,18 @@ function Product({ category }) {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // ===================== Fetch Products =====================
     useEffect(() => {
         const fetchProducts = async () => {
             setLoading(true);
             try {
-                const params = {
-                    category, // slug như 'pc-gvn', 'laptop', etc.
-                    limit: 8, // hoặc số bạn muốn hiển thị
-                    status: true,
-                };
-
-                // console.log('📦 Gửi request với params:', params); // 👉 thêm dòng này
-
                 const res = await axiosClient.get('/products', {
-                    params,
+                    params: { category, limit: 8, status: true }
                 });
 
                 const data = res.data;
-                console.log('🧠 Sample product:', data.products?.[0]);
-
                 if (Array.isArray(data.products)) {
                     setProducts(data.products);
-                } else {
-                    setProducts([]);
                 }
             } catch (error) {
                 console.error('❌ Lỗi khi fetch sản phẩm:', error);
@@ -56,10 +46,11 @@ function Product({ category }) {
 
     return (
         <div className={cx('product-wrapper')}>
-            {/* Swiper with custom navigation buttons */}
+            {/* Swiper Buttons */}
             <button className={cx('prev-btn')}>
                 <FontAwesomeIcon icon={faAngleLeft} />
             </button>
+
             <button className={cx('next-btn')}>
                 <FontAwesomeIcon icon={faAngleRight} />
             </button>
@@ -87,124 +78,152 @@ function Product({ category }) {
                     swiper.navigation.update();
                 }}
             >
-                {products.map((product) => (
-                    <SwiperSlide key={product._id} className={cx('custom-slide')}>
-                        <div className={cx('product-card')}>
-                            <div className={cx('proloop-label--bottom')}>
-                                {typeof product.status === 'string' &&
-                                    product.status.toLowerCase().includes('quà tặng') && (
-                                        <span className={cx('gift-tag')}>
-                                            <div className={cx('gift-tag__hot')}>
-                                                <FireIcon className={cx('icon-fire')} />
-                                                Quà tặng HOT
-                                            </div>
-                                            <div className={cx('gift-tag__box')}>
-                                                <GiftIcon className={cx('icon-gift')} />
-                                            </div>
+                {products.map((product) => {
+                    // ===================== Default Variation Logic =====================
+                    const defaultVariation =
+                        product.variations?.length > 0 ? product.variations[0] : null;
+
+                    const displayImage =
+                        defaultVariation?.thumbnail ||
+                        defaultVariation?.images?.[0] ||
+                        product.images?.[0];
+
+                    const displayPrice = defaultVariation
+                        ? (defaultVariation.discountPrice ?? defaultVariation.price)
+                        : (product.discountPrice ?? product.price);
+
+                    const originalPrice = defaultVariation
+                        ? defaultVariation.price
+                        : product.price;
+
+                    const hasDiscount =
+                        defaultVariation?.discountPrice && defaultVariation.discountPrice < defaultVariation.price;
+
+                    return (
+                        <SwiperSlide key={product._id} className={cx('custom-slide')}>
+                            <div className={cx('product-card')}>
+                                <div className={cx('proloop-label--bottom')}>
+                                    {typeof product.status === 'string' &&
+                                        product.status.toLowerCase().includes('quà tặng') && (
+                                            <span className={cx('gift-tag')}>
+                                                <div className={cx('gift-tag__hot')}>
+                                                    <FireIcon className={cx('icon-fire')} />
+                                                    Quà tặng HOT
+                                                </div>
+                                                <div className={cx('gift-tag__box')}>
+                                                    <GiftIcon className={cx('icon-gift')} />
+                                                </div>
+                                            </span>
+                                        )}
+
+                                    {Array.isArray(product.gifts) &&
+                                        product.gifts.some((g) => g && Object.keys(g).length > 0) && (
+                                            <span className={cx('gift-badge')}>
+                                                <GiftIcon className={cx('icon-gift-small')} />
+                                            </span>
+                                        )}
+                                </div>
+
+                                {/* IMAGE WITH DEFAULT VARIATION */}
+                                <Link to={`/products/${product.slug}`}>
+                                    <img src={displayImage} alt={product.name} />
+                                </Link>
+
+                                <div className={cx('proloop-label--bottom')}>
+                                    {(() => {
+                                        switch (product.status?.trim()) {
+                                            case 'sản phẩm mới':
+                                                return <span className={cx('new-tag')}>Sản phẩm mới</span>;
+                                            case 'hàng rất nhiều':
+                                                return <span className={cx('very-many-tag')}>Hàng rất nhiều</span>;
+                                            case 'nhiều hàng':
+                                                return <span className={cx('many-tag')}>Nhiều hàng</span>;
+                                            case 'còn hàng':
+                                                return <span className={cx('in-stock')}>Còn hàng</span>;
+                                            case 'sắp hết hàng':
+                                                return <span className={cx('low-stock')}>Sắp hết hàng</span>;
+                                            case 'hết hàng':
+                                                return <span className={cx('out-stock')}>Hết hàng</span>;
+                                            case 'đang nhập hàng':
+                                                return <span className={cx('importing-tag')}>Đang nhập hàng</span>;
+                                            default:
+                                                return null;
+                                        }
+                                    })()}
+
+                                    {product.isBestSeller && (
+                                        <span className={cx('bestseller-tag')}>
+                                            <FireIcon className={cx('icon-fire')} />
+                                            <span className={cx('bestseller-label')}>Bán chạy</span>
                                         </span>
                                     )}
+                                </div>
 
-                                {/* Hiển thị icon nhỏ nếu product.gifts có quà kèm */}
-                                {Array.isArray(product.gifts) &&
-                                    product.gifts.some((g) => g && Object.keys(g).length > 0) && (
-                                        <span className={cx('gift-badge')}>
-                                            <GiftIcon className={cx('icon-gift-small')} />
-                                        </span>
-                                    )}
-                            </div>
+                                <div className={cx('product-card__des')}>
+                                    <Link to={`/products/${product.slug}`}>{getDisplayName(product)}</Link>
 
-                            <Link to={`/products/${product.slug}`}>
-                                <img src={product.images?.[0]} alt={product.name} />
-                            </Link>
+                                    {typeof product.specs === 'object' &&
+                                        Object.values(product.specs || {}).some(
+                                            (value) => typeof value === 'string' && value.trim(),
+                                        ) && (
+                                            <div className={cx('specs')}>
+                                                {Object.values(product.specs || {})
+                                                    .filter((value) => typeof value === 'string' && value.trim())
+                                                    .map((value, index, array) => (
+                                                        <span key={index}>
+                                                            {value}
+                                                            {index < array.length - 1 && (
+                                                                <span className={cx('separator')}> | </span>
+                                                            )}
+                                                        </span>
+                                                    ))}
+                                            </div>
+                                        )}
 
-                            <div className={cx('proloop-label--bottom')}>
-                                {(() => {
-                                    switch (product.status?.trim()) {
-                                        case 'sản phẩm mới':
-                                            return <span className={cx('new-tag')}>Sản phẩm mới</span>;
-                                        case 'hàng rất nhiều':
-                                            return <span className={cx('very-many-tag')}>Hàng rất nhiều</span>; // 👈 Thêm dòng này
-                                        case 'nhiều hàng':
-                                            return <span className={cx('many-tag')}>Nhiều hàng</span>;
-                                        case 'còn hàng':
-                                            return <span className={cx('in-stock')}>Còn hàng</span>;
-                                        case 'sắp hết hàng':
-                                            return <span className={cx('low-stock')}>Sắp hết hàng</span>;
-                                        case 'hết hàng':
-                                            return <span className={cx('out-stock')}>Hết hàng</span>;
-                                        case 'đang nhập hàng':
-                                            return <span className={cx('importing-tag')}>Đang nhập hàng</span>;
-                                        default:
-                                            return null;
-                                    }
-                                })()}
-
-                                {/* Góc phải dưới: Bán chạy */}
-                                {product.isBestSeller && (
-                                    <span className={cx('bestseller-tag')}>
-                                        <FireIcon className={cx('icon-fire')} />
-                                        <span className={cx('bestseller-label')}>Bán chạy</span>
-                                    </span>
-                                )}
-                            </div>
-
-                            <div className={cx('product-card__des')}>
-                                <Link to={`/products/${product.slug}`}>{product.name}</Link>
-
-                                {typeof product.specs === 'object' &&
-                                    Object.values(product.specs || {}).some(
-                                        (value) => typeof value === 'string' && value.trim(),
-                                    ) && (
-                                        <div className={cx('specs')}>
-                                            {Object.values(product.specs || {})
-                                                .filter((value) => typeof value === 'string' && value.trim())
-                                                .map((value, index, array) => (
-                                                    <span key={index}>
-                                                        {value}
-                                                        {index < array.length - 1 && (
-                                                            <span className={cx('separator')}> | </span>
-                                                        )}
+                                    {/* PRICE WITH DEFAULT VARIATION */}
+                                    <div className={cx('price')}>
+                                        {hasDiscount ? (
+                                            <>
+                                                <div className={cx('price-wrap1')}>
+                                                    <span className={cx('original-price')}>
+                                                        {originalPrice.toLocaleString()}₫
                                                     </span>
-                                                ))}
-                                        </div>
-                                    )}
+                                                </div>
 
-                                <div className={cx('price')}>
-                                    {product.discountPrice && product.discountPrice < product.price ? (
-                                        <>
-                                            <div className={cx('price-wrap1')}>
-                                                <span className={cx('original-price')}>
-                                                    {product.price.toLocaleString()}₫
-                                                </span>
-                                            </div>
+                                                <div className={cx('price-wrap2')}>
+                                                    <span className={cx('discount-price')}>
+                                                        {displayPrice.toLocaleString()}₫
+                                                    </span>
+
+                                                    <span className={cx('discount-percent')}>
+                                                        -
+                                                        {Math.round(
+                                                            (1 - displayPrice / originalPrice) * 100
+                                                        )}
+                                                        %
+                                                    </span>
+                                                </div>
+                                            </>
+                                        ) : (
                                             <div className={cx('price-wrap2')}>
                                                 <span className={cx('discount-price')}>
-                                                    {product.discountPrice.toLocaleString()}₫
-                                                </span>
-                                                <span className={cx('discount-percent')}>
-                                                    -{Math.round((1 - product.discountPrice / product.price) * 100)}%
+                                                    {displayPrice.toLocaleString()}₫
                                                 </span>
                                             </div>
-                                        </>
-                                    ) : (
-                                        <div className={cx('price-wrap2')}>
-                                            <span className={cx('discount-price')}>
-                                                {product.price.toLocaleString()}₫
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
+                                        )}
+                                    </div>
 
-                                {/* Rating Star */}
-                                <div className={cx('rating')}>
-                                    <BasicRating value={product.averageRating || 0} />
-                                    {/* {console.log('⭐ Rating:', product.averageRating)} */}
-                                    <span className={cx('rating-count')}>({product.reviewCount || 0} đánh giá)</span>
+                                    <div className={cx('rating')}>
+                                        <BasicRating value={product.averageRating || 0} />
+                                        <span className={cx('rating-count')}>
+                                            ({product.reviewCount || 0} đánh giá)
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </SwiperSlide>
-                ))}
+                        </SwiperSlide>
+                    );
+                })}
             </Swiper>
         </div>
     );

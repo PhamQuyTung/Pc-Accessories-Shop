@@ -10,6 +10,31 @@ import { formatCurrency } from '~/utils/formatCurrency';
 
 const cx = classNames.bind(styles);
 
+// Helper: Lấy tên hiển thị kèm biến thể mặc định
+const getDisplayName = (product) => {
+    const defaultVariant = product.defaultVariant || product.variations?.[0] || null;
+    if (!defaultVariant) return product.name;
+
+    const variantAttributes = defaultVariant.attributes || [];
+    if (variantAttributes.length === 0) return product.name;
+
+    const termsNames = variantAttributes
+        .map((attr) => attr.term?.name || attr.terms?.map((t) => t.name).join(',') || '')
+        .filter(Boolean);
+
+    return termsNames.length > 0 ? `${product.name} - ${termsNames.join(' | ')}` : product.name;
+};
+
+// Helper: Lấy defaultVariant, thumbnail, price
+const getDisplayData = (product) => {
+    const defaultVariant = product.defaultVariant || product.variations?.[0] || null;
+    const display = defaultVariant || product;
+    const thumbnail = display.images?.[0] || product.images?.[0] || '/placeholder.png';
+    const price = display.price ?? product.price ?? 0;
+    const discountPrice = display.discountPrice ?? product.discountPrice ?? null;
+    return { display, thumbnail, price, discountPrice };
+};
+
 function SearchBar() {
     const [placeholderText] = useState('Bạn cần tìm gì?...');
     const [displayText, setDisplayText] = useState('');
@@ -23,7 +48,7 @@ function SearchBar() {
     const fetchSearchResults = debounce(async (query) => {
         if (!query) return setSearchResults([]);
         try {
-            const res = await axios.get(`http://localhost:5000/api/products/search?query=${query}`);
+            const res = await axios.get(`/api/products/search?query=${encodeURIComponent(query)}`);
             setSearchResults(res.data);
         } catch (error) {
             console.error('Lỗi tìm kiếm:', error);
@@ -34,7 +59,7 @@ function SearchBar() {
         fetchSearchResults(searchTerm);
     }, [searchTerm]);
 
-    // Hiệu ứng placeholder động
+    // Placeholder động
     useEffect(() => {
         const typingSpeed = 150;
         const pauseDuration = 1000;
@@ -67,14 +92,12 @@ function SearchBar() {
     };
 
     const handleSearchSubmit = () => {
-        if (searchTerm.trim()) {
-            handleNavigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
-        }
+        if (searchTerm.trim()) handleNavigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
     };
 
     return (
         <>
-            {/* Thanh tìm kiếm cho desktop */}
+            {/* Desktop Search */}
             <div className={cx('search-wrapper', 'desktop')}>
                 <input
                     className={cx('custom-input')}
@@ -84,34 +107,36 @@ function SearchBar() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
                 />
-
                 <FontAwesomeIcon icon={faMagnifyingGlass} className={cx('search-icon')} onClick={handleSearchSubmit} />
 
                 {searchResults.length > 0 && (
                     <div className={cx('search-dropdown')}>
                         <ul className={cx('search-product-list')}>
-                            {searchResults.map((item) => (
-                                <li key={item._id} onClick={() => handleNavigate(`/products/${item.slug}`)}>
-                                    <img src={item.images?.[0]} alt={item.name} />
-                                    <div className={cx('info')}>
-                                        <span className={cx('link-product')}>{item.name}</span>
-                                        <span className={cx('price')}>
-                                            {item.discountPrice ? (
-                                                <>
-                                                    <span className={cx('discount')}>
-                                                        {formatCurrency(item.discountPrice)}
-                                                    </span>
-                                                    <span className={cx('original')}>{formatCurrency(item.price)}</span>
-                                                </>
-                                            ) : (
-                                                <span>{formatCurrency(item.price)}</span>
-                                            )}
-                                        </span>
-                                    </div>
-                                </li>
-                            ))}
+                            {searchResults.map((item) => {
+                                const { display, thumbnail, price, discountPrice } = getDisplayData(item);
+                                const displayName = getDisplayName(item);
+                                return (
+                                    <li key={item._id} onClick={() => handleNavigate(`/products/${item.slug}`)}>
+                                        <img src={thumbnail} alt={displayName} />
+                                        <div className={cx('info')}>
+                                            <span className={cx('link-product')}>{displayName}</span>
+                                            <span className={cx('price')}>
+                                                {discountPrice && discountPrice < price ? (
+                                                    <>
+                                                        <span className={cx('discount')}>
+                                                            {formatCurrency(discountPrice)}
+                                                        </span>
+                                                        <span className={cx('original')}>{formatCurrency(price)}</span>
+                                                    </>
+                                                ) : (
+                                                    <span>{formatCurrency(price)}</span>
+                                                )}
+                                            </span>
+                                        </div>
+                                    </li>
+                                );
+                            })}
                         </ul>
-
                         <div
                             className={cx('search-see-more')}
                             onClick={() => handleNavigate(`/search?query=${encodeURIComponent(searchTerm)}`)}
@@ -122,12 +147,11 @@ function SearchBar() {
                 )}
             </div>
 
-            {/* Icon mở search cho mobile */}
+            {/* Mobile Search */}
             <div className={cx('mobile-icon')} onClick={() => setIsMobileSearchOpen(true)}>
                 <FontAwesomeIcon icon={faMagnifyingGlass} />
             </div>
 
-            {/* Overlay tìm kiếm mobile */}
             {isMobileSearchOpen && (
                 <div className={cx('mobile-search-overlay')}>
                     <div className={cx('mobile-search-bar')}>
@@ -150,19 +174,34 @@ function SearchBar() {
 
                     {searchResults.length > 0 && (
                         <div className={cx('mobile-results')}>
-                            {searchResults.map((item) => (
-                                <div
-                                    key={item._id}
-                                    className={cx('mobile-item')}
-                                    onClick={() => handleNavigate(`/products/${item.slug}`)}
-                                >
-                                    <img src={item.images?.[0]} alt={item.name} />
-                                    <div>
-                                        <p>{item.name}</p>
-                                        <span>{formatCurrency(item.price)}</span>
+                            {searchResults.map((item) => {
+                                const { display, thumbnail, price, discountPrice } = getDisplayData(item);
+                                const displayName = getDisplayName(item);
+                                return (
+                                    <div
+                                        key={item._id}
+                                        className={cx('mobile-item')}
+                                        onClick={() => handleNavigate(`/products/${item.slug}`)}
+                                    >
+                                        <img src={thumbnail} alt={displayName} />
+                                        <div>
+                                            <p>{displayName}</p>
+                                            <span>
+                                                {discountPrice && discountPrice < price ? (
+                                                    <>
+                                                        <span className={cx('discount')}>
+                                                            {formatCurrency(discountPrice)}
+                                                        </span>
+                                                        <span className={cx('original')}>{formatCurrency(price)}</span>
+                                                    </>
+                                                ) : (
+                                                    <span>{formatCurrency(price)}</span>
+                                                )}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>

@@ -102,6 +102,23 @@ function ProductDetail() {
     const location = useLocation();
 
     useEffect(() => {
+        if (!product || !product.variations || product.variations.length === 0) return;
+
+        const first = product.variations[0];
+
+        // Tạo map attributes → term mặc định
+        const defaultAttrs = {};
+        first.attributes.forEach((a) => {
+            const attrId = typeof a.attrId === 'object' ? a.attrId._id : a.attrId;
+            const termId = Array.isArray(a.terms) ? a.terms[0]._id : a.terms._id;
+            defaultAttrs[attrId] = termId;
+        });
+
+        setSelectedAttributes(defaultAttrs);
+        setActiveVariation(first);
+    }, [product]);
+
+    useEffect(() => {
         axiosClient
             .get('/posts?limit=4')
             .then((res) => {

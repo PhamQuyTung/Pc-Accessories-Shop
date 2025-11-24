@@ -1,6 +1,5 @@
 import React from 'react';
 import styles from './NewsSection.module.scss';
-import cx from 'classnames';
 
 const NewsSection = ({ news }) => {
     if (!news || news.length === 0) return null;
@@ -17,7 +16,7 @@ const NewsSection = ({ news }) => {
                         className={styles.newsItem}
                     >
                         <div className={styles.thumbWrapper}>
-                            <img src={item.thumbnail} alt={item.title} />
+                            <img src={item.image} alt={item.title} />
                         </div>
 
                         <div className={styles.info}>

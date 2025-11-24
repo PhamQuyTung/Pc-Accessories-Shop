@@ -5,18 +5,41 @@ import styles from './ProductCard.module.scss';
 import classNames from 'classnames/bind';
 import { FireIcon, GiftIcon } from '../Icons/Icons';
 import BasicRating from '~/components/Rating/Rating';
+import { getDisplayName } from '~/pages/Product/ProductDetail/utils/productHelpers';
 
 const cx = classNames.bind(styles);
 
 function ProductCard({ product, viewMode }) {
     if (!product) return null;
+    console.log("PRODUCT CARD DATA:", product);
 
-    // console.log('Product:', product);
+    // ===========================
+    // 1) Lấy biến thể mặc định
+    // ===========================
+    const defaultVariant =
+        product?.variations?.find((v) => v._id === product.defaultVariantId?.toString()) ||
+        product?.variations?.[0] ||
+        null;
+
+    // Trường hợp sản phẩm không có biến thể → fallback về dữ liệu product
+    const display = defaultVariant || product;
+
+    // ===========================
+    // 2) Lấy ảnh hiển thị
+    // ===========================
+    const thumbnail =
+        defaultVariant?.images?.[0] || defaultVariant?.thumbnail || product?.images?.[0] || '/placeholder.png';
+
+    // ===========================
+    // 3) Lấy giá hiển thị
+    // ===========================
+    const price = display?.price ?? product.price ?? 0;
+    const discountPrice = display?.discountPrice ?? product.discountPrice ?? null;
 
     return (
         <div className={cx('product-card', viewMode === 'list' ? 'list-mode' : 'grid-mode')}>
+            {/* ----- TAG QUÀ TẶNG HOT ----- */}
             <div className={cx('proloop-label--bottom')}>
-                {/* Quà tặng HOT */}
                 {typeof product.status === 'string' && product.status.includes('quà tặng') && (
                     <span className={cx('gift-tag')}>
                         <div className={cx('gift-tag__hot')}>
@@ -29,26 +52,26 @@ function ProductCard({ product, viewMode }) {
                     </span>
                 )}
 
-                {/* --- NEW: Hiển thị 1 icon/quà nhỏ nếu product.gifts có dữ liệu --- */}
                 {Array.isArray(product.gifts) && product.gifts.length > 0 && (
                     <span className={cx('gift-badge')}>
                         <GiftIcon className={cx('icon-gift-small')} />
-                        {/* <span className={cx('gift-badge__text')}>{product.gifts.length > 1 ? `${product.gifts.length} quà` : 'Quà'}</span> */}
                     </span>
                 )}
             </div>
 
+            {/* ----- HÌNH ẢNH ----- */}
             <Link to={`/products/${product.slug || product._id}`}>
-                <img src={product.images?.[0]} alt={product.name} />
+                <img src={thumbnail} alt={product.name} />
             </Link>
 
+            {/* ----- TAG TRẠNG THÁI (Hàng mới, còn hàng...) ----- */}
             <div className={cx('proloop-label--bottom')}>
                 {(() => {
                     switch (product.status?.trim()) {
                         case 'sản phẩm mới':
                             return <span className={cx('new-tag')}>Sản phẩm mới</span>;
                         case 'hàng rất nhiều':
-                            return <span className={cx('very-many-tag')}>Hàng rất nhiều</span>; // 👈 Thêm dòng này
+                            return <span className={cx('very-many-tag')}>Hàng rất nhiều</span>;
                         case 'nhiều hàng':
                             return <span className={cx('many-tag')}>Nhiều hàng</span>;
                         case 'còn hàng':
@@ -64,7 +87,6 @@ function ProductCard({ product, viewMode }) {
                     }
                 })()}
 
-                {/* Bán chạy */}
                 {product.isBestSeller && (
                     <span className={cx('bestseller-tag')}>
                         <FireIcon className={cx('icon-fire')} />
@@ -73,44 +95,44 @@ function ProductCard({ product, viewMode }) {
                 )}
             </div>
 
+            {/* ----- TÊN SẢN PHẨM ----- */}
             <div className={cx('product-card__des')}>
-                <Link to={`/products/${product.slug || product._id}`}>{product.name}</Link>
+                <Link to={`/products/${product.slug || product._id}`}>{getDisplayName(product)}</Link>
 
-                {typeof product.specs === 'object' &&
-                    Object.values(product.specs || {}).some((value) => typeof value === 'string' && value.trim()) && (
-                        <div className={cx('specs')}>
-                            {Object.values(product.specs || {})
-                                .filter((value) => typeof value === 'string' && value.trim())
-                                .map((value, index, array) => (
-                                    <span key={index}>
-                                        {value}
-                                        {index < array.length - 1 && <span className={cx('separator')}> | </span>}
-                                    </span>
-                                ))}
-                        </div>
-                    )}
+                {/* HIỂN THỊ SPEC CỦA BIẾN THỂ */}
+                {display.specs && Object.values(display.specs).length > 0 && (
+                    <div className={cx('specs')}>
+                        {Object.values(display.specs).map((value, i, arr) => (
+                            <span key={i}>
+                                {value}
+                                {i < arr.length - 1 && <span className={cx('separator')}> | </span>}
+                            </span>
+                        ))}
+                    </div>
+                )}
 
+                {/* GIÁ */}
                 <div className={cx('price')}>
-                    {product.discountPrice && product.discountPrice < product.price ? (
+                    {discountPrice && discountPrice < price ? (
                         <>
                             <div className={cx('price-wrap1')}>
-                                <span className={cx('original-price')}>{product.price.toLocaleString()}₫</span>
+                                <span className={cx('original-price')}>{price.toLocaleString()}₫</span>
                             </div>
                             <div className={cx('price-wrap2')}>
-                                <span className={cx('discount-price')}>{product.discountPrice.toLocaleString()}₫</span>
+                                <span className={cx('discount-price')}>{discountPrice.toLocaleString()}₫</span>
                                 <span className={cx('discount-percent')}>
-                                    -{Math.round((1 - product.discountPrice / product.price) * 100)}%
+                                    -{Math.round((1 - discountPrice / price) * 100)}%
                                 </span>
                             </div>
                         </>
                     ) : (
                         <div className={cx('price-wrap2')}>
-                            <span className={cx('discount-price')}>{product.price.toLocaleString()}₫</span>
+                            <span className={cx('discount-price')}>{price.toLocaleString()}₫</span>
                         </div>
                     )}
                 </div>
 
-                {/* Rating Star */}
+                {/* RATING */}
                 <div className={cx('rating')}>
                     <BasicRating value={product.averageRating || 0} />
                     <span className={cx('rating-count')}>({product.reviewCount || 0} đánh giá)</span>
