@@ -515,72 +515,72 @@
         font-weight: 600;
         font-size: 20px;
     }
+}
 
-    .add-review {
-        background: transparent;
+.add-review {
+    background: transparent;
 
-        h4 {
-            margin-bottom: 1rem;
-            font-weight: 600;
-            font-size: 20px;
+    h4 {
+        margin-bottom: 1rem;
+        font-weight: 600;
+        font-size: 20px;
+    }
+
+    .review-textarea {
+        width: 60%;
+        height: 200px;
+        border: none;
+        border-radius: 8px;
+        // resize: none;
+        padding: 1rem;
+        font-size: 16px;
+        box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+        margin-bottom: 1rem;
+        border-radius: 7px !important;
+        font-size: 16px;
+        outline: none !important;
+        padding: 25px 12px 6px 20px;
+
+        &:focus {
+            outline: none;
+            box-shadow: 0 0 5px rgba(120, 71, 255, 0.4);
         }
+    }
 
-        .review-textarea {
-            width: 60%;
-            height: 200px;
-            border: none;
-            border-radius: 8px;
-            // resize: none;
-            padding: 1rem;
-            font-size: 16px;
-            box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
-            margin-bottom: 1rem;
-            border-radius: 7px !important;
-            font-size: 16px;
-            outline: none !important;
-            padding: 25px 12px 6px 20px;
+    .rating-stars {
+        display: flex;
+        gap: 0.5rem;
+        font-size: 24px;
+        margin-bottom: 1.5rem;
 
-            &:focus {
-                outline: none;
-                box-shadow: 0 0 5px rgba(120, 71, 255, 0.4);
-            }
-        }
-
-        .rating-stars {
-            display: flex;
-            gap: 0.5rem;
-            font-size: 24px;
-            margin-bottom: 1.5rem;
-
-            .star {
-                cursor: pointer;
-                color: #ccc; // sao mặc định chưa chọn
-                transition: color 0.2s ease;
-
-                &.active {
-                    color: #ffcc00; // sao được chọn (vàng)
-                }
-
-                &:hover {
-                    color: #ffcc00;
-                }
-            }
-        }
-
-        .submit-review-btn {
-            padding: 0.6rem 1.5rem;
-            background-color: #c92a5e;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
+        .star {
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            color: #ccc; // sao mặc định chưa chọn
+            transition: color 0.2s ease;
+
+            &.active {
+                color: #ffcc00; // sao được chọn (vàng)
+            }
 
             &:hover {
-                background-color: #9a234b;
+                color: #ffcc00;
             }
+        }
+    }
+
+    .submit-review-btn {
+        padding: 0.6rem 1.5rem;
+        background-color: #c92a5e;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+
+        &:hover {
+            background-color: #9a234b;
         }
     }
 }

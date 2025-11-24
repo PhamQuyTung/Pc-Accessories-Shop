@@ -311,4 +311,42 @@ module.exports = {
       res.status(500).json({ message: "Lỗi server", error: err });
     }
   },
+
+  // ================= SET DEFAULT VARIANT =================
+  setDefaultVariant: async (req, res) => {
+    try {
+      const { productId, variantId } = req.params;
+
+      // Tìm product chứa variantId
+      const product = await Product.findById(productId);
+      if (!product) {
+        return res.status(404).json({ message: "Không tìm thấy sản phẩm." });
+      }
+
+      // Kiểm tra variant có thuộc product không
+      const exists = product.variations.some(
+        (v) => v._id.toString() === variantId
+      );
+
+      if (!exists) {
+        return res.status(400).json({
+          message: "Biến thể này không thuộc sản phẩm.",
+        });
+      }
+
+      // Gán defaultVariantId
+      product.defaultVariantId = variantId;
+
+      await product.save();
+
+      res.json({
+        success: true,
+        message: "Đã đặt làm biến thể mặc định.",
+        defaultVariantId: variantId,
+      });
+    } catch (err) {
+      console.error("Lỗi set default variant:", err);
+      res.status(500).json({ message: "Lỗi server", error: err.message });
+    }
+  },
 };

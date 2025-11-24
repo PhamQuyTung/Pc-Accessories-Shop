@@ -314,11 +314,27 @@ class ProductController {
           attributes: v.attributes || [],
         }));
 
+        // ---- Lấy default variation ----
+        let defaultVar =
+          convertedVariations.find(
+            (v) => v._id === p.defaultVariantId?.toString()
+          ) ||
+          convertedVariations[0] ||
+          null;
+
+        // ---- Tính status theo default variation ----
+        const status = computeProductStatus({
+          importing: p.importing,
+          quantity: defaultVar?.quantity ?? p.quantity,
+          variations: defaultVar ? [defaultVar] : [], // ép dạng mảng để file xử lý
+        });
+
         return {
           ...p,
           _id: p._id?.toString(),
           defaultVariantId: p.defaultVariantId?.toString(),
           variations: convertedVariations,
+          status, // ⭐⭐⭐ TRẢ STATUS RA FE
         };
       });
 
@@ -466,12 +482,11 @@ class ProductController {
         longDescription,
         dimensions,
         weight,
-        variations,
         importing,
         isBestSeller,
       } = req.body;
 
-      // 🧩 Nếu là sản phẩm biến thể, tự sinh variations từ attributes
+      // 🧩 1. Generate variations nếu là variable product
       if (
         req.body.productType === "variable" &&
         Array.isArray(req.body.attributes)
@@ -482,6 +497,26 @@ class ProductController {
         );
       }
 
+      // 🧩 2. Chuẩn hóa variations từ req.body.variations
+      const normalizedVariations = Array.isArray(req.body.variations)
+        ? req.body.variations.map((v) => ({
+            sku: v.sku,
+            price: v.price,
+            discountPrice: v.discountPrice,
+            quantity: v.quantity,
+            images: v.images || [],
+            attributes: (v.attributes || []).map((a) => ({
+              attrId: a.attrId,
+              terms: Array.isArray(a.terms)
+                ? a.terms.filter(Boolean)
+                : a.termId
+                  ? [a.termId]
+                  : [],
+            })),
+          }))
+        : [];
+
+      // 🧩 3. Tạo product
       const product = new Product({
         name,
         images,
@@ -507,36 +542,20 @@ class ProductController {
         attributes: Array.isArray(req.body.attributes)
           ? req.body.attributes
           : [],
-        variations: Array.isArray(variations)
-          ? variations.map((v) => ({
-              sku: v.sku,
-              price: v.price,
-              discountPrice: v.discountPrice,
-              quantity: v.quantity,
-              images: v.images || [],
-              attributes: (v.attributes || []).map((a) => ({
-                attrId: a.attrId,
-                terms: Array.isArray(a.terms)
-                  ? a.terms.filter(Boolean) // giữ các termId hợp lệ
-                  : a.termId
-                    ? [a.termId] // fallback nếu client gửi termId đơn
-                    : [],
-              })),
-            }))
-          : [],
-        isBestSeller: !!isBestSeller, // 👈 Thêm dòng này
+        variations: normalizedVariations,
+        isBestSeller: !!isBestSeller,
       });
 
-      // Nếu có biến thể, thiết lập defaultVariantId
-      if (product.variations?.length > 0) {
-        product.defaultVariantId =
-          product.defaultVariantId || product.variations[0]._id;
+      // 🧩 4. Tự set defaultVariantId
+      if (normalizedVariations.length > 0) {
+        product.defaultVariantId = normalizedVariations[0]._id;
       }
 
-      // ✅ Tính status dựa trên quantity + variations thay vì lấy từ client
+      // 🧩 5. Tính status
       product.status = computeProductStatus(product, { importing });
 
       await product.save();
+
       res.status(201).json(product);
     } catch (err) {
       res

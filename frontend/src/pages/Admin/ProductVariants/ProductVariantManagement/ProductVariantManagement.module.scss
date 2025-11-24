@@ -108,3 +108,25 @@
     font-size: 14px;
     margin-top: 2px;
 }
+
+.default-box {
+    text-align: center;
+}
+
+.btn-set-default {
+    background: #ddd;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+
+    &:hover {
+        background: #ccc;
+    }
+}
+
+.default-active {
+    font-size: 20px;
+    color: gold;
+}

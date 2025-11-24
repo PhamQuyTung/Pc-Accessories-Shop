@@ -15,6 +15,10 @@ export const updateVariant = (variantId, data) => {
     return axiosClient.put(`/variants/${variantId}`, data);
 };
 
+export const setDefaultVariant = (productId, variantId) => {
+    return axiosClient.patch(`/variants/${productId}/${variantId}/default`);
+};
+
 // helper: get attribute by key (dùng endpoint bạn đã có ở CreateVariant)
 export const getAttributeByKey = (key) => axiosClient.get(`/attributes/key/${key}`);
 

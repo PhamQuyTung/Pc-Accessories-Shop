@@ -6,7 +6,7 @@ import Swal from 'sweetalert2';
 import { updateProductAttributes } from '~/services/productService';
 import { useToast } from '~/components/ToastMessager';
 
-import { getVariantsByProduct, deleteVariant } from '~/services/variantService';
+import { getVariantsByProduct, deleteVariant, setDefaultVariant } from '~/services/variantService';
 
 const cx = classNames.bind(styles);
 
@@ -16,6 +16,8 @@ const ProductVariantManagement = () => {
     const [variants, setVariants] = useState([]);
     const [productName, setProductName] = useState('');
     const [loading, setLoading] = useState(true);
+
+    const [defaultVariantId, setDefaultVariantId] = useState(null); // Mặc định biến thể
 
     const toast = useToast();
 
@@ -31,6 +33,8 @@ const ProductVariantManagement = () => {
             setVariants(newVariants);
 
             setProductName(res.data.product?.name || '');
+
+            setDefaultVariantId(res.data.product?.defaultVariantId || null);
 
             // 🟢 Tự động cập nhật product.attributes
             const newAttributes = buildProductAttributes(newVariants);
@@ -70,6 +74,22 @@ const ProductVariantManagement = () => {
         }
     };
 
+    // ======================
+    // Đặt biến thể mặc định
+    // ======================
+    const handleSetDefault = async (variantId) => {
+        try {
+            await setDefaultVariant(productId, variantId);
+            toast('Đã đặt làm biến thể mặc định', 'success');
+            fetchVariants(); // reload UI
+        } catch (err) {
+            toast('Không thể đặt làm mặc định!', 'error');
+        }
+    };
+
+    // ======================
+    // Xây dựng thuộc tính sản phẩm từ biến thể
+    // ======================
     const buildProductAttributes = (variants) => {
         const map = new Map();
 
@@ -90,14 +110,6 @@ const ProductVariantManagement = () => {
             attrId,
             terms: Array.from(termsSet),
         }));
-    };
-
-    const getAttrName = (variant, key) => {
-        const attr = variant.attributes?.find((a) => a.attrId?.key === key);
-        if (!attr) return '—';
-
-        const term = attr.terms?.[0];
-        return term?.name ?? '—';
     };
 
     if (loading)
@@ -128,6 +140,7 @@ const ProductVariantManagement = () => {
                         <th>Giá</th>
                         <th>Giá KM</th>
                         <th>Số lượng</th>
+                        <th>Mặc định</th>
                         <th>Hành động</th>
                     </tr>
                 </thead>
@@ -183,6 +196,21 @@ const ProductVariantManagement = () => {
                             </td>
 
                             <td>{v.quantity}</td>
+
+                            <td>
+                                <div className={cx('default-box')}>
+                                    {defaultVariantId === v._id ? (
+                                        <span className={cx('default-active')}>⭐</span>
+                                    ) : (
+                                        <button
+                                            className={cx('btn-set-default')}
+                                            onClick={() => handleSetDefault(v._id)}
+                                        >
+                                            Chọn
+                                        </button>
+                                    )}
+                                </div>
+                            </td>
 
                             <td>
                                 <div className={cx('actions')}>

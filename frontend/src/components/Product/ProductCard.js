@@ -60,7 +60,7 @@ function ProductCard({ product, viewMode }) {
             </div>
 
             {/* ----- HÌNH ẢNH ----- */}
-            <Link to={`/products/${product.slug || product._id}`}>
+            <Link to={`/products/${product.slug}?vid=${display._id}`}>
                 <img src={thumbnail} alt={product.name} />
             </Link>
 
@@ -97,7 +97,7 @@ function ProductCard({ product, viewMode }) {
 
             {/* ----- TÊN SẢN PHẨM ----- */}
             <div className={cx('product-card__des')}>
-                <Link to={`/products/${product.slug || product._id}`}>{getDisplayName(product)}</Link>
+                <Link to={`/products/${product.slug}?vid=${display._id}`}>{getDisplayName(product)}</Link>
 
                 {/* HIỂN THỊ SPEC CỦA BIẾN THỂ */}
                 {display.specs && Object.values(display.specs).length > 0 && (

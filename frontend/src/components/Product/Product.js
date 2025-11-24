@@ -26,7 +26,7 @@ function Product({ category }) {
             setLoading(true);
             try {
                 const res = await axiosClient.get('/products', {
-                    params: { category, limit: 8, status: true }
+                    params: { category, limit: 8, status: true },
                 });
 
                 const data = res.data;
@@ -80,21 +80,26 @@ function Product({ category }) {
             >
                 {products.map((product) => {
                     // ===================== Default Variation Logic =====================
-                    const defaultVariation =
-                        product.variations?.length > 0 ? product.variations[0] : null;
+                    let defaultVariation = null;
+
+                    // Nếu có defaultVariantId thì tìm đúng biến thể đó
+                    if (product.defaultVariantId && Array.isArray(product.variations)) {
+                        defaultVariation = product.variations.find((v) => v._id === product.defaultVariantId);
+                    }
+
+                    // Nếu không có → fallback biến thể đầu tiên
+                    if (!defaultVariation) {
+                        defaultVariation = product.variations?.[0] || null;
+                    }
 
                     const displayImage =
-                        defaultVariation?.thumbnail ||
-                        defaultVariation?.images?.[0] ||
-                        product.images?.[0];
+                        defaultVariation?.thumbnail || defaultVariation?.images?.[0] || product.images?.[0];
 
                     const displayPrice = defaultVariation
                         ? (defaultVariation.discountPrice ?? defaultVariation.price)
                         : (product.discountPrice ?? product.price);
 
-                    const originalPrice = defaultVariation
-                        ? defaultVariation.price
-                        : product.price;
+                    const originalPrice = defaultVariation ? defaultVariation.price : product.price;
 
                     const hasDiscount =
                         defaultVariation?.discountPrice && defaultVariation.discountPrice < defaultVariation.price;
@@ -196,11 +201,7 @@ function Product({ category }) {
                                                     </span>
 
                                                     <span className={cx('discount-percent')}>
-                                                        -
-                                                        {Math.round(
-                                                            (1 - displayPrice / originalPrice) * 100
-                                                        )}
-                                                        %
+                                                        -{Math.round((1 - displayPrice / originalPrice) * 100)}%
                                                     </span>
                                                 </div>
                                             </>
