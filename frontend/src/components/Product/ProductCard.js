@@ -5,7 +5,7 @@ import styles from './ProductCard.module.scss';
 import classNames from 'classnames/bind';
 import { FireIcon, GiftIcon } from '../Icons/Icons';
 import BasicRating from '~/components/Rating/Rating';
-import { getDisplayName } from '~/pages/Product/ProductDetail/utils/productHelpers';
+import { getDefaultDisplayName } from '~/utils/getDefaultDisplayName';
 
 const cx = classNames.bind(styles);
 
@@ -97,7 +97,7 @@ function ProductCard({ product, viewMode }) {
 
             {/* ----- TÊN SẢN PHẨM ----- */}
             <div className={cx('product-card__des')}>
-                <Link to={`/products/${product.slug}?vid=${display._id}`}>{getDisplayName(product)}</Link>
+                <Link to={`/products/${product.slug}?vid=${display._id}`}>{getDefaultDisplayName(product)}</Link>
 
                 {/* HIỂN THỊ SPEC CỦA BIẾN THỂ */}
                 {display.specs && Object.values(display.specs).length > 0 && (

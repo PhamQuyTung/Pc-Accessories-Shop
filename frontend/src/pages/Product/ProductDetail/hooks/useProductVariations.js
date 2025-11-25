@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function useProductVariations(product, vid) {
     const [selectedAttributes, setSelectedAttributes] = useState({});
     const [activeVariation, setActiveVariation] = useState(null);
+
+    const navigate = useNavigate();
+    const location = useLocation();
 
     // Khi product hoặc vid thay đổi, set lại activeVariation
     useEffect(() => {
@@ -62,6 +66,7 @@ export default function useProductVariations(product, vid) {
     };
 
     const handleSelectVariation = (variation) => {
+        // 1. Cập nhật selectedAttributes
         const attrs = {};
         variation.attributes.forEach((a) => {
             const attrId = a.attrId._id || a.attrId;
@@ -71,6 +76,12 @@ export default function useProductVariations(product, vid) {
 
         setSelectedAttributes(attrs);
         setActiveVariation(variation);
+
+        // 2. Update URL ?vid=xxxx (KHÔNG reload)
+        const params = new URLSearchParams(location.search);
+        params.set('vid', variation._id);
+
+        navigate(`${location.pathname}?${params.toString()}`, { replace: true });
     };
 
     return {

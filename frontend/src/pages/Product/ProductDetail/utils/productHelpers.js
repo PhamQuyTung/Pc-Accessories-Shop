@@ -1,26 +1,24 @@
-export const getDisplayName = (product) => {
-    if (!product) return '';
+export function getDisplayName(product, variation, selectedAttributes = {}) {
+    if (!product) return "";
 
-    // Lấy default variant
-    const defaultVariant =
-        product.variations?.find(v => v._id === product.defaultVariantId?.toString()) ||
-        product.variations?.[0] ||
-        null;
+    // ===== Trường hợp có variation đang active =====
+    if (variation) {
+        const attrs = (variation.attributes || [])
+            .map(a => {
+                const term = Array.isArray(a.terms) ? a.terms[0] : a.terms;
+                return term?.name;
+            })
+            .filter(Boolean)
+            .join(" | ");
 
-    if (!defaultVariant) return product.name;
+        return attrs ? `${product.name} - ${attrs}` : product.name;
+    }
 
-    // Nếu variant có name riêng
-    if (defaultVariant.name) return `${product.name} - ${defaultVariant.name}`;
+    // ===== Fallback nếu không có variation =====
+    const safeAttrs = Object.values(selectedAttributes || {});
+    if (safeAttrs.length > 0) {
+        return `${product.name} - ${safeAttrs.join(" | ")}`;
+    }
 
-    // Lấy tên từ attributes.terms
-    const termsNames = (defaultVariant.attributes || [])
-        .flatMap(attr =>
-            Array.isArray(attr.terms)
-                ? attr.terms.map(t => t.name).filter(Boolean)
-                : attr.term?.name ? [attr.term.name] : []
-        );
-
-    return termsNames.length > 0
-        ? `${product.name} - ${termsNames.join(' | ')}`
-        : product.name;
-};
+    return product.name;
+}

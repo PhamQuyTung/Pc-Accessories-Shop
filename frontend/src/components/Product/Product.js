@@ -12,7 +12,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons';
 import { FireIcon, GiftIcon } from '../Icons/Icons';
 import BasicRating from '~/components/Rating/Rating';
-import { getDisplayName } from '~/pages/Product/ProductDetail/utils/productHelpers';
+import { getDefaultDisplayName } from '~/utils/getDefaultDisplayName';
 
 const cx = classNames.bind(styles);
 
@@ -165,7 +165,7 @@ function Product({ category }) {
                                 </div>
 
                                 <div className={cx('product-card__des')}>
-                                    <Link to={`/products/${product.slug}`}>{getDisplayName(product)}</Link>
+                                    <Link to={`/products/${product.slug}`}>{getDefaultDisplayName(product)}</Link>
 
                                     {typeof product.specs === 'object' &&
                                         Object.values(product.specs || {}).some(

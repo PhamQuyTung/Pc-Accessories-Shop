@@ -10,15 +10,17 @@ export default function useProductDetail(slug) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Fetch product
+    // Fetch product (có delay 2 giây)
     useEffect(() => {
         if (!slug) return;
         window.scrollTo(0, 0);
         setLoading(true);
 
-        axios
-            .get(`http://localhost:5000/api/products/${slug}`)
-            .then((res) => {
+        const fetchProduct = axios.get(`http://localhost:5000/api/products/${slug}`);
+        const delay = new Promise((resolve) => setTimeout(resolve, 2000)); // ⏳ delay 2s
+
+        Promise.all([fetchProduct, delay])
+            .then(([res]) => {
                 const data = res.data;
                 data.status = Array.isArray(data.status) ? data.status : [data.status];
                 setProduct(data);

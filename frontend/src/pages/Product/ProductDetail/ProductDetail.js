@@ -31,6 +31,8 @@ import useProductReviews from './hooks/useProductReviews';
 import useCart from './hooks/useCart';
 import useFavorite from './hooks/useFavorite';
 
+import { getDisplayName } from '~/pages/Product/ProductDetail/utils/productHelpers';
+
 import styles from './ProductDetail.module.scss';
 const cx = classNames.bind(styles);
 
@@ -213,7 +215,13 @@ function ProductDetailView({
 
     return (
         <div className={cx('product-detail')}>
-            <BreadcrumbSection product={product} location={location} />
+            <BreadcrumbSection
+                product={product}
+                activeVariation={activeVariation}
+                selectedAttributes={selectedAttributes}
+                location={location}
+            />
+
             <div className={cx('product-detail__wraps')}>
                 <Row>
                     <Col lg={6} md={12}>
@@ -288,15 +296,18 @@ function ProductDetailView({
 // =========================
 // Helper Components
 // =========================
-function BreadcrumbSection({ product, location }) {
+function BreadcrumbSection({ product, activeVariation, selectedAttributes, location }) {
     if (!product.category) return null;
+
+    const label = getDisplayName(product, activeVariation, selectedAttributes);
+
     return (
         <div className={cx('breadcrumb-wrap')}>
             <Breadcrumb
                 customData={[
                     { path: '/', label: 'Trang chủ' },
                     { path: `/categories/${product.category.slug}`, label: product.category.name },
-                    { path: location.pathname, label: product.name },
+                    { path: location.pathname + location.search, label },
                 ]}
             />
         </div>
