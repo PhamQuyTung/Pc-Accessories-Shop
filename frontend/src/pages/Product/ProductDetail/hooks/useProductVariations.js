@@ -8,8 +8,22 @@ export default function useProductVariations(product, vid) {
     useEffect(() => {
         if (!product?.variations?.length) return;
 
-        // Tìm biến thể theo vid
-        let variation = vid ? product.variations.find((v) => v._id === vid) : product.variations[0]; // fallback nếu không có vid
+        let variation = null;
+
+        if (vid) {
+            // Ưu tiên query param
+            variation = product.variations.find((v) => v._id === vid);
+        }
+
+        // Nếu không có vid hoặc không match → lấy defaultVariantId
+        if (!variation && product.defaultVariantId) {
+            variation = product.variations.find((v) => v._id === product.defaultVariantId);
+        }
+
+        // Nếu vẫn không có → fallback biến thể đầu tiên
+        if (!variation) {
+            variation = product.variations[0];
+        }
 
         if (!variation) variation = product.variations[0];
 
