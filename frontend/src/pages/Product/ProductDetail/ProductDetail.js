@@ -147,6 +147,7 @@ function ProductDetailView({
     const { quantity, setQuantity } = quantityState;
     const { isAddingToCart, setIsAddingToCart } = isAddingToCartState;
     const { activeTab, setActiveTab } = activeTabState;
+    const [loadingVariation, setLoadingVariation] = useState(false);
 
     // Thêm vào giỏ
     const handleAddToCart = async () => {
@@ -213,6 +214,8 @@ function ProductDetailView({
         }
     };
 
+    if (loadingVariation) return <SpinnerLoading />;
+
     return (
         <div className={cx('product-detail')}>
             <BreadcrumbSection
@@ -252,7 +255,15 @@ function ProductDetailView({
                                     product={product}
                                     selectedAttributes={selectedAttributes}
                                     activeVariation={activeVariation}
-                                    onSelectVariation={handleSelectVariation}
+                                    onSelectVariation={(variation) => {
+                                        setLoadingVariation(true);
+
+                                        // Gọi hàm gốc
+                                        handleSelectVariation(variation);
+
+                                        // Tắt loading sau 2s
+                                        setTimeout(() => setLoadingVariation(false), 2000);
+                                    }}
                                     onSelectAttribute={handleSelectAttribute}
                                     COLOR_MAP={COLOR_MAP}
                                 />
