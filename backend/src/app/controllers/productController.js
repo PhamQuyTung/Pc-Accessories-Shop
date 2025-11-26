@@ -925,9 +925,10 @@ class ProductController {
     }
   }
 
-  // Tìm kiếm sản phẩm
+  // Tìm kiếm sản phẩm (Find + Populate)
   async searchProducts(req, res) {
     const { query, page = 1, limit = 10 } = req.query;
+
     if (!query || query.trim() === "") {
       return res.status(400).json({ error: "Query không được để trống" });
     }
@@ -937,86 +938,85 @@ class ProductController {
       const limitNum = parseInt(limit);
       const skip = (pageNum - 1) * limitNum;
 
-      const products = await Product.aggregate([
+      // --- 1) Tìm sản phẩm + populate đầy đủ ---
+      const products = await Product.find({
+        name: { $regex: query.trim(), $options: "i" },
+        deleted: { $ne: true },
+        visible: true,
+      })
+        .populate({
+          path: "variations",
+          populate: [
+            { path: "attributes.attrId" },
+            { path: "attributes.terms" },
+          ],
+        })
+        .populate({
+          path: "defaultVariantId",
+          populate: [
+            { path: "attributes.attrId" },
+            { path: "attributes.terms" },
+          ],
+        })
+        .lean()
+        .skip(skip)
+        .limit(limitNum);
+
+      // --- 2) Gắn defaultVariant đúng ---
+      const normalized = products.map((p) => {
+        const defaultVariant =
+          p.variations.find(
+            (v) => v._id.toString() === p.defaultVariantId?._id?.toString()
+          ) || p.variations[0];
+
+        return {
+          ...p,
+          defaultVariant,
+        };
+      });
+
+      // --- 3) Lấy reviews ---
+      const productIds = normalized.map((p) => p._id);
+
+      const reviews = await Review.aggregate([
         {
-          $match: {
-            name: { $regex: query.trim(), $options: "i" },
-            deleted: { $ne: true },
-            visible: true,
+          $match: { product: { $in: productIds } },
+        },
+        {
+          $group: {
+            _id: "$product",
+            reviewCount: { $sum: 1 },
+            averageRating: { $avg: "$rating" },
           },
         },
-
-        // ---------- Gắn review ----------
-        {
-          $lookup: {
-            from: "reviews",
-            localField: "_id",
-            foreignField: "product",
-            as: "reviews",
-          },
-        },
-
-        // ---------- Lấy defaultVariant từ variations ----------
-        {
-          $addFields: {
-            defaultVariant: {
-              $first: {
-                $filter: {
-                  input: "$variations",
-                  as: "v",
-                  cond: { $eq: ["$$v._id", "$defaultVariantId"] },
-                },
-              },
-            },
-          },
-        },
-
-        // Nếu defaultVariantId không khớp → dùng biến thể đầu tiên
-        {
-          $addFields: {
-            defaultVariant: {
-              $ifNull: [
-                "$defaultVariant",
-                { $arrayElemAt: ["$variations", 0] },
-              ],
-            },
-          },
-        },
-
-        // ---------- Tính giá ----------
-        {
-          $addFields: {
-            finalPrice: {
-              $cond: {
-                if: { $gt: ["$defaultVariant.discountPrice", 0] },
-                then: "$defaultVariant.discountPrice",
-                else: "$defaultVariant.price",
-              },
-            },
-
-            averageRating: {
-              $cond: [
-                { $gt: [{ $size: "$reviews" }, 0] },
-                { $avg: "$reviews.rating" },
-                0,
-              ],
-            },
-
-            reviewCount: { $size: "$reviews" },
-          },
-        },
-
-        { $skip: skip },
-        { $limit: limitNum },
       ]);
 
-      // ✔ gắn status động
-      const productsWithStatus = products.map((p) => ({
-        ...p,
-        status: computeProductStatus(p, { importing: p.importing }),
-      }));
+      const reviewMap = {};
+      reviews.forEach((r) => {
+        reviewMap[r._id.toString()] = {
+          averageRating: r.averageRating,
+          reviewCount: r.reviewCount,
+        };
+      });
 
-      res.json(productsWithStatus);
+      // --- 4) Gắn rating + finalPrice ---
+      const finalData = normalized.map((p) => {
+        const rv = reviewMap[p._id.toString()] || {};
+
+        const finalPrice =
+          p.defaultVariant.discountPrice && p.defaultVariant.discountPrice > 0
+            ? p.defaultVariant.discountPrice
+            : p.defaultVariant.price;
+
+        return {
+          ...p,
+          finalPrice,
+          averageRating: rv.averageRating || 0,
+          reviewCount: rv.reviewCount || 0,
+        };
+      });
+
+      res.json(finalData);
     } catch (err) {
       console.error("❌ Lỗi khi tìm kiếm sản phẩm:", err);
       res.status(500).json({ error: "Lỗi server" });

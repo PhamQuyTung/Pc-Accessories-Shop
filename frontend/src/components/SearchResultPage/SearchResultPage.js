@@ -27,6 +27,7 @@ function SearchResultPage() {
 
                 const res = await axios.get(`/api/products/search?query=${encodeURIComponent(query)}`);
                 setResults(res.data);
+                console.log("SEARCH RESULT ITEM:", res.data);
 
                 const elapsed = Date.now() - startTime;
                 const minLoadingTime = 500; // 0.5 giây

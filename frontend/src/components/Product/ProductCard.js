@@ -11,13 +11,13 @@ const cx = classNames.bind(styles);
 
 function ProductCard({ product, viewMode }) {
     if (!product) return null;
-    console.log("PRODUCT CARD DATA:", product);
+    console.log('PRODUCT CARD DATA:', product);
 
     // ===========================
     // 1) Lấy biến thể mặc định
     // ===========================
     const defaultVariant =
-        product?.variations?.find((v) => v._id === product.defaultVariantId?.toString()) ||
+        product?.variations?.find((v) => v._id?.toString() === product.defaultVariantId?.toString()) ||
         product?.variations?.[0] ||
         null;
 
