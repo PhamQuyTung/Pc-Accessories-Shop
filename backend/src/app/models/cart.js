@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const ObjectId = mongoose.Schema.Types.ObjectId;
 
 const cartSchema = new mongoose.Schema({
   user_id: {
@@ -11,6 +12,7 @@ const cartSchema = new mongoose.Schema({
     ref: "Product",
     required: true,
   },
+  variation_id: { type: ObjectId, ref: "Variation", default: null },
   quantity: { type: Number, required: true, default: 1 },
   isGift: { type: Boolean, default: false }, // 🆕 thêm cờ quà tặng
 }, { timestamps: true });

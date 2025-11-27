@@ -158,11 +158,11 @@ function ProductDetailView({
         setIsAddingToCart(true);
         try {
             if (cart?.addToCart) {
-                await cart.addToCart(product._id, activeVariation._id, quantity);
+                await cart.addToCart(product._id, activeVariation ? activeVariation._id : null, quantity);
             } else {
                 await axiosClient.post('/carts/add', {
                     product_id: product._id,
-                    variation_id: activeVariation._id,
+                    variation_id: activeVariation ? activeVariation._id : null,
                     quantity,
                 });
             }

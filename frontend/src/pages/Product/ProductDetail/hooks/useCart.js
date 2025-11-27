@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axiosClient from '~/utils/axiosClient';
+import cartEvent from '~/utils/cartEvent';
 
 export default function useCart(userId) {
     const [items, setItems] = useState([]);
@@ -25,43 +26,26 @@ export default function useCart(userId) {
     }, [userId]);
 
     // --- Thêm sản phẩm ---
-    const addToCart = async (productId, variantId, qty = 1) => {
+    const addToCart = async (productId, variationId, qty = 1) => {
         try {
-            const exists = items.find((item) => item.productId === productId && item.variantId === variantId);
+            await axiosClient.post('/carts/add', {
+                product_id: productId,
+                variation_id: variationId,
+                quantity: qty,
+            });
 
-            if (exists) {
-                await updateQty(productId, variantId, exists.qty + qty);
-                return;
-            }
-
-            const newItem = { productId, variantId, qty };
-            setItems((prev) => [...prev, newItem]);
-
-            if (userId) {
-                await axiosClient.post(`/cart/${userId}`, newItem);
-            }
-        } catch (error) {
-            console.error('Error adding to cart:', error);
+            cartEvent.emit('update-cart-count');
+        } catch (e) {
+            console.error('Add cart error:', e);
         }
     };
 
     // --- Cập nhật số lượng ---
-    const updateQty = async (productId, variantId, qty) => {
-        try {
-            setItems((prev) =>
-                prev.map((i) => (i.productId === productId && i.variantId === variantId ? { ...i, qty } : i)),
-            );
-
-            if (userId) {
-                await axiosClient.put(`/cart/${userId}`, {
-                    productId,
-                    variantId,
-                    qty,
-                });
-            }
-        } catch (error) {
-            console.error('Error updating quantity:', error);
-        }
+    const updateQty = async (itemId, quantity) => {
+        await axiosClient.put('/carts/update', {
+            item_id: itemId,
+            quantity,
+        });
     };
 
     // --- Xóa ---

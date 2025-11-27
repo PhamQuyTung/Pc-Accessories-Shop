@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 
 exports.addToCart = async (req, res) => {
   try {
-    const { product_id, quantity } = req.body;
+    const { product_id, variation_id, quantity } = req.body;
     const userId = req.userId; // ✅ lấy từ middleware xác thực
 
     if (!product_id || !quantity) {
@@ -24,6 +24,7 @@ exports.addToCart = async (req, res) => {
     const existingItem = await Cart.findOne({
       user_id: userId,
       product_id,
+      variation_id,
       isGift: false,
     });
 
@@ -34,6 +35,7 @@ exports.addToCart = async (req, res) => {
       await Cart.create({
         user_id: userId,
         product_id,
+        variation_id,
         quantity,
         isGift: false,
       });
