@@ -191,13 +191,13 @@ function Product({ category }) {
                                             <>
                                                 <div className={cx('price-wrap1')}>
                                                     <span className={cx('original-price')}>
-                                                        {originalPrice.toLocaleString()}₫
+                                                        {originalPrice?.toLocaleString() ?? '0'}₫
                                                     </span>
                                                 </div>
 
                                                 <div className={cx('price-wrap2')}>
                                                     <span className={cx('discount-price')}>
-                                                        {displayPrice.toLocaleString()}₫
+                                                        {displayPrice?.toLocaleString() ?? '0'}₫
                                                     </span>
 
                                                     <span className={cx('discount-percent')}>
@@ -208,7 +208,7 @@ function Product({ category }) {
                                         ) : (
                                             <div className={cx('price-wrap2')}>
                                                 <span className={cx('discount-price')}>
-                                                    {displayPrice.toLocaleString()}₫
+                                                    {displayPrice?.toLocaleString() ?? '0'}₫
                                                 </span>
                                             </div>
                                         )}

@@ -8,35 +8,54 @@ export default function useProductVariations(product, vid) {
     const navigate = useNavigate();
     const location = useLocation();
 
+    const getSafeAttrs = (variation) => {
+        if (!variation?.attributes || !Array.isArray(variation.attributes))
+            return {};
+
+        const attrs = {};
+        variation.attributes.forEach((a) => {
+            const attrId = a?.attrId?._id || a?.attrId;
+            if (!attrId) return;
+
+            let term = null;
+
+            if (Array.isArray(a?.terms)) {
+                term = a.terms[0];
+            } else {
+                term = a?.terms;
+            }
+
+            const termId = term?._id || term;
+            if (termId) attrs[attrId] = termId;
+        });
+
+        return attrs;
+    };
+
     // Khi product hoặc vid thay đổi, set lại activeVariation
     useEffect(() => {
-        if (!product?.variations?.length) return;
+        if (!Array.isArray(product?.variations) || product.variations.length === 0) return;
 
         let variation = null;
 
+        // 1. Query param vid
         if (vid) {
-            // Ưu tiên query param
             variation = product.variations.find((v) => v._id === vid);
         }
 
-        // Nếu không có vid hoặc không match → lấy defaultVariantId
+        // 2. Default variant
         if (!variation && product.defaultVariantId) {
             variation = product.variations.find((v) => v._id === product.defaultVariantId);
         }
 
-        // Nếu vẫn không có → fallback biến thể đầu tiên
+        // 3. Fallback: biến thể đầu tiên
         if (!variation) {
             variation = product.variations[0];
         }
 
-        if (!variation) variation = product.variations[0];
+        if (!variation) return; // tránh crash
 
-        const attrs = {};
-        variation.attributes.forEach((a) => {
-            const attrId = a.attrId._id || a.attrId;
-            const termId = Array.isArray(a.terms) ? a.terms[0]._id : a.terms._id;
-            attrs[attrId] = termId;
-        });
+        const attrs = getSafeAttrs(variation);
 
         setSelectedAttributes(attrs);
         setActiveVariation(variation);
@@ -44,15 +63,19 @@ export default function useProductVariations(product, vid) {
 
     // Khi chọn attribute → tìm biến thể phù hợp
     useEffect(() => {
-        if (!product?.variations?.length) return;
+        if (!Array.isArray(product?.variations)) return;
 
         const match = product.variations.find((v) =>
+            Array.isArray(v.attributes) &&
             v.attributes.every((a) => {
-                const id = a.attrId._id || a.attrId;
-                const t = Array.isArray(a.terms) ? a.terms[0] : a.terms;
-                const termId = t._id || t;
+                const id = a?.attrId?._id || a?.attrId;
+                if (!id) return false;
+
+                const term = Array.isArray(a?.terms) ? a.terms[0] : a?.terms;
+                const termId = term?._id || term;
+
                 return selectedAttributes[id] === termId;
-            }),
+            })
         );
 
         if (match) setActiveVariation(match);
@@ -66,18 +89,14 @@ export default function useProductVariations(product, vid) {
     };
 
     const handleSelectVariation = (variation) => {
-        // 1. Cập nhật selectedAttributes
-        const attrs = {};
-        variation.attributes.forEach((a) => {
-            const attrId = a.attrId._id || a.attrId;
-            const term = Array.isArray(a.terms) ? a.terms[0] : a.terms;
-            attrs[attrId] = term._id || term;
-        });
+        if (!variation) return;
+
+        const attrs = getSafeAttrs(variation);
 
         setSelectedAttributes(attrs);
         setActiveVariation(variation);
 
-        // 2. Update URL ?vid=xxxx (KHÔNG reload)
+        // update URL ?vid=xxxx
         const params = new URLSearchParams(location.search);
         params.set('vid', variation._id);
 

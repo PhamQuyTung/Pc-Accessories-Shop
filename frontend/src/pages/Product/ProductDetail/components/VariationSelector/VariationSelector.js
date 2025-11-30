@@ -59,13 +59,13 @@ const VariationSelector = ({
                 <div className={cx('product-variations-grouped')}>
                     <p className={cx('variations-label')}>Chọn biến thể:</p>
                     <div className={cx('variations-grid')}>
-                        {getSortedVariations(product.variations).map((variation) => {
+                        {getSortedVariations(product.variations).map((variation, index) => {
                             const isActive = isVariationMatching(variation, selectedAttributes);
                             const label = getVariationLabel(variation);
 
                             return (
                                 <button
-                                    key={variation._id}
+                                    key={variation._id || index}
                                     onClick={() => handleSelectVariation(variation)}
                                     className={cx('variation-btn', { active: isActive })}
                                     title={label}

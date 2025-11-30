@@ -54,14 +54,13 @@ class ProductController {
       const limitNum = Number(limit);
       const skip = (pageNum - 1) * limitNum;
 
-      /** -----------------------------
-       * 🧩 1. Xây điều kiện lọc (match)
-       * ----------------------------- */
+      // -----------------------------
+      // 1. Build match
+      // -----------------------------
       const match = { deleted: { $ne: true } };
 
       if (search) match.name = { $regex: search, $options: "i" };
 
-      // Lọc theo categoryId hoặc slug
       if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
         match.category = new mongoose.Types.ObjectId(categoryId);
       } else if (category) {
@@ -69,22 +68,20 @@ class ProductController {
         if (cat) match.category = cat._id;
       }
 
-      // Lọc theo visible
       if (visible !== undefined && visible !== "") {
         match.visible = visible === "true";
       }
 
-      // Nếu không phải admin thì chỉ lấy sản phẩm hiển thị
       if (isAdmin !== "true") match.visible = true;
 
-      /** -----------------------------
-       * 📊 2. Tính tổng số sản phẩm
-       * ----------------------------- */
+      // -----------------------------
+      // 2. Count total
+      // -----------------------------
       const totalCount = await Product.countDocuments(match);
 
-      /** -----------------------------
-       * 🧱 3. Pipeline chính
-       * ----------------------------- */
+      // -----------------------------
+      // 3. Pipeline
+      // -----------------------------
       const pipeline = [
         { $match: match },
 
@@ -110,7 +107,7 @@ class ProductController {
         },
         { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
 
-        // ---- VARIATIONS POPULATE ----
+        // ---- Variations populate safe ----
         {
           $lookup: {
             from: "attributes",
@@ -131,61 +128,74 @@ class ProductController {
           $addFields: {
             variations: {
               $map: {
-                input: "$variations",
+                input: { $ifNull: ["$variations", []] },
                 as: "var",
                 in: {
-                  $mergeObjects: [
-                    "$$var",
-                    {
-                      attributes: {
-                        $map: {
-                          input: "$$var.attributes",
-                          as: "attr",
-                          in: {
-                            attrId: {
-                              $arrayElemAt: [
-                                {
-                                  $filter: {
-                                    input: "$variationAttrData",
-                                    cond: {
-                                      $eq: ["$$this._id", "$$attr.attrId"],
-                                    },
-                                  },
-                                },
-                                0,
-                              ],
-                            },
-                            terms: {
-                              $map: {
-                                input: "$$attr.terms",
-                                as: "termId",
-                                in: {
+                  $let: {
+                    vars: {
+                      varObj: {
+                        $cond: [
+                          { $eq: [{ $type: "$$var" }, "object"] },
+                          "$$var",
+                          {},
+                        ],
+                      },
+                    },
+                    in: {
+                      $mergeObjects: [
+                        "$$varObj",
+                        {
+                          attributes: {
+                            $map: {
+                              input: { $ifNull: ["$$varObj.attributes", []] },
+                              as: "attr",
+                              in: {
+                                attrId: {
                                   $arrayElemAt: [
                                     {
                                       $filter: {
-                                        input: "$variationTermData",
+                                        input: "$variationAttrData",
                                         cond: {
-                                          $eq: ["$$this._id", "$$termId"],
+                                          $eq: ["$$this._id", "$$attr.attrId"],
                                         },
                                       },
                                     },
                                     0,
                                   ],
                                 },
+                                terms: {
+                                  $map: {
+                                    input: { $ifNull: ["$$attr.terms", []] },
+                                    as: "termId",
+                                    in: {
+                                      $arrayElemAt: [
+                                        {
+                                          $filter: {
+                                            input: "$variationTermData",
+                                            cond: {
+                                              $eq: ["$$this._id", "$$termId"],
+                                            },
+                                          },
+                                        },
+                                        0,
+                                      ],
+                                    },
+                                  },
+                                },
                               },
                             },
                           },
                         },
-                      },
+                      ],
                     },
-                  ],
+                  },
                 },
               },
             },
           },
         },
 
-        // ---- GIFT POPULATE ----
+        // ---- Gifts ----
         {
           $lookup: {
             from: "gifts",
@@ -220,7 +230,6 @@ class ProductController {
                         productName: "$$gp.productName",
                         quantity: "$$gp.quantity",
                         finalPrice: "$$gp.finalPrice",
-
                         productData: {
                           $arrayElemAt: [
                             {
@@ -241,7 +250,7 @@ class ProductController {
           },
         },
 
-        // ---- ⭐ Reviews, rating, giá ----
+        // ---- Reviews ----
         {
           $lookup: {
             from: "reviews",
@@ -261,28 +270,28 @@ class ProductController {
             },
             reviewCount: { $size: "$reviews" },
             finalPrice: {
-              $cond: {
-                if: { $gt: ["$discountPrice", 0] },
-                then: "$discountPrice",
-                else: "$price",
-              },
+              $cond: [
+                { $gt: ["$discountPrice", 0] },
+                "$discountPrice",
+                "$price",
+              ],
             },
           },
         },
       ];
 
-      /** -----------------------------
-       * ⚙️ 4. Sort + Phân trang
-       * ----------------------------- */
+      // -----------------------------
+      // 4. Sort + Pagination
+      // -----------------------------
       if (sort && sort.startsWith("price")) {
         pipeline.push({
           $addFields: {
             sortPrice: {
-              $cond: {
-                if: { $gt: [{ $toDouble: "$discountPrice" }, 0] },
-                then: { $toDouble: "$discountPrice" },
-                else: { $toDouble: "$price" },
-              },
+              $cond: [
+                { $gt: ["$discountPrice", 0] },
+                "$discountPrice",
+                "$price",
+              ],
             },
           },
         });
@@ -299,14 +308,14 @@ class ProductController {
 
       pipeline.push({ $skip: skip }, { $limit: limitNum });
 
-      /** -----------------------------
-       * 🚀 5. Chạy pipeline
-       * ----------------------------- */
+      // -----------------------------
+      // 5. Execute
+      // -----------------------------
       const products = await Product.aggregate(pipeline);
 
-      /** -----------------------------
-       * 🧹 6. Làm sạch gifts + thêm status
-       * ----------------------------- */
+      // -----------------------------
+      // 6. Clean + Compute status
+      // -----------------------------
       const cleanedProducts = products.map((p) => {
         const convertedVariations = (p.variations || []).map((v) => ({
           ...v,
@@ -314,7 +323,6 @@ class ProductController {
           attributes: v.attributes || [],
         }));
 
-        // ---- Lấy default variation ----
         let defaultVar =
           convertedVariations.find(
             (v) => v._id === p.defaultVariantId?.toString()
@@ -322,11 +330,10 @@ class ProductController {
           convertedVariations[0] ||
           null;
 
-        // ---- Tính status theo default variation ----
         const status = computeProductStatus({
           importing: p.importing,
           quantity: defaultVar?.quantity ?? p.quantity,
-          variations: defaultVar ? [defaultVar] : [], // ép dạng mảng để file xử lý
+          variations: defaultVar ? [defaultVar] : [],
         });
 
         return {
@@ -334,13 +341,13 @@ class ProductController {
           _id: p._id?.toString(),
           defaultVariantId: p.defaultVariantId?.toString(),
           variations: convertedVariations,
-          status, // ⭐⭐⭐ TRẢ STATUS RA FE
+          status,
         };
       });
 
-      /** -----------------------------
-       * 📦 7. Trả về kết quả
-       * ----------------------------- */
+      // -----------------------------
+      // 7. Return
+      // -----------------------------
       res.status(200).json({
         products: cleanedProducts,
         totalCount,
@@ -349,7 +356,7 @@ class ProductController {
       });
     } catch (err) {
       console.error("❌ Lỗi getAll:", err);
-      res.status(500).json({ message: "Lỗi server", error: err });
+      res.status(500).json({ message: "Lỗi server", error: err.message });
     }
   }
 

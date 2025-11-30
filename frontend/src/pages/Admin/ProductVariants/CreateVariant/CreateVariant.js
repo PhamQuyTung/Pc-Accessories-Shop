@@ -242,7 +242,7 @@ const CreateVariant = () => {
             const variants = matrix.map((row) => ({
                 attributes: row.attributes.map((a) => ({
                     attrId: a.attrId,
-                    termId: a.termId,
+                    terms: [a.termId],
                 })),
                 sku: row.sku,
                 price: Number(row.price),
