@@ -79,30 +79,51 @@ function Product({ category }) {
                 }}
             >
                 {products.map((product) => {
-                    // ===================== Default Variation Logic =====================
-                    let defaultVariation = null;
+                    // ===================== Default Variation Logic (robust) =====================
+                    const variations = Array.isArray(product.variations) ? product.variations : [];
+                    const defId = product.defaultVariantId ? String(product.defaultVariantId) : null;
 
-                    // Nếu có defaultVariantId thì tìm đúng biến thể đó
-                    if (product.defaultVariantId && Array.isArray(product.variations)) {
-                        defaultVariation = product.variations.find((v) => v._id === product.defaultVariantId);
-                    }
+                    // normalize comparison by stringifying both sides
+                    let defaultVariation = defId
+                        ? variations.find((v) => String(v._id) === defId) || null
+                        : null;
 
-                    // Nếu không có → fallback biến thể đầu tiên
-                    if (!defaultVariation) {
-                        defaultVariation = product.variations?.[0] || null;
-                    }
+                    // fallback to first available variation
+                    defaultVariation = defaultVariation || variations[0] || null;
 
                     const displayImage =
                         defaultVariation?.thumbnail || defaultVariation?.images?.[0] || product.images?.[0];
 
-                    const displayPrice = defaultVariation
-                        ? (defaultVariation.discountPrice ?? defaultVariation.price)
-                        : (product.discountPrice ?? product.price);
+                    // Robust price logic: treat discountPrice === 0 as "no discount"
+                    const toNum = (v) => (typeof v === 'number' && !isNaN(v) ? v : null);
 
-                    const originalPrice = defaultVariation ? defaultVariation.price : product.price;
+                    const variationPrice = toNum(defaultVariation?.price);
+                    const variationDiscount = toNum(defaultVariation?.discountPrice);
+                    const productPriceNum = toNum(product?.price);
+                    const productDiscountNum = toNum(product?.discountPrice);
 
-                    const hasDiscount =
-                        defaultVariation?.discountPrice && defaultVariation.discountPrice < defaultVariation.price;
+                    let displayPrice = 0;
+                    let originalPrice = 0;
+
+                    if (defaultVariation) {
+                        if (variationDiscount !== null && variationDiscount > 0 && variationPrice !== null && variationDiscount < variationPrice) {
+                            displayPrice = variationDiscount;
+                            originalPrice = variationPrice;
+                        } else {
+                            displayPrice = variationPrice ?? 0;
+                            originalPrice = variationPrice ?? 0;
+                        }
+                    } else {
+                        if (productDiscountNum !== null && productDiscountNum > 0 && productPriceNum !== null && productDiscountNum < productPriceNum) {
+                            displayPrice = productDiscountNum;
+                            originalPrice = productPriceNum;
+                        } else {
+                            displayPrice = productPriceNum ?? 0;
+                            originalPrice = productPriceNum ?? 0;
+                        }
+                    }
+
+                    const hasDiscount = originalPrice > 0 && displayPrice < originalPrice;
 
                     return (
                         <SwiperSlide key={product._id} className={cx('custom-slide')}>
@@ -191,13 +212,13 @@ function Product({ category }) {
                                             <>
                                                 <div className={cx('price-wrap1')}>
                                                     <span className={cx('original-price')}>
-                                                        {originalPrice?.toLocaleString() ?? '0'}₫
+                                                        {originalPrice.toLocaleString()}₫
                                                     </span>
                                                 </div>
 
                                                 <div className={cx('price-wrap2')}>
                                                     <span className={cx('discount-price')}>
-                                                        {displayPrice?.toLocaleString() ?? '0'}₫
+                                                        {displayPrice.toLocaleString()}₫
                                                     </span>
 
                                                     <span className={cx('discount-percent')}>
@@ -208,7 +229,7 @@ function Product({ category }) {
                                         ) : (
                                             <div className={cx('price-wrap2')}>
                                                 <span className={cx('discount-price')}>
-                                                    {displayPrice?.toLocaleString() ?? '0'}₫
+                                                    {displayPrice.toLocaleString()}₫
                                                 </span>
                                             </div>
                                         )}
