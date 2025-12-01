@@ -180,9 +180,7 @@ function EditVariant() {
         if (!form.sku.trim()) return toast('SKU không được để trống', 'error');
         if (!form.price || Number(form.price) <= 0) return toast('Giá phải > 0', 'error');
 
-        // Check trùng SKU FE
         const skuExists = allVariants.some((v) => v.sku === form.sku && v._id !== variantId);
-
         if (skuExists) {
             toast('SKU đã tồn tại trong sản phẩm!', 'error');
             return;
@@ -191,15 +189,41 @@ function EditVariant() {
         setSaving(true);
 
         try {
+            // ✅ Normalize attributes before sending
+            const normalizedAttrs = (form.attributes || [])
+              .filter(a => a && a.attrId && a.terms && a.terms.length > 0)
+              .map(a => {
+                // ✅ Extract _id nếu a.attrId là object
+                const attrId = typeof a.attrId === 'object' && a.attrId?._id 
+                  ? String(a.attrId._id) 
+                  : String(a.attrId);
+
+                // ✅ Extract _id từ terms (có thể là array of objects)
+                const terms = Array.isArray(a.terms) 
+                  ? a.terms.map(t => {
+                      return typeof t === 'object' && t?._id ? String(t._id) : String(t);
+                    })
+                  : [typeof a.terms === 'object' && a.terms?._id ? String(a.terms._id) : String(a.terms)];
+
+                return {
+                  attrId,
+                  terms
+                };
+              });
+
+            console.log('📤 Sending normalized attributes:', normalizedAttrs); // DEBUG
+
             const payload = {
                 sku: form.sku,
                 price: Number(form.price),
-                discountPrice: form.discountPrice ? Number(form.discountPrice) : null,
+                discountPrice: form.discountPrice && Number(form.discountPrice) > 0 ? Number(form.discountPrice) : null,
                 quantity: Number(form.quantity),
-                images: form.images, // MULTI-IMAGES gửi lên BE
+                images: form.images,
                 thumbnail: form.thumbnail || form.images[0] || '',
-                attributes: form.attributes,
+                attributes: normalizedAttrs,
             };
+
+            console.log('📤 Full payload:', payload); // DEBUG
 
             await updateVariant(variantId, payload);
 

@@ -191,24 +191,63 @@ module.exports = {
 
       const variant = product.variations.id(variantId);
 
-      // Fix attributes update
-      if (update.attributes) {
-        update.attributes = update.attributes.map((a) => ({
-          attrId: new mongoose.Types.ObjectId(a.attrId),
-          terms: a.terms.map((t) => new mongoose.Types.ObjectId(t)),
-        }));
+      // Fix attributes update with validation
+      if (update.attributes && Array.isArray(update.attributes)) {
+        try {
+          update.attributes = update.attributes
+            .filter((a) => a && a.attrId) // bỏ null/undefined
+            .map((a) => {
+              // ✅ Handle both object & string
+              let attrIdStr = String(a.attrId);
+              if (typeof a.attrId === 'object' && a.attrId?._id) {
+                attrIdStr = String(a.attrId._id);
+              }
 
-        const newMap = normalizeAttrs(update.attributes);
+              if (!isValidObjectId(attrIdStr)) {
+                throw new Error(`attrId không hợp lệ: ${attrIdStr}`);
+              }
 
-        const duplicate = product.variations.find((v) => {
-          if (String(v._id) === variantId) return false;
-          return isSameAttrs(normalizeAttrs(v.attributes), newMap);
-        });
+              // ✅ Handle terms: array of objects or strings
+              let termsArray = Array.isArray(a.terms) ? a.terms : [a.terms];
+              termsArray = termsArray
+                .filter((t) => t) // bỏ null/undefined
+                .map((t) => {
+                  let tStr = String(t);
+                  if (typeof t === 'object' && t?._id) {
+                    tStr = String(t._id);
+                  }
+                  if (!isValidObjectId(tStr)) {
+                    throw new Error(`termId không hợp lệ: ${tStr}`);
+                  }
+                  return new mongoose.Types.ObjectId(tStr);
+                });
 
-        if (duplicate)
-          return res.status(400).json({
-            message: "Đã tồn tại biến thể với cặp thuộc tính này.",
+              if (termsArray.length === 0) {
+                throw new Error('terms array không được để trống');
+              }
+
+              return {
+                attrId: new mongoose.Types.ObjectId(attrIdStr),
+                terms: termsArray,
+              };
+            });
+
+          // Duplicate check
+          const newMap = normalizeAttrs(update.attributes);
+          const duplicate = product.variations.find((v) => {
+            if (String(v._id) === variantId) return false;
+            return isSameAttrs(normalizeAttrs(v.attributes), newMap);
           });
+
+          if (duplicate)
+            return res.status(400).json({
+              message: "Đã tồn tại biến thể với cặp thuộc tính này.",
+            });
+        } catch (attrErr) {
+          return res.status(400).json({
+            message: `Lỗi xử lý attributes: ${attrErr.message}`,
+          });
+        }
       }
 
       Object.assign(variant, update);
@@ -223,7 +262,7 @@ module.exports = {
       });
     } catch (err) {
       console.error("Lỗi cập nhật biến thể:", err);
-      res.status(500).json({ message: "Lỗi server", error: err });
+      res.status(500).json({ message: "Lỗi server", error: err.message });
     }
   },
 
