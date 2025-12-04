@@ -64,6 +64,52 @@ function CheckoutPage() {
         }, 0);
     };
 
+    // ================= HELPER: Extract price data from product/variation =================
+    const getPriceData = (product, variation) => {
+        const toNum = (v) => (typeof v === 'number' && !isNaN(v) ? v : 0);
+
+        if (variation) {
+            // ✅ Ưu tiên lấy từ variation
+            const discountPrice = toNum(variation.discountPrice);
+            const price = toNum(variation.price);
+
+            return {
+                basePrice: discountPrice > 0 ? discountPrice : price,
+                originalPrice: price,
+                hasDiscount: discountPrice > 0 && discountPrice < price,
+            };
+        } else {
+            // Fallback to product
+            const discountPrice = toNum(product.discountPrice);
+            const price = toNum(product.price);
+
+            return {
+                basePrice: discountPrice > 0 ? discountPrice : price,
+                originalPrice: price,
+                hasDiscount: discountPrice > 0 && discountPrice < price,
+            };
+        }
+    };
+
+    // ================= HELPER: Extract variation attributes label =================
+    const getVariationLabel = (variation) => {
+        if (!variation || !variation.attributes || variation.attributes.length === 0) {
+            return null;
+        }
+
+        return variation.attributes
+            .map((attr) => {
+                const attrName = attr.attrId?.name || 'Attr';
+                const termName = Array.isArray(attr.terms)
+                    ? attr.terms[0]?.name || attr.terms[0]
+                    : attr.terms?.name || attr.terms;
+
+                return `${attrName}: ${termName}`;
+            })
+            .filter(Boolean)
+            .join(' - ');
+    };
+
     // === Lấy giỏ hàng + khuyến mãi ===
     useEffect(() => {
         const fetchCart = async () => {
@@ -72,10 +118,13 @@ function CheckoutPage() {
                 const items = Array.isArray(res.data.items) ? res.data.items : [];
                 setCartItems(items);
 
+                // ✅ Tính subtotal lấy từ variation hoặc product
                 const sub = items.reduce((acc, item) => {
-                    const price =
-                        item.product_id.discountPrice > 0 ? item.product_id.discountPrice : item.product_id.price;
-                    return acc + price * item.quantity;
+                    const product = item.product_id || {};
+                    const variation = item.variation_id || null;
+                    const { basePrice } = getPriceData(product, variation);
+                    const quantity = item.quantity || 1;
+                    return acc + basePrice * quantity;
                 }, 0);
                 setSubtotal(sub);
 
@@ -84,6 +133,7 @@ function CheckoutPage() {
                     const promoRes = await axiosClient.post('/promotion-gifts/apply-cart', {
                         cartItems: items.map((i) => ({
                             product_id: i.product_id._id,
+                            variation_id: i.variation_id?._id || null,
                             quantity: i.quantity,
                             createdAt: i.createdAt,
                         })),
@@ -141,11 +191,21 @@ function CheckoutPage() {
         navigate('/payment', { state: payload });
     };
 
-    // === Hàm render giỏ hàng tách dòng (giống CartPage) ===
+    // === Hàm render giỏ hàng tách dòng (UPDATE) ===
     const renderCartRow = (item) => {
         const product = item.product_id;
+        const variation = item.variation_id || null;
         const productId = product._id;
-        const basePrice = product.discountPrice > 0 ? product.discountPrice : product.price;
+
+        // ✅ Lấy giá từ variation hoặc product
+        const { basePrice, originalPrice, hasDiscount } = getPriceData(product, variation);
+
+        // ✅ Lấy ảnh ưu tiên từ variation
+        const imageSrc = variation?.images?.[0] || product.images?.[0];
+
+        // ✅ Lấy variation attributes label
+        const variationLabel = getVariationLabel(variation);
+
         const promoItem = promotionSummary.discounts.find((d) => d.productId === productId);
 
         const rows = [];
@@ -158,12 +218,10 @@ function CheckoutPage() {
 
                 rows.push(
                     <div key={`${productId}-promo`} className={cx('cart-item', 'promo-row')}>
-                        <img
-                            src={Array.isArray(product.images) ? product.images[0] : product.images}
-                            alt={product.name}
-                        />
+                        <img src={imageSrc || '/placeholder.png'} alt={product.name} />
                         <div className={cx('cart-item__info')}>
                             <p className={cx('cart-item__name')}>{product.name}</p>
+                            {variationLabel && <div className={cx('variation-label')}>{variationLabel}</div>}
                             <div className={cx('promo-tag')}>🎁 {promoItem.promotionTitle}</div>
                             <p className={cx('cart-item__qty')}>SL: {promoItem.discountedQty}</p>
                             <p className={cx('cart-item__price')}>Đơn giá: {discountedPrice.toLocaleString()}₫</p>
@@ -182,12 +240,10 @@ function CheckoutPage() {
 
                 rows.push(
                     <div key={`${productId}-normal`} className={cx('cart-item')}>
-                        <img
-                            src={Array.isArray(product.images) ? product.images[0] : product.images}
-                            alt={product.name}
-                        />
+                        <img src={imageSrc || '/placeholder.png'} alt={product.name} />
                         <div className={cx('cart-item__info')}>
                             <p className={cx('cart-item__name')}>{product.name}</p>
+                            {variationLabel && <div className={cx('variation-label')}>{variationLabel}</div>}
                             <p className={cx('cart-item__qty')}>SL: {promoItem.normalQty}</p>
                             <p className={cx('cart-item__price')}>Đơn giá: {basePrice.toLocaleString()}₫</p>
                             <div className={cx('cart-item__total')}>
@@ -204,9 +260,10 @@ function CheckoutPage() {
 
             rows.push(
                 <div key={productId} className={cx('cart-item')}>
-                    <img src={Array.isArray(product.images) ? product.images[0] : product.images} alt={product.name} />
+                    <img src={imageSrc || '/placeholder.png'} alt={product.name} />
                     <div className={cx('cart-item__info')}>
                         <p className={cx('cart-item__name')}>{product.name}</p>
+                        {variationLabel && <div className={cx('variation-label')}>{variationLabel}</div>}
                         <p className={cx('cart-item__qty')}>SL: {item.quantity}</p>
                         <p className={cx('cart-item__price')}>Đơn giá: {basePrice.toLocaleString()}₫</p>
                         <div className={cx('cart-item__total')}>
@@ -418,5 +475,4 @@ function AddressSelectorForm({ form, onChange, agreed, setAgreed, onSubmit }) {
         </form>
     );
 }
-
 export default CheckoutPage;
