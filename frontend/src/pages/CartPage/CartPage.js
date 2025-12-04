@@ -1,3 +1,4 @@
+// CartPage.js (các import giữ nguyên)
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axiosClient from '~/utils/axiosClient';
@@ -35,19 +36,17 @@ function CartPage() {
 
             const initialQuantities = {};
             items.forEach((item) => {
-                if (item.product_id?._id) {
-                    initialQuantities[item.product_id._id] = item.quantity;
-                }
+                initialQuantities[item._id] = item.quantity;
             });
             setQuantities(initialQuantities);
 
             cartEvent.emit('update-cart-count');
 
-            // ✅ Gọi API áp dụng khuyến mãi
             if (items.length > 0) {
                 const promoRes = await axiosClient.post('/promotion-gifts/apply-cart', {
                     cartItems: items.map((i) => ({
-                        product_id: i.product_id._id,
+                        product_id: i.product_id?._id,
+                        variation_id: i.variation_id?._id || null,
                         quantity: i.quantity,
                         createdAt: i.createdAt,
                     })),
@@ -65,7 +64,7 @@ function CartPage() {
         fetchCart();
     }, []);
 
-    // === Cảnh báo sản phẩm bị xóa ===
+    // removed items alert
     useEffect(() => {
         if (!removedHandled && removedItems.length > 0) {
             Swal.fire({
@@ -82,45 +81,102 @@ function CartPage() {
         }
     }, [removedItems, removedHandled]);
 
-    // === Cập nhật số lượng ===
-    const updateQuantity = async (productId, delta) => {
+    const updateQuantity = async (cartItemId, delta) => {
         if (isUpdating) return;
         setIsUpdating(true);
 
-        const currentQty = quantities[productId] || 1;
+        const currentQty = quantities[cartItemId] || 1;
         const newQuantity = currentQty + delta;
-        if (newQuantity < 1) return;
+        if (newQuantity < 1) {
+            setIsUpdating(false);
+            return;
+        }
 
         try {
             await axiosClient.put('/carts/update', {
-                product_id: productId,
+                cartItemId,
                 quantity: newQuantity,
             });
-            setQuantities((prev) => ({ ...prev, [productId]: newQuantity }));
+            setQuantities((prev) => ({ ...prev, [cartItemId]: newQuantity }));
             cartEvent.emit('update-cart-count');
-            await fetchCart();  // ✅ Cập nhật lại giỏ hàng để lấy khuyến mãi mới
+            await fetchCart();
         } catch (error) {
             console.error('❌ Lỗi cập nhật số lượng:', error);
         } finally {
-            setIsUpdating(false); // ✅ đảm bảo reset lại sau mỗi thao tác
-
+            setIsUpdating(false);
         }
     };
 
-    // === Xóa sản phẩm ===
-    const removeFromCart = async (productId) => {
-        await axiosClient.delete('/carts/remove', { data: { product_id: productId } });
-        toast('Đã xoá sản phẩm khỏi giỏ hàng!', 'success');
-        fetchCart();
-        cartEvent.emit('update-cart-count');
+    const removeFromCart = async (cartItemId) => {
+        try {
+            await axiosClient.delete('/carts/remove', { data: { cartItemId } });
+            toast('Đã xoá sản phẩm khỏi giỏ hàng!', 'success');
+            await fetchCart();
+            cartEvent.emit('update-cart-count');
+        } catch (err) {
+            console.error('❌ Lỗi removeFromCart:', err);
+        }
     };
 
-    // === Tổng trước giảm ===
+    // ================= HELPER: Extract price từ variation hoặc product =================
+    const getPriceData = (product, variation) => {
+        const toNum = (v) => (typeof v === 'number' && !isNaN(v) ? v : 0);
+
+        if (variation) {
+            // ✅ Ưu tiên lấy từ variation
+            const discountPrice = toNum(variation.discountPrice);
+            const price = toNum(variation.price);
+
+            if (price === 0) {
+                console.warn('⚠️ Variation price is 0:', { product: product.name, variation });
+            }
+
+            return {
+                basePrice: discountPrice > 0 ? discountPrice : price,
+                originalPrice: price,
+                hasDiscount: discountPrice > 0 && discountPrice < price,
+            };
+        } else {
+            // Fallback to product
+            const discountPrice = toNum(product.discountPrice);
+            const price = toNum(product.price);
+
+            return {
+                basePrice: discountPrice > 0 ? discountPrice : price,
+                originalPrice: price,
+                hasDiscount: discountPrice > 0 && discountPrice < price,
+            };
+        }
+    };
+
+    // ================= HELPER: Extract variation attributes label =================
+    const getVariationLabel = (variation) => {
+        if (!variation || !variation.attributes || variation.attributes.length === 0) {
+            return null;
+        }
+
+        return variation.attributes
+            .map((attr) => {
+                const attrName = attr.attrId?.name || 'Attr';
+                const termName = Array.isArray(attr.terms)
+                    ? attr.terms[0]?.name || attr.terms[0]
+                    : attr.terms?.name || attr.terms;
+
+                return `${attrName}: ${termName}`;
+            })
+            .filter(Boolean)
+            .join(' - ');
+    };
+
+    // ================= Tính tổng =================
     const subTotal = cartItems.reduce((acc, item) => {
-        const product = item.product_id;
-        const finalPrice = product.discountPrice > 0 ? product.discountPrice : product.price;
-        const quantity = quantities[product._id] || item.quantity;
-        return acc + finalPrice * quantity;
+        const product = item.product_id || {};
+        const variation = item.variation_id || null;
+
+        const { basePrice } = getPriceData(product, variation);
+        const quantity = quantities[item._id] || item.quantity || 1;
+
+        return acc + (basePrice * quantity);
     }, 0);
 
     const totalDiscount = promotionSummary.totalDiscount || 0;
@@ -140,104 +196,81 @@ function CartPage() {
         );
     }
 
-    // === Render một dòng sản phẩm (có thể tách ra nhiều dòng nếu có promo) ===
-    const renderCartRow = (item, promoItem) => {
-        const product = item.product_id;
-        const productId = product._id;
-        const basePrice = product.discountPrice > 0 ? product.discountPrice : product.price;
+    // ================= Render một dòng sản phẩm =================
+    const renderCartRow = (item) => {
+        const product = item.product_id || {};
+        const variation = item.variation_id || null;
+        const cartItemId = item._id;
 
-        // Nếu có khuyến mãi, chia ra 2 dòng
-        if (promoItem) {
-            const totalQty = (promoItem.discountedQty || 0) + (promoItem.normalQty || 0);
-            const discountPerItem = promoItem.discountPerItem || 0;
-            const discountedPrice = basePrice - discountPerItem;
+        // ✅ Extract image ưu tiên variation → product
+        const imageSrc = variation?.images?.[0] || product.images?.[0];
 
-            const totalDiscounted = promoItem.discountedQty * discountedPrice;
-            const totalNormal = promoItem.normalQty * basePrice;
-            const total = totalDiscounted + totalNormal;
+        // ✅ Get price data
+        const { basePrice, originalPrice, hasDiscount } = getPriceData(product, variation);
 
-            return (
-                <div key={productId} className={cx('row-wrapper')}>
-                    <div className={cx('row', 'promo-row')}>
-                        <div className={cx('product')}>
-                            <img
-                                src={Array.isArray(product.images) ? product.images[0] : product.images}
-                                alt={product.name}
-                            />
-                            <div className={cx('info')}>
-                                <Link to={`/products/${product.slug}`} className={cx('product-name')}>
-                                    {product.name}
-                                </Link>
-                                {promoItem.discountedQty > 0 && (
-                                    <div
-                                        className={cx('promo-tag')}
-                                        data-tooltip={`Giảm ${promoItem.discountedQty} sản phẩm, ${promoItem.normalQty} không giảm`}
-                                    >
-                                        <FaGift /> {promoItem.promotionTitle} ({promoItem.discountedQty}/{totalQty})
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+        // ✅ Get variation label (attributes)
+        const variationLabel = getVariationLabel(variation);
 
-                        <div className={cx('price')}>
-                            {promoItem.discountedQty > 0 ? (
-                                <>
-                                    <span className={cx('original')}>{basePrice.toLocaleString()}₫</span>
-                                    <span className={cx('discounted')}>{discountedPrice.toLocaleString()}₫</span>
-                                </>
-                            ) : (
-                                <span>{basePrice.toLocaleString()}₫</span>
+        // ✅ Quantity
+        const qty = quantities[cartItemId] || item.quantity || 1;
+
+        // ✅ Subtotal
+        const subtotal = basePrice * qty;
+
+        return (
+            <div key={cartItemId} className={cx('row-wrapper')}>
+                <div className={cx('row')}>
+                    {/* Sản phẩm + Ảnh */}
+                    <div className={cx('product')}>
+                        <img src={imageSrc || '/placeholder.png'} alt={product.name} />
+                        <div>
+                            <Link to={`/products/${product.slug}`} className={cx('product-name')}>
+                                {product.name}
+                            </Link>
+                            {/* Hiển thị biến thể attributes */}
+                            {variationLabel && (
+                                <div className={cx('variation-label')}>
+                                    {variationLabel}
+                                </div>
                             )}
                         </div>
-
-                        <div className={cx('quantity')}>
-                            <button onClick={() => updateQuantity(productId, -1)}>-</button>
-                            <span>{quantities[productId] || totalQty}</span>
-                            <button onClick={() => updateQuantity(productId, 1)}>+</button>
-                        </div>
-
-                        <div className={cx('subtotal')}>
-                            <span className={cx('discounted')}>{total.toLocaleString()}₫</span>
-                        </div>
-
-                        <div>
-                            <button className={cx('remove')} onClick={() => removeFromCart(productId)}>
-                                <FaTrashAlt />
-                            </button>
-                        </div>
                     </div>
-                </div>
-            );
-        }
 
-        // Không có khuyến mãi → render bình thường
-        const qty = quantities[productId] || item.quantity;
-        const total = basePrice * qty;
-        return (
-            <div key={item._id} className={cx('row-wrapper')}>
-                <div className={cx('row')}>
-                    <div className={cx('product')}>
-                        <img
-                            src={Array.isArray(product.images) ? product.images[0] : product.images}
-                            alt={product.name}
-                        />
-                        <Link to={`/products/${product.slug}`} className={cx('product-name')}>
-                            {product.name}
-                        </Link>
-                    </div>
+                    {/* Giá */}
                     <div className={cx('price')}>
-                        <span className={cx('discounted')}>{basePrice.toLocaleString()}₫</span>
+                        {hasDiscount ? (
+                            <>
+                                <span className={cx('original-price')}>
+                                    {originalPrice.toLocaleString()}₫
+                                </span>
+                                <span className={cx('discount-price')}>
+                                    {basePrice.toLocaleString()}₫
+                                </span>
+                            </>
+                        ) : (
+                            <span className={cx('price-value')}>
+                                {basePrice.toLocaleString()}₫
+                            </span>
+                        )}
                     </div>
+
+                    {/* Số lượng */}
                     <div className={cx('quantity')}>
-                        <button onClick={() => updateQuantity(productId, -1)}>-</button>
+                        <button onClick={() => updateQuantity(cartItemId, -1)}>−</button>
                         <span>{qty}</span>
-                        <button onClick={() => updateQuantity(productId, 1)}>+</button>
+                        <button onClick={() => updateQuantity(cartItemId, 1)}>+</button>
                     </div>
+
+                    {/* Thành tiền */}
                     <div className={cx('subtotal')}>
-                        <span>{total.toLocaleString()}₫</span>
+                        <span className={cx('subtotal-value')}>
+                            {subtotal.toLocaleString()}₫
+                        </span>
                     </div>
+
+                    {/* Xóa */}
                     <div>
-                        <button className={cx('remove')} onClick={() => removeFromCart(productId)}>
+                        <button className={cx('remove')} onClick={() => removeFromCart(cartItemId)}>
                             <FaTrashAlt />
                         </button>
                     </div>
@@ -268,14 +301,11 @@ function CartPage() {
                             <div>Xóa</div>
                         </div>
 
-                        {cartItems.map((item) => {
-                            const promoItem = promotionSummary.discounts?.find(
-                                (p) => p.productId === item.product_id._id,
-                            );
-                            return renderCartRow(item, promoItem);
-                        })}
+                        {/* Render tất cả cart items */}
+                        {cartItems.map((item) => renderCartRow(item))}
                     </div>
 
+                    {/* Thông tin đơn hàng */}
                     <div className={cx('summary')}>
                         <div className={cx('summary-wrap')}>
                             <h3>Thông tin đơn hàng</h3>
@@ -284,10 +314,12 @@ function CartPage() {
                                 <span>Tạm tính</span>
                                 <span>{subTotal.toLocaleString()}₫</span>
                             </div>
+
                             <div className={cx('summary-item')}>
                                 <span>Phí vận chuyển</span>
                                 <span>Miễn phí</span>
                             </div>
+
                             <div className={cx('summary-item')}>
                                 <span>Khuyến mãi</span>
                                 <span>- {totalDiscount.toLocaleString()}₫</span>
