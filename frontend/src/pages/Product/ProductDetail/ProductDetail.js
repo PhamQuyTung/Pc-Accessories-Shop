@@ -244,10 +244,11 @@ function ProductDetailView({
                                         reviewCount={reviews.reviews.length}
                                         onClickRatings={handleClickRating}
                                     />
+                                    {/* ✅ FIX: Pass isFavorite result to FavoriteButton */}
                                     <FavoriteButton
                                         productId={product._id}
                                         isFavorite={fav.isFavorite(product._id)}
-                                        onClick={handleToggleFavorite}
+                                        onToggle={handleToggleFavorite}
                                     />
                                 </div>
 

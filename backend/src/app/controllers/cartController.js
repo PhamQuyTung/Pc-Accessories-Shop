@@ -73,30 +73,25 @@ exports.addToCart = async (req, res) => {
 // ======================================================
 // GET CART
 // ======================================================
-// ================= GET CART (optimized version) =================
+// ================= FIX: cartController.js - getCart (dùng populate) =================
 exports.getCart = async (req, res) => {
   try {
     const userId = req.userId;
 
-    const items = await Cart.find({ user_id: userId }).populate({
-      path: "product_id",
-      select:
-        "name price discountPrice images slug deleted visible hasGifts gifts variations defaultVariantId",
-      populate: [
-        {
-          path: "gifts.products.productId",
-          select: "name slug price",
+    // ✅ Fetch cart items với populate product (bao gồm cả variations field)
+    const items = await Cart.find({ user_id: userId })
+      .populate({
+        path: "product_id",
+        select: "name price discountPrice images slug deleted visible hasGifts gifts variations",
+        populate: {
+          path: "gifts",
+          select: "title products",
+          populate: {
+            path: "products.productId",
+            select: "name slug price",
+          },
         },
-        {
-          path: "variations.attributes.attrId", // ✅ Populate attribute names
-          select: "name type",
-        },
-        {
-          path: "variations.attributes.terms", // ✅ Populate term names
-          select: "name colorCode",
-        },
-      ],
-    });
+      });
 
     if (!items || items.length === 0) {
       return res.status(200).json({ items: [], removed: [] });
@@ -105,6 +100,41 @@ exports.getCart = async (req, res) => {
     const validItems = [];
     const removed = [];
 
+    // Get product IDs để batch populate variation attributes
+    const productIds = [
+      ...new Set(items.map((item) => String(item.product_id._id))),
+    ];
+
+    const Product = require("../models/product");
+    
+    // ✅ Populate variation attributes (1 query duy nhất)
+    const productsWithVariations = await Product.find(
+      { _id: { $in: productIds } }
+    )
+      .select("_id variations")
+      .populate("variations.attributes.attrId", "name")
+      .populate("variations.attributes.terms", "name colorCode");
+
+    console.log('🔍 DEBUG productsWithVariations[0].variations:', 
+      JSON.stringify(productsWithVariations[0]?.variations?.[0], null, 2)
+    );
+
+    const variationMap = {};
+    for (const p of productsWithVariations) {
+      const variations = p.toObject?.().variations || p.variations;
+      variationMap[String(p._id)] = variations;
+      
+      console.log(`📦 Variation map for ${p._id}:`, {
+        count: variations?.length,
+        firstVariation: variations?.[0] ? {
+          _id: String(variations[0]._id),
+          quantity: variations[0].quantity,
+          price: variations[0].price,
+        } : null,
+      });
+    }
+
+    // Process each cart item
     for (const item of items) {
       const product = item.product_id;
 
@@ -114,17 +144,46 @@ exports.getCart = async (req, res) => {
         continue;
       }
 
-      // ✅ Map variation với attributes đã populate
-      const variation =
-        item.variation_id && product.variations
-          ? product.variations.id(item.variation_id)
-          : null;
+      let variation = null;
+      if (item.variation_id && product.variations) {
+        const populatedVariations = variationMap[String(product._id)] || product.variations;
+
+        console.log(`🔍 Looking for variation ${item.variation_id} in product ${product.name}:`, {
+          availableVariations: populatedVariations?.map(v => ({
+            _id: String(v._id),
+            qty: v.quantity,
+          })),
+        });
+
+        variation = populatedVariations.find(
+          (v) => String(v._id) === String(item.variation_id)
+        );
+
+        if (!variation) {
+          console.warn(
+            `⚠️ Variation ${item.variation_id} not found in ${product.name}`
+          );
+          removed.push({
+            _id: item._id,
+            name: `${product.name} - (Biến thể không tồn tại)`,
+          });
+          await Cart.deleteOne({ _id: item._id });
+          continue;
+        }
+
+        console.log(`✅ Found variation with stock:`, {
+          product: product.name,
+          variationId: String(variation._id),
+          stock: variation.quantity,
+          price: variation.price,
+        });
+      }
 
       validItems.push({
         _id: item._id,
         user_id: item.user_id,
         product_id: product,
-        variation_id: variation, // ✅ Đã có attrId.name + terms[].name
+        variation_id: variation,
         quantity: item.quantity,
         isGift: item.isGift,
         createdAt: item.createdAt,
@@ -134,7 +193,7 @@ exports.getCart = async (req, res) => {
 
     return res.status(200).json({ items: validItems, removed });
   } catch (error) {
-    console.error("🔥 Lỗi khi lấy giỏ hàng:", error);
+    console.error("🔥 Lỗi getCart:", error);
     return res.status(500).json({ message: "Lỗi server khi lấy giỏ hàng" });
   }
 };

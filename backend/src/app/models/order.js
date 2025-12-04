@@ -15,20 +15,23 @@ const orderSchema = new mongoose.Schema(
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product",
         },
-        productName: String, // tên tại thời điểm đặt hàng
+        variation_id: {
+          type: mongoose.Schema.Types.ObjectId,
+          default: null,
+        },
+        productName: String,
         quantity: Number,
-        price: Number, // giá gốc
-        discountPrice: Number, // giá giảm (nếu có)
-        finalPrice: Number, // giá thực tế (price hoặc discountPrice)
-        total: Number, // finalPrice * quantity
-        // ⚡️ THÊM PHẦN NÀY ĐỂ LƯU QUÀ TẶNG
+        price: Number,
+        discountPrice: Number,
+        finalPrice: Number,
+        total: Number,
         gifts: [
           {
             productId: {
               type: mongoose.Schema.Types.ObjectId,
               ref: "Product",
             },
-            quantity: Number, // số lượng quà
+            quantity: Number,
           },
         ],
       },
