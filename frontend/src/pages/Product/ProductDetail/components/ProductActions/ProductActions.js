@@ -2,25 +2,14 @@ import React from 'react';
 import cx from 'classnames';
 import styles from './ProductActions.module.scss';
 
-const ProductActions = ({ 
-    isAddingToCart, 
-    product, 
-    activeVariation, 
-    onAddToCart 
-}) => {
+const ProductActions = ({ isAddingToCart, product, activeVariation, onAddToCart }) => {
+    const isOutOfStock = activeVariation && Number(activeVariation.quantity) === 0;
 
-    const isDisabled =
-        isAddingToCart ||
-        product?.status?.includes('hết hàng') ||
-        product?.status?.includes('đang nhập hàng');
+    const isDisabled = isAddingToCart || !activeVariation || isOutOfStock;
 
     return (
         <div className={styles.actionsWrapper}>
-            <button
-                className={cx(styles.addToCart)}
-                onClick={onAddToCart}
-                disabled={isDisabled}
-            >
+            <button className={cx(styles.addToCart)} onClick={onAddToCart} disabled={isDisabled}>
                 <span className={styles.mainText}>MUA NGAY</span>
                 <span className={styles.subText}>Giao tận nơi/Nhận tại cửa hàng</span>
             </button>
