@@ -230,3 +230,28 @@
     cursor: pointer;
     font-size: 13px;
 }
+
+.card2 {
+    
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #444;
+    }
+
+    .ql-container {
+        border-radius: 8px;
+        min-height: 150px;
+    }
+
+    .ql-toolbar {
+        border-radius: 8px 8px 0 0;
+    }
+}

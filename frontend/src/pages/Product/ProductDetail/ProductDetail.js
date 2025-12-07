@@ -197,10 +197,16 @@ function ProductDetailView({
     // Render nội dung tab
     const renderTabContent = () => {
         switch (activeTab) {
-            case 'description':
-                return <ExpandableContent html={product.longDescription || '<p>Không có mô tả chi tiết</p>'} />;
+            case 'description': {
+                const longDesc =
+                    activeVariation?.longDescription || product.longDescription || '<p>Không có mô tả chi tiết</p>';
+
+                return <ExpandableContent html={longDesc} />;
+            }
+
             case 'additional':
                 return <SpecsTable specs={product.specs} />;
+
             case 'reviews':
                 return (
                     <div ref={reviewSectionRef}>
@@ -209,6 +215,7 @@ function ProductDetailView({
                         <AddReviewForm productId={product._id} submitReview={reviews.submitReview} toast={toast} />
                     </div>
                 );
+
             default:
                 return null;
         }
@@ -283,7 +290,9 @@ function ProductDetailView({
                                     quantity={quantity}
                                     setQuantity={setQuantity}
                                 />
-                                <ProductShortDescription shortDescription={product.shortDescription} />
+                                <ProductShortDescription
+                                    shortDescription={activeVariation?.shortDescription || product.shortDescription}
+                                />
                                 <PromotionSection promotions={promotionGifts || product.promotions} />
                             </div>
                         </div>

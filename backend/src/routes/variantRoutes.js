@@ -15,6 +15,20 @@ router.delete("/:variantId", authMiddleware, variantController.deleteVariant);
 // Cập nhật biến thể
 router.put("/:variantId", authMiddleware, variantController.updateVariant);
 
+// 🟦 Chỉ cập nhật mô tả biến thể
+router.patch(
+  "/:variantId/description",
+  authMiddleware,
+  variantController.updateVariantDescription
+);
+
+// 🟩 Chỉ tạo mới mô tả (khi biến thể chưa có)
+router.post(
+  "/:variantId/description",
+  authMiddleware,
+  variantController.createVariantDescription
+);
+
 // Tạo biến thể (single)
 // Path: /api/variants/:productId/create
 router.post("/:productId/create", authMiddleware, variantController.createVariant);

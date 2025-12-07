@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './CreateVariant.module.scss';
+import ReactQuill from 'react-quill-new';
+import CustomToolbar from '~/components/Editor/CustomToolbar';
+import { quillFormats, quillModules } from '~/utils/quillSetup';
+
 import { useToast } from '~/components/ToastMessager';
 import axiosClient from '~/utils/axiosClient';
 import { updateProductAttributes } from '~/services/productService';
@@ -97,9 +101,7 @@ const CreateVariant = () => {
     const toggleTermSelect = (attrId, termId) => {
         setSelectedTermsMap((prev) => {
             const current = prev[attrId] || [];
-            const next = current.includes(termId)
-                ? current.filter((t) => t !== termId)
-                : [...current, termId];
+            const next = current.includes(termId) ? current.filter((t) => t !== termId) : [...current, termId];
             return { ...prev, [attrId]: next };
         });
     };
@@ -143,10 +145,7 @@ const CreateVariant = () => {
             })),
         );
 
-        const cartesian = arrays.reduce(
-            (acc, arr) => acc.flatMap((x) => arr.map((y) => [...x, y])),
-            [[]],
-        );
+        const cartesian = arrays.reduce((acc, arr) => acc.flatMap((x) => arr.map((y) => [...x, y])), [[]]);
 
         const newMatrix = cartesian
             .filter((combo) => combo.length > 0) // skip empty
@@ -163,6 +162,8 @@ const CreateVariant = () => {
                         price: '',
                         discountPrice: '',
                         quantity: '',
+                        shortDescription: '', // 👈 thêm
+                        longDescription: '', // 👈 thêm
                         images: [],
                     }
                 );
@@ -248,6 +249,8 @@ const CreateVariant = () => {
                 price: Number(row.price),
                 discountPrice: Number(row.discountPrice || 0),
                 quantity: Number(row.quantity || 0),
+                shortDescription: row.shortDescription || '', // 👈 thêm
+                longDescription: row.longDescription || '', // 👈 thêm
                 images: row.images,
             }));
 
@@ -352,93 +355,150 @@ const CreateVariant = () => {
 
                         <div className={cx('matrix-wrapper')}>
                             <table className={cx('matrix-table')}>
-                                <thead>
-                                    <tr>
-                                        {/* Columns for attributes */}
-                                        {selectedAttributeIds.map((attrId) => {
-                                            const attr = attributeDataMap[attrId];
-                                            return (
-                                                <th key={attrId}>{attr?.name}</th>
-                                            );
-                                        })}
-                                        <th>SKU *</th>
-                                        <th>Giá *</th>
-                                        <th>Giá KM</th>
-                                        <th>Số lượng</th>
-                                        <th>Ảnh</th>
-                                    </tr>
-                                </thead>
-
                                 <tbody>
                                     {matrix.map((v, index) => (
-                                        <tr key={v.key || index}>
-                                            {/* Attribute values (read-only) */}
-                                            {v.attributes.map((attr, ai) => (
-                                                <td key={ai}>
-                                                    <span className={cx('attr-value')}>
-                                                        {attr.term?.name || attr.termId}
-                                                    </span>
-                                                </td>
-                                            ))}
-
-                                            <td>
-                                                <input
-                                                    type="text"
-                                                    value={v.sku}
-                                                    onChange={(e) => updateMatrix(index, 'sku', e.target.value)}
-                                                    placeholder="SKU"
-                                                />
-                                            </td>
-
-                                            <td>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={v.price}
-                                                    onChange={(e) => updateMatrix(index, 'price', e.target.value)}
-                                                    placeholder="Giá"
-                                                />
-                                            </td>
-
-                                            <td>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={v.discountPrice}
-                                                    onChange={(e) => updateMatrix(index, 'discountPrice', e.target.value)}
-                                                    placeholder="Giá KM"
-                                                />
-                                            </td>
-
-                                            <td>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={v.quantity}
-                                                    onChange={(e) => updateMatrix(index, 'quantity', e.target.value)}
-                                                    placeholder="SL"
-                                                />
-                                            </td>
-
-                                            <td>
-                                                <input
-                                                    type="file"
-                                                    multiple
-                                                    accept="image/*"
-                                                    onChange={(e) => handleUploadImages(e, index)}
-                                                />
-                                                {v.images.length > 0 && (
-                                                    <div className={cx('img-count')}>
-                                                        {v.images.length} ảnh
-                                                    </div>
-                                                )}
-                                                <div className={cx('img-preview')}>
-                                                    {v.images.map((img, i) => (
-                                                        <img key={i} src={img} alt="" />
+                                        <div key={v.key} className={cx('variant-card')}>
+                                            {/* HEADER */}
+                                            <div className={cx('variant-header')}>
+                                                <div className={cx('variant-title')}>
+                                                    {v.attributes.map((a) => (
+                                                        <span key={a.termId} className={cx('variant-attr')}>
+                                                            {a.term?.name}
+                                                        </span>
                                                     ))}
                                                 </div>
-                                            </td>
-                                        </tr>
+                                                <button
+                                                    type="button"
+                                                    className={cx('toggle-btn')}
+                                                    onClick={() => updateMatrix(index, 'collapsed', !v.collapsed)}
+                                                >
+                                                    {v.collapsed ? '⯈' : '⯆'}
+                                                </button>
+                                            </div>
+
+                                            {!v.collapsed && (
+                                                <div className={cx('variant-body')}>
+                                                    {/* INPUT GRID */}
+                                                    <div className={cx('grid-2')}>
+                                                        <div>
+                                                            <label>SKU *</label>
+                                                            <input
+                                                                type="text"
+                                                                value={v.sku}
+                                                                onChange={(e) =>
+                                                                    updateMatrix(index, 'sku', e.target.value)
+                                                                }
+                                                            />
+                                                        </div>
+
+                                                        <div>
+                                                            <label>Giá *</label>
+                                                            <input
+                                                                type="number"
+                                                                value={v.price}
+                                                                onChange={(e) =>
+                                                                    updateMatrix(index, 'price', e.target.value)
+                                                                }
+                                                            />
+                                                        </div>
+
+                                                        <div>
+                                                            <label>Giá KM</label>
+                                                            <input
+                                                                type="number"
+                                                                value={v.discountPrice}
+                                                                onChange={(e) =>
+                                                                    updateMatrix(index, 'discountPrice', e.target.value)
+                                                                }
+                                                            />
+                                                        </div>
+
+                                                        <div>
+                                                            <label>Số lượng</label>
+                                                            <input
+                                                                type="number"
+                                                                value={v.quantity}
+                                                                onChange={(e) =>
+                                                                    updateMatrix(index, 'quantity', e.target.value)
+                                                                }
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* IMAGE UPLOAD */}
+                                                    <div className={cx('image-section')}>
+                                                        <label>Ảnh sản phẩm</label>
+
+                                                        {/* Nút upload custom */}
+                                                        <label className={cx('upload-btn')}>
+                                                            + Thêm ảnh
+                                                            <input
+                                                                type="file"
+                                                                multiple
+                                                                onChange={(e) => handleUploadImages(e, index)}
+                                                                hidden
+                                                            />
+                                                        </label>
+
+                                                        <div className={cx('image-preview')}>
+                                                            {v.images.map((img, i) => (
+                                                                <div key={i} className={cx('img-box')}>
+                                                                    <img src={img} alt="" />
+                                                                    <button
+                                                                        type="button"
+                                                                        className={cx('img-remove')}
+                                                                        onClick={() => {
+                                                                            const newImgs = v.images.filter(
+                                                                                (_, ii) => ii !== i,
+                                                                            );
+                                                                            updateMatrix(index, 'images', newImgs);
+                                                                        }}
+                                                                    >
+                                                                        ✕
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+
+                                                        {/* Nút xóa toàn bộ ảnh */}
+                                                        {v.images.length > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                className={cx('btn-remove-all-img')}
+                                                                onClick={() => updateMatrix(index, 'images', [])}
+                                                                style={{
+                                                                    marginTop: '8px',
+                                                                    background: '#ff4d4f',
+                                                                    color: '#fff',
+                                                                    padding: '6px 12px',
+                                                                    borderRadius: '6px',
+                                                                    border: 'none',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '13px',
+                                                                }}
+                                                            >
+                                                                Xóa tất cả ảnh
+                                                            </button>
+                                                        )}
+                                                    </div>
+
+                                                    {/* DESCRIPTION */}
+                                                    <label>Mô tả ngắn</label>
+                                                    <ReactQuill
+                                                        theme="snow"
+                                                        value={v.shortDescription}
+                                                        onChange={(c) => updateMatrix(index, 'shortDescription', c)}
+                                                    />
+
+                                                    <label style={{ marginTop: 12 }}>Mô tả dài</label>
+                                                    <ReactQuill
+                                                        theme="snow"
+                                                        value={v.longDescription}
+                                                        onChange={(c) => updateMatrix(index, 'longDescription', c)}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
                                     ))}
                                 </tbody>
                             </table>

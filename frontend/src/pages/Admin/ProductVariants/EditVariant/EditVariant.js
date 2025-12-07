@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './EditVariant.module.scss';
+import ReactQuill from 'react-quill-new';
+import CustomToolbar from '~/components/Editor/CustomToolbar';
+import { quillFormats, quillModules } from '~/utils/quillSetup';
+
 import { useToast } from '~/components/ToastMessager';
 import {
     getVariantsByProduct,
@@ -30,6 +34,8 @@ function EditVariant() {
         price: '',
         discountPrice: '',
         quantity: '',
+        shortDescription: '', // 👈 thêm
+        longDescription: '', // 👈 thêm
         images: [], // MULTI IMAGES
         thumbnail: '',
         attributes: [],
@@ -67,6 +73,8 @@ function EditVariant() {
                 price: found.price || '',
                 discountPrice: found.discountPrice || '',
                 quantity: found.quantity || 0,
+                shortDescription: found.shortDescription || '', // 👈 thêm
+                longDescription: found.longDescription || '', // 👈 thêm
                 images: found.images || [], // MULTI IMAGES
                 thumbnail: found.thumbnail || found.images?.[0] || '',
                 attributes: found.attributes || [],
@@ -191,25 +199,24 @@ function EditVariant() {
         try {
             // ✅ Normalize attributes before sending
             const normalizedAttrs = (form.attributes || [])
-              .filter(a => a && a.attrId && a.terms && a.terms.length > 0)
-              .map(a => {
-                // ✅ Extract _id nếu a.attrId là object
-                const attrId = typeof a.attrId === 'object' && a.attrId?._id 
-                  ? String(a.attrId._id) 
-                  : String(a.attrId);
+                .filter((a) => a && a.attrId && a.terms && a.terms.length > 0)
+                .map((a) => {
+                    // ✅ Extract _id nếu a.attrId là object
+                    const attrId =
+                        typeof a.attrId === 'object' && a.attrId?._id ? String(a.attrId._id) : String(a.attrId);
 
-                // ✅ Extract _id từ terms (có thể là array of objects)
-                const terms = Array.isArray(a.terms) 
-                  ? a.terms.map(t => {
-                      return typeof t === 'object' && t?._id ? String(t._id) : String(t);
-                    })
-                  : [typeof a.terms === 'object' && a.terms?._id ? String(a.terms._id) : String(a.terms)];
+                    // ✅ Extract _id từ terms (có thể là array of objects)
+                    const terms = Array.isArray(a.terms)
+                        ? a.terms.map((t) => {
+                              return typeof t === 'object' && t?._id ? String(t._id) : String(t);
+                          })
+                        : [typeof a.terms === 'object' && a.terms?._id ? String(a.terms._id) : String(a.terms)];
 
-                return {
-                  attrId,
-                  terms
-                };
-              });
+                    return {
+                        attrId,
+                        terms,
+                    };
+                });
 
             console.log('📤 Sending normalized attributes:', normalizedAttrs); // DEBUG
 
@@ -218,6 +225,8 @@ function EditVariant() {
                 price: Number(form.price),
                 discountPrice: form.discountPrice && Number(form.discountPrice) > 0 ? Number(form.discountPrice) : null,
                 quantity: Number(form.quantity),
+                shortDescription: form.shortDescription, // 👈 thêm
+                longDescription: form.longDescription, // 👈 thêm
                 images: form.images,
                 thumbnail: form.thumbnail || form.images[0] || '',
                 attributes: normalizedAttrs,
@@ -340,6 +349,47 @@ function EditVariant() {
                                 value={form.quantity}
                                 onChange={(e) => updateField('quantity', e.target.value)}
                             />
+
+                            {/* DESCRIPTION CARD */}
+                            <div className={cx('card2')} style={{ marginTop: '18px' }}>
+                                {/* SHORT DESCRIPTION */}
+                                <div className={cx('field')}>
+                                    <label>Mô tả ngắn</label>
+                                    <CustomToolbar id="variant-toolbar-short" />
+                                    <ReactQuill
+                                        theme="snow"
+                                        value={form.shortDescription}
+                                        onChange={(content) => updateField('shortDescription', content)}
+                                        formats={quillFormats}
+                                        modules={{
+                                            ...quillModules,
+                                            toolbar: {
+                                                container: '#variant-toolbar-short',
+                                                handlers: quillModules.toolbar.handlers,
+                                            },
+                                        }}
+                                    />
+                                </div>
+
+                                {/* LONG DESCRIPTION */}
+                                <div className={cx('field')} style={{ marginTop: '16px' }}>
+                                    <label>Mô tả dài</label>
+                                    <CustomToolbar id="variant-toolbar-long" />
+                                    <ReactQuill
+                                        theme="snow"
+                                        value={form.longDescription}
+                                        onChange={(content) => updateField('longDescription', content)}
+                                        formats={quillFormats}
+                                        modules={{
+                                            ...quillModules,
+                                            toolbar: {
+                                                container: '#variant-toolbar-long',
+                                                handlers: quillModules.toolbar.handlers,
+                                            },
+                                        }}
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         {/* RIGHT FORM CARD */}

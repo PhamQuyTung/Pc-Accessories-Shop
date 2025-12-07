@@ -23,6 +23,8 @@ const variationSchema = new mongoose.Schema(
     quantity: { type: Number, default: 0 },
     thumbnail: { type: String, default: "" },
     images: [String],
+    shortDescription: { type: String, default: "" },
+    longDescription: { type: String, default: "" },
     attributes: [
       {
         attrId: {
@@ -118,7 +120,7 @@ const productSchema = new mongoose.Schema({
 
   gifts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Gift" }],
   hasGifts: { type: Boolean, default: false },
-  
+
   variations: [variationSchema],
   defaultVariantId: {
     type: mongoose.Schema.Types.ObjectId,

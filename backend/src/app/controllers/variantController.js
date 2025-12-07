@@ -152,6 +152,40 @@ module.exports = {
     }
   },
 
+  // ================= CREATE VARIANT DESCRIPTION ONLY =================
+  createVariantDescription: async (req, res) => {
+    try {
+      const { variantId } = req.params;
+      const { shortDescription = "", longDescription = "" } = req.body;
+
+      if (!isValidObjectId(variantId))
+        return res.status(400).json({ message: "ID biến thể không hợp lệ" });
+
+      const product = await Product.findOne({ "variations._id": variantId });
+      if (!product)
+        return res.status(404).json({ message: "Không tìm thấy biến thể." });
+
+      const variant = product.variations.id(variantId);
+
+      variant.shortDescription = shortDescription;
+      variant.longDescription = longDescription;
+
+      await product.save();
+
+      res.status(201).json({
+        message: "Đã tạo mô tả biến thể",
+        variant: {
+          _id: variant._id,
+          shortDescription,
+          longDescription,
+        },
+      });
+    } catch (err) {
+      console.error("Lỗi tạo mô tả biến thể:", err);
+      res.status(500).json({ message: "Lỗi server", error: err.message });
+    }
+  },
+
   // ================= DELETE VARIANT =================
   deleteVariant: async (req, res) => {
     try {
@@ -199,7 +233,7 @@ module.exports = {
             .map((a) => {
               // ✅ Handle both object & string
               let attrIdStr = String(a.attrId);
-              if (typeof a.attrId === 'object' && a.attrId?._id) {
+              if (typeof a.attrId === "object" && a.attrId?._id) {
                 attrIdStr = String(a.attrId._id);
               }
 
@@ -213,7 +247,7 @@ module.exports = {
                 .filter((t) => t) // bỏ null/undefined
                 .map((t) => {
                   let tStr = String(t);
-                  if (typeof t === 'object' && t?._id) {
+                  if (typeof t === "object" && t?._id) {
                     tStr = String(t._id);
                   }
                   if (!isValidObjectId(tStr)) {
@@ -223,7 +257,7 @@ module.exports = {
                 });
 
               if (termsArray.length === 0) {
-                throw new Error('terms array không được để trống');
+                throw new Error("terms array không được để trống");
               }
 
               return {
@@ -262,6 +296,43 @@ module.exports = {
       });
     } catch (err) {
       console.error("Lỗi cập nhật biến thể:", err);
+      res.status(500).json({ message: "Lỗi server", error: err.message });
+    }
+  },
+
+  // ================= UPDATE VARIANT DESCRIPTION ONLY =================
+  updateVariantDescription: async (req, res) => {
+    try {
+      const { variantId } = req.params;
+      const { shortDescription, longDescription } = req.body;
+
+      if (!isValidObjectId(variantId))
+        return res.status(400).json({ message: "ID biến thể không hợp lệ" });
+
+      const product = await Product.findOne({ "variations._id": variantId });
+      if (!product)
+        return res.status(404).json({ message: "Không tìm thấy biến thể." });
+
+      const variant = product.variations.id(variantId);
+
+      if (shortDescription !== undefined)
+        variant.shortDescription = shortDescription;
+
+      if (longDescription !== undefined)
+        variant.longDescription = longDescription;
+
+      await product.save();
+
+      res.json({
+        message: "Đã cập nhật mô tả biến thể",
+        variant: {
+          _id: variant._id,
+          shortDescription: variant.shortDescription,
+          longDescription: variant.longDescription,
+        },
+      });
+    } catch (err) {
+      console.error("Lỗi cập nhật mô tả biến thể:", err);
       res.status(500).json({ message: "Lỗi server", error: err.message });
     }
   },

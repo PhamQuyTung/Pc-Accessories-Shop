@@ -9,8 +9,6 @@ import { computeProductStatus } from 'shared-utils';
 import { registerQuillModules } from '~/utils/quillSetup';
 
 import ProductGeneral from './components/ProductGeneral';
-import AttributesPanel from './components/AttributesPanel';
-import VariantsEditor from './components/VariantsEditor';
 import SidePublish from './components/SidePublish';
 registerQuillModules();
 

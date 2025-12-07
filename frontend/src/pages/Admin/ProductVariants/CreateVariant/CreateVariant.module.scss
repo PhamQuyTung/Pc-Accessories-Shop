@@ -271,3 +271,145 @@
 .no-attr {
     color: #ccc;
 }
+
+.desc-row td {
+    padding-top: 12px;
+    padding-bottom: 24px;
+    background: #fafafa;
+}
+
+.desc-card {
+    padding: 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.desc-card label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.desc-card .ql-container {
+    min-height: 120px;
+    border-radius: 6px;
+}
+
+.desc-card .ql-toolbar {
+    border-radius: 6px 6px 0 0;
+}
+
+.variant-card {
+    background: #fff;
+    border: 1px solid #e6e6e6;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.variant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.variant-title {
+    display: flex;
+    gap: 8px;
+}
+
+.variant-attr {
+    background: #eef5ff;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #1a73e8;
+    font-weight: 600;
+}
+
+.toggle-btn {
+    border: none;
+    background: none;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0.7;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.variant-body {
+    border-top: 1px solid #eee;
+    padding-top: 16px;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.image-section {
+    margin-top: 10px;
+
+    .image-preview {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+
+        .img-box {
+            position: relative;
+
+            img {
+                width: 70px;
+                height: 70px;
+                object-fit: cover;
+                border-radius: 6px;
+                border: 1px solid #ddd;
+            }
+
+            .img-remove {
+                position: absolute;
+                top: -6px;
+                right: -6px;
+                background: #ff4d4d;
+                color: #fff;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                font-size: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                border: none;
+            }
+        }
+    }
+}
+
+.upload-btn {
+    display: inline-block;
+    padding: 8px 14px;
+    background: #fff;
+    border: 1px dashed #d9d9d9;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #333;
+    font-size: 14px;
+    margin-bottom: 10px;
+    transition: 0.15s ease;
+
+    &:hover {
+        border-color: #ee4d2d;
+        background: #fff7f5;
+        color: #ee4d2d;
+    }
+}
