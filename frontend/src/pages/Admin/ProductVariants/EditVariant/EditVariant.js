@@ -357,7 +357,6 @@ function EditVariant() {
                                     <label>Mô tả ngắn</label>
                                     <CustomToolbar id="variant-toolbar-short" />
                                     <ReactQuill
-                                        key={'short-' + form.shortDescription}
                                         theme="snow"
                                         value={form.shortDescription}
                                         onChange={(content) => updateField('shortDescription', content)}
@@ -377,7 +376,6 @@ function EditVariant() {
                                     <label>Mô tả dài</label>
                                     <CustomToolbar id="variant-toolbar-long" />
                                     <ReactQuill
-                                        key={'long-' + form.longDescription}
                                         theme="snow"
                                         value={form.longDescription}
                                         onChange={(content) => updateField('longDescription', content)}
