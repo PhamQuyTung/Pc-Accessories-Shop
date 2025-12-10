@@ -10,6 +10,7 @@ import { registerQuillModules } from '~/utils/quillSetup';
 
 import ProductGeneral from './components/ProductGeneral';
 import SidePublish from './components/SidePublish';
+import ProductSpecs from './components/ProductSpecs';
 registerQuillModules();
 
 const cx = classNames.bind(styles);
@@ -30,7 +31,7 @@ export default function CreateProduct() {
         importing: false,
         brand: '',
         category: '',
-        specs: {},
+        specs: [],
         isBestSeller: false,
     });
 
@@ -102,11 +103,10 @@ export default function CreateProduct() {
         // support synthetic calls from Quill where we pass object
         if (e && e.target && typeof e.target.name === 'string') {
             const { name, value, type, checked } = e.target;
-            if (name.startsWith('specs.')) {
-                const key = name.split('.')[1];
-                setForm((prev) => ({ ...prev, specs: { ...prev.specs, [key]: value } }));
-                return;
-            }
+
+            // 🚨 CHẶN specs BỊ GHI ĐÈ
+            if (name === 'specs') return;
+
             if (name.startsWith('image-')) {
                 const idx = Number(name.split('-')[1]);
                 setForm((prev) => ({ ...prev, images: prev.images.map((im, i) => (i === idx ? value : im)) }));
@@ -119,6 +119,9 @@ export default function CreateProduct() {
             setForm((prev) => ({ ...prev, [name]: value }));
         } else if (e && e.name) {
             // synthetic call: { name, value }
+            // 🚨 CHẶN specs BỊ GHI ĐÈ
+            if (e.name === 'specs') return;
+
             const { name, value } = e;
             setForm((prev) => ({ ...prev, [name]: value }));
         }
@@ -240,6 +243,8 @@ export default function CreateProduct() {
             productType,
         };
 
+        console.log('📌 PAYLOAD BEFORE SUBMIT:', JSON.parse(JSON.stringify(payload)));
+
         if (productType === 'variable') {
             payload.attributes = productAttributes
                 .filter((a) => a.useForVariations)
@@ -269,6 +274,9 @@ export default function CreateProduct() {
         const payload = validateAndBuildPayload();
         if (!payload) return;
         try {
+            console.log('🚀 SUBMIT SPECS:', payload.specs);
+            console.log('🚀 FULL PAYLOAD SENT:', JSON.parse(JSON.stringify(payload)));
+
             await axios.post('http://localhost:5000/api/products', payload);
             toast('Tạo sản phẩm thành công', 'success');
             initialFormRef.current = form;
@@ -325,6 +333,12 @@ export default function CreateProduct() {
                         removeImageField={removeImageField}
                         productType={productType}
                     />
+
+                    <ProductSpecs
+                        specs={form.specs}
+                        setSpecs={(newSpecs) => setForm((prev) => ({ ...prev, specs: newSpecs }))}
+                    />
+
                     {/* {productType === 'variable' && (
                         <>
                             <AttributesPanel

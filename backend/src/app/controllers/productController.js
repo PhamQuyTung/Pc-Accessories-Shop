@@ -4,6 +4,7 @@ const Category = require("../models/category");
 const Review = require("../models/review");
 const mongoose = require("mongoose");
 const { computeProductStatus } = require("../../../../shared/productStatus");
+const { mergeSpecs } = require("../../helpers/mergeSpecs");
 
 // 🔧 Hàm sinh tổ hợp biến thể từ attributes
 const generateVariations = (attributes, baseSku = "SP") => {
@@ -493,6 +494,8 @@ class ProductController {
         isBestSeller,
       } = req.body;
 
+      console.log("🔥 REQ SPECS:", req.body.specs);
+
       // 🧩 1. Generate variations nếu là variable product
       if (
         req.body.productType === "variable" &&
@@ -523,6 +526,8 @@ class ProductController {
           }))
         : [];
 
+      const mergedProductSpecs = specs;
+
       // 🧩 3. Tạo product
       const product = new Product({
         name,
@@ -531,7 +536,7 @@ class ProductController {
         discountPrice,
         quantity,
         visible,
-        specs,
+        specs: mergedProductSpecs,
         category,
         brand,
         shortDescription,
@@ -711,8 +716,13 @@ class ProductController {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
       }
 
+      const defaultVariant = product.variations?.length
+        ? product.variations[0]
+        : null;
+
       res.json({
         ...product,
+        specs: mergeSpecs(product, defaultVariant),
         status: computeProductStatus(product, { importing: product.importing }), // ✅ đồng bộ status
       });
     } catch (err) {
@@ -736,9 +746,18 @@ class ProductController {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
       }
 
+      const defaultVariant =
+        product.variations.find(
+          (v) => v._id.toString() === product.defaultVariantId?.toString()
+        ) || product.variations[0];
+
+      const mergedSpecs = mergeSpecs(product, defaultVariant);
+
       res.json({
         ...product,
-        status: computeProductStatus(product, { importing: product.importing }), // ✅ đồng bộ status
+        defaultVariant,
+        specs: mergedSpecs,
+        status: computeProductStatus(product, { importing: product.importing }),
       });
     } catch (err) {
       console.error("❌ Lỗi getById:", err);
@@ -750,6 +769,11 @@ class ProductController {
   async updateProduct(req, res) {
     try {
       const data = { ...req.body };
+
+      // merge lại specs của product-level
+      if (data.specs) {
+        data.specs = mergeSpecs({ specs: data.specs }, null);
+      }
 
       // ✅ Bỏ status client gửi, ta sẽ tính lại
       delete data.status;
@@ -1017,6 +1041,8 @@ class ProductController {
 
         return {
           ...p,
+          defaultVariant,
+          specs: mergeSpecs(p, defaultVariant),
           finalPrice,
           averageRating: rv.averageRating || 0,
           reviewCount: rv.reviewCount || 0,

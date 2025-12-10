@@ -34,6 +34,9 @@ const CreateVariant = () => {
     // Map attrId -> selectedTermIds (các term được chọn của attr đó)
     const [selectedTermsMap, setSelectedTermsMap] = useState({});
 
+    // Mặc định specs trống
+    const [specs, setSpecs] = useState([{ key: '', value: '' }]);
+
     // Ma trận biến thể
     const [matrix, setMatrix] = useState([]);
 
@@ -165,6 +168,7 @@ const CreateVariant = () => {
                         shortDescription: '', // 👈 thêm
                         longDescription: '', // 👈 thêm
                         images: [],
+                        specs: [],
                     }
                 );
             });
@@ -179,6 +183,33 @@ const CreateVariant = () => {
         setMatrix((prev) => {
             const clone = [...prev];
             clone[index][field] = value;
+            return clone;
+        });
+    };
+
+    // ===========================================================
+    // Specs helpers
+    // ===========================================================
+    const addSpecRow = (index) => {
+        setMatrix((prev) => {
+            const clone = [...prev];
+            clone[index].specs.push({ key: '', value: '' });
+            return clone;
+        });
+    };
+
+    const updateSpecRow = (vIndex, sIndex, field, value) => {
+        setMatrix((prev) => {
+            const clone = [...prev];
+            clone[vIndex].specs[sIndex][field] = value;
+            return clone;
+        });
+    };
+
+    const removeSpecRow = (vIndex, sIndex) => {
+        setMatrix((prev) => {
+            const clone = [...prev];
+            clone[vIndex].specs = clone[vIndex].specs.filter((_, i) => i !== sIndex);
             return clone;
         });
     };
@@ -242,15 +273,16 @@ const CreateVariant = () => {
             // Build variants payload
             const variants = matrix.map((row) => ({
                 attributes: row.attributes.map((a) => ({
-                    attrId: a.attrId,
-                    terms: [a.termId],
+                    attrId: a.attrId, // id attribute (string)
+                    terms: [a.termId], // luôn là array
                 })),
                 sku: row.sku,
                 price: Number(row.price),
                 discountPrice: Number(row.discountPrice || 0),
                 quantity: Number(row.quantity || 0),
-                shortDescription: row.shortDescription || '', // 👈 thêm
-                longDescription: row.longDescription || '', // 👈 thêm
+                specs: row.specs,
+                shortDescription: row.shortDescription || '',
+                longDescription: row.longDescription || '',
                 images: row.images,
             }));
 
@@ -480,6 +512,75 @@ const CreateVariant = () => {
                                                                 Xóa tất cả ảnh
                                                             </button>
                                                         )}
+                                                    </div>
+
+                                                    {/* SPECS FORM (UI TABLE STYLE) */}
+                                                    <div className={cx('specs-section')}>
+                                                        <label className={cx('section-title')}>Thông số kỹ thuật</label>
+
+                                                        <div className={cx('specs-table')}>
+                                                            <div className={cx('specs-header')}>
+                                                                <span>Thông số</span>
+                                                                <span>Giá trị</span>
+                                                                <span></span>
+                                                            </div>
+
+                                                            {v.specs.length === 0 && (
+                                                                <div className={cx('specs-empty')}>
+                                                                    Chưa có thông số nào.
+                                                                </div>
+                                                            )}
+
+                                                            {v.specs.map((spec, sIndex) => (
+                                                                <div key={sIndex} className={cx('specs-row')}>
+                                                                    <input
+                                                                        type="text"
+                                                                        className={cx('specs-input')}
+                                                                        placeholder="VD: CPU"
+                                                                        value={spec.key}
+                                                                        onChange={(e) =>
+                                                                            updateSpecRow(
+                                                                                index,
+                                                                                sIndex,
+                                                                                'key',
+                                                                                e.target.value,
+                                                                            )
+                                                                        }
+                                                                    />
+
+                                                                    <input
+                                                                        type="text"
+                                                                        className={cx('specs-input')}
+                                                                        placeholder="VD: Intel Core i7 14700F"
+                                                                        value={spec.value}
+                                                                        onChange={(e) =>
+                                                                            updateSpecRow(
+                                                                                index,
+                                                                                sIndex,
+                                                                                'value',
+                                                                                e.target.value,
+                                                                            )
+                                                                        }
+                                                                    />
+
+                                                                    <button
+                                                                        type="button"
+                                                                        className={cx('specs-remove')}
+                                                                        onClick={() => removeSpecRow(index, sIndex)}
+                                                                    >
+                                                                        ✕
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+
+                                                        <button
+                                                            type="button"
+                                                            className={cx('add-spec-btn')}
+                                                            onClick={() => addSpecRow(index)}
+                                                        >
+                                                            + Thêm thông số
+                                                        </button>
                                                     </div>
 
                                                     {/* DESCRIPTION */}

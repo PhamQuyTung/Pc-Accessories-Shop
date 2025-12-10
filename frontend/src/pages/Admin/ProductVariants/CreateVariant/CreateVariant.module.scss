@@ -413,3 +413,150 @@
         color: #ee4d2d;
     }
 }
+
+.specs-section {
+    margin-top: 20px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fafafa;
+
+    .section-title {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        display: block;
+    }
+}
+
+.specs-table {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    overflow: hidden;
+    background: white;
+
+    .specs-header {
+        display: grid;
+        grid-template-columns: 1fr 1fr 40px;
+        padding: 10px 12px;
+        background: #f3f4f6;
+        font-weight: 600;
+        font-size: 14px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .specs-empty {
+        padding: 14px;
+        text-align: center;
+        color: #777;
+        font-size: 14px;
+    }
+
+    .specs-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 40px;
+        padding: 8px 12px;
+        border-bottom: 1px solid #f0f0f0;
+        align-items: center;
+
+        &:hover {
+            background: #f9fafb;
+        }
+    }
+}
+
+.specs-input {
+    width: 95%;
+    padding: 6px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+
+    &:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 1px #2563eb;
+    }
+}
+
+.specs-remove {
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+}
+
+.add-spec-btn {
+    margin-top: 12px;
+    padding: 6px 14px;
+    background: #2563eb;
+    color: white;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.spec-accordion {
+    margin-top: 12px;
+}
+
+.spec-group {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.spec-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background: #f7f7f7;
+    border-bottom: 1px solid #ddd;
+
+    input {
+        flex: 1;
+        margin-right: 8px;
+        padding: 4px 8px;
+    }
+
+    .remove-group {
+        background: #ff4d4f;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+}
+
+.spec-fields {
+    padding: 12px;
+}
+
+.field-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    input {
+        padding: 4px 8px;
+    }
+    .label-input {
+        width: 45%;
+    }
+    .value-input {
+        width: 45%;
+    }
+    .remove-field {
+        background: #ff7875;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+}

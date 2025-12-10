@@ -35,6 +35,13 @@ const variationSchema = new mongoose.Schema(
         terms: [{ type: mongoose.Schema.Types.ObjectId, ref: "AttributeTerm" }], // 👈 đổi tên từ termIds → terms
       },
     ],
+
+    specOverrides: {
+      type: Map,
+      of: String,
+      default: {},
+    },
+
     dimensions: {
       length: { type: Number, default: 0 },
       width: { type: Number, default: 0 },
@@ -71,7 +78,22 @@ const productSchema = new mongoose.Schema({
 
   // ❌ Không lưu status, chỉ tính động
   visible: { type: Boolean, default: true },
-  specs: { type: Map, of: String },
+  specs: {
+    type: [
+      {
+        group: { type: String, required: false, default: "" },
+
+        fields: [
+          {
+            label: { type: String, required: true },
+            value: { type: String, required: true },
+          },
+        ],
+      },
+    ],
+    default: [],
+  },
+
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Category",
