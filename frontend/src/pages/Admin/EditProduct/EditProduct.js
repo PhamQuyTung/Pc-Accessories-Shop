@@ -23,7 +23,6 @@ function EditProduct() {
 
     const [formData, setFormData] = useState(null);
     const [categories, setCategories] = useState([]);
-    const [categorySchema, setCategorySchema] = useState([]);
     const [importing, setImporting] = useState(false);
     const [existingProducts, setExistingProducts] = useState([]);
 
@@ -38,19 +37,6 @@ function EditProduct() {
             .then((res) => setGifts(res.data))
             .catch(() => setGifts([]));
     }, []);
-
-    // Khi load product từ backend
-    useEffect(() => {
-        axios.get(`http://localhost:5000/api/products/edit/${id}`).then((res) => {
-            const product = res.data;
-            setFormData({
-                ...product,
-                hasGifts: !!product.gifts?.length,
-            });
-            // normalize selectedGifts: nếu là id string -> chuyển thành object {_id: id}
-            setSelectedGifts((product.gifts || []).map((g) => (typeof g === 'string' ? { _id: g } : g)));
-        });
-    }, [id]);
 
     // Load categories và products để check trùng tên
     useEffect(() => {
@@ -105,7 +91,7 @@ function EditProduct() {
                     brand: product.brand?._id || product.brand || '',
                     shortDescription: decodedShortDesc || '',
                     longDescription: decodedLongDesc || '', // đảm bảo dạng HTML thật
-                    specs: product.specs || {},
+                    specs: Array.isArray(product.specs) ? product.specs : [],
                     quantity: product.quantity ?? 0,
                     rating: product.rating ?? 0,
                     isBestSeller: !!product.isBestSeller,
@@ -120,56 +106,11 @@ function EditProduct() {
             .catch(() => toast('Không tìm thấy sản phẩm!', 'error'));
     }, [id]);
 
-    // Khi chọn category thì load schema
-    useEffect(() => {
-        const rawCategory = formData?.category;
-        if (!rawCategory) return;
-
-        // Nếu formData.category là object (populated), lấy _id; nếu là string thì dùng luôn
-        const categoryId = typeof rawCategory === 'string' ? rawCategory : rawCategory?._id;
-        if (!categoryId) return;
-
-        axios
-            .get(`http://localhost:5000/api/categories/${categoryId}`)
-            .then((res) => {
-                const attributes = res.data.attributes || [];
-                const schema = attributes.map((attr) => ({
-                    label: attr.name,
-                    key: attr.key,
-                    type: attr.type,
-                }));
-                setCategorySchema(schema);
-
-                const newSpecs = {};
-                schema.forEach((item) => {
-                    newSpecs[item.key] = formData.specs?.[item.key] || '';
-                });
-
-                setFormData((prev) => ({
-                    ...prev,
-                    specs: newSpecs,
-                }));
-            })
-            .catch(() => {
-                // không cần crash app khi category không tồn tại
-                setCategorySchema([]);
-            });
-    }, [formData?.category]);
-
     // Xử lý thay đổi form
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        if (name.startsWith('specs.')) {
-            const key = name.split('.')[1];
-            setFormData((prev) => ({
-                ...prev,
-                specs: {
-                    ...prev.specs,
-                    [key]: value,
-                },
-            }));
-        } else if (name.startsWith('description.')) {
+        if (name.startsWith('description.')) {
             const key = name.split('.')[1];
             setFormData((prev) => ({
                 ...prev,
@@ -391,7 +332,7 @@ function EditProduct() {
                     </select>
                 </div>
 
-                {categorySchema.length > 0 && (
+                {/* {categorySchema.length > 0 && (
                     <div className={cx('group')}>
                         <label>Thông số kỹ thuật</label>
                         <div className={cx('specs')}>
@@ -407,7 +348,111 @@ function EditProduct() {
                             ))}
                         </div>
                     </div>
-                )}
+                )} */}
+
+                {/* SPECS */}
+                <div className={cx('group')}>
+                    <label>Thông số kỹ thuật</label>
+
+                    <div className={cx('spec-groups')}>
+                        {formData.specs?.map((group, groupIndex) => (
+                            <div key={groupIndex} className={cx('spec-group')}>
+                                <div className={cx('spec-group-header')}>
+                                    <input
+                                        type="text"
+                                        placeholder="Tên nhóm thông số"
+                                        value={group.group}
+                                        onChange={(e) => {
+                                            const updated = [...formData.specs];
+                                            updated[groupIndex].group = e.target.value;
+                                            setFormData((prev) => ({ ...prev, specs: updated }));
+                                        }}
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const updated = formData.specs.filter((_, i) => i !== groupIndex);
+                                            setFormData((prev) => ({ ...prev, specs: updated }));
+                                        }}
+                                    >
+                                        Xóa nhóm
+                                    </button>
+                                </div>
+
+                                {/* FIELDS */}
+                                {group.fields.map((field, fieldIndex) => (
+                                    <div key={fieldIndex} className={cx('spec-field')}>
+                                        <input
+                                            type="text"
+                                            placeholder="Label"
+                                            value={field.label}
+                                            onChange={(e) => {
+                                                const updated = [...formData.specs];
+                                                updated[groupIndex].fields[fieldIndex].label = e.target.value;
+                                                setFormData((prev) => ({ ...prev, specs: updated }));
+                                            }}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="Giá trị"
+                                            value={field.value}
+                                            onChange={(e) => {
+                                                const updated = [...formData.specs];
+                                                updated[groupIndex].fields[fieldIndex].value = e.target.value;
+                                                setFormData((prev) => ({ ...prev, specs: updated }));
+                                            }}
+                                        />
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const updated = [...formData.specs];
+                                                updated[groupIndex].fields = updated[groupIndex].fields.filter(
+                                                    (_, i) => i !== fieldIndex,
+                                                );
+                                                setFormData((prev) => ({ ...prev, specs: updated }));
+                                            }}
+                                        >
+                                            X
+                                        </button>
+                                    </div>
+                                ))}
+
+                                {/* ADD FIELD */}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const updated = [...formData.specs];
+                                        updated[groupIndex].fields.push({ label: '', value: '' });
+                                        setFormData((prev) => ({ ...prev, specs: updated }));
+                                    }}
+                                >
+                                    + Thêm dòng
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* ADD GROUP */}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setFormData((prev) => ({
+                                ...prev,
+                                specs: [
+                                    ...(prev.specs || []),
+                                    {
+                                        group: 'Nhóm mới',
+                                        fields: [{ label: '', value: '' }],
+                                    },
+                                ],
+                            }));
+                        }}
+                    >
+                        + Thêm nhóm thông số
+                    </button>
+                </div>
 
                 <div className={cx('group')}>
                     <label>Số lượng</label>
