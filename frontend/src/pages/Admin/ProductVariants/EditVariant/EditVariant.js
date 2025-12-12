@@ -455,40 +455,6 @@ function EditVariant() {
                                     </div>
                                 ))}
                             </div>
-
-                            <hr />
-
-                            {/* COLOR */}
-                            {/* <div className={cx('attr-group')}>
-                                <label>Màu</label>
-                                <select
-                                    value={getSelectedTermId(colorAttrId)}
-                                    onChange={(e) => setSelectedTerm(colorAttrId, e.target.value)}
-                                >
-                                    <option value="">— Chọn màu —</option>
-                                    {colors.map((c) => (
-                                        <option key={c._id} value={c._id}>
-                                            {c.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div> */}
-
-                            {/* SIZE */}
-                            {/* <div className={cx('attr-group')}>
-                                <label>Size</label>
-                                <select
-                                    value={getSelectedTermId(sizeAttrId)}
-                                    onChange={(e) => setSelectedTerm(sizeAttrId, e.target.value)}
-                                >
-                                    <option value="">— Chọn size —</option>
-                                    {sizes.map((s) => (
-                                        <option key={s._id} value={s._id}>
-                                            {s.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div> */}
                         </div>
                     </div>
 

@@ -41,6 +41,34 @@ const CreateVariant = () => {
     const [matrix, setMatrix] = useState([]);
 
     // ===========================================================
+    // Load product default specs
+    // ===========================================================
+    const [productDefaultSpecs, setProductDefaultSpecs] = useState([]);
+
+    // Khi load xong, set mặc định cho mỗi variant trong ma trận
+    useEffect(() => {
+        const loadProduct = async () => {
+            const res = await axiosClient.get(`/products/id/${productId}`);
+            setProductDefaultSpecs(res.data.specs || []);
+        };
+        loadProduct();
+    }, [productId]);
+
+    const convertSpecsToUI = (groups) => {
+        const flat = [];
+        groups.forEach((g) => {
+            g.fields.forEach((f) => {
+                flat.push({
+                    group: g.group,
+                    key: f.label,
+                    value: f.value,
+                });
+            });
+        });
+        return flat;
+    };
+
+    // ===========================================================
     // Load available attributes (có terms)
     // ===========================================================
     const loadAvailableAttributes = async () => {
@@ -168,7 +196,7 @@ const CreateVariant = () => {
                         shortDescription: '', // 👈 thêm
                         longDescription: '', // 👈 thêm
                         images: [],
-                        specs: [],
+                        specs: convertSpecsToUI(productDefaultSpecs),
                     }
                 );
             });
@@ -257,38 +285,53 @@ const CreateVariant = () => {
     // ===========================================================
     // Submit
     // ===========================================================
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (matrix.length === 0) return toast('Vui lòng chọn ít nhất 1 thuộc tính!', 'error');
 
-        // Validation
+        // Basic validation
         for (let item of matrix) {
-            if (!item.sku.trim()) return toast('SKU không được để trống!', 'error');
+            if (!item.sku?.trim()) return toast('SKU không được để trống!', 'error');
             if (!item.price || Number(item.price) <= 0) return toast('Giá phải lớn hơn 0!', 'error');
         }
 
         setLoading(true);
 
         try {
-            // Build variants payload
-            const variants = matrix.map((row) => ({
-                attributes: row.attributes.map((a) => ({
-                    attrId: a.attrId, // id attribute (string)
-                    terms: [a.termId], // luôn là array
-                })),
-                sku: row.sku,
-                price: Number(row.price),
-                discountPrice: Number(row.discountPrice || 0),
-                quantity: Number(row.quantity || 0),
-                specs: row.specs,
-                shortDescription: row.shortDescription || '',
-                longDescription: row.longDescription || '',
-                images: row.images,
-            }));
+            // Convert variant specs to specOverrides
+            const variants = matrix.map((row) => {
+                const specOverrides = [];
+
+                row.specs.forEach((spec) => {
+                    if (!spec.key.trim()) return; // skip empty
+
+                    const original = productDefaultSpecs.find((d) => d.key === spec.key);
+
+                    // Only push changed values
+                    if (!original || original.value !== spec.value) {
+                        specOverrides.push({ key: spec.key, value: spec.value });
+                    }
+                });
+
+                return {
+                    attributes: row.attributes.map((a) => ({
+                        attrId: a.attrId,
+                        terms: [a.termId],
+                    })),
+                    sku: row.sku,
+                    price: Number(row.price),
+                    discountPrice: Number(row.discountPrice || 0),
+                    quantity: Number(row.quantity || 0),
+                    specOverrides, // ⬅️ Only changed specs
+                    shortDescription: row.shortDescription || '',
+                    longDescription: row.longDescription || '',
+                    images: row.images,
+                };
+            });
 
             await axiosClient.post(`/variants/${productId}/bulk`, { variants });
 
-            // Update product attributes (chỉ lưu attrId)
             await updateProductAttributes(productId, {
                 attributes: selectedAttributeIds.map((attrId) => ({ attrId })),
             });
