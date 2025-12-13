@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './EditVariant.module.scss';
@@ -16,6 +16,7 @@ import {
 } from '~/services/variantService';
 import axiosClient from '~/utils/axiosClient';
 import { mergeSpecs } from '~/utils/mergeSpecs';
+import SpecEditor from '~/components/SpecEditor/SpecEditor';
 
 const cx = classNames.bind(styles);
 
@@ -57,6 +58,16 @@ function EditVariant() {
     const fetchProductSpecs = async () => {
         const res = await axiosClient.get(`/products/id/${productId}`);
         return res.data.specs || [];
+    };
+
+    const isOverridden = (groupName, label, value) => {
+        const baseGroup = productSpecs.find((g) => g.group === groupName);
+        if (!baseGroup) return true;
+
+        const baseField = baseGroup.fields.find((f) => f.label === label);
+        if (!baseField) return true;
+
+        return value !== baseField.value;
     };
 
     const buildSpecOverrides = (productSpecs, uiSpecs) => {
@@ -153,9 +164,9 @@ function EditVariant() {
     // -------------------------------------------------
     // Helpers
     // -------------------------------------------------
-    const updateField = (field, value) => {
+    const updateField = useCallback((field, value) => {
         setForm((prev) => ({ ...prev, [field]: value }));
-    };
+    }, []);
 
     const getSelectedTermId = (attrId) => {
         const attr = form.attributes.find((a) => String(a.attrId) === String(attrId));
@@ -213,6 +224,8 @@ function EditVariant() {
             isUploadingNow = false;
         }
     };
+
+    const specOverrides = useMemo(() => buildSpecOverrides(productSpecs, uiSpecs), [productSpecs, uiSpecs]);
 
     // -------------------------------------------------
     // SAVE
@@ -336,6 +349,25 @@ function EditVariant() {
         setForm((prev) => ({ ...prev, images: [], thumbnail: '' }));
     };
 
+    const ShortDescEditor = useMemo(
+        () => (
+            <ReactQuill
+                theme="snow"
+                value={form.shortDescription}
+                onChange={(content) => updateField('shortDescription', content)}
+                formats={quillFormats}
+                modules={{
+                    ...quillModules,
+                    toolbar: {
+                        container: '#variant-toolbar-short',
+                        handlers: quillModules.toolbar.handlers,
+                    },
+                }}
+            />
+        ),
+        [form.shortDescription, updateField],
+    );
+
     // -------------------------------------------------
     // UI
     // -------------------------------------------------
@@ -387,26 +419,8 @@ function EditVariant() {
                                 onChange={(e) => updateField('quantity', e.target.value)}
                             />
 
-                            {/* Spec */}
-                            {uiSpecs.map((group, gIdx) => (
-                                <div key={gIdx} className={cx('spec-group')}>
-                                    <h4>{group.group}</h4>
-
-                                    {group.fields.map((field, fIdx) => (
-                                        <div key={fIdx} className={cx('spec-row')}>
-                                            <span>{field.label}</span>
-                                            <input
-                                                value={field.value || ''}
-                                                onChange={(e) => {
-                                                    const clone = [...uiSpecs];
-                                                    clone[gIdx].fields[fIdx].value = e.target.value;
-                                                    setUiSpecs(clone);
-                                                }}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            ))}
+                            {/* SpecEditor Component */}
+                            <SpecEditor uiSpecs={uiSpecs} productSpecs={productSpecs} setUiSpecs={setUiSpecs} />
 
                             {/* DESCRIPTION CARD */}
                             <div className={cx('card2')} style={{ marginTop: '18px' }}>
@@ -414,19 +428,7 @@ function EditVariant() {
                                 <div className={cx('field')}>
                                     <label>Mô tả ngắn</label>
                                     <CustomToolbar id="variant-toolbar-short" />
-                                    <ReactQuill
-                                        theme="snow"
-                                        value={form.shortDescription}
-                                        onChange={(content) => updateField('shortDescription', content)}
-                                        formats={quillFormats}
-                                        modules={{
-                                            ...quillModules,
-                                            toolbar: {
-                                                container: '#variant-toolbar-short',
-                                                handlers: quillModules.toolbar.handlers,
-                                            },
-                                        }}
-                                    />
+                                    {ShortDescEditor}
                                 </div>
 
                                 {/* LONG DESCRIPTION */}

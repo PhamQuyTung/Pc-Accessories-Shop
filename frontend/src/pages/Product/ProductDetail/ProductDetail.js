@@ -32,6 +32,7 @@ import useCart from './hooks/useCart';
 import useFavorite from './hooks/useFavorite';
 
 import { getDisplayName } from '~/pages/Product/ProductDetail/utils/productHelpers';
+import { mergeSpecs } from '~/utils/mergeSpecs';
 
 import styles from './ProductDetail.module.scss';
 const cx = classNames.bind(styles);
@@ -204,8 +205,13 @@ function ProductDetailView({
                 return <ExpandableContent html={longDesc} />;
             }
 
-            case 'additional':
-                return <SpecsTable specs={product.specs} />;
+            case 'specs': {
+                console.log('Product specs:', product.specs);
+                console.log('Variant overrides:', activeVariation?.specOverrides);
+                console.log('Merged:', mergeSpecs(product, activeVariation));
+
+                return <SpecsTable specs={mergeSpecs(product, activeVariation)} />;
+            }
 
             case 'reviews':
                 return (
@@ -314,6 +320,33 @@ function ProductDetailView({
     );
 }
 
+function SpecsTable({ specs }) {
+    if (!Array.isArray(specs) || specs.length === 0) {
+        return <p>Không có thông số kỹ thuật</p>;
+    }
+
+    return (
+        <div className={cx('specs-wrapper')}>
+            {specs.map((group) => (
+                <div key={group.group} className={cx('specs-group')}>
+                    <h4 className={cx('specs-group-title')}>{group.group}</h4>
+
+                    <table className={cx('specs-table')}>
+                        <tbody>
+                            {group.fields.map((field) => (
+                                <tr key={field.label}>
+                                    <td className={cx('specs-key')}>{field.label}</td>
+                                    <td className={cx('specs-value')}>{field.value}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 // =========================
 // Helper Components
 // =========================
@@ -332,22 +365,6 @@ function BreadcrumbSection({ product, activeVariation, selectedAttributes, locat
                 ]}
             />
         </div>
-    );
-}
-
-function SpecsTable({ specs }) {
-    const built = buildSpecs(specs);
-    return (
-        <table className={cx('specs-table')}>
-            <tbody>
-                {Object.entries(built).map(([k, v]) => (
-                    <tr key={k}>
-                        <td className={cx('specs-key')}>{k}</td>
-                        <td className={cx('specs-value')}>{v}</td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
     );
 }
 
