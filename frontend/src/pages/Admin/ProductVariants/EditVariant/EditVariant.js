@@ -17,6 +17,7 @@ import {
 import axiosClient from '~/utils/axiosClient';
 import { mergeSpecs } from '~/utils/mergeSpecs';
 import SpecEditor from '~/components/SpecEditor/SpecEditor';
+import { buildSpecOverrides } from '~/utils/buildSpecOverrides';
 
 const cx = classNames.bind(styles);
 
@@ -68,26 +69,6 @@ function EditVariant() {
         if (!baseField) return true;
 
         return value !== baseField.value;
-    };
-
-    const buildSpecOverrides = (productSpecs, uiSpecs) => {
-        const overrides = {};
-
-        uiSpecs.forEach((group) => {
-            const baseGroup = productSpecs.find((g) => g.group === group.group);
-            if (!baseGroup) return;
-
-            group.fields.forEach((field) => {
-                const baseField = baseGroup.fields.find((f) => f.label === field.label);
-
-                if (!baseField || field.value !== baseField.value) {
-                    if (!overrides[group.group]) overrides[group.group] = {};
-                    overrides[group.group][field.label] = field.value;
-                }
-            });
-        });
-
-        return overrides;
     };
 
     // -------------------------------------------------
@@ -224,8 +205,6 @@ function EditVariant() {
             isUploadingNow = false;
         }
     };
-
-    const specOverrides = useMemo(() => buildSpecOverrides(productSpecs, uiSpecs), [productSpecs, uiSpecs]);
 
     // -------------------------------------------------
     // SAVE

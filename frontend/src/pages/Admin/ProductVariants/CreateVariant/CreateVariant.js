@@ -9,6 +9,8 @@ import { quillFormats, quillModules } from '~/utils/quillSetup';
 import { useToast } from '~/components/ToastMessager';
 import axiosClient from '~/utils/axiosClient';
 import { updateProductAttributes } from '~/services/productService';
+import { buildSpecOverrides } from '~/utils/buildSpecOverrides';
+import SpecEditor from '~/components/SpecEditor/SpecEditor';
 
 const cx = classNames.bind(styles);
 
@@ -34,9 +36,6 @@ const CreateVariant = () => {
     // Map attrId -> selectedTermIds (các term được chọn của attr đó)
     const [selectedTermsMap, setSelectedTermsMap] = useState({});
 
-    // Mặc định specs trống
-    const [specs, setSpecs] = useState([{ key: '', value: '' }]);
-
     // Ma trận biến thể
     const [matrix, setMatrix] = useState([]);
 
@@ -53,20 +52,6 @@ const CreateVariant = () => {
         };
         loadProduct();
     }, [productId]);
-
-    const convertSpecsToUI = (groups) => {
-        const flat = [];
-        groups.forEach((g) => {
-            g.fields.forEach((f) => {
-                flat.push({
-                    group: g.group,
-                    key: f.label,
-                    value: f.value,
-                });
-            });
-        });
-        return flat;
-    };
 
     // ===========================================================
     // Load available attributes (có terms)
@@ -196,7 +181,7 @@ const CreateVariant = () => {
                         shortDescription: '', // 👈 thêm
                         longDescription: '', // 👈 thêm
                         images: [],
-                        specs: convertSpecsToUI(productDefaultSpecs),
+                        uiSpecs: structuredClone(productDefaultSpecs),
                     }
                 );
             });
@@ -211,33 +196,6 @@ const CreateVariant = () => {
         setMatrix((prev) => {
             const clone = [...prev];
             clone[index][field] = value;
-            return clone;
-        });
-    };
-
-    // ===========================================================
-    // Specs helpers
-    // ===========================================================
-    const addSpecRow = (index) => {
-        setMatrix((prev) => {
-            const clone = [...prev];
-            clone[index].specs.push({ key: '', value: '' });
-            return clone;
-        });
-    };
-
-    const updateSpecRow = (vIndex, sIndex, field, value) => {
-        setMatrix((prev) => {
-            const clone = [...prev];
-            clone[vIndex].specs[sIndex][field] = value;
-            return clone;
-        });
-    };
-
-    const removeSpecRow = (vIndex, sIndex) => {
-        setMatrix((prev) => {
-            const clone = [...prev];
-            clone[vIndex].specs = clone[vIndex].specs.filter((_, i) => i !== sIndex);
             return clone;
         });
     };
@@ -301,18 +259,8 @@ const CreateVariant = () => {
         try {
             // Convert variant specs to specOverrides
             const variants = matrix.map((row) => {
-                const specOverrides = [];
-
-                row.specs.forEach((spec) => {
-                    if (!spec.key.trim()) return; // skip empty
-
-                    const original = productDefaultSpecs.find((d) => d.key === spec.key);
-
-                    // Only push changed values
-                    if (!original || original.value !== spec.value) {
-                        specOverrides.push({ key: spec.key, value: spec.value });
-                    }
-                });
+                const specOverrides = buildSpecOverrides(productDefaultSpecs, row.uiSpecs);
+                console.log('🧪 specOverrides', specOverrides, Object.keys(specOverrides).length);
 
                 return {
                     attributes: row.attributes.map((a) => ({
@@ -323,10 +271,10 @@ const CreateVariant = () => {
                     price: Number(row.price),
                     discountPrice: Number(row.discountPrice || 0),
                     quantity: Number(row.quantity || 0),
-                    specOverrides, // ⬅️ Only changed specs
                     shortDescription: row.shortDescription || '',
                     longDescription: row.longDescription || '',
                     images: row.images,
+                    specOverrides, // ⬅️ Only changed specs
                 };
             });
 
@@ -557,74 +505,21 @@ const CreateVariant = () => {
                                                         )}
                                                     </div>
 
-                                                    {/* SPECS FORM (UI TABLE STYLE) */}
-                                                    <div className={cx('specs-section')}>
-                                                        <label className={cx('section-title')}>Thông số kỹ thuật</label>
-
-                                                        <div className={cx('specs-table')}>
-                                                            <div className={cx('specs-header')}>
-                                                                <span>Thông số</span>
-                                                                <span>Giá trị</span>
-                                                                <span></span>
-                                                            </div>
-
-                                                            {v.specs.length === 0 && (
-                                                                <div className={cx('specs-empty')}>
-                                                                    Chưa có thông số nào.
-                                                                </div>
-                                                            )}
-
-                                                            {v.specs.map((spec, sIndex) => (
-                                                                <div key={sIndex} className={cx('specs-row')}>
-                                                                    <input
-                                                                        type="text"
-                                                                        className={cx('specs-input')}
-                                                                        placeholder="VD: CPU"
-                                                                        value={spec.key}
-                                                                        onChange={(e) =>
-                                                                            updateSpecRow(
-                                                                                index,
-                                                                                sIndex,
-                                                                                'key',
-                                                                                e.target.value,
-                                                                            )
-                                                                        }
-                                                                    />
-
-                                                                    <input
-                                                                        type="text"
-                                                                        className={cx('specs-input')}
-                                                                        placeholder="VD: Intel Core i7 14700F"
-                                                                        value={spec.value}
-                                                                        onChange={(e) =>
-                                                                            updateSpecRow(
-                                                                                index,
-                                                                                sIndex,
-                                                                                'value',
-                                                                                e.target.value,
-                                                                            )
-                                                                        }
-                                                                    />
-
-                                                                    <button
-                                                                        type="button"
-                                                                        className={cx('specs-remove')}
-                                                                        onClick={() => removeSpecRow(index, sIndex)}
-                                                                    >
-                                                                        ✕
-                                                                    </button>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-
-                                                        <button
-                                                            type="button"
-                                                            className={cx('add-spec-btn')}
-                                                            onClick={() => addSpecRow(index)}
-                                                        >
-                                                            + Thêm thông số
-                                                        </button>
-                                                    </div>
+                                                    {/* SPECS EDITOR COMPONENT */}
+                                                    <SpecEditor
+                                                        uiSpecs={v.uiSpecs}
+                                                        productSpecs={productDefaultSpecs}
+                                                        setUiSpecs={(updater) => {
+                                                            setMatrix((prev) => {
+                                                                const clone = [...prev];
+                                                                clone[index].uiSpecs =
+                                                                    typeof updater === 'function'
+                                                                        ? updater(clone[index].uiSpecs)
+                                                                        : updater;
+                                                                return clone;
+                                                            });
+                                                        }}
+                                                    />
 
                                                     {/* DESCRIPTION */}
                                                     <label>Mô tả ngắn</label>

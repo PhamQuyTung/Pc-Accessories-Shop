@@ -129,14 +129,32 @@ module.exports = {
         });
       }
 
+      // ================= SPEC OVERRIDES =================
+      let specOverrides = {};
+
+      if (data.specOverrides && typeof data.specOverrides === "object") {
+        for (const [group, fields] of Object.entries(data.specOverrides)) {
+          if (!group || typeof fields !== "object") continue;
+
+          specOverrides[group] = {};
+          for (const [label, value] of Object.entries(fields)) {
+            if (!label) continue;
+            specOverrides[group][label] = String(value ?? "");
+          }
+        }
+      }
+
       const variant = {
         sku: data.sku,
         price: Number(data.price),
         discountPrice: data.discountPrice ?? null,
         quantity: Number(data.quantity) || 0,
+        shortDescription: data.shortDescription || "",
+        longDescription: data.longDescription || "",
         thumbnail: data.thumbnail || "",
         images: Array.isArray(data.images) ? data.images : [],
         attributes: attrs,
+        specOverrides,
       };
 
       product.variations.push(variant);
@@ -384,35 +402,42 @@ module.exports = {
         if (product.variations.find((x) => x.sku === v.sku))
           return res.status(400).json({ message: `SKU ${v.sku} đã tồn tại.` });
 
-        if (Array.isArray(v.attributes)) {
-          for (let j = 0; j < v.attributes.length; j++) {
-            const a = v.attributes[j];
-            if (!a || !a.attrId || !a.terms) {
-              return res.status(400).json({
-                message: `attributes[${j}] của SKU ${v.sku} không hợp lệ`,
-                received: a,
-              });
-            }
-          }
-        }
-
+        // ================= ATTRIBUTES =================
         const attrs = Array.isArray(v.attributes)
           ? v.attributes
-              .filter((a) => a && typeof a === "object") // 👈 Bỏ undefined/null
+              .filter((a) => a && typeof a === "object")
               .map((a) => ({
                 attrId: a.attrId,
                 terms: Array.isArray(a.terms) ? a.terms : [a.terms],
               }))
           : [];
 
+        // ================= SPEC OVERRIDES (✅ ĐÚNG CHỖ) =================
+        let specOverrides = {};
+
+        if (v.specOverrides && typeof v.specOverrides === "object") {
+          for (const [group, fields] of Object.entries(v.specOverrides)) {
+            if (!group || typeof fields !== "object") continue;
+
+            specOverrides[group] = {};
+            for (const [label, value] of Object.entries(fields)) {
+              if (!label) continue;
+              specOverrides[group][label] = String(value ?? "");
+            }
+          }
+        }
+
         converted.push({
           sku: v.sku,
           price: Number(v.price),
           discountPrice: v.discountPrice ?? null,
           quantity: Number(v.quantity) || 0,
+          shortDescription: v.shortDescription || "",
+          longDescription: v.longDescription || "",
           images: v.images || [],
           thumbnail: v.thumbnail || "",
           attributes: attrs,
+          specOverrides, // ✅ mỗi variant 1 bộ override
         });
       }
 
