@@ -38,7 +38,10 @@ const variationSchema = new mongoose.Schema(
 
     specOverrides: {
       type: Map,
-      of: String,
+      of: {
+        type: Map,
+        of: String,
+      },
       default: {},
     },
 

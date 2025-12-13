@@ -15,6 +15,7 @@ import {
     getAttributeTerms,
 } from '~/services/variantService';
 import axiosClient from '~/utils/axiosClient';
+import { mergeSpecs } from '~/utils/mergeSpecs';
 
 const cx = classNames.bind(styles);
 
@@ -50,32 +51,66 @@ function EditVariant() {
 
     const [allVariants, setAllVariants] = useState([]);
 
+    const [productSpecs, setProductSpecs] = useState([]);
+    const [uiSpecs, setUiSpecs] = useState([]);
+
+    const fetchProductSpecs = async () => {
+        const res = await axiosClient.get(`/products/id/${productId}`);
+        return res.data.specs || [];
+    };
+
+    const buildSpecOverrides = (productSpecs, uiSpecs) => {
+        const overrides = {};
+
+        uiSpecs.forEach((group) => {
+            const baseGroup = productSpecs.find((g) => g.group === group.group);
+            if (!baseGroup) return;
+
+            group.fields.forEach((field) => {
+                const baseField = baseGroup.fields.find((f) => f.label === field.label);
+
+                if (!baseField || field.value !== baseField.value) {
+                    if (!overrides[group.group]) overrides[group.group] = {};
+                    overrides[group.group][field.label] = field.value;
+                }
+            });
+        });
+
+        return overrides;
+    };
+
     // -------------------------------------------------
     // FETCH: Variant
     // -------------------------------------------------
     const fetchVariant = async () => {
         setLoading(true);
         try {
-            const res = await getVariantsByProduct(productId);
-            const variants = res.data.variants || [];
+            const [variantRes, specs] = await Promise.all([getVariantsByProduct(productId), fetchProductSpecs()]);
 
-            setAllVariants(variants);
+            setProductSpecs(specs);
 
-            const found = variants.find((v) => v._id === variantId || v._id === String(variantId));
+            const variants = variantRes.data.variants || [];
+            const found = variants.find((v) => String(v._id) === String(variantId));
+
             if (!found) {
                 toast('Không tìm thấy biến thể', 'error');
                 navigate(`/admin/products/${productId}/variants`);
                 return;
             }
 
+            // ✅ MERGE specs
+            const mergedSpecs = mergeSpecs({ specs }, { specOverrides: found.specOverrides });
+
+            setUiSpecs(mergedSpecs);
+
             setForm({
                 sku: found.sku || '',
                 price: found.price || '',
                 discountPrice: found.discountPrice || '',
                 quantity: found.quantity || 0,
-                shortDescription: found.shortDescription || '', // 👈 thêm
-                longDescription: found.longDescription || '', // 👈 thêm
-                images: found.images || [], // MULTI IMAGES
+                shortDescription: found.shortDescription || '',
+                longDescription: found.longDescription || '',
+                images: found.images || [],
                 thumbnail: found.thumbnail || found.images?.[0] || '',
                 attributes: found.attributes || [],
             });
@@ -219,6 +254,7 @@ function EditVariant() {
                 });
 
             console.log('📤 Sending normalized attributes:', normalizedAttrs); // DEBUG
+            const specOverrides = buildSpecOverrides(productSpecs, uiSpecs);
 
             const payload = {
                 sku: form.sku,
@@ -230,6 +266,7 @@ function EditVariant() {
                 images: form.images,
                 thumbnail: form.thumbnail || form.images[0] || '',
                 attributes: normalizedAttrs,
+                specOverrides, // ✅ CHỈ GỬI OVERRIDE
             };
 
             console.log('📤 Full payload:', payload); // DEBUG
@@ -349,6 +386,27 @@ function EditVariant() {
                                 value={form.quantity}
                                 onChange={(e) => updateField('quantity', e.target.value)}
                             />
+
+                            {/* Spec */}
+                            {uiSpecs.map((group, gIdx) => (
+                                <div key={gIdx} className={cx('spec-group')}>
+                                    <h4>{group.group}</h4>
+
+                                    {group.fields.map((field, fIdx) => (
+                                        <div key={fIdx} className={cx('spec-row')}>
+                                            <span>{field.label}</span>
+                                            <input
+                                                value={field.value || ''}
+                                                onChange={(e) => {
+                                                    const clone = [...uiSpecs];
+                                                    clone[gIdx].fields[fIdx].value = e.target.value;
+                                                    setUiSpecs(clone);
+                                                }}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            ))}
 
                             {/* DESCRIPTION CARD */}
                             <div className={cx('card2')} style={{ marginTop: '18px' }}>

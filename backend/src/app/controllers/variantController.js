@@ -284,6 +284,24 @@ module.exports = {
         }
       }
 
+      // ================= SPEC OVERRIDES (GROUP A) =================
+      if (update.specOverrides && typeof update.specOverrides === "object") {
+        const normalized = {};
+
+        for (const [group, fields] of Object.entries(update.specOverrides)) {
+          if (!group || typeof fields !== "object") continue;
+
+          normalized[group] = {};
+
+          for (const [label, value] of Object.entries(fields)) {
+            if (!label) continue;
+            normalized[group][label] = String(value ?? "");
+          }
+        }
+
+        update.specOverrides = normalized;
+      }
+
       Object.assign(variant, update);
       await product.save();
 
