@@ -9,6 +9,7 @@ import Chuot from './Chuot/Chuot';
 import BanPhim from './BanPhim/BanPhim';
 import LT from './LT/LT';
 import Screen from './Screen/Screen';
+import Phone from './Phone/phone';
 import Promotions from './Promotions/PromotionsWrapper';
 import LatestPosts from './LatestPosts/LatestPosts';
 
@@ -26,6 +27,7 @@ function Home() {
         <Chuot key="chuot" />,
         <BanPhim key="banphim" />,
         <Screen key="screen" />,
+        <Phone key="phone" />,
         <LatestPosts key="posts" />,
     ];
 

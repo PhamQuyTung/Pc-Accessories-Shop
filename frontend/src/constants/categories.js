@@ -75,6 +75,11 @@ export const CATEGORY_LIST = [
     "slug": "phu-kien"
   },
   {
+    "key": "dienthoai",
+    "name": "Điện thoại",
+    "slug": "dien-thoai"
+  },
+  {
     "key": "thuonghieu",
     "name": "Thương hiệu",
     "slug": "thuong-hieu"
