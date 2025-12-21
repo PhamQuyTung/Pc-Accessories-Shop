@@ -108,149 +108,6 @@ class ProductController {
         },
         { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
 
-        // ---- Variations populate safe ----
-        {
-          $lookup: {
-            from: "attributes",
-            localField: "variations.attributes.attrId",
-            foreignField: "_id",
-            as: "variationAttrData",
-          },
-        },
-        {
-          $lookup: {
-            from: "attributeterms",
-            localField: "variations.attributes.terms",
-            foreignField: "_id",
-            as: "variationTermData",
-          },
-        },
-        {
-          $addFields: {
-            variations: {
-              $map: {
-                input: { $ifNull: ["$variations", []] },
-                as: "var",
-                in: {
-                  $let: {
-                    vars: {
-                      varObj: {
-                        $cond: [
-                          { $eq: [{ $type: "$$var" }, "object"] },
-                          "$$var",
-                          {},
-                        ],
-                      },
-                    },
-                    in: {
-                      $mergeObjects: [
-                        "$$varObj",
-                        {
-                          attributes: {
-                            $map: {
-                              input: { $ifNull: ["$$varObj.attributes", []] },
-                              as: "attr",
-                              in: {
-                                attrId: {
-                                  $arrayElemAt: [
-                                    {
-                                      $filter: {
-                                        input: "$variationAttrData",
-                                        cond: {
-                                          $eq: ["$$this._id", "$$attr.attrId"],
-                                        },
-                                      },
-                                    },
-                                    0,
-                                  ],
-                                },
-                                terms: {
-                                  $map: {
-                                    input: { $ifNull: ["$$attr.terms", []] },
-                                    as: "termId",
-                                    in: {
-                                      $arrayElemAt: [
-                                        {
-                                          $filter: {
-                                            input: "$variationTermData",
-                                            cond: {
-                                              $eq: ["$$this._id", "$$termId"],
-                                            },
-                                          },
-                                        },
-                                        0,
-                                      ],
-                                    },
-                                  },
-                                },
-                              },
-                            },
-                          },
-                        },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-
-        // ---- Gifts ----
-        {
-          $lookup: {
-            from: "gifts",
-            localField: "gifts",
-            foreignField: "_id",
-            as: "gifts",
-          },
-        },
-        {
-          $lookup: {
-            from: "products",
-            localField: "gifts.products.productId",
-            foreignField: "_id",
-            as: "giftProducts",
-          },
-        },
-        {
-          $addFields: {
-            gifts: {
-              $map: {
-                input: "$gifts",
-                as: "g",
-                in: {
-                  _id: "$$g._id",
-                  title: "$$g.title",
-                  products: {
-                    $map: {
-                      input: "$$g.products",
-                      as: "gp",
-                      in: {
-                        productId: "$$gp.productId",
-                        productName: "$$gp.productName",
-                        quantity: "$$gp.quantity",
-                        finalPrice: "$$gp.finalPrice",
-                        productData: {
-                          $arrayElemAt: [
-                            {
-                              $filter: {
-                                input: "$giftProducts",
-                                cond: { $eq: ["$$this._id", "$$gp.productId"] },
-                              },
-                            },
-                            0,
-                          ],
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-
         // ---- Reviews ----
         {
           $lookup: {
@@ -260,6 +117,8 @@ class ProductController {
             as: "reviews",
           },
         },
+
+        // ---- Final Price (simple product) ----
         {
           $addFields: {
             averageRating: {
@@ -279,6 +138,45 @@ class ProductController {
             },
           },
         },
+
+        // ================================
+        // 🔥 TÍNH GIÁ BIẾN THỂ TRONG MONGO
+        // ================================
+        {
+          $addFields: {
+            variantPrices: {
+              $map: {
+                input: { $ifNull: ["$variations", []] },
+                as: "v",
+                in: {
+                  $cond: [
+                    { $gt: ["$$v.discountPrice", 0] },
+                    "$$v.discountPrice",
+                    "$$v.price",
+                  ],
+                },
+              },
+            },
+          },
+        },
+        {
+          $addFields: {
+            minPrice: {
+              $cond: [
+                { $gt: [{ $size: "$variantPrices" }, 0] },
+                { $min: "$variantPrices" },
+                "$finalPrice",
+              ],
+            },
+            maxPrice: {
+              $cond: [
+                { $gt: [{ $size: "$variantPrices" }, 0] },
+                { $max: "$variantPrices" },
+                "$finalPrice",
+              ],
+            },
+          },
+        },
       ];
 
       // -----------------------------
@@ -287,13 +185,7 @@ class ProductController {
       if (sort && sort.startsWith("price")) {
         pipeline.push({
           $addFields: {
-            sortPrice: {
-              $cond: [
-                { $gt: ["$discountPrice", 0] },
-                "$discountPrice",
-                "$price",
-              ],
-            },
+            sortPrice: "$minPrice", // 🔥 SORT THEO MIN PRICE
           },
         });
       }
@@ -343,6 +235,10 @@ class ProductController {
           defaultVariantId: p.defaultVariantId?.toString(),
           variations: convertedVariations,
           status,
+
+          // ✅ ĐÃ CÓ SẴN TỪ MONGO
+          minPrice: p.minPrice,
+          maxPrice: p.maxPrice,
         };
       });
 

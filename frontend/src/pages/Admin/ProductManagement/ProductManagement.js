@@ -167,6 +167,44 @@ const ProductManagement = () => {
         }
     };
 
+    const getProductThumbnail = (product) => {
+        // 1️⃣ Simple product
+        if (product.images?.length > 0) {
+            return product.images[0];
+        }
+
+        // 2️⃣ Variable product - có defaultVariant
+        if (product.defaultVariantId && product.variations?.length > 0) {
+            const defaultVariant = product.variations.find((v) => v._id === product.defaultVariantId);
+
+            if (defaultVariant?.images?.length > 0) {
+                return defaultVariant.images[0];
+            }
+        }
+
+        // 3️⃣ Fallback: lấy ảnh biến thể đầu tiên
+        const firstVariantWithImage = product.variations?.find((v) => v.images?.length > 0);
+
+        if (firstVariantWithImage) {
+            return firstVariantWithImage.images[0];
+        }
+
+        // 4️⃣ Cuối cùng
+        return '/placeholder.jpg';
+    };
+
+    const renderPriceRange = (product) => {
+        if (typeof product.minPrice !== 'number' || typeof product.maxPrice !== 'number') {
+            return 'N/A';
+        }
+
+        if (product.minPrice === product.maxPrice) {
+            return formatCurrency(product.minPrice);
+        }
+
+        return `${formatCurrency(product.minPrice)} - ${formatCurrency(product.maxPrice)}`;
+    };
+
     return (
         <div className={cx('product-management')}>
             <div className={cx('header')}>
@@ -287,7 +325,7 @@ const ProductManagement = () => {
                             <td>{(currentPage - 1) * limit + index + 1}</td>
                             <td>
                                 <img
-                                    src={product.images?.[0] || '/placeholder.jpg'}
+                                    src={getProductThumbnail(product)}
                                     alt={product.name}
                                     className={cx('product-thumb')}
                                 />
@@ -307,16 +345,9 @@ const ProductManagement = () => {
                                       : 'Không có thương hiệu'}
                             </td>
 
-                            <td>{product.price != null ? formatCurrency(product.price) : 'N/A'}</td>
-                            <td>{product.discountPrice != null ? formatCurrency(product.discountPrice) : 'N/A'}</td>
-
-                            <td>
-                                {formatCurrency(
-                                    typeof product.discountPrice === 'number' && product.discountPrice > 0
-                                        ? product.discountPrice
-                                        : product.price,
-                                )}
-                            </td>
+                            <td>{renderPriceRange(product)}</td>
+                            <td>—</td>
+                            <td>{formatCurrency(product.minPrice)}</td>
 
                             <td>
                                 {typeof product.category === 'object' && product.category?.name

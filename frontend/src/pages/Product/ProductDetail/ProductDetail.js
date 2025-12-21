@@ -149,16 +149,6 @@ function ProductDetailView({
     const { isAddingToCart, setIsAddingToCart } = isAddingToCartState;
     const { activeTab, setActiveTab } = activeTabState;
     const [loadingVariation, setLoadingVariation] = useState(false);
-    const effectiveVariation =
-        activeVariation ||
-        (product.variations?.length === 0
-            ? {
-                  _id: null,
-                  quantity: product.quantity,
-                  price: product.price,
-                  discountPrice: product.discountPrice,
-              }
-            : null);
 
     // Thêm vào giỏ
     const handleAddToCart = async () => {
