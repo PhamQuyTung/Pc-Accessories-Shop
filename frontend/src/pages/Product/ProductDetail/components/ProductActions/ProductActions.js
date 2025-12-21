@@ -3,9 +3,13 @@ import cx from 'classnames';
 import styles from './ProductActions.module.scss';
 
 const ProductActions = ({ isAddingToCart, product, activeVariation, onAddToCart }) => {
-    const isOutOfStock = activeVariation && Number(activeVariation.quantity) === 0;
+    const hasVariations = product?.variations?.length > 0;
 
-    const isDisabled = isAddingToCart || !activeVariation || isOutOfStock;
+    const isOutOfStock = hasVariations
+        ? Number(activeVariation?.quantity || 0) === 0
+        : Number(product?.quantity || 0) === 0;
+
+    const isDisabled = isAddingToCart || isOutOfStock || (hasVariations && !activeVariation);
 
     return (
         <div className={styles.actionsWrapper}>
