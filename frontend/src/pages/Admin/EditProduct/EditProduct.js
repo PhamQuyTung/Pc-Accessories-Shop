@@ -383,6 +383,20 @@ function EditProduct() {
                                 {/* FIELDS */}
                                 {group.fields.map((field, fieldIndex) => (
                                     <div key={fieldIndex} className={cx('spec-field')}>
+                                        <label className={cx('show-on-card')}>
+                                            <input
+                                                type="checkbox"
+                                                checked={field.showOnCard || false}
+                                                onChange={(e) => {
+                                                    const updated = [...formData.specs];
+                                                    updated[groupIndex].fields[fieldIndex].showOnCard =
+                                                        e.target.checked;
+                                                    setFormData((prev) => ({ ...prev, specs: updated }));
+                                                }}
+                                            />
+                                            Hiển thị trên card
+                                        </label>
+
                                         <input
                                             type="text"
                                             placeholder="Label"

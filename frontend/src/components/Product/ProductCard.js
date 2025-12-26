@@ -102,14 +102,19 @@ function ProductCard({ product, viewMode }) {
                 {/* HIỂN THỊ SPEC CỦA BIẾN THỂ */}
                 {Array.isArray(display.specs) && display.specs.length > 0 && (
                     <div className={cx('specs')}>
-                        {display.specs
-                            .flatMap((spec) => spec.fields?.map((field) => field.value))
-                            .map((value, i, arr) => (
-                                <span key={i}>
-                                    {value}
-                                    {i < arr.length - 1 && <span className={cx('separator')}> | </span>}
-                                </span>
-                            ))}
+                        {Array.isArray(display.specs) && (
+                            <div className={cx('specs')}>
+                                {display.specs
+                                    .flatMap((group) => group.fields?.filter((f) => f.showOnCard).map((f) => f.value))
+                                    .slice(0, 3) // 👈 UX an toàn
+                                    .map((value, i, arr) => (
+                                        <span key={i}>
+                                            {value}
+                                            {i < arr.length - 1 && <span className={cx('separator')}> | </span>}
+                                        </span>
+                                    ))}
+                            </div>
+                        )}
                     </div>
                 )}
 
