@@ -100,14 +100,16 @@ function ProductCard({ product, viewMode }) {
                 <Link to={`/products/${product.slug}?vid=${display._id}`}>{getDefaultDisplayName(product)}</Link>
 
                 {/* HIỂN THỊ SPEC CỦA BIẾN THỂ */}
-                {display.specs && Object.values(display.specs).length > 0 && (
+                {Array.isArray(display.specs) && display.specs.length > 0 && (
                     <div className={cx('specs')}>
-                        {Object.values(display.specs).map((value, i, arr) => (
-                            <span key={i}>
-                                {value}
-                                {i < arr.length - 1 && <span className={cx('separator')}> | </span>}
-                            </span>
-                        ))}
+                        {display.specs
+                            .flatMap((spec) => spec.fields?.map((field) => field.value))
+                            .map((value, i, arr) => (
+                                <span key={i}>
+                                    {value}
+                                    {i < arr.length - 1 && <span className={cx('separator')}> | </span>}
+                                </span>
+                            ))}
                     </div>
                 )}
 
