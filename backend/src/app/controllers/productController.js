@@ -891,13 +891,30 @@ class ProductController {
 
       // --- 2) Gắn defaultVariant đúng ---
       const normalized = products.map((p) => {
-        const defaultVariant =
-          p.variations.find(
-            (v) => v._id.toString() === p.defaultVariantId?._id?.toString()
-          ) || p.variations[0];
+        const variations = Array.isArray(p.variations)
+          ? p.variations.filter(
+              (v) =>
+                v &&
+                typeof v === "object" &&
+                (v.price != null || v.discountPrice != null)
+            )
+          : [];
+
+        const defId = p.defaultVariantId?._id?.toString();
+
+        let defaultVariant = defId
+          ? variations.find((v) => v._id?.toString() === defId)
+          : null;
+
+        defaultVariant = defaultVariant || variations[0] || null;
+
+        if (!p.defaultVariant) {
+          console.warn("⚠️ Product has no valid variation:", p._id);
+        }
 
         return {
           ...p,
+          variations,
           defaultVariant,
         };
       });
@@ -929,16 +946,18 @@ class ProductController {
       // --- 4) Gắn rating + finalPrice ---
       const finalData = normalized.map((p) => {
         const rv = reviewMap[p._id.toString()] || {};
+        const dv = p.defaultVariant;
+
+        const toNum = (v) => (typeof v === "number" && !isNaN(v) ? v : null);
 
         const finalPrice =
-          p.defaultVariant.discountPrice && p.defaultVariant.discountPrice > 0
-            ? p.defaultVariant.discountPrice
-            : p.defaultVariant.price;
+          toNum(dv?.discountPrice) && dv.discountPrice > 0
+            ? dv.discountPrice
+            : (toNum(dv?.price) ?? toNum(p.price) ?? 0);
 
         return {
           ...p,
-          defaultVariant,
-          specs: mergeSpecs(p, defaultVariant),
+          specs: mergeSpecs(p, dv),
           finalPrice,
           averageRating: rv.averageRating || 0,
           reviewCount: rv.reviewCount || 0,

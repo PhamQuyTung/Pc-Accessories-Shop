@@ -6,6 +6,7 @@ import classNames from 'classnames/bind';
 import { FireIcon, GiftIcon } from '../Icons/Icons';
 import BasicRating from '~/components/Rating/Rating';
 import { getDefaultDisplayName } from '~/utils/getDefaultDisplayName';
+import { getCardSpecs } from '~/utils/getCardSpecs';
 
 const cx = classNames.bind(styles);
 
@@ -35,6 +36,11 @@ function ProductCard({ product, viewMode }) {
     // ===========================
     const price = display?.price ?? product.price ?? 0;
     const discountPrice = display?.discountPrice ?? product.discountPrice ?? null;
+
+    // ===========================
+    // 4) Lấy specs hiển thị trên card
+    // ===========================
+    const cardSpecs = getCardSpecs(display.specs, 3);
 
     return (
         <div className={cx('product-card', viewMode === 'list' ? 'list-mode' : 'grid-mode')}>
@@ -100,21 +106,14 @@ function ProductCard({ product, viewMode }) {
                 <Link to={`/products/${product.slug}?vid=${display._id}`}>{getDefaultDisplayName(product)}</Link>
 
                 {/* HIỂN THỊ SPEC CỦA BIẾN THỂ */}
-                {Array.isArray(display.specs) && display.specs.length > 0 && (
+                {cardSpecs.length > 0 && (
                     <div className={cx('specs')}>
-                        {Array.isArray(display.specs) && (
-                            <div className={cx('specs')}>
-                                {display.specs
-                                    .flatMap((group) => group.fields?.filter((f) => f.showOnCard).map((f) => f.value))
-                                    .slice(0, 3) // 👈 UX an toàn
-                                    .map((value, i, arr) => (
-                                        <span key={i}>
-                                            {value}
-                                            {i < arr.length - 1 && <span className={cx('separator')}> | </span>}
-                                        </span>
-                                    ))}
-                            </div>
-                        )}
+                        {cardSpecs.map((value, i) => (
+                            <span key={i}>
+                                {value}
+                                {i < cardSpecs.length - 1 && <span className={cx('separator')}> | </span>}
+                            </span>
+                        ))}
                     </div>
                 )}
 

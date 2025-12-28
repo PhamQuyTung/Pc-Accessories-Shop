@@ -13,6 +13,7 @@ import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons';
 import { FireIcon, GiftIcon } from '../Icons/Icons';
 import BasicRating from '~/components/Rating/Rating';
 import { getDefaultDisplayName } from '~/utils/getDefaultDisplayName';
+import { getCardSpecs } from '~/utils/getCardSpecs';
 
 const cx = classNames.bind(styles);
 
@@ -84,12 +85,12 @@ function Product({ category }) {
                     const defId = product.defaultVariantId ? String(product.defaultVariantId) : null;
 
                     // normalize comparison by stringifying both sides
-                    let defaultVariation = defId
-                        ? variations.find((v) => String(v._id) === defId) || null
-                        : null;
+                    let defaultVariation = defId ? variations.find((v) => String(v._id) === defId) || null : null;
 
                     // fallback to first available variation
                     defaultVariation = defaultVariation || variations[0] || null;
+
+                    const displaySpecs = getCardSpecs(defaultVariation?.specs || product?.specs, 3);
 
                     const displayImage =
                         defaultVariation?.thumbnail || defaultVariation?.images?.[0] || product.images?.[0];
@@ -106,7 +107,12 @@ function Product({ category }) {
                     let originalPrice = 0;
 
                     if (defaultVariation) {
-                        if (variationDiscount !== null && variationDiscount > 0 && variationPrice !== null && variationDiscount < variationPrice) {
+                        if (
+                            variationDiscount !== null &&
+                            variationDiscount > 0 &&
+                            variationPrice !== null &&
+                            variationDiscount < variationPrice
+                        ) {
                             displayPrice = variationDiscount;
                             originalPrice = variationPrice;
                         } else {
@@ -114,7 +120,12 @@ function Product({ category }) {
                             originalPrice = variationPrice ?? 0;
                         }
                     } else {
-                        if (productDiscountNum !== null && productDiscountNum > 0 && productPriceNum !== null && productDiscountNum < productPriceNum) {
+                        if (
+                            productDiscountNum !== null &&
+                            productDiscountNum > 0 &&
+                            productPriceNum !== null &&
+                            productDiscountNum < productPriceNum
+                        ) {
                             displayPrice = productDiscountNum;
                             originalPrice = productPriceNum;
                         } else {
@@ -125,31 +136,13 @@ function Product({ category }) {
 
                     const hasDiscount = originalPrice > 0 && displayPrice < originalPrice;
 
+                    const hasSpecs = displaySpecs.length > 0;
+                    const hasGift =
+                        Array.isArray(product.gifts) && product.gifts.some((g) => g && Object.keys(g).length > 0);
+
                     return (
                         <SwiperSlide key={product._id} className={cx('custom-slide')}>
                             <div className={cx('product-card')}>
-                                <div className={cx('proloop-label--bottom')}>
-                                    {typeof product.status === 'string' &&
-                                        product.status.toLowerCase().includes('quà tặng') && (
-                                            <span className={cx('gift-tag')}>
-                                                <div className={cx('gift-tag__hot')}>
-                                                    <FireIcon className={cx('icon-fire')} />
-                                                    Quà tặng HOT
-                                                </div>
-                                                <div className={cx('gift-tag__box')}>
-                                                    <GiftIcon className={cx('icon-gift')} />
-                                                </div>
-                                            </span>
-                                        )}
-
-                                    {Array.isArray(product.gifts) &&
-                                        product.gifts.some((g) => g && Object.keys(g).length > 0) && (
-                                            <span className={cx('gift-badge')}>
-                                                <GiftIcon className={cx('icon-gift-small')} />
-                                            </span>
-                                        )}
-                                </div>
-
                                 {/* IMAGE WITH DEFAULT VARIATION */}
                                 <Link to={`/products/${product.slug}`}>
                                     <img src={displayImage} alt={product.name} />
@@ -188,23 +181,28 @@ function Product({ category }) {
                                 <div className={cx('product-card__des')}>
                                     <Link to={`/products/${product.slug}`}>{getDefaultDisplayName(product)}</Link>
 
-                                    {typeof product.specs === 'object' &&
-                                        Object.values(product.specs || {}).some(
-                                            (value) => typeof value === 'string' && value.trim(),
-                                        ) && (
-                                            <div className={cx('specs')}>
-                                                {Object.values(product.specs || {})
-                                                    .filter((value) => typeof value === 'string' && value.trim())
-                                                    .map((value, index, array) => (
+                                    {(hasSpecs || hasGift) && (
+                                        <div className={cx('proloop-label--bottom')}>
+                                            {hasSpecs && (
+                                                <div className={cx('specs')}>
+                                                    {displaySpecs.map((value, index) => (
                                                         <span key={index}>
                                                             {value}
-                                                            {index < array.length - 1 && (
+                                                            {index < displaySpecs.length - 1 && (
                                                                 <span className={cx('separator')}> | </span>
                                                             )}
                                                         </span>
                                                     ))}
-                                            </div>
-                                        )}
+                                                </div>
+                                            )}
+
+                                            {hasGift && (
+                                                <span className={cx('gift-badge')}>
+                                                    <GiftIcon className={cx('icon-gift-small')} />
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
 
                                     {/* PRICE WITH DEFAULT VARIATION */}
                                     <div className={cx('price')}>
