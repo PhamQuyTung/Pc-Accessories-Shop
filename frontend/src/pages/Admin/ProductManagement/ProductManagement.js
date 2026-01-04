@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaPencilAlt, FaTrashAlt, FaClone } from 'react-icons/fa';
+import Tippy from '@tippyjs/react';
+import 'tippy.js/dist/tippy.css'; // optional
 import axios from 'axios';
 import classNames from 'classnames/bind';
 import styles from './ProductManagement.module.scss';
@@ -9,6 +11,33 @@ import { useToast } from '~/components/ToastMessager';
 import Pagination from '~/components/Pagination/Pagination';
 
 const cx = classNames.bind(styles);
+
+const getDefaultVariant = (product) => {
+    if (!product.variations?.length) return null;
+
+    return product.variations.find((v) => v._id === product.defaultVariantId) || product.variations[0];
+};
+
+const getDisplayPrices = (product) => {
+    // 1️⃣ Variable product
+    if (product.variations?.length > 0) {
+        const variant = getDefaultVariant(product);
+        if (!variant) return {};
+
+        return {
+            price: variant.price,
+            discountPrice: variant.discountPrice,
+            finalPrice: variant.discountPrice > 0 ? variant.discountPrice : variant.price,
+        };
+    }
+
+    // 2️⃣ Simple product
+    return {
+        price: product.price,
+        discountPrice: product.discountPrice,
+        finalPrice: product.discountPrice > 0 ? product.discountPrice : product.price,
+    };
+};
 
 const ProductManagement = () => {
     const [totalCount, setTotalCount] = useState(0);
@@ -335,6 +364,12 @@ const ProductManagement = () => {
                                 <Link to={`/products/${product.slug}`} className={cx('product-link')}>
                                     {product.name}
                                 </Link>
+
+                                {product.variations?.length > 0 && (
+                                    <span className={cx('variant-badge')} title="Sản phẩm có biến thể">
+                                        Biến thể
+                                    </span>
+                                )}
                             </td>
 
                             <td>
@@ -345,9 +380,40 @@ const ProductManagement = () => {
                                       : 'Không có thương hiệu'}
                             </td>
 
-                            <td>{renderPriceRange(product)}</td>
-                            <td>—</td>
-                            <td>{formatCurrency(product.minPrice)}</td>
+                            {(() => {
+                                const { price, discountPrice, finalPrice } = getDisplayPrices(product);
+
+                                return (
+                                    <>
+                                        {/* Giá gốc */}
+                                        <td>{price > 0 ? formatCurrency(price) : '—'}</td>
+
+                                        {/* Giá khuyến mãi */}
+                                        <td>{discountPrice > 0 ? formatCurrency(discountPrice) : '—'}</td>
+
+                                        {/* Giá thực tế */}
+                                        <td>
+                                            {product.variations?.length > 0 ? (
+                                                <Tippy
+                                                    content={<span className={cx('tooltip-content')}>Giá hiển thị theo biến thể mặc định</span>}
+                                                    placement="top"
+                                                    animation="scale"
+                                                    delay={[100, 0]}
+                                                    interactive={true}
+                                                    appendTo={document.body} // ⭐ QUAN TRỌNG
+                                                >
+                                                    <span className={cx('price-tooltip')}>
+                                                        {finalPrice > 0 ? formatCurrency(finalPrice) : '—'}
+                                                        <span className={cx('price-tooltip-icon')}>ⓘ</span>
+                                                    </span>
+                                                </Tippy>
+                                            ) : (
+                                                <span>{finalPrice > 0 ? formatCurrency(finalPrice) : '—'}</span>
+                                            )}
+                                        </td>
+                                    </>
+                                );
+                            })()}
 
                             <td>
                                 {typeof product.category === 'object' && product.category?.name

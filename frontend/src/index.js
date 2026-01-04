@@ -7,6 +7,8 @@ import GlobalStyles from './components/GlobalStyles';
 import ToastMessagerProvider from './components/ToastMessager';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { registerQuillModules } from './utils/quillSetup';
+import 'tippy.js/dist/tippy.css';
+import 'tippy.js/animations/scale.css';
 
 registerQuillModules(); // ✅ gọi duy nhất 1 lần
 
