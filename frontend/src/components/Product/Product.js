@@ -17,7 +17,7 @@ import { getCardSpecs } from '~/utils/getCardSpecs';
 
 const cx = classNames.bind(styles);
 
-function Product({ category }) {
+function Product({ category, onHasProductChange }) {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -31,12 +31,16 @@ function Product({ category }) {
                 });
 
                 const data = res.data;
-                if (Array.isArray(data.products)) {
-                    setProducts(data.products);
-                }
+                const list = Array.isArray(data.products) ? data.products : [];
+
+                setProducts(list);
+
+                // 🔥 BÁO NGƯỢC LÊN SECTION
+                onHasProductChange?.(list.length > 0);
             } catch (error) {
                 console.error('❌ Lỗi khi fetch sản phẩm:', error);
                 setProducts([]);
+                onHasProductChange?.(false);
             } finally {
                 setLoading(false);
             }
@@ -44,6 +48,9 @@ function Product({ category }) {
 
         fetchProducts();
     }, [category]);
+
+    if (loading) return null;
+    if (!products.length) return null;
 
     return (
         <div className={cx('product-wrapper')}>
