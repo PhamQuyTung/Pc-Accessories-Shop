@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons';
@@ -43,21 +43,39 @@ function SearchBar() {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+
     const navigate = useNavigate();
 
-    const fetchSearchResults = debounce(async (query) => {
-        if (!query) return setSearchResults([]);
-        try {
-            const res = await axios.get(`/api/products/search?query=${encodeURIComponent(query)}`);
-            setSearchResults(res.data);
-        } catch (error) {
-            console.error('Lỗi tìm kiếm:', error);
-        }
-    }, 300);
+    const MAX_RESULTS = 6;
+
+    const fetchSearchResults = useMemo(
+        () =>
+            debounce(async (query) => {
+                if (query.trim().length < 2) {
+                    setSearchResults([]);
+                    setLoading(false);
+                    return;
+                }
+
+                try {
+                    setLoading(true);
+                    const res = await axios.get(`/api/products/search?query=${encodeURIComponent(query)}`);
+                    setSearchResults(res.data);
+                } catch (error) {
+                    console.error('Lỗi tìm kiếm:', error);
+                    setSearchResults([]);
+                } finally {
+                    setLoading(false);
+                }
+            }, 300),
+        [],
+    );
 
     useEffect(() => {
         fetchSearchResults(searchTerm);
-    }, [searchTerm]);
+        return () => fetchSearchResults.cancel();
+    }, [searchTerm, fetchSearchResults]);
 
     // Placeholder động
     useEffect(() => {
@@ -95,6 +113,15 @@ function SearchBar() {
         if (searchTerm.trim()) handleNavigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
     };
 
+    const highlightText = (text, keyword) => {
+        if (!keyword) return text;
+
+        const regex = new RegExp(`(${keyword})`, 'gi');
+        const parts = text.split(regex);
+
+        return parts.map((part, index) => (regex.test(part) ? <mark key={index}>{part}</mark> : part));
+    };
+
     return (
         <>
             {/* Desktop Search */}
@@ -109,40 +136,61 @@ function SearchBar() {
                 />
                 <FontAwesomeIcon icon={faMagnifyingGlass} className={cx('search-icon')} onClick={handleSearchSubmit} />
 
-                {searchResults.length > 0 && (
+                {(loading || searchResults.length > 0 || searchTerm.trim().length >= 2) && (
                     <div className={cx('search-dropdown')}>
-                        <ul className={cx('search-product-list')}>
-                            {searchResults.map((item) => {
-                                const { display, thumbnail, price, discountPrice } = getDisplayData(item);
-                                const displayName = getDisplayName(item);
-                                return (
-                                    <li key={item._id} onClick={() => handleNavigate(`/products/${item.slug}`)}>
-                                        <img src={thumbnail} alt={displayName} />
-                                        <div className={cx('info')}>
-                                            <span className={cx('link-product')}>{displayName}</span>
-                                            <span className={cx('price')}>
-                                                {discountPrice && discountPrice < price ? (
-                                                    <>
-                                                        <span className={cx('discount')}>
-                                                            {formatCurrency(discountPrice)}
-                                                        </span>
-                                                        <span className={cx('original')}>{formatCurrency(price)}</span>
-                                                    </>
-                                                ) : (
-                                                    <span>{formatCurrency(price)}</span>
-                                                )}
-                                            </span>
-                                        </div>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                        <div
-                            className={cx('search-see-more')}
-                            onClick={() => handleNavigate(`/search?query=${encodeURIComponent(searchTerm)}`)}
-                        >
-                            🔍 Xem thêm kết quả cho “{searchTerm}”
-                        </div>
+                        {/* Loading */}
+                        {loading && <div className={cx('search-loading')}>Đang tìm kiếm...</div>}
+
+                        {/* Không có kết quả */}
+                        {!loading && searchTerm.trim().length >= 2 && searchResults.length === 0 && (
+                            <div className={cx('search-no-result')}>❌ Không tìm thấy sản phẩm phù hợp</div>
+                        )}
+
+                        {/* Có kết quả */}
+                        {!loading && searchResults.length > 0 && (
+                            <>
+                                <ul className={cx('search-product-list')}>
+                                    {searchResults.slice(0, MAX_RESULTS).map((item) => {
+                                        const { thumbnail, price, discountPrice } = getDisplayData(item);
+                                        const displayName = getDisplayName(item);
+
+                                        return (
+                                            <li key={item._id} onClick={() => handleNavigate(`/products/${item.slug}`)}>
+                                                <img src={thumbnail} alt={displayName} />
+                                                <div className={cx('info')}>
+                                                    <span className={cx('link-product')}>
+                                                        {highlightText(displayName, searchTerm)}
+                                                    </span>
+                                                    <span className={cx('price')}>
+                                                        {discountPrice && discountPrice < price ? (
+                                                            <>
+                                                                <span className={cx('discount')}>
+                                                                    {formatCurrency(discountPrice)}
+                                                                </span>
+                                                                <span className={cx('original')}>
+                                                                    {formatCurrency(price)}
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <span className={cx('price-normal')}>
+                                                                {formatCurrency(price)}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+
+                                <div
+                                    className={cx('search-see-more')}
+                                    onClick={() => handleNavigate(`/search?query=${encodeURIComponent(searchTerm)}`)}
+                                >
+                                    🔍 Xem thêm kết quả cho “{searchTerm}”
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
             </div>

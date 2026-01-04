@@ -77,17 +77,46 @@
                     gap: 8px;
                     font-size: 1.4rem;
                 }
+
                 .discount {
                     color: red;
                     font-weight: bold;
                 }
+
                 .original {
                     text-decoration: line-through;
                     color: #999;
                 }
+
+                .price-normal {
+                    color: red;
+                    font-weight: 600;
+                }
             }
         }
     }
+}
+
+.search-loading {
+    padding: 14px;
+    text-align: center;
+    font-size: 1.4rem;
+    color: #666;
+    font-style: italic;
+}
+
+.link-product mark {
+    background: transparent;
+    color: #e53935;
+    font-weight: 600;
+}
+
+.search-no-result {
+    padding: 16px;
+    text-align: center;
+    font-size: 1.4rem;
+    color: #777;
+    font-style: italic;
 }
 
 /* === Responsive === */

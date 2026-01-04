@@ -90,7 +90,7 @@ function Product({ category }) {
                     // fallback to first available variation
                     defaultVariation = defaultVariation || variations[0] || null;
 
-                    const displaySpecs = getCardSpecs(defaultVariation?.specs || product?.specs, 3);
+                    const displaySpecs = getCardSpecs(defaultVariation?.specs || product?.specs, 6);
 
                     const displayImage =
                         defaultVariation?.thumbnail || defaultVariation?.images?.[0] || product.images?.[0];
