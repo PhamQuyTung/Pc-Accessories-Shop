@@ -246,7 +246,10 @@ class ProductController {
       // -----------------------------
       // 5. Execute
       // -----------------------------
-      const products = await Product.aggregate(pipeline);
+      const products = await Product.aggregate(pipeline).collation({
+        locale: "vi",
+        strength: 1,
+      });
 
       // -----------------------------
       // 5.5 Self-heal defaultVariantId
