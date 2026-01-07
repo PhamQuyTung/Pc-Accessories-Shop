@@ -255,7 +255,8 @@ select:disabled {
     vertical-align: middle;
 }
 
-.price-tooltip {
+.price-tooltip,
+.quantity-tooltip {
     cursor: help;
     display: inline-flex;
     align-items: center;
@@ -264,7 +265,8 @@ select:disabled {
     color: #374151;
 }
 
-.price-tooltip-icon {
+.price-tooltip-icon,
+.quantity-tooltip-icon {
     font-size: 12px;
     color: #6b7280;
 }
@@ -277,4 +279,25 @@ select:disabled {
     border-radius: 6px;
     max-width: 200px;
     text-align: center;
+}
+
+.variant-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 6px;
+    font-size: 12px;
+    background: #e0f2ff;
+    color: #0369a1;
+    border-radius: 4px;
+}
+
+.warning-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 6px;
+    font-size: 12px;
+    background: #fff4e5;
+    color: #b45309;
+    border-radius: 4px;
+    cursor: help;
 }

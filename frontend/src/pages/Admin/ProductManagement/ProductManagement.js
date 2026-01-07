@@ -197,42 +197,43 @@ const ProductManagement = () => {
     };
 
     const getProductThumbnail = (product) => {
-        // 1️⃣ Simple product
+        const hasVariations = product.variations?.length > 0;
+
+        if (hasVariations) {
+            let variant = null;
+
+            // 1️⃣ Ưu tiên defaultVariantId
+            if (product.defaultVariantId) {
+                variant = product.variations.find((v) => String(v._id) === String(product.defaultVariantId));
+            }
+
+            // 2️⃣ Fallback: lấy variant đầu tiên
+            if (!variant) {
+                variant = product.variations[0];
+            }
+
+            // 3️⃣ Ưu tiên images → thumbnail
+            if (variant?.images?.length > 0) {
+                return variant.images[0];
+            }
+
+            if (variant?.thumbnail) {
+                return variant.thumbnail;
+            }
+
+            return '/placeholder.jpg';
+        }
+
+        // SIMPLE PRODUCT
         if (product.images?.length > 0) {
             return product.images[0];
         }
 
-        // 2️⃣ Variable product - có defaultVariant
-        if (product.defaultVariantId && product.variations?.length > 0) {
-            const defaultVariant = product.variations.find((v) => v._id === product.defaultVariantId);
-
-            if (defaultVariant?.images?.length > 0) {
-                return defaultVariant.images[0];
-            }
-        }
-
-        // 3️⃣ Fallback: lấy ảnh biến thể đầu tiên
-        const firstVariantWithImage = product.variations?.find((v) => v.images?.length > 0);
-
-        if (firstVariantWithImage) {
-            return firstVariantWithImage.images[0];
-        }
-
-        // 4️⃣ Cuối cùng
         return '/placeholder.jpg';
     };
 
-    const renderPriceRange = (product) => {
-        if (typeof product.minPrice !== 'number' || typeof product.maxPrice !== 'number') {
-            return 'N/A';
-        }
-
-        if (product.minPrice === product.maxPrice) {
-            return formatCurrency(product.minPrice);
-        }
-
-        return `${formatCurrency(product.minPrice)} - ${formatCurrency(product.maxPrice)}`;
-    };
+    // const hasVariations = products.variations?.length > 0;
+    // const missingDefaultVariant = hasVariations && !products.defaultVariantId;
 
     return (
         <div className={cx('product-management')}>
@@ -365,10 +366,9 @@ const ProductManagement = () => {
                                     {product.name}
                                 </Link>
 
+                                {/* Badge biến thể */}
                                 {product.variations?.length > 0 && (
-                                    <span className={cx('variant-badge')} title="Sản phẩm có biến thể">
-                                        Biến thể
-                                    </span>
+                                    <span className={cx('variant-badge')}>Biến thể</span>
                                 )}
                             </td>
 
@@ -395,7 +395,11 @@ const ProductManagement = () => {
                                         <td>
                                             {product.variations?.length > 0 ? (
                                                 <Tippy
-                                                    content={<span className={cx('tooltip-content')}>Giá hiển thị theo biến thể mặc định</span>}
+                                                    content={
+                                                        <span className={cx('tooltip-content')}>
+                                                            Giá hiển thị theo biến thể mặc định
+                                                        </span>
+                                                    }
                                                     placement="top"
                                                     animation="scale"
                                                     delay={[100, 0]}
@@ -422,11 +426,27 @@ const ProductManagement = () => {
                             </td>
 
                             <td>
-                                {typeof product.status === 'string' && product.status.includes('đang nhập hàng')
-                                    ? 'Đang nhập hàng'
-                                    : typeof product.quantity === 'number'
-                                      ? product.quantity
-                                      : 'N/A'}
+                                {product.variations?.length > 0 ? (
+                                    <Tippy
+                                        content={
+                                            <span className={cx('tooltip-content')}>
+                                                Số lượng hiển thị theo biến thể mặc định
+                                            </span>
+                                        }
+                                        placement="top"
+                                        animation="scale"
+                                        delay={[100, 0]}
+                                        interactive={true}
+                                        appendTo={document.body}
+                                    >
+                                        <span className={cx('quantity-tooltip')}>
+                                            <span>{product.displayQuantity}</span>
+                                            <span className={cx('quantity-tooltip-icon')}>ⓘ</span>
+                                        </span>
+                                    </Tippy>
+                                ) : (
+                                    product.displayQuantity
+                                )}
                             </td>
 
                             <td>{variantCounts[product._id] ?? '...'}</td>

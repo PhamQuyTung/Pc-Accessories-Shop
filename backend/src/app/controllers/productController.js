@@ -179,6 +179,44 @@ class ProductController {
         },
       ];
 
+      // ================================
+      // 🔥 SORT QUANTITY (DEFAULT VARIANT)
+      // ================================
+      if (sort && sort.startsWith("quantity")) {
+        pipeline.push({
+          $addFields: {
+            sortQuantity: {
+              $cond: [
+                {
+                  $and: [
+                    { $isArray: "$variations" },
+                    { $gt: [{ $size: "$variations" }, 0] },
+                    { $ne: ["$defaultVariantId", null] },
+                  ],
+                },
+                {
+                  $let: {
+                    vars: {
+                      defaultVar: {
+                        $first: {
+                          $filter: {
+                            input: "$variations",
+                            as: "v",
+                            cond: { $eq: ["$$v._id", "$defaultVariantId"] },
+                          },
+                        },
+                      },
+                    },
+                    in: { $ifNull: ["$$defaultVar.quantity", 0] },
+                  },
+                },
+                { $ifNull: ["$quantity", 0] }, // simple product
+              ],
+            },
+          },
+        });
+      }
+
       // -----------------------------
       // 4. Sort + Pagination
       // -----------------------------
@@ -193,7 +231,11 @@ class ProductController {
       if (sort) {
         const [field, order] = sort.split("_");
         const sortValue = order === "asc" ? 1 : -1;
-        const sortField = field === "price" ? "sortPrice" : field;
+        let sortField = field;
+
+        if (field === "price") sortField = "sortPrice";
+        if (field === "quantity") sortField = "sortQuantity";
+
         pipeline.push({ $sort: { [sortField]: sortValue } });
       } else {
         pipeline.push({ $sort: { createdAt: -1 } });
@@ -207,6 +249,54 @@ class ProductController {
       const products = await Product.aggregate(pipeline);
 
       // -----------------------------
+      // 5.5 Self-heal defaultVariantId
+      // -----------------------------
+      const bulkUpdates = [];
+
+      for (const p of products) {
+        if (
+          p.defaultVariantId &&
+          Array.isArray(p.variations) &&
+          p.variations.length > 0
+        ) {
+          const exists = p.variations.some(
+            (v) => String(v._id) === String(p.defaultVariantId)
+          );
+
+          if (!exists) {
+            bulkUpdates.push({
+              updateOne: {
+                filter: { _id: p._id },
+                update: { defaultVariantId: p.variations[0]._id },
+              },
+            });
+
+            // 🔥 cập nhật luôn object đang dùng để trả response
+            p.defaultVariantId = p.variations[0]._id;
+          }
+        }
+
+        // Trường hợp không còn variant nào
+        if (
+          p.defaultVariantId &&
+          (!p.variations || p.variations.length === 0)
+        ) {
+          bulkUpdates.push({
+            updateOne: {
+              filter: { _id: p._id },
+              update: { defaultVariantId: null },
+            },
+          });
+
+          p.defaultVariantId = null;
+        }
+      }
+
+      if (bulkUpdates.length > 0) {
+        await Product.bulkWrite(bulkUpdates);
+      }
+
+      // -----------------------------
       // 6. Clean + Compute status
       // -----------------------------
       const cleanedProducts = products.map((p) => {
@@ -216,16 +306,21 @@ class ProductController {
           attributes: v.attributes || [],
         }));
 
-        let defaultVar =
+        // ✅ tìm biến thể mặc định
+        const defaultVar =
           convertedVariations.find(
             (v) => v._id === p.defaultVariantId?.toString()
-          ) ||
-          convertedVariations[0] ||
-          null;
+          ) || null;
+
+        // ✅ quantity dùng để hiển thị
+        const displayQuantity =
+          defaultVar?.quantity ??
+          p.quantity ?? // fallback cho simple product
+          0;
 
         const status = computeProductStatus({
           importing: p.importing,
-          quantity: defaultVar?.quantity ?? p.quantity,
+          quantity: displayQuantity,
           variations: defaultVar ? [defaultVar] : [],
         });
 
@@ -234,9 +329,11 @@ class ProductController {
           _id: p._id?.toString(),
           defaultVariantId: p.defaultVariantId?.toString(),
           variations: convertedVariations,
-          status,
 
-          // ✅ ĐÃ CÓ SẴN TỪ MONGO
+          // 🔥 QUAN TRỌNG
+          displayQuantity,
+
+          status,
           minPrice: p.minPrice,
           maxPrice: p.maxPrice,
         };

@@ -158,6 +158,13 @@ module.exports = {
       };
 
       product.variations.push(variant);
+
+      // 🟢 FIX: nếu chưa có defaultVariantId → set luôn
+      if (!product.defaultVariantId) {
+        const newlyCreatedVariant = product.variations.at(-1);
+        product.defaultVariantId = newlyCreatedVariant._id;
+      }
+
       await product.save();
 
       res.status(201).json({
@@ -216,9 +223,19 @@ module.exports = {
       if (!product)
         return res.status(404).json({ message: "Không tìm thấy biến thể." });
 
+      const wasDefault = String(product.defaultVariantId) === String(variantId);
+
       product.variations = product.variations.filter(
-        (v) => String(v._id) !== variantId
+        (v) => String(v._id) !== String(variantId)
       );
+
+      // 🟢 nếu xoá default variant
+      if (wasDefault) {
+        product.defaultVariantId =
+          product.variations.length > 0 ? product.variations[0]._id : null;
+      }
+
+      await product.save();
 
       await product.save();
       res.json({ message: "Đã xoá biến thể." });
@@ -442,6 +459,14 @@ module.exports = {
       }
 
       product.variations.push(...converted);
+
+      // 🟢 FIX: nếu chưa có defaultVariantId
+      if (!product.defaultVariantId && converted.length > 0) {
+        const firstNewVariant =
+          product.variations[product.variations.length - converted.length];
+        product.defaultVariantId = firstNewVariant._id;
+      }
+
       await product.save();
 
       res.status(201).json({
