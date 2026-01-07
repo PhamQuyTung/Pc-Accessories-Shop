@@ -14,6 +14,7 @@ import { FireIcon, GiftIcon } from '../Icons/Icons';
 import BasicRating from '~/components/Rating/Rating';
 import { getDefaultDisplayName } from '~/utils/getDefaultDisplayName';
 import { getCardSpecs } from '~/utils/getCardSpecs';
+import { mergeSpecs } from '~/utils/mergeSpecs';
 
 const cx = classNames.bind(styles);
 
@@ -91,14 +92,24 @@ function Product({ category, onHasProductChange }) {
                     const variations = Array.isArray(product.variations) ? product.variations : [];
                     const defId = product.defaultVariantId ? String(product.defaultVariantId) : null;
 
-                    // normalize comparison by stringifying both sides
-                    let defaultVariation = defId ? variations.find((v) => String(v._id) === defId) || null : null;
+                    // Tìm biến thể mặc định
+                    let defaultVariation = null;
 
-                    // fallback to first available variation
-                    defaultVariation = defaultVariation || variations[0] || null;
+                    // Nếu có defaultVariantId, tìm biến thể tương ứng
+                    if (defId) {
+                        defaultVariation = variations.find((v) => String(v._id) === defId) || null;
+                    }
 
-                    const displaySpecs = getCardSpecs(defaultVariation?.specs || product?.specs, 6);
+                    // Nếu không tìm thấy biến thể mặc định, lấy biến thể đầu tiên
+                    if (!defaultVariation && variations.length > 0) {
+                        defaultVariation = variations[0];
+                    }
 
+                    // ===================== Merge Specs =====================
+                    const finalSpecs = mergeSpecs(product, defaultVariation);
+                    const displaySpecs = getCardSpecs(finalSpecs, 6);
+
+                    // ===================== Display Data =====================
                     const displayImage =
                         defaultVariation?.thumbnail || defaultVariation?.images?.[0] || product.images?.[0];
 
