@@ -679,9 +679,32 @@ class ProductController {
         data.variations = generateVariations(data.attributes, data.sku || "SP");
       }
 
-      // đảm bảo luôn có shortDescription & longDescription
-      data.shortDescription = data.shortDescription || "";
-      data.longDescription = data.longDescription || "";
+      // 🟢 Lấy product hiện tại
+      const existingProduct = await Product.findById(req.params.id);
+
+      if (!existingProduct) {
+        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      }
+
+      // 🟢 Xác định có phải variable product không
+      const isVariableProduct =
+        Array.isArray(existingProduct.variations) &&
+        existingProduct.variations.length > 0;
+
+      const updateData = { ...data };
+
+      // ❌ XÓA DỨT KHOÁT
+      delete updateData.shortDescription;
+      delete updateData.longDescription;
+
+      if (!isVariableProduct) {
+        if (req.body.shortDescription !== undefined) {
+          updateData.shortDescription = req.body.shortDescription;
+        }
+        if (req.body.longDescription !== undefined) {
+          updateData.longDescription = req.body.longDescription;
+        }
+      }
 
       if (data.dimensions) {
         data.dimensions = {
@@ -724,10 +747,12 @@ class ProductController {
       // 🟢 Tính lại status dựa trên dữ liệu mới
       data.status = computeProductStatus(data, { importing: data.importing });
 
-      // 🟢 Cập nhật và trả về document mới
-      const updated = await Product.findByIdAndUpdate(req.params.id, data, {
-        new: true,
-      });
+      // 🟢 Cập nhật
+      const updated = await Product.findByIdAndUpdate(
+        req.params.id,
+        { $set: updateData },
+        { new: true }
+      );
 
       if (!updated) {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });

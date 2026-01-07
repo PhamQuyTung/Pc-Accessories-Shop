@@ -73,9 +73,10 @@ function EditProduct() {
                 const decodedLongDesc = he.decode(product.longDescription || '');
                 const decodedShortDesc = he.decode(product.shortDescription || '');
 
+                const isVariableProduct = Array.isArray(product.variations) && product.variations.length > 0;
+
                 setFormData({
                     ...product,
-                    // đảm bảo các field không null để tránh warning "value prop on input should not be null"
                     name: product.name || '',
                     images: Array.isArray(product.images)
                         ? product.images.length > 0
@@ -86,11 +87,14 @@ function EditProduct() {
                           : [''],
                     price: product.price ?? 0,
                     discountPrice: product.discountPrice ?? 0,
-                    // Nếu backend trả populated object thì dùng _id, nếu trả id thì giữ nguyên
                     category: product.category?._id || product.category || '',
                     brand: product.brand?._id || product.brand || '',
-                    shortDescription: decodedShortDesc || '',
-                    longDescription: decodedLongDesc || '', // đảm bảo dạng HTML thật
+                    isVariableProduct,
+
+                    // 🔥 FIX CHÍNH Ở ĐÂY
+                    shortDescription: isVariableProduct ? '' : he.decode(product.shortDescription || ''),
+                    longDescription: isVariableProduct ? '' : he.decode(product.longDescription || ''),
+
                     specs: Array.isArray(product.specs) ? product.specs : [],
                     quantity: product.quantity ?? 0,
                     rating: product.rating ?? 0,
@@ -211,6 +215,11 @@ function EditProduct() {
                 gifts: formData.hasGifts ? selectedGifts.map((g) => g._id) : [],
             };
 
+            if (formData.isVariableProduct) {
+                delete payload.shortDescription;
+                delete payload.longDescription;
+            }
+
             await axios.put(`http://localhost:5000/api/products/${id}`, payload);
             toast('Cập nhật sản phẩm thành công!', 'success');
             navigate('/admin/products');
@@ -278,7 +287,11 @@ function EditProduct() {
                     <ReactQuill
                         theme="snow"
                         value={formData.shortDescription || ''}
-                        onChange={(content) => setFormData((prev) => ({ ...prev, shortDescription: content }))}
+                        readOnly={formData.isVariableProduct}
+                        onChange={(content) => {
+                            if (formData.isVariableProduct) return;
+                            setFormData((prev) => ({ ...prev, shortDescription: content }));
+                        }}
                         modules={{
                             toolbar: {
                                 container: '#toolbar-short',
@@ -287,6 +300,10 @@ function EditProduct() {
                         }}
                         formats={quillFormats}
                     />
+
+                    {formData.isVariableProduct && (
+                        <p className={cx('hint')}>⚠️ Mô tả được quản lý theo từng biến thể</p>
+                    )}
                 </div>
 
                 <div className={cx('group')}>
@@ -297,7 +314,11 @@ function EditProduct() {
                     <ReactQuill
                         theme="snow"
                         value={formData.longDescription || ''}
-                        onChange={(content) => setFormData((prev) => ({ ...prev, longDescription: content }))}
+                        readOnly={formData.isVariableProduct}
+                        onChange={(content) => {
+                            if (formData.isVariableProduct) return;
+                            setFormData((prev) => ({ ...prev, longDescription: content }));
+                        }}
                         modules={{
                             toolbar: {
                                 container: '#toolbar-long',
@@ -306,6 +327,10 @@ function EditProduct() {
                         }}
                         formats={quillFormats}
                     />
+
+                    {formData.isVariableProduct && (
+                        <p className={cx('hint')}>⚠️ Mô tả được quản lý theo từng biến thể</p>
+                    )}
                 </div>
 
                 <div className={cx('group')}>

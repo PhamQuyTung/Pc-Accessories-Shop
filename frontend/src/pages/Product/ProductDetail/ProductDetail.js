@@ -154,7 +154,7 @@ function ProductDetailView({
     const handleAddToCart = async () => {
         const token = localStorage.getItem('token');
         if (!token) return toast('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng', 'warning');
-        
+
         // ❌ CHỈ chặn khi CÓ biến thể nhưng CHƯA chọn
         if (product.variations?.length > 0 && !activeVariation) {
             return toast('Vui lòng chọn biến thể', 'warning');
@@ -203,8 +203,13 @@ function ProductDetailView({
     const renderTabContent = () => {
         switch (activeTab) {
             case 'description': {
-                const longDesc =
-                    activeVariation?.longDescription || product.longDescription || '<p>Không có mô tả chi tiết</p>';
+                let longDesc = '<p>Không có mô tả chi tiết</p>';
+
+                if (activeVariation) {
+                    longDesc = activeVariation.longDescription || '<p>Không có mô tả cho biến thể</p>';
+                } else {
+                    longDesc = product.longDescription || '<p>Không có mô tả chi tiết</p>';
+                }
 
                 return <ExpandableContent html={longDesc} />;
             }
@@ -301,7 +306,11 @@ function ProductDetailView({
                                     setQuantity={setQuantity}
                                 />
                                 <ProductShortDescription
-                                    shortDescription={activeVariation?.shortDescription || product.shortDescription}
+                                    shortDescription={
+                                        activeVariation
+                                            ? activeVariation.shortDescription || 'Biến thể này chưa có mô tả'
+                                            : product.shortDescription || ''
+                                    }
                                 />
                                 <PromotionSection promotions={promotionGifts || product.promotions} />
                             </div>
