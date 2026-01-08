@@ -60,6 +60,17 @@ class ProductController {
       // -----------------------------
       const match = { deleted: { $ne: true } };
 
+      const { productType } = req.query;
+
+      // 🔥 Filter theo loại sản phẩm
+      if (productType === "variable") {
+        match.$expr = { $gt: [{ $size: "$variations" }, 0] };
+      }
+
+      if (productType === "simple") {
+        match.$expr = { $eq: [{ $size: "$variations" }, 0] };
+      }
+
       if (search) match.name = { $regex: search, $options: "i" };
 
       if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {

@@ -9,6 +9,7 @@ import styles from './ProductManagement.module.scss';
 import Swal from 'sweetalert2';
 import { useToast } from '~/components/ToastMessager';
 import Pagination from '~/components/Pagination/Pagination';
+import SkeletonTable from '~/components/Skeleton/SkeletonTable/SkeletonTable';
 
 const cx = classNames.bind(styles);
 
@@ -57,10 +58,18 @@ const ProductManagement = () => {
 
     const [variantCounts, setVariantCounts] = useState({});
 
+    const [productType, setProductType] = useState('');
+
+    const [loading, setLoading] = useState(false);
+
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
     const toast = useToast();
 
     // Hàm lấy sản phẩm từ API
     const fetchProducts = async (page = currentPage) => {
+        setLoading(true);
+
         try {
             const query = new URLSearchParams();
             query.append('isAdmin', true);
@@ -70,21 +79,22 @@ const ProductManagement = () => {
             if (search.trim()) query.append('search', search);
             if (category) query.append('category', category);
             if (visible !== '') query.append('visible', visible);
+            if (productType) query.append('productType', productType);
             if (sort) query.append('sort', sort);
 
-            const res = await axios.get(`http://localhost:5000/api/products?${query.toString()}`);
-            console.log(query.toString());
+            const [res] = await Promise.all([
+                axios.get(`http://localhost:5000/api/products?${query.toString()}`),
+                sleep(3000), // ⏱️ UX DELAY 3s
+            ]);
 
             setTotalCount(res.data.totalCount);
             setProducts(res.data.products);
             setTotalPages(res.data.totalPages);
             setCurrentPage(res.data.currentPage);
-            console.log('Sản phẩm:', res.data.products);
-            console.log('Tổng số sản phẩm:', res.data.totalCount);
-            console.log('Tổng số trang:', res.data.totalPages);
-            console.log('Trang hiện tại:', res.data.currentPage);
         } catch (err) {
             console.error('Lỗi khi tải sản phẩm:', err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -115,7 +125,7 @@ const ProductManagement = () => {
     // Khi người dùng thay đổi bộ lọc, tự động load lại
     useEffect(() => {
         fetchProducts(currentPage);
-    }, [search, category, visible, sort, currentPage]);
+    }, [search, category, visible, sort, currentPage, productType]);
 
     // Lấy danh mục
     const fetchCategories = async () => {
@@ -185,6 +195,7 @@ const ProductManagement = () => {
         setCategory('');
         setVisible('');
         setSort('');
+        setProductType('');
         setCurrentPage(1);
 
         // toast('Đã xóa tất cả bộ lọc và bật lại ô tìm kiếm', 'success');
@@ -255,7 +266,7 @@ const ProductManagement = () => {
                         className={cx('input')}
                         value={search}
                         onChange={(e) => handleSearchChange(e.target.value)}
-                        disabled={!!category} // ✅ Disable khi có category
+                        disabled={!!category || loading} // ✅ Disable khi có category và khi loading
                     />
                     {category && (
                         <div className={cx('disabled-note')}>
@@ -276,6 +287,7 @@ const ProductManagement = () => {
                             setCurrentPage(1); // ✅ Reset trang
                             // toast('Đã reset ô tìm kiếm do bạn đang lọc danh mục', 'info');
                         }}
+                        disabled={loading}
                         className={cx('select')}
                     >
                         <option value="">Tất cả danh mục</option>
@@ -293,11 +305,30 @@ const ProductManagement = () => {
                         id="visible"
                         value={visible}
                         onChange={(e) => setVisible(e.target.value)}
+                        disabled={loading}
                         className={cx('select')}
                     >
                         <option value="">Tất cả</option>
                         <option value="true">Hiển thị</option>
                         <option value="false">Đang ẩn</option>
+                    </select>
+                </div>
+
+                <div className={cx('filter-group')}>
+                    <label htmlFor="productType">🧩 Loại sản phẩm:</label>
+                    <select
+                        id="productType"
+                        value={productType}
+                        onChange={(e) => {
+                            setProductType(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        disabled={loading}
+                        className={cx('select')}
+                    >
+                        <option value="">Tất cả</option>
+                        <option value="variable">Có biến thể</option>
+                        <option value="simple">Không có biến thể</option>
                     </select>
                 </div>
 
@@ -316,6 +347,7 @@ const ProductManagement = () => {
                             setSort(e.target.value);
                             setCurrentPage(1); // ✅ Reset về trang đầu mỗi khi sắp xếp
                         }}
+                        disabled={loading}
                         className={cx('select')}
                     >
                         <option value="">Mặc định</option>
@@ -349,151 +381,158 @@ const ProductManagement = () => {
                         <th>Hành động</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {products.map((product, index) => (
-                        <tr key={product._id}>
-                            <td>{(currentPage - 1) * limit + index + 1}</td>
-                            <td>
-                                <img
-                                    src={getProductThumbnail(product)}
-                                    alt={product.name}
-                                    className={cx('product-thumb')}
-                                />
-                            </td>
+                {loading ? (
+                    <SkeletonTable
+                        columns={13} // đúng số <th>
+                        rows={limit} // số dòng skeleton = page size
+                        hasImageColumn={true}
+                        imageColumnIndex={1} // cột hình ảnh (ID=0, Image=1)
+                    />
+                ) : (
+                    <tbody>
+                        {products.map((product, index) => (
+                            <tr key={product._id}>
+                                <td>{(currentPage - 1) * limit + index + 1}</td>
 
-                            <td>
-                                <Link to={`/products/${product.slug}`} className={cx('product-link')}>
-                                    {product.name}
-                                </Link>
+                                <td>
+                                    <img
+                                        src={getProductThumbnail(product)}
+                                        alt={product.name}
+                                        className={cx('product-thumb')}
+                                    />
+                                </td>
 
-                                {/* Badge biến thể */}
-                                {product.variations?.length > 0 && (
-                                    <span className={cx('variant-badge')}>Biến thể</span>
-                                )}
-                            </td>
+                                <td>
+                                    <Link to={`/products/${product.slug}`} className={cx('product-link')}>
+                                        {product.name}
+                                    </Link>
 
-                            <td>
-                                {typeof product.brand === 'object' && product.brand?.name
-                                    ? product.brand.name
-                                    : typeof product.brand === 'string'
-                                      ? product.brand
-                                      : 'Không có thương hiệu'}
-                            </td>
+                                    {product.variations?.length > 0 && (
+                                        <span className={cx('variant-badge')}>Biến thể</span>
+                                    )}
+                                </td>
 
-                            {(() => {
-                                const { price, discountPrice, finalPrice } = getDisplayPrices(product);
+                                <td>
+                                    {typeof product.brand === 'object' && product.brand?.name
+                                        ? product.brand.name
+                                        : typeof product.brand === 'string'
+                                          ? product.brand
+                                          : 'Không có thương hiệu'}
+                                </td>
 
-                                return (
-                                    <>
-                                        {/* Giá gốc */}
-                                        <td>{price > 0 ? formatCurrency(price) : '—'}</td>
+                                {(() => {
+                                    const { price, discountPrice, finalPrice } = getDisplayPrices(product);
 
-                                        {/* Giá khuyến mãi */}
-                                        <td>{discountPrice > 0 ? formatCurrency(discountPrice) : '—'}</td>
+                                    return (
+                                        <>
+                                            <td>{price > 0 ? formatCurrency(price) : '—'}</td>
+                                            <td>{discountPrice > 0 ? formatCurrency(discountPrice) : '—'}</td>
 
-                                        {/* Giá thực tế */}
-                                        <td>
-                                            {product.variations?.length > 0 ? (
-                                                <Tippy
-                                                    content={
-                                                        <span className={cx('tooltip-content')}>
-                                                            Giá hiển thị theo biến thể mặc định
+                                            <td>
+                                                {product.variations?.length > 0 ? (
+                                                    <Tippy
+                                                        content={
+                                                            <span className={cx('tooltip-content')}>
+                                                                Giá hiển thị theo biến thể mặc định
+                                                            </span>
+                                                        }
+                                                        placement="top"
+                                                        animation="scale"
+                                                        delay={[100, 0]}
+                                                        interactive
+                                                        appendTo={document.body}
+                                                    >
+                                                        <span className={cx('price-tooltip')}>
+                                                            {finalPrice > 0 ? formatCurrency(finalPrice) : '—'}
+                                                            <span className={cx('price-tooltip-icon')}>ⓘ</span>
                                                         </span>
-                                                    }
-                                                    placement="top"
-                                                    animation="scale"
-                                                    delay={[100, 0]}
-                                                    interactive={true}
-                                                    appendTo={document.body} // ⭐ QUAN TRỌNG
-                                                >
-                                                    <span className={cx('price-tooltip')}>
-                                                        {finalPrice > 0 ? formatCurrency(finalPrice) : '—'}
-                                                        <span className={cx('price-tooltip-icon')}>ⓘ</span>
-                                                    </span>
-                                                </Tippy>
-                                            ) : (
-                                                <span>{finalPrice > 0 ? formatCurrency(finalPrice) : '—'}</span>
-                                            )}
-                                        </td>
-                                    </>
-                                );
-                            })()}
+                                                    </Tippy>
+                                                ) : (
+                                                    <span>{finalPrice > 0 ? formatCurrency(finalPrice) : '—'}</span>
+                                                )}
+                                            </td>
+                                        </>
+                                    );
+                                })()}
 
-                            <td>
-                                {typeof product.category === 'object' && product.category?.name
-                                    ? product.category.name
-                                    : 'Không có danh mục'}
-                            </td>
+                                <td>
+                                    {typeof product.category === 'object' && product.category?.name
+                                        ? product.category.name
+                                        : 'Không có danh mục'}
+                                </td>
 
-                            <td>
-                                {product.variations?.length > 0 ? (
-                                    <Tippy
-                                        content={
-                                            <span className={cx('tooltip-content')}>
-                                                Số lượng hiển thị theo biến thể mặc định
+                                <td>
+                                    {product.variations?.length > 0 ? (
+                                        <Tippy
+                                            content={
+                                                <span className={cx('tooltip-content')}>
+                                                    Số lượng hiển thị theo biến thể mặc định
+                                                </span>
+                                            }
+                                            placement="top"
+                                            animation="scale"
+                                            delay={[100, 0]}
+                                            interactive
+                                            appendTo={document.body}
+                                        >
+                                            <span className={cx('quantity-tooltip')}>
+                                                <span>{product.displayQuantity}</span>
+                                                <span className={cx('quantity-tooltip-icon')}>ⓘ</span>
                                             </span>
-                                        }
-                                        placement="top"
-                                        animation="scale"
-                                        delay={[100, 0]}
-                                        interactive={true}
-                                        appendTo={document.body}
+                                        </Tippy>
+                                    ) : (
+                                        product.displayQuantity
+                                    )}
+                                </td>
+
+                                <td>{variantCounts[product._id] ?? '...'}</td>
+
+                                <td>
+                                    <button
+                                        className={cx('toggle-btn', product.visible ? 'active' : 'inactive')}
+                                        onClick={() => handleToggleVisible(product._id)}
+                                        disabled={loading} // ⭐ tránh spam click
                                     >
-                                        <span className={cx('quantity-tooltip')}>
-                                            <span>{product.displayQuantity}</span>
-                                            <span className={cx('quantity-tooltip-icon')}>ⓘ</span>
-                                        </span>
-                                    </Tippy>
-                                ) : (
-                                    product.displayQuantity
-                                )}
-                            </td>
-
-                            <td>{variantCounts[product._id] ?? '...'}</td>
-
-                            <td>
-                                <button
-                                    className={cx('toggle-btn', product.visible ? 'active' : 'inactive')}
-                                    onClick={() => handleToggleVisible(product._id)}
-                                >
-                                    {product.visible ? '👁️ Hiển thị' : '🙈 Đang ẩn'}
-                                </button>
-                            </td>
-
-                            <td>{formatDate(product.createdAt)}</td>
-
-                            <td>
-                                <div className={cx('action-buttons')}>
-                                    {/* Edit */}
-                                    <Link to={`/products/edit/${product._id}`} className={cx('btn-edit-link')}>
-                                        <button className={cx('btn-edit')}>
-                                            <FaPencilAlt size={14} />
-                                        </button>
-                                    </Link>
-
-                                    {/* Variant icon */}
-                                    <Link
-                                        to={`/admin/products/${product._id}/variants`}
-                                        className={cx('btn-edit-link')}
-                                    >
-                                        <button className={cx('btn-variant')}>
-                                            <FaClone size={14} />
-                                        </button>
-                                    </Link>
-
-                                    {/* Delete */}
-                                    <button className={cx('btn-delete')} onClick={() => handleSoftDelete(product._id)}>
-                                        <FaTrashAlt size={14} />
+                                        {product.visible ? '👁️ Hiển thị' : '🙈 Đang ẩn'}
                                     </button>
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
+                                </td>
+
+                                <td>{formatDate(product.createdAt)}</td>
+
+                                <td>
+                                    <div className={cx('action-buttons')}>
+                                        <Link to={`/products/edit/${product._id}`} className={cx('btn-edit-link')}>
+                                            <button className={cx('btn-edit')}>
+                                                <FaPencilAlt size={14} />
+                                            </button>
+                                        </Link>
+
+                                        <Link
+                                            to={`/admin/products/${product._id}/variants`}
+                                            className={cx('btn-edit-link')}
+                                        >
+                                            <button className={cx('btn-variant')}>
+                                                <FaClone size={14} />
+                                            </button>
+                                        </Link>
+
+                                        <button
+                                            className={cx('btn-delete')}
+                                            onClick={() => handleSoftDelete(product._id)}
+                                            disabled={loading}
+                                        >
+                                            <FaTrashAlt size={14} />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                )}
             </table>
 
             {totalPages > 1 && (
-                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={!loading ? handlePageChange : () => {}} />
             )}
         </div>
     );
