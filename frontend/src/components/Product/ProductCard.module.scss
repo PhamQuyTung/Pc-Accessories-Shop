@@ -64,8 +64,8 @@
 
     &:hover {
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-        transform: translateY(-6px);
-        // transform: translateY(-6px) scale(1.03);
+        transform: translateY(-4px);
+        // transform: translateY(-4px) scale(1.03);
         z-index: 2;
         border: 1px solid #ed174a;
     }
@@ -143,6 +143,7 @@
         background-color: #ececec;
         text-align: start;
         padding: 4px 8px;
+        // margin: 10px 0;
         display: flex;
         align-items: center;
         flex-wrap: wrap;

@@ -463,7 +463,7 @@ function EditProduct() {
                                     type="button"
                                     onClick={() => {
                                         const updated = [...formData.specs];
-                                        updated[groupIndex].fields.push({ label: '', value: '' });
+                                        updated[groupIndex].fields.push({ label: '', value: '', showOnCard: false, });
                                         setFormData((prev) => ({ ...prev, specs: updated }));
                                     }}
                                 >
@@ -483,7 +483,7 @@ function EditProduct() {
                                     ...(prev.specs || []),
                                     {
                                         group: 'Nhóm mới',
-                                        fields: [{ label: '', value: '' }],
+                                        fields: [{ label: '', value: '', showOnCard: false, }],
                                     },
                                 ],
                             }));

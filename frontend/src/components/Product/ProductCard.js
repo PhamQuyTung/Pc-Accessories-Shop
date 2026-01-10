@@ -7,6 +7,7 @@ import { FireIcon, GiftIcon } from '../Icons/Icons';
 import BasicRating from '~/components/Rating/Rating';
 import { getDefaultDisplayName } from '~/utils/getDefaultDisplayName';
 import { getCardSpecs } from '~/utils/getCardSpecs';
+import { mergeSpecs } from '~/utils/mergeSpecs';
 
 const cx = classNames.bind(styles);
 
@@ -38,9 +39,10 @@ function ProductCard({ product, viewMode }) {
     const discountPrice = display?.discountPrice ?? product.discountPrice ?? null;
 
     // ===========================
-    // 4) Lấy specs hiển thị trên card
+    // 4) Lấy specs hiển thị trên card (FIX)
     // ===========================
-    const cardSpecs = getCardSpecs(display.specs, 3);
+    const mergedSpecs = mergeSpecs(product, defaultVariant);
+    const cardSpecs = getCardSpecs(mergedSpecs, 6);
 
     return (
         <div className={cx('product-card', viewMode === 'list' ? 'list-mode' : 'grid-mode')}>
@@ -105,17 +107,19 @@ function ProductCard({ product, viewMode }) {
             <div className={cx('product-card__des')}>
                 <Link to={`/products/${product.slug}?vid=${display._id}`}>{getDefaultDisplayName(product)}</Link>
 
-                {/* HIỂN THỊ SPEC CỦA BIẾN THỂ */}
-                {cardSpecs.length > 0 && (
-                    <div className={cx('specs')}>
-                        {cardSpecs.map((value, i) => (
-                            <span key={i}>
-                                {value}
-                                {i < cardSpecs.length - 1 && <span className={cx('separator')}> | </span>}
-                            </span>
-                        ))}
-                    </div>
-                )}
+                <div className={cx('proloop-label--bottom')}>
+                    {/* HIỂN THỊ SPEC CỦA BIẾN THỂ */}
+                    {cardSpecs.length > 0 && (
+                        <div className={cx('specs')}>
+                            {cardSpecs.map((value, i) => (
+                                <span key={i}>
+                                    {value}
+                                    {i < cardSpecs.length - 1 && <span className={cx('separator')}> | </span>}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
                 {/* GIÁ */}
                 <div className={cx('price')}>
