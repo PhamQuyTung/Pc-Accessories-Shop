@@ -30,6 +30,7 @@ import EditProduct from '~/pages/Admin/EditProduct/EditProduct';
 import Trash from '~/pages/Trash/Trash';
 import UserManagement from '~/pages/Admin/AccountManagement/AccountManagement';
 import CategoryManagement from '~/pages/Admin/CategoryManagement/CategoryManagement';
+import CategorySpecManagement from '~/pages/Admin/CategoryManagement/CategorySpecManagement/CategorySpecManagement';
 import AttributeManagement from '~/pages/Admin/AttributeManagement/AttributeManagement';
 import AssignAttributeToCategory from '~/pages/Admin/AssignAttributeToCategory/AssignAttributeToCategory';
 import AttributeTermPage from '~/pages/Admin/AttributeTermPage/AttributeTermPage';
@@ -147,6 +148,7 @@ const routes = [
             { path: 'products/trash', element: <Trash /> },
             { path: 'users', element: <UserManagement /> },
             { path: 'categories', element: <CategoryManagement /> },
+            { path: 'categories/:categoryId/specs', element: <CategorySpecManagement /> },
             { path: 'attributes', element: <AttributeManagement /> },
             { path: 'attributes/:attributeId/terms', element: <AttributeTermPage /> },
             { path: 'attributes/assign', element: <AssignAttributeToCategory /> },

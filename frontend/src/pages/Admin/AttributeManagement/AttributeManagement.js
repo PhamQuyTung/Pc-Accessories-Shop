@@ -85,9 +85,9 @@ function AttributeManagement() {
                 <h2 className={cx('title')}>Quản lý thuộc tính</h2>
 
                 {/* Button link gán thuộc tính vào danh mục */}
-                <Link to="/admin/attributes/assign" className={cx('assignBtn')}>
+                {/* <Link to="/admin/attributes/assign" className={cx('assignBtn')}>
                     + Thêm thuộc tính vào danh mục
-                </Link>
+                </Link> */}
             </div>
 
             <div className={cx('wrapper-container')}>

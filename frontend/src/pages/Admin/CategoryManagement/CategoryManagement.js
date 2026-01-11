@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import styles from './CategoryManagement.module.scss';
 import classNames from 'classnames/bind';
@@ -33,6 +34,8 @@ function CategoryManagement() {
     const itemsPerPage = 5;
 
     const toast = useToast();
+
+    const navigate = useNavigate();
 
     // Fetch categories
     const fetchCategories = async () => {
@@ -287,6 +290,7 @@ function CategoryManagement() {
                             <th>Slug</th>
                             <th>Mô tả</th>
                             <th>Số sản phẩm</th>
+                            <th>Số TSKT</th>
                             <th>Danh mục cha</th>
                             <th>Hành động</th>
                         </tr>
@@ -306,16 +310,31 @@ function CategoryManagement() {
                                     <td>{cat.description || 'Không có'}</td>
                                     <td>{cat.productCount || 0}</td>
                                     <td>
+                                        {cat.specs && cat.specs.length > 0 ? (
+                                            <span className={cx('specCount')}>{cat.specs.length}</span>
+                                        ) : (
+                                            <span className={cx('specEmpty')}>0</span>
+                                        )}
+                                    </td>
+                                    <td>
                                         {cat.parent
                                             ? categories.find((p) => p._id === cat.parent)?.name || 'Không rõ'
                                             : 'Không có'}
                                     </td>
-                                    <td>
+                                    <td className={cx('actions')}>
                                         <button onClick={() => setEditingCategory(cat)} disabled={loading}>
                                             <FontAwesomeIcon icon={faPen} /> Sửa
                                         </button>
+
                                         <button onClick={() => handleDeleteCategory(cat._id)} disabled={loading}>
                                             <FontAwesomeIcon icon={faTrash} /> Xóa
+                                        </button>
+
+                                        <button
+                                            onClick={() => navigate(`/admin/categories/${cat._id}/specs`)}
+                                            className={cx('spec-btn')}
+                                        >
+                                            ⚙ Specs
                                         </button>
                                     </td>
                                 </tr>

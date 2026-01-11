@@ -1,25 +1,30 @@
+// models/category.js
 const mongoose = require("mongoose");
 
-const categorySchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true },
-  slug: { type: String, required: true, unique: true },
-  description: String,
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
+const categorySchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, unique: true },
+    slug: { type: String, required: true, unique: true },
+    description: String,
 
-  /** ĐỔI TÊN Ở ĐÂY */
-  specs: [
-    { label: String, key: String, type: { type: String, default: "text" } },
-  ],
+    specs: [
+      {
+        label: String, // CPU
+        key: String, // cpu
+        type: { type: String, default: "text" }, // text | number | select
+        icon: { type: String, default: "default" }, // ✅ QUAN TRỌNG
+      },
+    ],
 
-  /** GIỮ NGUYÊN attributes */
-  attributes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Attribute" }],
+    attributes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Attribute" }],
 
-  parent: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Category",
-    default: null,
+    parent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      default: null,
+    },
   },
-});
+  { timestamps: true }
+);
 
 module.exports = mongoose.model("Category", categorySchema);

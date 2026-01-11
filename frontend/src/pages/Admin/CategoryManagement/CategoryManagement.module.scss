@@ -205,3 +205,47 @@
         user-select: none;
     }
 }
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.spec-btn {
+    background: #0ea5e9;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+
+    &:hover {
+        background: #0284c7;
+    }
+}
+
+.specCount {
+    display: inline-block;
+    min-width: 28px;
+    text-align: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    background: #e7f1ff;
+    color: #2271b1;
+    border: 1px solid #c3dbf7;
+}
+
+.specEmpty {
+    display: inline-block;
+    min-width: 28px;
+    text-align: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 13px;
+    color: #6b7280;
+    background: #f3f4f6;
+    border: 1px dashed #d1d5db;
+}

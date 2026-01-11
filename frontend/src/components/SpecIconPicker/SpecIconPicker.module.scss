@@ -1,0 +1,59 @@
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 8px;
+    max-width: 100%;
+}
+
+.item {
+    height: 72px;
+    padding: 6px;
+    border: 1px solid #ccd0d4;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+
+    transition: all 0.15s ease;
+
+    &:hover {
+        border-color: #2271b1;
+        background: #f0f6fc;
+    }
+}
+
+.active {
+    border-color: #2271b1;
+    background: #e7f1ff;
+}
+
+.icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    width: 28px;
+
+    svg {
+        height: 28px !important;
+        width: 28px !important;
+        display: block;
+    }
+}
+
+.label {
+    font-size: 11px;
+    color: #333;
+    text-align: center;
+    line-height: 1.2;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
