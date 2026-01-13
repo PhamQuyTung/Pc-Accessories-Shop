@@ -1,4 +1,4 @@
-import { SPEC_ICONS } from '~/constants/specIcons';
+import { SPEC_ICON_MAP } from '~/constants/specIcons';
 import styles from './SpecList.module.scss';
 import classNames from 'classnames/bind';
 
@@ -13,25 +13,33 @@ export default function SpecList({ specs, onEdit, onDelete }) {
 
             <ul className={cx('list')}>
                 {specs.map((spec, index) => {
-                    const iconKey = spec.icon || 'default';
-                    const Icon = SPEC_ICONS.find((i) => i.key === iconKey)?.Icon;
+                    const iconKey = spec.icon;
+                    const Icon = SPEC_ICON_MAP[iconKey] ?? null; // ✅ FIX Ở ĐÂY
+                    if (!Icon) console.warn('Missing icon:', iconKey);
 
                     return (
-                        <li key={index} className={cx('item')}>
+                        <li key={spec._id || index} className={cx('item', { showOnCard: spec.showOnCard })}>
                             <div className={cx('icon')}>{Icon && <Icon width={20} height={20} />}</div>
 
                             <div className={cx('info')}>
-                                <strong>{spec.label}</strong>
-                                <span>
+                                <div className={cx('labelRow')}>
+                                    <strong>{spec.label}</strong>
+
+                                    {spec.showOnCard && (
+                                        <span className={cx('badge')} title="Spec này hiển thị trên Product Card">
+                                            CARD
+                                        </span>
+                                    )}
+                                </div>
+
+                                <span className={cx('meta')}>
                                     {spec.key} · {spec.type}
                                 </span>
                             </div>
 
                             <div className={cx('actions')}>
                                 <button onClick={() => onEdit(index)}>✏</button>
-                                <button onClick={() => onDelete(index)}>
-                                    🗑
-                                </button>
+                                <button onClick={() => onDelete(index)}>🗑</button>
                             </div>
                         </li>
                     );

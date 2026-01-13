@@ -13,8 +13,9 @@ import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons';
 import { FireIcon, GiftIcon } from '../Icons/Icons';
 import BasicRating from '~/components/Rating/Rating';
 import { getDefaultDisplayName } from '~/utils/getDefaultDisplayName';
-import { getCardSpecs } from '~/utils/getCardSpecs';
 import { mergeSpecs } from '~/utils/mergeSpecs';
+import { SPEC_ICON_MAP } from '~/constants/specIcons';
+import { getCardSpecs } from '~/utils/getCardSpecs';
 
 const cx = classNames.bind(styles);
 
@@ -107,7 +108,7 @@ function Product({ category, onHasProductChange }) {
 
                     // ===================== Merge Specs =====================
                     const finalSpecs = mergeSpecs(product, defaultVariation);
-                    const displaySpecs = getCardSpecs(finalSpecs, 6);
+                    const cardSpecs = getCardSpecs(product, defaultVariation, 4);
 
                     // ===================== Display Data =====================
                     const displayImage =
@@ -154,7 +155,6 @@ function Product({ category, onHasProductChange }) {
 
                     const hasDiscount = originalPrice > 0 && displayPrice < originalPrice;
 
-                    const hasSpecs = displaySpecs.length > 0;
                     const hasGift =
                         Array.isArray(product.gifts) && product.gifts.some((g) => g && Object.keys(g).length > 0);
 
@@ -199,27 +199,19 @@ function Product({ category, onHasProductChange }) {
                                 <div className={cx('product-card__des')}>
                                     <Link to={`/products/${product.slug}`}>{getDefaultDisplayName(product)}</Link>
 
-                                    {(hasSpecs || hasGift) && (
-                                        <div className={cx('proloop-label--bottom')}>
-                                            {hasSpecs && (
-                                                <div className={cx('specs')}>
-                                                    {displaySpecs.map((value, index) => (
-                                                        <span key={index}>
-                                                            {value}
-                                                            {index < displaySpecs.length - 1 && (
-                                                                <span className={cx('separator')}> | </span>
-                                                            )}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
+                                    {cardSpecs.length > 0 && (
+                                        <ul className={cx('spec-list')}>
+                                            {cardSpecs.map((spec) => {
+                                                const Icon = SPEC_ICON_MAP[spec.icon];
 
-                                            {hasGift && (
-                                                <span className={cx('gift-badge')}>
-                                                    <GiftIcon className={cx('icon-gift-small')} />
-                                                </span>
-                                            )}
-                                        </div>
+                                                return (
+                                                    <li key={spec.key} className={cx('spec-item')}>
+                                                        {Icon && <Icon className={cx('spec-icon')} />}
+                                                        <span>{spec.value}</span>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
                                     )}
 
                                     {/* PRICE WITH DEFAULT VARIATION */}

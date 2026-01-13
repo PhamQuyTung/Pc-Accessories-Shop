@@ -101,8 +101,21 @@ class ProductController {
         {
           $lookup: {
             from: "categories",
-            localField: "category",
-            foreignField: "_id",
+            let: { categoryId: "$category" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ["$_id", "$$categoryId"] },
+                },
+              },
+              {
+                $project: {
+                  name: 1,
+                  slug: 1,
+                  specs: 1, // 🔥 BẮT BUỘC
+                },
+              },
+            ],
             as: "category",
           },
         },
@@ -368,55 +381,98 @@ class ProductController {
     }
   }
 
-  // Lấy chi tiết sản phẩm theo slug
+  // Lấy chi tiết sản phẩm theo slug (CHUẨN KIẾN TRÚC MỚI)
   async getBySlug(req, res) {
     try {
-      const product = await Product.findOne({
-        slug: req.params.slug,
-        deleted: { $ne: true },
-        visible: true,
-      })
-        // 🧩 Thêm phần populate cho category
-        .populate({
-          path: "category",
-          select: "name slug",
-        })
-        .populate({
-          path: "gifts", // populate danh sách quà
-          populate: {
-            path: "products.productId",
-            select: "name slug images price discountPrice",
+      const { slug } = req.params;
+
+      const pipeline = [
+        {
+          $match: {
+            slug,
+            deleted: { $ne: true },
+            visible: true,
           },
-        })
-        // 🧩 Thêm phần populate cho thuộc tính sản phẩm
-        .populate({
-          path: "attributes.attrId",
-          select: "name slug",
-        })
-        .populate({
-          path: "attributes.terms",
-          select: "name slug",
-        })
-        // 🧩 Thêm phần populate cho thuộc tính trong biến thể
-        .populate({
-          path: "variations.attributes.attrId",
-          select: "name slug",
-        })
-        .populate({
-          path: "variations.attributes.terms",
-          select: "name slug",
-        })
-        .lean();
+        },
+
+        /* ================= CATEGORY (QUAN TRỌNG NHẤT) ================= */
+        {
+          $lookup: {
+            from: "categories",
+            let: { categoryId: "$category" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ["$_id", "$$categoryId"] },
+                },
+              },
+              {
+                $project: {
+                  name: 1,
+                  slug: 1,
+                  specs: 1, // 🔥 BẮT BUỘC
+                },
+              },
+            ],
+            as: "category",
+          },
+        },
+        { $unwind: "$category" },
+
+        /* ================= BRAND ================= */
+        {
+          $lookup: {
+            from: "brands",
+            localField: "brand",
+            foreignField: "_id",
+            as: "brand",
+          },
+        },
+        { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
+
+        /* ================= GIFTS ================= */
+        {
+          $lookup: {
+            from: "gifts",
+            localField: "gifts",
+            foreignField: "_id",
+            as: "gifts",
+          },
+        },
+
+        /* ================= ATTRIBUTES ================= */
+        {
+          $lookup: {
+            from: "attributes",
+            localField: "attributes.attrId",
+            foreignField: "_id",
+            as: "attributeDefs",
+          },
+        },
+
+        /* ================= VARIATIONS ================= */
+        {
+          $lookup: {
+            from: "attributes",
+            localField: "variations.attributes.attrId",
+            foreignField: "_id",
+            as: "variationAttributeDefs",
+          },
+        },
+      ];
+
+      const products = await Product.aggregate(pipeline);
+      const product = products[0];
 
       if (!product) {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
       }
 
-      // Lấy reviews
+      /* ================= REVIEWS ================= */
       const reviews = await Review.find({ product: product._id }).lean();
       const reviewCount = reviews.length;
       const averageRating = reviewCount
-        ? reviews.reduce((acc, cur) => acc + cur.rating, 0) / reviewCount
+        ? reviews.reduce((a, c) => a + c.rating, 0) / reviewCount
         : 0;
 
       res.json({
@@ -424,10 +480,12 @@ class ProductController {
         averageRating: Number((Math.round(averageRating * 10) / 10).toFixed(1)),
         reviewCount,
         reviews,
-        status: computeProductStatus(product, { importing: product.importing }),
+        status: computeProductStatus(product, {
+          importing: product.importing,
+        }),
       });
     } catch (err) {
-      console.error("Lỗi getBySlug:", err);
+      console.error("❌ Lỗi getBySlug:", err);
       res.status(500).json({ error: "Lỗi server" });
     }
   }
@@ -777,11 +835,6 @@ class ProductController {
     try {
       const data = { ...req.body };
 
-      // merge lại specs của product-level
-      if (data.specs) {
-        data.specs = mergeSpecs({ specs: data.specs }, null);
-      }
-
       // ✅ Bỏ status client gửi, ta sẽ tính lại
       delete data.status;
 
@@ -803,6 +856,23 @@ class ProductController {
         existingProduct.variations.length > 0;
 
       const updateData = { ...data };
+
+      // ✅ FIX SPECS – BẮT BUỘC
+      if (
+        updateData.specs &&
+        typeof updateData.specs === "object" &&
+        !Array.isArray(updateData.specs)
+      ) {
+        updateData.specs = Object.entries(updateData.specs)
+          .filter(
+            ([_, value]) =>
+              value !== "" && value !== null && value !== undefined
+          )
+          .map(([key, value]) => ({
+            key,
+            value,
+          }));
+      }
 
       // ❌ XÓA DỨT KHOÁT
       delete updateData.shortDescription;
@@ -857,6 +927,8 @@ class ProductController {
 
       // 🟢 Tính lại status dựa trên dữ liệu mới
       data.status = computeProductStatus(data, { importing: data.importing });
+
+      console.log('FINAL SPECS TO SAVE:', updateData.specs);
 
       // 🟢 Cập nhật
       const updated = await Product.findByIdAndUpdate(

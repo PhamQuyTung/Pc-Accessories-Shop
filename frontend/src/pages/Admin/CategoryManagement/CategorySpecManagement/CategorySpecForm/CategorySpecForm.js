@@ -24,14 +24,18 @@ export default function CategorySpecForm({ value = [], onChange }) {
                 label: '',
                 key: '',
                 type: 'text',
-                icon: 'default', 
+                icon: 'default',
+                showOnCard: false,
             },
         ]);
     };
 
     const updateSpec = (index, field, val) => {
         const next = [...specs];
-        next[index][field] = val;
+        next[index] = {
+            ...next[index],
+            [field]: val,
+        };
         updateSpecs(next);
     };
 
@@ -50,6 +54,7 @@ export default function CategorySpecForm({ value = [], onChange }) {
                         <th>Tên hiển thị</th>
                         <th>Key</th>
                         <th>Kiểu</th>
+                        <th>Card</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -88,8 +93,18 @@ export default function CategorySpecForm({ value = [], onChange }) {
                                 </select>
                             </td>
 
+                            {/* ✅ SHOW ON CARD */}
+                            <td style={{ textAlign: 'center' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={!!spec.showOnCard}
+                                    onChange={(e) => updateSpec(index, 'showOnCard', e.target.checked)}
+                                />
+                            </td>
+
+                            {/* ❌ REMOVE */}
                             <td>
-                                <button className={cx('remove')} onClick={() => removeSpec(index)}>
+                                <button type="button" className={cx('remove')} onClick={() => removeSpec(index)}>
                                     ✕
                                 </button>
                             </td>
@@ -98,7 +113,7 @@ export default function CategorySpecForm({ value = [], onChange }) {
                 </tbody>
             </table>
 
-            <button className={cx('add')} onClick={addSpec}>
+            <button type="button" className={cx('add')} onClick={addSpec}>
                 + Thêm spec
             </button>
         </div>

@@ -31,6 +31,7 @@ function CategorySpecManagement() {
             key: s.key,
             type: s.type,
             icon: s.icon || 'default',
+            showOnCard: !!s.showOnCard,
         }));
 
     useEffect(() => {

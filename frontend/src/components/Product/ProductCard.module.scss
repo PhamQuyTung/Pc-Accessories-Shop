@@ -374,3 +374,29 @@
     font-weight: 600;
     font-size: 12px;
 }
+
+.spec-list {
+    font-size: 13px;
+    font-weight: 500;
+    color: #6d6e72;
+    background-color: #ececec;
+    text-align: start;
+    padding: 4px 8px;
+    border-radius: 4px;
+    // margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.spec-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.spec-icon {
+    font-size: 14px;
+    color: #888;
+}

@@ -98,6 +98,31 @@ export default function CreateProduct() {
             .catch(() => {});
     }, []);
 
+    // update specs when category changes
+    const selectedCategory = categories.find((c) => String(c._id) === String(form.category));
+
+    useEffect(() => {
+        if (!form.category) {
+            setForm((prev) => ({ ...prev, specs: [] }));
+            return;
+        }
+
+        if (!selectedCategory?.specs) return;
+
+        setForm((prev) => {
+            // giữ value cũ nếu có
+            const oldMap = Object.fromEntries((prev.specs || []).map((s) => [s.key, s.value]));
+
+            return {
+                ...prev,
+                specs: selectedCategory.specs.map((spec) => ({
+                    key: spec.key,
+                    value: oldMap[spec.key] || '',
+                })),
+            };
+        });
+    }, [form.category, categories, selectedCategory]);
+
     // helpers moved here and passed down
     const handleFormChange = (e) => {
         // support synthetic calls from Quill where we pass object
@@ -336,6 +361,7 @@ export default function CreateProduct() {
 
                     <ProductSpecs
                         specs={form.specs}
+                        categorySpecs={selectedCategory?.specs || []}
                         setSpecs={(newSpecs) => setForm((prev) => ({ ...prev, specs: newSpecs }))}
                     />
 

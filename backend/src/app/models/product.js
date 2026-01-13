@@ -81,22 +81,13 @@ const productSchema = new mongoose.Schema({
 
   // ❌ Không lưu status, chỉ tính động
   visible: { type: Boolean, default: true },
-  specs: {
-    type: [
-      {
-        group: { type: String, required: false, default: "" },
 
-        fields: [
-          {
-            label: { type: String, required: true },
-            value: { type: String, required: true },
-            showOnCard: { type: Boolean, default: false }, 
-          },
-        ],
-      },
-    ],
-    default: [],
-  },
+  specs: [
+    {
+      key: { type: String, required: true }, // pin, led, cpu
+      value: { type: String, default: "" },
+    },
+  ],
 
   category: {
     type: mongoose.Schema.Types.ObjectId,

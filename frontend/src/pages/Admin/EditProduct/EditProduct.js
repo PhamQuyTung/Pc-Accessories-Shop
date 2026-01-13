@@ -30,6 +30,7 @@ function EditProduct() {
 
     const [gifts, setGifts] = useState([]); // tất cả gift trong hệ thống
     const [selectedGifts, setSelectedGifts] = useState([]);
+    const [categorySpecs, setCategorySpecs] = useState([]);
 
     useEffect(() => {
         axios
@@ -62,6 +63,18 @@ function EditProduct() {
             .catch(() => setBrands([]));
     }, []);
 
+    // Load category specs based on selected category
+    useEffect(() => {
+        if (formData?.category) {
+            axios
+                .get(`http://localhost:5000/api/categories/${formData.category}`)
+                .then((res) => setCategorySpecs(res.data.specs || []))
+                .catch(() => setCategorySpecs([]));
+        } else {
+            setCategorySpecs([]);
+        }
+    }, [formData?.category]);
+
     // Ở useEffect khi load sản phẩm
     useEffect(() => {
         axios
@@ -69,9 +82,12 @@ function EditProduct() {
             .then((res) => {
                 const product = res.data;
 
-                // Decode nếu bị escaped
-                const decodedLongDesc = he.decode(product.longDescription || '');
-                const decodedShortDesc = he.decode(product.shortDescription || '');
+                const specsObject = Array.isArray(product.specs)
+                    ? product.specs.reduce((acc, cur) => {
+                          if (cur?.key) acc[cur.key] = cur.value || '';
+                          return acc;
+                      }, {})
+                    : {};
 
                 const isVariableProduct = Array.isArray(product.variations) && product.variations.length > 0;
 
@@ -95,7 +111,7 @@ function EditProduct() {
                     shortDescription: isVariableProduct ? '' : he.decode(product.shortDescription || ''),
                     longDescription: isVariableProduct ? '' : he.decode(product.longDescription || ''),
 
-                    specs: Array.isArray(product.specs) ? product.specs : [],
+                    specs: specsObject,
                     quantity: product.quantity ?? 0,
                     rating: product.rating ?? 0,
                     isBestSeller: !!product.isBestSeller,
@@ -376,122 +392,30 @@ function EditProduct() {
                 )} */}
 
                 {/* SPECS */}
-                <div className={cx('group')}>
-                    <label>Thông số kỹ thuật</label>
+                {categorySpecs.length > 0 && (
+                    <div className={cx('group')}>
+                        <label>Thông số kỹ thuật</label>
 
-                    <div className={cx('spec-groups')}>
-                        {formData.specs?.map((group, groupIndex) => (
-                            <div key={groupIndex} className={cx('spec-group')}>
-                                <div className={cx('spec-group-header')}>
-                                    <input
-                                        type="text"
-                                        placeholder="Tên nhóm thông số"
-                                        value={group.group}
-                                        onChange={(e) => {
-                                            const updated = [...formData.specs];
-                                            updated[groupIndex].group = e.target.value;
-                                            setFormData((prev) => ({ ...prev, specs: updated }));
-                                        }}
-                                    />
-
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const updated = formData.specs.filter((_, i) => i !== groupIndex);
-                                            setFormData((prev) => ({ ...prev, specs: updated }));
-                                        }}
-                                    >
-                                        Xóa nhóm
-                                    </button>
-                                </div>
-
-                                {/* FIELDS */}
-                                {group.fields.map((field, fieldIndex) => (
-                                    <div key={fieldIndex} className={cx('spec-field')}>
-                                        <label className={cx('show-on-card')}>
-                                            <input
-                                                type="checkbox"
-                                                checked={field.showOnCard || false}
-                                                onChange={(e) => {
-                                                    const updated = [...formData.specs];
-                                                    updated[groupIndex].fields[fieldIndex].showOnCard =
-                                                        e.target.checked;
-                                                    setFormData((prev) => ({ ...prev, specs: updated }));
-                                                }}
-                                            />
-                                            Hiển thị trên card
-                                        </label>
-
-                                        <input
-                                            type="text"
-                                            placeholder="Label"
-                                            value={field.label}
-                                            onChange={(e) => {
-                                                const updated = [...formData.specs];
-                                                updated[groupIndex].fields[fieldIndex].label = e.target.value;
-                                                setFormData((prev) => ({ ...prev, specs: updated }));
-                                            }}
-                                        />
-                                        <input
-                                            type="text"
-                                            placeholder="Giá trị"
-                                            value={field.value}
-                                            onChange={(e) => {
-                                                const updated = [...formData.specs];
-                                                updated[groupIndex].fields[fieldIndex].value = e.target.value;
-                                                setFormData((prev) => ({ ...prev, specs: updated }));
-                                            }}
-                                        />
-
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const updated = [...formData.specs];
-                                                updated[groupIndex].fields = updated[groupIndex].fields.filter(
-                                                    (_, i) => i !== fieldIndex,
-                                                );
-                                                setFormData((prev) => ({ ...prev, specs: updated }));
-                                            }}
-                                        >
-                                            X
-                                        </button>
-                                    </div>
-                                ))}
-
-                                {/* ADD FIELD */}
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const updated = [...formData.specs];
-                                        updated[groupIndex].fields.push({ label: '', value: '', showOnCard: false, });
-                                        setFormData((prev) => ({ ...prev, specs: updated }));
-                                    }}
-                                >
-                                    + Thêm dòng
-                                </button>
+                        {categorySpecs.map((spec) => (
+                            <div key={spec.key} className={cx('spec-row')}>
+                                <label>{spec.label}</label>
+                                <input
+                                    type="text"
+                                    value={formData.specs?.[spec.key] || ''}
+                                    onChange={(e) =>
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            specs: {
+                                                ...prev.specs,
+                                                [spec.key]: e.target.value,
+                                            },
+                                        }))
+                                    }
+                                />
                             </div>
                         ))}
                     </div>
-
-                    {/* ADD GROUP */}
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setFormData((prev) => ({
-                                ...prev,
-                                specs: [
-                                    ...(prev.specs || []),
-                                    {
-                                        group: 'Nhóm mới',
-                                        fields: [{ label: '', value: '', showOnCard: false, }],
-                                    },
-                                ],
-                            }));
-                        }}
-                    >
-                        + Thêm nhóm thông số
-                    </button>
-                </div>
+                )}
 
                 <div className={cx('group')}>
                     <label>Số lượng</label>

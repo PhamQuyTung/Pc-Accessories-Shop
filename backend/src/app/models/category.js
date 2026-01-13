@@ -13,6 +13,10 @@ const categorySchema = new mongoose.Schema(
         key: String, // cpu
         type: { type: String, default: "text" }, // text | number | select
         icon: { type: String, default: "default" }, // ✅ QUAN TRỌNG
+        showOnCard: {
+          type: Boolean,
+          default: false,
+        },
       },
     ],
 

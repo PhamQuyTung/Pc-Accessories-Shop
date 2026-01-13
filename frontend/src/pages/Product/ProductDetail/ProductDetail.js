@@ -33,6 +33,7 @@ import useFavorite from './hooks/useFavorite';
 
 import { getDisplayName } from '~/pages/Product/ProductDetail/utils/productHelpers';
 import { mergeSpecs } from '~/utils/mergeSpecs';
+import { mergeSpecsFlat } from '~/utils/mergeSpecsFlat';
 
 import styles from './ProductDetail.module.scss';
 const cx = classNames.bind(styles);
@@ -217,9 +218,18 @@ function ProductDetailView({
             case 'specs': {
                 console.log('Product specs:', product.specs);
                 console.log('Variant overrides:', activeVariation?.specOverrides);
-                console.log('Merged:', mergeSpecs(product, activeVariation));
+                console.log(
+                    'Merged:',
+                    mergeSpecsFlat(product.category?.specs, product.specs, activeVariation?.specOverrides),
+                );
+                
+                const specs = mergeSpecsFlat(
+                    product.category?.specs || [],
+                    product.specs || [],
+                    activeVariation?.specOverrides || [],
+                );
 
-                return <SpecsTable specs={mergeSpecs(product, activeVariation)} />;
+                return <SpecsTable specs={specs} />;
             }
 
             case 'reviews':
@@ -339,24 +349,19 @@ function SpecsTable({ specs }) {
     }
 
     return (
-        <div className={cx('specs-wrapper')}>
-            {specs.map((group) => (
-                <div key={group.group} className={cx('specs-group')}>
-                    <h4 className={cx('specs-group-title')}>{group.group}</h4>
-
-                    <table className={cx('specs-table')}>
-                        <tbody>
-                            {group.fields.map((field) => (
-                                <tr key={field.label}>
-                                    <td className={cx('specs-key')}>{field.label}</td>
-                                    <td className={cx('specs-value')}>{field.value}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            ))}
-        </div>
+        <table className={cx('specs-table')}>
+            <tbody>
+                {specs.map((spec) => (
+                    <tr key={spec.key}>
+                        <td className={cx('specs-key')}>
+                            {spec.icon && <i className={`icon-${spec.icon}`} />}
+                            {spec.label}
+                        </td>
+                        <td className={cx('specs-value')}>{spec.value}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
     );
 }
 
