@@ -13,7 +13,6 @@ import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons';
 import { FireIcon, GiftIcon } from '../Icons/Icons';
 import BasicRating from '~/components/Rating/Rating';
 import { getDefaultDisplayName } from '~/utils/getDefaultDisplayName';
-import { mergeSpecs } from '~/utils/mergeSpecs';
 import { SPEC_ICON_MAP } from '~/constants/specIcons';
 import { getCardSpecs } from '~/utils/getCardSpecs';
 
@@ -107,7 +106,6 @@ function Product({ category, onHasProductChange }) {
                     }
 
                     // ===================== Merge Specs =====================
-                    const finalSpecs = mergeSpecs(product, defaultVariation);
                     const cardSpecs = getCardSpecs(product, defaultVariation, 4);
 
                     // ===================== Display Data =====================

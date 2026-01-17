@@ -86,7 +86,7 @@ export default function CollectionsPage() {
         setCurrentPage(1); // Reset về trang 1
         const fetchProductsByCategory = async () => {
             try {
-                const res = await axiosClient.get(`/products/category/${slug}`);
+                const res = await axiosClient.get(`/products?category=${slug}`);
 
                 // Kiểm tra cấu trúc dữ liệu trả về
                 const productsArr = Array.isArray(res.data.products) ? res.data.products : [];

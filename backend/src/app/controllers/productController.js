@@ -685,6 +685,43 @@ class ProductController {
             visible: true,
           },
         },
+
+        // 🔥 CATEGORY (BẮT BUỘC)
+        {
+          $lookup: {
+            from: "categories",
+            let: { categoryId: "$category" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ["$_id", "$$categoryId"] },
+                },
+              },
+              {
+                $project: {
+                  name: 1,
+                  slug: 1,
+                  specs: 1, // 🔥 QUAN TRỌNG
+                },
+              },
+            ],
+            as: "category",
+          },
+        },
+        { $unwind: "$category" },
+
+        // 🔥 BRAND (khuyến nghị – cho ProductCard)
+        {
+          $lookup: {
+            from: "brands",
+            localField: "brand",
+            foreignField: "_id",
+            as: "brand",
+          },
+        },
+        { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
+
+        // 🔥 REVIEWS
         {
           $lookup: {
             from: "reviews",
@@ -693,6 +730,8 @@ class ProductController {
             as: "reviews",
           },
         },
+
+        // 🔥 RATING + COUNT
         {
           $addFields: {
             averageRating: {
@@ -705,18 +744,23 @@ class ProductController {
             reviewCount: { $size: "$reviews" },
           },
         },
+
         { $limit: 7 },
       ]);
 
-      // ✅ Gắn status động
+      // ✅ Gắn status động (GIỮ NGUYÊN)
       const relatedWithStatus = related.map((p) => ({
         ...p,
-        status: computeProductStatus(p, { importing: p.importing }),
+        status: computeProductStatus({
+          importing: p.importing,
+          quantity: p.quantity ?? 0,
+          variations: p.variations ?? [],
+        }),
       }));
 
       res.json(relatedWithStatus);
     } catch (err) {
-      console.error("Lỗi khi lấy sản phẩm liên quan:", err);
+      console.error("❌ Lỗi khi lấy sản phẩm liên quan:", err);
       res.status(500).json({ error: "Không thể lấy sản phẩm liên quan" });
     }
   }
@@ -928,7 +972,7 @@ class ProductController {
       // 🟢 Tính lại status dựa trên dữ liệu mới
       data.status = computeProductStatus(data, { importing: data.importing });
 
-      console.log('FINAL SPECS TO SAVE:', updateData.specs);
+      console.log("FINAL SPECS TO SAVE:", updateData.specs);
 
       // 🟢 Cập nhật
       const updated = await Product.findByIdAndUpdate(
@@ -1079,6 +1123,10 @@ class ProductController {
         deleted: { $ne: true },
         visible: true,
       })
+        .populate({
+          path: "category",
+          select: "name slug specs", // 🔥 BẮT BUỘC
+        })
         .populate({
           path: "variations",
           populate: [
