@@ -1,30 +1,22 @@
-export function buildSpecOverrides(productSpecs = [], uiSpecs = []) {
+export function buildSpecOverrides(uiSpecs = []) {
     const overrides = {};
+
     const normalize = (v) =>
         String(v ?? '')
             .replace(/\s+/g, ' ')
             .trim();
 
-    uiSpecs.forEach((uiGroup) => {
-        if (!uiGroup?.group || !Array.isArray(uiGroup.fields)) return;
+    uiSpecs.forEach((spec) => {
+        if (!spec?.key) return;
 
-        const baseGroup = productSpecs.find((g) => g.group === uiGroup.group);
+        const uiValue = normalize(spec.value);
+        const baseValue = normalize(spec.baseValue);
 
-        uiGroup.fields.forEach((uiField) => {
-            if (!uiField?.label) return;
+        if (uiValue === '') return;
 
-            const baseField = baseGroup?.fields?.find((f) => f.label === uiField.label);
-
-            const uiValue = normalize(uiField.value);
-            if (uiValue === '') return;
-
-            const baseValue = normalize(baseField?.value);
-
-            if (!baseField || uiValue !== baseValue) {
-                overrides[uiGroup.group] ??= {};
-                overrides[uiGroup.group][uiField.label] = uiValue;
-            }
-        });
+        if (uiValue !== baseValue) {
+            overrides[spec.key] = uiValue;
+        }
     });
 
     return overrides;

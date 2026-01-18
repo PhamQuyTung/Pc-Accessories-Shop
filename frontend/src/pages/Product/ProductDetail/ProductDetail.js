@@ -32,7 +32,6 @@ import useCart from './hooks/useCart';
 import useFavorite from './hooks/useFavorite';
 
 import { getDisplayName } from '~/pages/Product/ProductDetail/utils/productHelpers';
-import { mergeSpecs } from '~/utils/mergeSpecs';
 import { mergeSpecsFlat } from '~/utils/mergeSpecsFlat';
 
 import styles from './ProductDetail.module.scss';
@@ -222,11 +221,11 @@ function ProductDetailView({
                     'Merged:',
                     mergeSpecsFlat(product.category?.specs, product.specs, activeVariation?.specOverrides),
                 );
-                
+
                 const specs = mergeSpecsFlat(
                     product.category?.specs || [],
                     product.specs || [],
-                    activeVariation?.specOverrides || [],
+                    activeVariation?.specOverrides || {},
                 );
 
                 return <SpecsTable specs={specs} />;

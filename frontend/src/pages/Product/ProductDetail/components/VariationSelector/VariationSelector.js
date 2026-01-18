@@ -25,6 +25,8 @@ const VariationSelector = ({
     const hasVariations = product.variations && product.variations.length > 0;
     const hasAttributes = product.attributes && product.attributes.length > 0;
 
+    console.log('product.attributes = ', product.attributes);
+
     const handleSelectVariation = (variation) => {
         onSelectVariation(variation);
         if (variation?._id) {
@@ -61,7 +63,7 @@ const VariationSelector = ({
                     <div className={cx('variations-grid')}>
                         {getSortedVariations(product.variations).map((variation, index) => {
                             const isActive = isVariationMatching(variation, selectedAttributes);
-                            const label = getVariationLabel(variation);
+                            const label = getVariationLabel(variation, product.attributes || []);
 
                             return (
                                 <button

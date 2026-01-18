@@ -22,7 +22,7 @@ const generateVariations = (attributes, baseSku = "SP") => {
         });
         return res;
       },
-      [[]]
+      [[]],
     );
 
   const combinations = combine(attributes);
@@ -287,7 +287,7 @@ class ProductController {
           p.variations.length > 0
         ) {
           const exists = p.variations.some(
-            (v) => String(v._id) === String(p.defaultVariantId)
+            (v) => String(v._id) === String(p.defaultVariantId),
           );
 
           if (!exists) {
@@ -336,7 +336,7 @@ class ProductController {
         // ✅ tìm biến thể mặc định
         const defaultVar =
           convertedVariations.find(
-            (v) => v._id === p.defaultVariantId?.toString()
+            (v) => v._id === p.defaultVariantId?.toString(),
           ) || null;
 
         // ✅ quantity dùng để hiển thị
@@ -387,6 +387,7 @@ class ProductController {
       const { slug } = req.params;
 
       const pipeline = [
+        /* ================= PRODUCT ================= */
         {
           $match: {
             slug,
@@ -440,7 +441,7 @@ class ProductController {
           },
         },
 
-        /* ================= ATTRIBUTES ================= */
+        /* ================= ATTRIBUTE DEFINITIONS ================= */
         {
           $lookup: {
             from: "attributes",
@@ -450,13 +451,23 @@ class ProductController {
           },
         },
 
-        /* ================= VARIATIONS ================= */
+        /* ================= VARIATION ATTRIBUTE DEFINITIONS ================= */
         {
           $lookup: {
             from: "attributes",
             localField: "variations.attributes.attrId",
             foreignField: "_id",
             as: "variationAttributeDefs",
+          },
+        },
+
+        /* ================= VARIATION TERMS (🔥 CỐT LÕI) ================= */
+        {
+          $lookup: {
+            from: "attributeterms",
+            localField: "variations.attributes.terms",
+            foreignField: "_id",
+            as: "variationTermDefs",
           },
         },
       ];
@@ -468,11 +479,43 @@ class ProductController {
         return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
       }
 
+      /* =====================================================
+       * 🔧 MAP LẠI VARIATIONS.ATTRIBUTES (CỰC KỲ QUAN TRỌNG)
+       * ===================================================== */
+      if (Array.isArray(product.variations)) {
+        product.variations = product.variations.map((variation) => {
+          const attributes = (variation.attributes || []).map((attr) => {
+            const attrDef = product.variationAttributeDefs.find(
+              (a) => String(a._id) === String(attr.attrId),
+            );
+
+            const termIds = Array.isArray(attr.terms)
+              ? attr.terms
+              : [attr.terms];
+
+            const terms = product.variationTermDefs.filter((t) =>
+              termIds.some((id) => String(id) === String(t._id)),
+            );
+
+            return {
+              ...attr,
+              attrId: attrDef || attr.attrId,
+              terms: terms.length ? terms : attr.terms,
+            };
+          });
+
+          return {
+            ...variation,
+            attributes,
+          };
+        });
+      }
+
       /* ================= REVIEWS ================= */
       const reviews = await Review.find({ product: product._id }).lean();
       const reviewCount = reviews.length;
       const averageRating = reviewCount
-        ? reviews.reduce((a, c) => a + c.rating, 0) / reviewCount
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
         : 0;
 
       res.json({
@@ -494,7 +537,7 @@ class ProductController {
   async getBreadcrumb(req, res) {
     try {
       const product = await Product.findOne({ slug: req.params.slug }).populate(
-        "category"
+        "category",
       );
 
       if (!product) {
@@ -568,7 +611,7 @@ class ProductController {
       ) {
         req.body.variations = generateVariations(
           req.body.attributes,
-          req.body.sku || "SP"
+          req.body.sku || "SP",
         );
       }
 
@@ -652,7 +695,7 @@ class ProductController {
       const product = await Product.findByIdAndUpdate(
         id,
         { attributes },
-        { new: true }
+        { new: true },
       );
 
       if (!product) {
@@ -847,7 +890,7 @@ class ProductController {
     }
     try {
       const product = await Product.findById(req.params.id)
-        .populate("category", "name slug")
+        .populate("category", "name slug specs")
         .populate("brand", "name slug")
         .lean();
 
@@ -857,13 +900,18 @@ class ProductController {
 
       const defaultVariant =
         product.variations.find(
-          (v) => v._id.toString() === product.defaultVariantId?.toString()
+          (v) => v._id.toString() === product.defaultVariantId?.toString(),
         ) || product.variations[0];
 
-      const mergedSpecs = mergeSpecs(product, defaultVariant);
+      const mergedSpecs = mergeSpecs(
+        product,
+        defaultVariant,
+        product.category?.specs || [],
+      );
 
       res.json({
         ...product,
+        categorySpecs: product.category?.specs || [],
         defaultVariant,
         specs: mergedSpecs,
         status: computeProductStatus(product, { importing: product.importing }),
@@ -910,7 +958,7 @@ class ProductController {
         updateData.specs = Object.entries(updateData.specs)
           .filter(
             ([_, value]) =>
-              value !== "" && value !== null && value !== undefined
+              value !== "" && value !== null && value !== undefined,
           )
           .map(([key, value]) => ({
             key,
@@ -978,7 +1026,7 @@ class ProductController {
       const updated = await Product.findByIdAndUpdate(
         req.params.id,
         { $set: updateData },
-        { new: true }
+        { new: true },
       );
 
       if (!updated) {
@@ -1001,7 +1049,7 @@ class ProductController {
       const product = await Product.findByIdAndUpdate(
         req.params.id,
         { deleted: true, deletedAt: new Date() }, // 👈 thêm timestamp
-        { new: true }
+        { new: true },
       );
 
       if (!product) {
@@ -1084,7 +1132,7 @@ class ProductController {
       const product = await Product.findByIdAndUpdate(
         req.params.id,
         { deleted: false, deletedAt: null }, // 👈 clear timestamp
-        { new: true }
+        { new: true },
       ).lean();
 
       if (!product) {
@@ -1152,7 +1200,7 @@ class ProductController {
               (v) =>
                 v &&
                 typeof v === "object" &&
-                (v.price != null || v.discountPrice != null)
+                (v.price != null || v.discountPrice != null),
             )
           : [];
 
@@ -1400,7 +1448,7 @@ class ProductController {
           {
             $inc: { "variations.$.quantity": -quantity },
           },
-          { new: true }
+          { new: true },
         );
       } else {
         // Giảm tồn kho tổng
@@ -1410,7 +1458,7 @@ class ProductController {
             quantity: { $gte: quantity },
           },
           { $inc: { quantity: -quantity } },
-          { new: true }
+          { new: true },
         );
       }
 
@@ -1455,14 +1503,14 @@ class ProductController {
         product = await Product.findOneAndUpdate(
           { _id: productId, "variations._id": variationId },
           { $inc: { "variations.$.quantity": quantity } },
-          { new: true }
+          { new: true },
         );
       } else {
         // Hoàn kho cho tổng sản phẩm
         product = await Product.findByIdAndUpdate(
           productId,
           { $inc: { quantity } },
-          { new: true }
+          { new: true },
         );
       }
 

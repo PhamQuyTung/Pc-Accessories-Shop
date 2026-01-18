@@ -3,8 +3,6 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './CreateVariant.module.scss';
 import ReactQuill from 'react-quill-new';
-import CustomToolbar from '~/components/Editor/CustomToolbar';
-import { quillFormats, quillModules } from '~/utils/quillSetup';
 
 import { useToast } from '~/components/ToastMessager';
 import axiosClient from '~/utils/axiosClient';

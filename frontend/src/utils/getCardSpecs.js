@@ -5,10 +5,8 @@ export function getCardSpecs(product, variation = null, limit = 6) {
 
     const productMap = Object.fromEntries(productSpecs.map((s) => [s.key, s.value]));
 
-    // nếu sau này có specOverrides cho variation
-    const variationMap = variation?.specOverrides
-        ? Object.fromEntries(variation.specOverrides.map((s) => [s.key, s.value]))
-        : {};
+    const variationMap =
+        variation?.specOverrides && typeof variation.specOverrides === 'object' ? variation.specOverrides : {};
 
     return categorySpecs
         .filter((s) => s.showOnCard) // 🔥 QUYẾT ĐỊNH TẠI CATEGORY

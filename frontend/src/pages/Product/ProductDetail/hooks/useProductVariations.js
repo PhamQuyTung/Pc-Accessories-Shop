@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function useProductVariations(product, vid) {
     const [selectedAttributes, setSelectedAttributes] = useState({});
@@ -9,8 +9,7 @@ export default function useProductVariations(product, vid) {
     const location = useLocation();
 
     const getSafeAttrs = (variation) => {
-        if (!variation?.attributes || !Array.isArray(variation.attributes))
-            return {};
+        if (!variation?.attributes || !Array.isArray(variation.attributes)) return {};
 
         const attrs = {};
         variation.attributes.forEach((a) => {
@@ -40,7 +39,7 @@ export default function useProductVariations(product, vid) {
 
         // 1. Query param vid
         if (vid) {
-            variation = product.variations.find((v) => v._id === vid);
+            variation = product.variations.find((v) => String(v._id) === String(vid));
         }
 
         // 2. Default variant
@@ -64,28 +63,40 @@ export default function useProductVariations(product, vid) {
     // Khi chọn attribute → tìm biến thể phù hợp
     useEffect(() => {
         if (!Array.isArray(product?.variations)) return;
+        if (!selectedAttributes || Object.keys(selectedAttributes).length === 0) return;
 
-        const match = product.variations.find((v) =>
-            Array.isArray(v.attributes) &&
-            v.attributes.every((a) => {
-                const id = a?.attrId?._id || a?.attrId;
-                if (!id) return false;
+        const match = product.variations.find(
+            (v) =>
+                Array.isArray(v.attributes) &&
+                v.attributes.every((a) => {
+                    const id = a?.attrId?._id || a?.attrId;
+                    if (!id) return false;
 
-                const term = Array.isArray(a?.terms) ? a.terms[0] : a?.terms;
-                const termId = term?._id || term;
+                    const term = Array.isArray(a?.terms) ? a.terms[0] : a?.terms;
+                    const termId = term?._id || term;
 
-                return selectedAttributes[id] === termId;
-            })
+                    return selectedAttributes[id] === termId;
+                }),
         );
 
-        if (match) setActiveVariation(match);
+        // 🛑 CHỈ SET KHI KHÁC VARIANT HIỆN TẠI
+        if (match && (!activeVariation || String(match._id) !== String(activeVariation._id))) {
+            setActiveVariation(match);
+        }
     }, [selectedAttributes, product]);
 
     const handleSelectAttribute = (attrId, termId) => {
-        setSelectedAttributes((prev) => ({
-            ...prev,
-            [attrId]: prev[attrId] === termId ? undefined : termId,
-        }));
+        setSelectedAttributes((prev) => {
+            const next = { ...prev };
+
+            if (next[attrId] === termId) {
+                delete next[attrId]; // ❗ xoá key
+            } else {
+                next[attrId] = termId;
+            }
+
+            return next;
+        });
     };
 
     const handleSelectVariation = (variation) => {

@@ -1,40 +1,36 @@
-function mergeSpecs(product, variant) {
-  // Clone specs từ product (product.specs của bạn là ARRAY chứ không phải OBJECT)
-  const finalSpecs = Array.isArray(product.specs)
-    ? JSON.parse(JSON.stringify(product.specs))
-    : [];
+function mergeSpecs(product, variant, categorySpecs = []) {
+  const productSpecsMap = new Map();
+  const overrideMap =
+    variant?.specOverrides instanceof Map
+      ? Object.fromEntries(variant.specOverrides)
+      : variant?.specOverrides || {};
 
-  // Nếu không có overrides → trả lại nguyên bản
-  if (!variant?.specOverrides || typeof variant.specOverrides !== "object") {
-    return finalSpecs;
+  // Map product.specs → key:value
+  if (Array.isArray(product.specs)) {
+    for (const s of product.specs) {
+      if (s?.key) {
+        productSpecsMap.set(s.key, s.value ?? "");
+      }
+    }
   }
 
-  // Với mỗi override
-  for (const [groupName, fields] of Object.entries(variant.specOverrides)) {
-    // Tìm group trong product.specs
-    const group = finalSpecs.find((g) => g.group === groupName);
+  // Build final specs theo category
+  const finalSpecs = [];
 
-    // Nếu group tồn tại
-    if (group) {
-      for (const [label, newValue] of Object.entries(fields)) {
-        const field = group.fields.find((f) => f.label === label);
-        if (field) {
-          field.value = newValue; // ghi đè
-        } else {
-          // Nếu label chưa tồn tại → thêm mới
-          group.fields.push({ label, value: newValue });
-        }
-      }
-    } else {
-      // Nếu group chưa tồn tại → thêm nhóm mới
-      finalSpecs.push({
-        group: groupName,
-        fields: Object.entries(fields).map(([label, value]) => ({
-          label,
-          value,
-        })),
-      });
-    }
+  for (const catSpec of categorySpecs) {
+    const key = catSpec.key;
+    if (!key) continue;
+
+    const value = overrideMap[key] ?? productSpecsMap.get(key) ?? "";
+
+    finalSpecs.push({
+      key,
+      label: catSpec.label,
+      value,
+      type: catSpec.type || "text",
+      icon: catSpec.icon || "default",
+      showOnCard: !!catSpec.showOnCard,
+    });
   }
 
   return finalSpecs;

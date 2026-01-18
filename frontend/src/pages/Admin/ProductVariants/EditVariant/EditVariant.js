@@ -15,7 +15,7 @@ import {
     getAttributeTerms,
 } from '~/services/variantService';
 import axiosClient from '~/utils/axiosClient';
-import { mergeSpecs } from '~/utils/mergeSpecs';
+import { buildVariantSpecs } from '~/utils/buildVariantSpecs';
 import SpecEditor from '~/components/SpecEditor/SpecEditor';
 import { buildSpecOverrides } from '~/utils/buildSpecOverrides';
 
@@ -56,19 +56,13 @@ function EditVariant() {
     const [productSpecs, setProductSpecs] = useState([]);
     const [uiSpecs, setUiSpecs] = useState([]);
 
-    const fetchProductSpecs = async () => {
+    const fetchProductData = async () => {
         const res = await axiosClient.get(`/products/id/${productId}`);
-        return res.data.specs || [];
-    };
 
-    const isOverridden = (groupName, label, value) => {
-        const baseGroup = productSpecs.find((g) => g.group === groupName);
-        if (!baseGroup) return true;
-
-        const baseField = baseGroup.fields.find((f) => f.label === label);
-        if (!baseField) return true;
-
-        return value !== baseField.value;
+        return {
+            productSpecs: res.data.product?.specs || [],
+            categorySpecs: res.data.categorySpecs || [],
+        };
     };
 
     // -------------------------------------------------
@@ -77,9 +71,11 @@ function EditVariant() {
     const fetchVariant = async () => {
         setLoading(true);
         try {
-            const [variantRes, specs] = await Promise.all([getVariantsByProduct(productId), fetchProductSpecs()]);
+            const [variantRes, productData] = await Promise.all([getVariantsByProduct(productId), fetchProductData()]);
 
-            setProductSpecs(specs);
+            const { productSpecs, categorySpecs } = productData;
+
+            setProductSpecs(productSpecs);
 
             const variants = variantRes.data.variants || [];
             const found = variants.find((v) => String(v._id) === String(variantId));
@@ -90,10 +86,10 @@ function EditVariant() {
                 return;
             }
 
-            // ✅ MERGE specs
-            const mergedSpecs = mergeSpecs({ specs }, { specOverrides: found.specOverrides });
+            // ✅ BUILD UI SPECS ĐÚNG CHUẨN
+            const uiSpecs = buildVariantSpecs(categorySpecs, productSpecs, found.specOverrides || {});
 
-            setUiSpecs(mergedSpecs);
+            setUiSpecs(uiSpecs);
 
             setForm({
                 sku: found.sku || '',
@@ -399,7 +395,7 @@ function EditVariant() {
                             />
 
                             {/* SpecEditor Component */}
-                            <SpecEditor uiSpecs={uiSpecs} productSpecs={productSpecs} setUiSpecs={setUiSpecs} />
+                            <SpecEditor uiSpecs={uiSpecs} setUiSpecs={setUiSpecs} />
 
                             {/* DESCRIPTION CARD */}
                             <div className={cx('card2')} style={{ marginTop: '18px' }}>
