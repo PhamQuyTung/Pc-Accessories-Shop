@@ -11,7 +11,7 @@ const reviewSchema = new mongoose.Schema(
     comment: { type: String },
     createdAt: { type: Date, default: Date.now },
   },
-  { _id: false }
+  { _id: false },
 );
 
 // ================= Variation Schema =================
@@ -38,10 +38,7 @@ const variationSchema = new mongoose.Schema(
 
     specOverrides: {
       type: Map,
-      of: {
-        type: Map,
-        of: String,
-      },
+      of: String,
       default: {},
     },
 
@@ -56,7 +53,7 @@ const variationSchema = new mongoose.Schema(
       unit: { type: String, default: "kg" },
     },
   },
-  { _id: true }
+  { _id: true },
 );
 
 // ================= Promotion Applied Schema =================
@@ -67,7 +64,7 @@ const promotionAppliedSchema = new mongoose.Schema(
     appliedAt: { type: Date, default: null },
     soldCount: { type: Number, default: 0 }, // 👈 THÊM DÒNG NÀY
   },
-  { _id: false }
+  { _id: false },
 );
 
 // ================= Product Schema =================

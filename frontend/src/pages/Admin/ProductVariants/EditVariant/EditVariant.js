@@ -242,7 +242,7 @@ function EditVariant() {
                 });
 
             console.log('📤 Sending normalized attributes:', normalizedAttrs); // DEBUG
-            const specOverrides = buildSpecOverrides(productSpecs, uiSpecs);
+            const specOverrides = buildSpecOverrides(uiSpecs);
 
             const payload = {
                 sku: form.sku,

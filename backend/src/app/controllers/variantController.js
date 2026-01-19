@@ -89,6 +89,8 @@ module.exports = {
       const { productId } = req.params;
       const data = req.body;
 
+      console.log("🆕 CREATE VARIANT specOverrides:", data.specOverrides);
+
       if (!isValidObjectId(productId))
         return res.status(400).json({ message: "ID sản phẩm không hợp lệ" });
 
@@ -121,7 +123,7 @@ module.exports = {
       // Duplicate check
       const newMap = normalizeAttrs(attrs);
       const duplicate = product.variations.find((v) =>
-        isSameAttrs(normalizeAttrs(v.attributes), newMap)
+        isSameAttrs(normalizeAttrs(v.attributes), newMap),
       );
       if (duplicate) {
         return res.status(400).json({
@@ -226,7 +228,7 @@ module.exports = {
       const wasDefault = String(product.defaultVariantId) === String(variantId);
 
       product.variations = product.variations.filter(
-        (v) => String(v._id) !== String(variantId)
+        (v) => String(v._id) !== String(variantId),
       );
 
       // 🟢 nếu xoá default variant
@@ -250,6 +252,10 @@ module.exports = {
     try {
       const { variantId } = req.params;
       const update = req.body;
+
+      console.log("🟡 UPDATE VARIANT REQ");
+      console.log("variantId:", variantId);
+      console.log("raw specOverrides from FE:", update.specOverrides);
 
       if (!isValidObjectId(variantId))
         return res.status(400).json({ message: "ID biến thể không hợp lệ" });
@@ -319,26 +325,39 @@ module.exports = {
         }
       }
 
-      // ================= SPEC OVERRIDES (GROUP A) =================
+      // ================= SPEC OVERRIDES =================
       if (update.specOverrides && typeof update.specOverrides === "object") {
         const normalized = {};
 
-        for (const [group, fields] of Object.entries(update.specOverrides)) {
-          if (!group || typeof fields !== "object") continue;
+        for (const [key, value] of Object.entries(update.specOverrides)) {
+          if (!key) continue;
 
-          normalized[group] = {};
+          const strValue = String(value ?? "")
+            .replace(/\s+/g, " ")
+            .trim();
 
-          for (const [label, value] of Object.entries(fields)) {
-            if (!label) continue;
-            normalized[group][label] = String(value ?? "");
-          }
+          // ⛔ không lưu override rỗng
+          if (strValue === "") continue;
+
+          normalized[key] = strValue;
         }
 
         update.specOverrides = normalized;
+
+        console.log("🟢 NORMALIZED specOverrides:", update.specOverrides);
       }
+
+      console.log("🟠 BEFORE ASSIGN");
+      console.log("variant.specOverrides (before):", variant.specOverrides);
+      console.log("update.specOverrides:", update.specOverrides);
 
       Object.assign(variant, update);
       await product.save();
+
+      const savedVariant = product.variations.id(variantId);
+
+      console.log("✅ AFTER SAVE");
+      console.log("savedVariant.specOverrides:", savedVariant.specOverrides);
 
       await product.populate("variations.attributes.attrId");
       await product.populate("variations.attributes.terms");

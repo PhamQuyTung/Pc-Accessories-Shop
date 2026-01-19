@@ -5,12 +5,22 @@ import styles from '../../pages/Admin/ProductVariants/EditVariant/EditVariant.mo
 const cx = classNames.bind(styles);
 
 function SpecEditor({ uiSpecs, setUiSpecs }) {
+    const normalize = (v) =>
+        String(v ?? '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
     const handleChange = useCallback(
         (idx, value) => {
             setUiSpecs((prev) => {
                 const clone = structuredClone(prev);
-                clone[idx].value = value;
-                clone[idx].overridden = value !== clone[idx].baseValue;
+
+                const nextValue = value;
+                const baseValue = clone[idx].baseValue;
+
+                clone[idx].value = nextValue;
+                clone[idx].overridden = normalize(nextValue) !== normalize(baseValue);
+
                 return clone;
             });
         },
