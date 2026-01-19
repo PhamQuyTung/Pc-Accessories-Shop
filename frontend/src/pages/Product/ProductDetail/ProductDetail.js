@@ -351,12 +351,15 @@ function SpecsTable({ specs }) {
         <table className={cx('specs-table')}>
             <tbody>
                 {specs.map((spec) => (
-                    <tr key={spec.key}>
+                    <tr key={spec.key} className={cx({ 'spec-override': spec.isOverridden })}>
                         <td className={cx('specs-key')}>
                             {spec.icon && <i className={`icon-${spec.icon}`} />}
                             {spec.label}
                         </td>
-                        <td className={cx('specs-value')}>{spec.value}</td>
+                        <td className={cx('specs-value')}>
+                            {spec.value}
+                            {spec.isOverridden && <span className={cx('spec-badge')}>Theo biến thể</span>}
+                        </td>
                     </tr>
                 ))}
             </tbody>

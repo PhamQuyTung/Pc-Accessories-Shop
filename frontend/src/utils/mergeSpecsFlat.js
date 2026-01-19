@@ -1,15 +1,27 @@
-// src/utils/mergeSpecsFlat.js
-export function mergeSpecsFlat(categorySpecs = [], productSpecs = [], overrides = {}) {
-    // product specs: Array → Object
-    const productMap = Object.fromEntries((productSpecs || []).map((s) => [s.key, s.value]));
+// utils/mergeSpecsFlat.js
+export function mergeSpecsFlat(categorySpecs = [], productSpecs = [], variantOverrides = {}) {
+    const productMap = {};
+    productSpecs.forEach((s) => {
+        if (s?.key) productMap[s.key] = s.value;
+    });
 
-    // overrides: Object (specOverrides từ variation)
-    const overrideMap = overrides && typeof overrides === 'object' ? overrides : {};
+    return categorySpecs
+        .map((catSpec) => {
+            const key = catSpec.key;
+            const baseValue = productMap[key] ?? '';
+            const overrideValue = variantOverrides?.[key];
 
-    return (categorySpecs || []).map((spec) => ({
-        key: spec.key,
-        label: spec.label,
-        icon: spec.icon,
-        value: overrideMap[spec.key] ?? productMap[spec.key] ?? '—',
-    }));
+            const finalValue = overrideValue !== undefined && overrideValue !== '' ? overrideValue : baseValue;
+
+            if (!finalValue || String(finalValue).trim() === '') return null;
+
+            return {
+                key,
+                label: catSpec.label,
+                icon: catSpec.icon,
+                value: finalValue,
+                isOverridden: overrideValue !== undefined,
+            };
+        })
+        .filter(Boolean);
 }

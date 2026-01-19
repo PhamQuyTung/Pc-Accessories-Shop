@@ -988,3 +988,22 @@
         }
     }
 }
+
+// ProductDetail.module.scss
+.spec-override {
+    background-color: #fff8e1;
+}
+
+.specs-value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.spec-badge {
+    font-size: 12px;
+    background: #ff9800;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
