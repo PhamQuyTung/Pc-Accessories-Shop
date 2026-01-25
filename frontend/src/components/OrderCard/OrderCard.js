@@ -9,7 +9,7 @@ import axiosClient from '~/utils/axiosClient';
 import { useToast } from '~/components/ToastMessager/ToastMessager';
 import ModalCancelOrder from '~/components/ModalCancelOrder/ModalCancelOrder';
 
-const API_BASE_URL = '[http://localhost:5000](http://localhost:5000)';
+const API_BASE_URL = 'http://localhost:5000';
 
 const STATUS_LABELS = {
     new: 'Chờ xác nhận',
@@ -27,14 +27,32 @@ const collapseVariants = {
     collapsed: { height: 0, opacity: 0, overflow: 'hidden', transition },
 };
 
-function getProductImage(product) {
-    if (product && Array.isArray(product.images) && product.images.length > 0) {
-        const img = product.images[0];
-        if (typeof img === 'string' && img.trim() !== '') {
-            return img.startsWith('http') ? img : `${API_BASE_URL}/${img}`;
-        }
+function getOrderItemImage(item) {
+    if (!item?.image) {
+        return `${API_BASE_URL}/images/no-image.png`;
     }
-    return `${API_BASE_URL}/images/no-image.png`;
+
+    return item.image.startsWith('http') ? item.image : `${API_BASE_URL}${item.image}`;
+}
+
+function renderVariationAttributes(variation) {
+    if (!variation?.attributes?.length) return null;
+
+    return (
+        <div className={cx('variant-attrs')}>
+            {variation.attributes.map((attr, idx) => {
+                const attrName = attr.attrId?.name;
+                if (!attrName || !attr.terms?.length) return null;
+
+                return (
+                    <div key={idx} className={cx('variant-attr')}>
+                        <span className={cx('attr-name')}>{attrName}:</span>
+                        <span className={cx('attr-values')}>{attr.terms.map((t) => t.name).join(', ')}</span>
+                    </div>
+                );
+            })}
+        </div>
+    );
 }
 
 function OrderCard({ order, onCancel, onReorder }) {
@@ -158,13 +176,34 @@ function OrderCard({ order, onCancel, onReorder }) {
 
                                 return (
                                     <div key={idx} className={cx('order-item', { withdrawn })}>
-                                        <img src={getProductImage(product)} alt={product?.name || 'Sản phẩm'} />
+                                        <img src={getOrderItemImage(item)} alt={product?.name || 'Sản phẩm'} />
                                         <div className={cx('item-info')}>
                                             <p className={cx('name')}>{product?.name || 'Không xác định'}</p>
+
+                                            {/* ✅ MÔ TẢ BIẾN THỂ */}
+                                            {renderVariationAttributes(item.variation_data)}
+
                                             <p>Số lượng: {item.quantity}</p>
-                                            <p>
-                                                Giá: <strong>{item.price.toLocaleString()}₫</strong>
+
+                                            <p className={cx('price')}>
+                                                Giá:
+                                                {item.discountPrice && item.discountPrice < item.price && (
+                                                    <>
+                                                        <span className={cx('old-price')}>
+                                                            {formatCurrency(item.price)}
+                                                        </span>
+                                                    </>
+                                                )}
+                                                <strong className={cx('final-price')}>
+                                                    {formatCurrency(item.finalPrice)}
+                                                </strong>
+                                                <span className={cx('discount-badge')}>
+                                                    -
+                                                    {Math.round(((item.price - item.discountPrice) / item.price) * 100)}
+                                                    %
+                                                </span>
                                             </p>
+
                                             {withdrawn && (
                                                 <p className={cx('refund-note')}>
                                                     ⚠️ Sản phẩm đã bị thu hồi. Hệ thống sẽ hoàn tiền.
@@ -188,7 +227,10 @@ function OrderCard({ order, onCancel, onReorder }) {
                                                                 <span className={cx('gift-name')}>
                                                                     {gift.productId?.name}
                                                                 </span>
-                                                                <span className={cx('gift-qty')}> x{gift.quantity * item.quantity}</span>
+                                                                <span className={cx('gift-qty')}>
+                                                                    {' '}
+                                                                    x{gift.quantity * item.quantity}
+                                                                </span>
                                                             </div>
                                                         </li>
                                                     ))}

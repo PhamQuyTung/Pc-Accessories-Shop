@@ -31,14 +31,27 @@ async function populateAndNormalizeOrder(orderQuery) {
   const plain = order.toObject();
 
   plain.items = plain.items.map((i) => {
-    const variation = i.product_id?.variations && i.variation_id
-      ? i.product_id.variations.find(v => String(v._id) === String(i.variation_id))
-      : null;
+    const variation =
+      i.product_id?.variations && i.variation_id
+        ? i.product_id.variations.find(
+            (v) => String(v._id) === String(i.variation_id),
+          )
+        : null;
+
+    // ✅ FIX ẢNH Ở ĐÂY
+    const image =
+      variation?.thumbnail ||
+      variation?.images?.[0] ||
+      i.product_id?.images?.[0] ||
+      null;
 
     return {
       ...i,
       product_id: normalizeProduct(i.product_id),
-      variation_data: variation || null, // ✅ Lấy variation data đã populate
+      variation_data: variation || null,
+
+      image, // 🔥 FIELD QUAN TRỌNG
+
       gifts: (i.gifts || []).map((g) => ({
         ...g,
         productId: g.productId ? normalizeProduct(g.productId) : null,
