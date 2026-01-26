@@ -35,25 +35,30 @@ function getOrderItemImage(item) {
     return item.image.startsWith('http') ? item.image : `${API_BASE_URL}${item.image}`;
 }
 
-function renderVariationAttributes(variation) {
+const getVariationLabel = (variation) => {
     if (!variation?.attributes?.length) return null;
 
-    return (
-        <div className={cx('variant-attrs')}>
-            {variation.attributes.map((attr, idx) => {
-                const attrName = attr.attrId?.name;
-                if (!attrName || !attr.terms?.length) return null;
+    return variation.attributes
+        .map((attr) => {
+            // Nếu attrId là object, lấy name; nếu là string thì lấy luôn
+            const attrName = typeof attr.attrId === 'object' 
+                ? attr.attrId?.name 
+                : attr.attrId;
 
-                return (
-                    <div key={idx} className={cx('variant-attr')}>
-                        <span className={cx('attr-name')}>{attrName}:</span>
-                        <span className={cx('attr-values')}>{attr.terms.map((t) => t.name).join(', ')}</span>
-                    </div>
-                );
-            })}
-        </div>
-    );
-}
+            // Nếu terms là array, lấy name của phần tử đầu tiên
+            let termName = '';
+            if (Array.isArray(attr.terms) && attr.terms.length > 0) {
+                const firstTerm = attr.terms[0];
+                termName = typeof firstTerm === 'object' 
+                    ? firstTerm.name 
+                    : firstTerm;
+            }
+
+            return termName ? `${attrName}: ${termName}` : null;
+        })
+        .filter(Boolean)
+        .join(' - ');
+};
 
 function OrderCard({ order, onCancel, onReorder }) {
     const [open, setOpen] = useState(false);
@@ -172,6 +177,9 @@ function OrderCard({ order, onCancel, onReorder }) {
                         <div className={cx('order-items')}>
                             {order.items.map((item, idx) => {
                                 const product = item.product_id;
+                                const variation = item.variation_id; // ✅ GIỐNG CartPage
+                                const variationLabel = getVariationLabel(variation);
+
                                 const withdrawn = !product || product.deleted || product.status === false;
 
                                 return (
@@ -180,8 +188,10 @@ function OrderCard({ order, onCancel, onReorder }) {
                                         <div className={cx('item-info')}>
                                             <p className={cx('name')}>{product?.name || 'Không xác định'}</p>
 
-                                            {/* ✅ MÔ TẢ BIẾN THỂ */}
-                                            {renderVariationAttributes(item.variation_data)}
+                                            {/* ✅ MÔ TẢ BIẾN THỂ – GIỐNG CARTPAGE */}
+                                            {variationLabel && (
+                                                <div className={cx('variation-label')}>{variationLabel}</div>
+                                            )}
 
                                             <p>Số lượng: {item.quantity}</p>
 

@@ -151,9 +151,7 @@ function CartPage() {
 
     // ================= HELPER: Extract variation attributes label =================
     const getVariationLabel = (variation) => {
-        if (!variation || !variation.attributes || variation.attributes.length === 0) {
-            return null;
-        }
+        if (!variation?.attributes?.length) return null;
 
         return variation.attributes
             .map((attr) => {

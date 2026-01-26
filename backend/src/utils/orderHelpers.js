@@ -7,27 +7,27 @@ const populateFields = `
 `;
 
 async function populateAndNormalizeOrder(orderQuery) {
-  // ✅ Populate trong một pass duy nhất
   const order = await orderQuery
     .populate("items.product_id", populateFields)
     .populate({
       path: "items.gifts.productId",
       model: "Product",
       select: "name images price slug",
-    })
-    // ✅ FIX: Populate variation attributes theo đúng path
-    .populate({
-      path: "items.product_id.variations.attributes.attrId",
-      model: "Attribute",
-      select: "name type",
-    })
-    .populate({
-      path: "items.product_id.variations.attributes.terms",
-      model: "AttributeTerm",
-      select: "name colorCode",
     });
 
-  // ✅ Map variation_data từ items
+  // ✅ Populate từng level riêng biệt để chắc chắn
+  await order.populate({
+    path: "items.product_id.variations.attributes.attrId",
+    model: "Attribute",
+    select: "name type key",
+  });
+
+  await order.populate({
+    path: "items.product_id.variations.attributes.terms",
+    model: "AttributeTerm",
+    select: "name slug color image",
+  });
+
   const plain = order.toObject();
 
   plain.items = plain.items.map((i) => {
@@ -38,7 +38,11 @@ async function populateAndNormalizeOrder(orderQuery) {
           )
         : null;
 
-    // ✅ FIX ẢNH Ở ĐÂY
+    // 🔍 Debug: Log để kiểm tra
+    if (variation?.attributes) {
+      console.log("✅ Variation attributes:", JSON.stringify(variation.attributes, null, 2));
+    }
+
     const image =
       variation?.thumbnail ||
       variation?.images?.[0] ||
@@ -48,10 +52,9 @@ async function populateAndNormalizeOrder(orderQuery) {
     return {
       ...i,
       product_id: normalizeProduct(i.product_id),
+      variation_id: variation || null,
       variation_data: variation || null,
-
-      image, // 🔥 FIELD QUAN TRỌNG
-
+      image,
       gifts: (i.gifts || []).map((g) => ({
         ...g,
         productId: g.productId ? normalizeProduct(g.productId) : null,
