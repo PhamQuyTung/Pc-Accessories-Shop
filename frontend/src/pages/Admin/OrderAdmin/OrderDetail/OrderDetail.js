@@ -119,6 +119,12 @@ const OrderDetail = () => {
             const basePrice = item.finalPrice || product.discountPrice || product.price;
             const promoItem = promotionSummary.discounts.find((d) => d.productId === productId);
 
+            // ✅ Lấy variation object đầy đủ (có attributes populate)
+            const variation = item.variation_data || 
+                (product?.variations && item.variation_id
+                    ? product.variations.find(v => String(v._id) === String(item.variation_id))
+                    : null);
+
             if (promoItem) {
                 // 🎯 Dòng khuyến mãi
                 if (promoItem.discountedQty > 0) {
@@ -127,7 +133,11 @@ const OrderDetail = () => {
 
                     displayRows.push({
                         key: `${productId}-promo`,
-                        img: product.images?.[0] || '/no-image.png',
+                        img: item.image
+                            ? item.image.startsWith('http')
+                                ? item.image
+                                : `http://localhost:5000${item.image}`
+                            : '/no-image.png',
                         name: productName,
                         quantity: promoItem.discountedQty,
                         price: discountedPrice,
@@ -135,6 +145,7 @@ const OrderDetail = () => {
                         isPromo: true,
                         promotionTitle: promoItem.promotionTitle,
                         gifts: item.gifts || [],
+                        variation: variation, // ✅ Pass object, không phải ID
                     });
                 }
 
@@ -143,13 +154,18 @@ const OrderDetail = () => {
                     const totalNormal = promoItem.normalQty * basePrice;
                     displayRows.push({
                         key: `${productId}-normal`,
-                        img: product.images?.[0] || '/no-image.png',
+                        img: item.image
+                            ? item.image.startsWith('http')
+                                ? item.image
+                                : `http://localhost:5000${item.image}`
+                            : '/no-image.png',
                         name: productName,
                         quantity: promoItem.normalQty,
                         price: basePrice,
                         total: totalNormal,
                         isPromo: false,
                         gifts: item.gifts || [],
+                        variation: variation, // ✅ Pass object
                     });
                 }
             } else {
@@ -157,18 +173,42 @@ const OrderDetail = () => {
                 const total = basePrice * item.quantity;
                 displayRows.push({
                     key: productId,
-                    img: product.images?.[0] || '/no-image.png',
+                    img: item.image
+                        ? item.image.startsWith('http')
+                            ? item.image
+                            : `http://localhost:5000${item.image}`
+                        : '/no-image.png',
                     name: productName,
                     quantity: item.quantity,
                     price: basePrice,
                     total,
                     isPromo: false,
                     gifts: item.gifts || [],
+                    variation: variation, // ✅ Pass object
                 });
             }
         });
 
         return displayRows;
+    };
+
+    const getVariationLabel = (variation) => {
+        if (!variation?.attributes?.length) return null;
+
+        return variation.attributes
+            .map((attr) => {
+                const attrName = typeof attr.attrId === 'object' ? attr.attrId?.name : attr.attrId;
+
+                let termName = '';
+                if (Array.isArray(attr.terms) && attr.terms.length > 0) {
+                    const firstTerm = attr.terms[0];
+                    termName = typeof firstTerm === 'object' ? firstTerm.name : firstTerm;
+                }
+
+                return termName ? `${attrName}: ${termName}` : null;
+            })
+            .filter(Boolean)
+            .join(' - ');
     };
 
     const displayItems = generateDisplayItems(order);
@@ -274,15 +314,24 @@ const OrderDetail = () => {
                                         <img src={row.img} alt={row.name} className={cx('product-img')} />
                                         <div>
                                             <span>{row.name}</span>
-                                            {row.isPromo && (
-                                                <div className={cx('promo-tag')}>
-                                                    🎁 {row.promotionTitle || 'Áp dụng khuyến mãi'}
+
+                                            {/* ✅ MÔ TẢ BIẾN THỂ */}
+                                            {row.variation && (
+                                                <div className={cx('variation-label')}>
+                                                    {getVariationLabel(row.variation)}
                                                 </div>
+                                            )}
+
+                                            {row.isPromo && (
+                                                <div className={cx('promo-tag')}>🎁 {row.promotionTitle}</div>
                                             )}
                                         </div>
                                     </td>
+
                                     <td className={cx('text-center')}>{row.quantity}</td>
+
                                     <td className={cx('text-right')}>{row.price.toLocaleString('vi-VN')} ₫</td>
+                                    
                                     <td className={cx('text-right')}>{row.total.toLocaleString('vi-VN')} ₫</td>
                                 </tr>
 
