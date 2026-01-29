@@ -448,7 +448,37 @@ async function getUserOrders(userId, filters = {}) {
   if (search) {
     const normalizedSearch = removeVietnameseTones(search.trim());
     const safeSearch = normalizedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    query["shippingInfo.searchName"] = { $regex: new RegExp(safeSearch, "i") };
+    const regex = new RegExp(safeSearch, "i");
+
+    // Nếu nhập full ObjectId -> tìm chính xác
+    if (mongoose.Types.ObjectId.isValid(search)) {
+      query.$or = [{ _id: search }];
+    } else {
+      // tìm theo các trường text
+      query.$or = [
+        { "shippingInfo.searchName": regex },
+        { "shippingInfo.phone": regex },
+        { "shippingInfo.email": regex },
+        { "shippingInfo.address": regex },
+      ];
+
+      // Hỗ trợ tìm theo mã rút gọn như "#5df0d0" hoặc "5df0d0" -> match trên chuỗi _id
+      // loại bỏ mọi ký tự không phải hex (xóa '#', khoảng trắng, ...)
+      const idSearch = (search || "").replace(/[^0-9a-fA-F]/g, "").trim();
+      // cho phép tìm từ 2 ký tự trở lên (thay đổi này giúp tìm sớm hơn)
+      if (/^[0-9a-fA-F]{2,24}$/.test(idSearch)) {
+        // dùng $expr + $regexMatch để so sánh string(_id)
+        query.$or.push({
+          $expr: {
+            $regexMatch: {
+              input: { $toString: "$_id" },
+              regex: idSearch,
+              options: "i",
+            },
+          },
+        });
+      }
+    }
   }
 
   if (status) query.status = status;
@@ -497,15 +527,34 @@ async function getAllOrders(filters = {}, includeDeleted = false) {
     const safeSearch = normalizedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(safeSearch, "i");
 
+    // Nếu nhập full ObjectId -> tìm chính xác
     if (mongoose.Types.ObjectId.isValid(search)) {
       query.$or = [{ _id: search }];
     } else {
+      // tìm theo các trường text
       query.$or = [
         { "shippingInfo.searchName": regex },
         { "shippingInfo.phone": regex },
         { "shippingInfo.email": regex },
         { "shippingInfo.address": regex },
       ];
+
+      // Hỗ trợ tìm theo mã rút gọn như "#5df0d0" hoặc "5df0d0" -> match trên chuỗi _id
+      // loại bỏ mọi ký tự không phải hex (xóa '#', khoảng trắng, ...)
+      const idSearch = (search || "").replace(/[^0-9a-fA-F]/g, "").trim();
+      // cho phép tìm từ 2 ký tự trở lên (thay đổi này giúp tìm sớm hơn)
+      if (/^[0-9a-fA-F]{2,24}$/.test(idSearch)) {
+        // dùng $expr + $regexMatch để so sánh string(_id)
+        query.$or.push({
+          $expr: {
+            $regexMatch: {
+              input: { $toString: "$_id" },
+              regex: idSearch,
+              options: "i",
+            },
+          },
+        });
+      }
     }
   }
 

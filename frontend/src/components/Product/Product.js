@@ -10,7 +10,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons';
-import { FireIcon, GiftIcon } from '../Icons/Icons';
+import { FireIcon } from '../Icons/Icons';
 import BasicRating from '~/components/Rating/Rating';
 import { getDefaultDisplayName } from '~/utils/getDefaultDisplayName';
 import { SPEC_ICON_MAP } from '~/constants/specIcons';
@@ -197,6 +197,7 @@ function Product({ category, onHasProductChange }) {
                                 <div className={cx('product-card__des')}>
                                     <Link to={`/products/${product.slug}`}>{getDefaultDisplayName(product)}</Link>
 
+                                    {/* SPECIFICATIONS */}
                                     {cardSpecs.length > 0 && (
                                         <ul className={cx('spec-list')}>
                                             {cardSpecs.map((spec) => {
@@ -204,7 +205,9 @@ function Product({ category, onHasProductChange }) {
 
                                                 return (
                                                     <li key={spec.key} className={cx('spec-item')}>
-                                                        {Icon && <Icon className={cx('spec-icon')} />}
+                                                        <span className={cx('spec-icon-wrapper')}>
+                                                            {Icon && <Icon />}
+                                                        </span>
                                                         <span>{spec.value}</span>
                                                     </li>
                                                 );
