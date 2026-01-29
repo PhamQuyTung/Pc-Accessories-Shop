@@ -23,26 +23,51 @@ exports.addToCart = async (req, res) => {
       return res.status(404).json({ message: "Sản phẩm không khả dụng." });
     }
 
-    // Tìm item đã tồn tại
-    const existingItem = await Cart.findOne({
+    // ✅ Build query chính xác
+    const query = {
       user_id: userId,
       product_id,
-      variation_id: variation_id || null,
       isGift: false,
+    };
+
+    // Nếu có variation_id, thêm vào query (convert sang ObjectId)
+    if (variation_id) {
+      query.variation_id = new mongoose.Types.ObjectId(variation_id);
+    } else {
+      // Nếu không có variation_id thì search item không variation
+      query.variation_id = null;
+    }
+
+    console.log('🔍 Searching cart item:', {
+      user_id: String(userId),
+      product_id: String(product_id),
+      variation_id: variation_id ? String(variation_id) : 'null',
     });
 
-    if (existingItem) {
-      existingItem.quantity += quantity;
-      await existingItem.save();
+    // Tìm item đã tồn tại
+    let cartItem = await Cart.findOne(query);
+
+    if (cartItem) {
+      // ✅ UPDATE: Tăng quantity
+      console.log('✅ Item exists, updating qty:', cartItem.quantity, '+', quantity);
+      cartItem.quantity += quantity;
+      await cartItem.save();
     } else {
-      await Cart.create({
+      // ✅ CREATE: Tạo item mới
+      console.log('➕ Creating new cart item');
+      cartItem = await Cart.create({
         user_id: userId,
         product_id,
-        variation_id: variation_id || null,
+        variation_id: variation_id ? new mongoose.Types.ObjectId(variation_id) : null,
         quantity,
         isGift: false,
       });
     }
+
+    console.log('✅ Cart item saved:', {
+      _id: cartItem._id,
+      quantity: cartItem.quantity,
+    });
 
     // =============================
     // Auto-add Gifts
@@ -52,8 +77,7 @@ exports.addToCart = async (req, res) => {
     for (const gift of gifts) {
       for (const g of gift.products) {
         const giftProduct = await Product.findById(g.productId);
-        if (!giftProduct || giftProduct.deleted || !giftProduct.visible)
-          continue;
+        if (!giftProduct || giftProduct.deleted || !giftProduct.visible) continue;
 
         await Cart.findOneAndUpdate(
           { user_id: userId, product_id: g.productId, isGift: true },
@@ -63,10 +87,25 @@ exports.addToCart = async (req, res) => {
       }
     }
 
-    return res.status(200).json({ message: "Thêm vào giỏ hàng thành công!" });
+    return res.status(200).json({ 
+      message: "Thêm vào giỏ hàng thành công!",
+      cartItem,
+    });
   } catch (error) {
-    console.error("❌ Lỗi khi thêm vào giỏ hàng:", error);
-    return res.status(500).json({ message: "Lỗi máy chủ khi thêm giỏ hàng." });
+    console.error("❌ Error adding to cart:", error);
+    
+    // Handle E11000 duplicate key error
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        message: "Sản phẩm này đã có trong giỏ hàng. Vui lòng kiểm tra lại.",
+        error: error.message,
+      });
+    }
+
+    return res.status(500).json({ 
+      message: "Lỗi máy chủ khi thêm giỏ hàng.",
+      error: error.message,
+    });
   }
 };
 

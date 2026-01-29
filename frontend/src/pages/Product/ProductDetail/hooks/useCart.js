@@ -42,6 +42,7 @@ export default function useCart(userId) {
             cartEvent.emit('update-cart-count');
         } catch (error) {
             console.error('Add cart error:', error);
+            throw error; // ✅ Throw để component catch
         }
     };
 
@@ -58,6 +59,7 @@ export default function useCart(userId) {
             await fetchCart();
         } catch (error) {
             console.error('Update qty error:', error);
+            throw error;
         }
     };
 
@@ -77,6 +79,26 @@ export default function useCart(userId) {
             await fetchCart();
         } catch (error) {
             console.error('Remove item error:', error);
+            throw error;
+        }
+    };
+
+    // ============================
+    //  Helper: Extract giá từ item
+    // ============================
+    const getItemPrice = (item) => {
+        const toNum = (v) => (typeof v === 'number' && !isNaN(v) ? v : 0);
+        
+        if (item.variation_id) {
+            // ✅ Lấy giá từ variation (ưu tiên discountPrice)
+            const discountPrice = toNum(item.variation_id.discountPrice);
+            const price = toNum(item.variation_id.price);
+            return discountPrice > 0 ? discountPrice : price;
+        } else {
+            // Fallback to product
+            const discountPrice = toNum(item.product_id?.discountPrice);
+            const price = toNum(item.product_id?.price);
+            return discountPrice > 0 ? discountPrice : price;
         }
     };
 
@@ -86,9 +108,13 @@ export default function useCart(userId) {
     const totalQty = items.reduce((sum, i) => sum + (i.quantity || 0), 0);
 
     // ============================
-    //  Tổng tiền
+    //  Tổng tiền (✅ FIX: extract giá đúng)
     // ============================
-    const totalPrice = items.reduce((sum, i) => sum + (i.price || 0) * (i.quantity || 0), 0);
+    const totalPrice = items.reduce((sum, i) => {
+        const price = getItemPrice(i);
+        const qty = i.quantity || 0;
+        return sum + (price * qty);
+    }, 0);
 
     return {
         items,

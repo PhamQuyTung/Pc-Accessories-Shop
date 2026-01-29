@@ -36,10 +36,10 @@ const cartSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Unique: user + product + variation
+// ✅ FIX: Unique index phải bao gồm variation_id
 cartSchema.index(
   { user_id: 1, product_id: 1, variation_id: 1 },
-  { unique: true }
+  { unique: true, sparse: true }
 );
 
 module.exports = mongoose.model("Cart", cartSchema);
