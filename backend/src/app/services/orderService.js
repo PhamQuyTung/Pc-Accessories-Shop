@@ -249,8 +249,8 @@ async function checkoutOrder(userId, body, session) {
 
       const updatedProduct = await Product.findOneAndUpdate(
         { _id: product._id, "variations._id": variationId },
-        { $inc: { "variations.$.quantity": -item.quantity } },
-        { new: true, session }
+        { $inc: { "variations.$.quantity": -item.quantity } }, // ✅ TRỪ
+        { session }
       );
 
       if (!updatedProduct) {
@@ -716,47 +716,89 @@ async function restoreOrder(orderId) {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const order = await Order.findOne({
-      _id: orderId,
-      status: "deleted",
-    }).session(session);
+    console.log('🔄 Starting restore process for order:', orderId);
+    
+    const order = await Order.findById(orderId).session(session);
     if (!order) throw new Error("NOT_FOUND");
 
-    // 👉 1. Trừ tồn sản phẩm chính
+    console.log('📦 Order items count:', order.items.length);
+
+    // ✅ STEP 1: Kiểm tra từng sản phẩm/variation có đủ hàng không
+    for (const item of order.items) {
+      if (!item.product_id) continue;
+
+      const product = await Product.findById(item.product_id).session(session);
+      if (!product) {
+        throw new Error(`Sản phẩm không tồn tại: ${item.productName}`);
+      }
+
+      console.log(`🔍 Checking product: ${product.name}, item variation_id:`, item.variation_id);
+
+      // Nếu có variation_id, kiểm tra variation
+      if (item.variation_id) {
+        const variation = product.variations?.find(
+          v => v._id.toString() === item.variation_id.toString()
+        );
+
+        if (!variation) {
+          console.warn(`⚠️ Variation not found: ${item.variation_id}`);
+          throw new Error(`Biến thể sản phẩm "${product.name}" không tồn tại!`);
+        }
+
+        console.log(`📊 Variation stock: ${variation.quantity}, will deduct: ${item.quantity}`);
+      } else {
+        console.log(`📊 Product stock: ${product.quantity}, will deduct: ${item.quantity}`);
+      }
+    }
+
+    console.log('✅ Stock check passed, starting deduction...');
+
+    // ✅ STEP 2: TRỪ ĐI (DEDUCT) hàng cho từng item
     for (const item of order.items) {
       const pid = item.product_id._id ? item.product_id._id : item.product_id;
-      const updated = await Product.findOneAndUpdate(
-        { _id: pid, quantity: { $gte: item.quantity } },
-        { $inc: { quantity: -item.quantity } },
-        { new: true, session }
-      );
+      const vid = item.variation_id;
 
-      if (!updated) {
-        const p = await Product.findById(pid).select("name quantity");
-        throw new Error(
-          `OUT_OF_STOCK:${p?.name || pid}:${item.quantity}:${p?.quantity ?? 0}`
+      if (vid) {
+        // ✅ FIX: Trừ (-) từ variation
+        console.log(`🔄 Deducting ${item.quantity} units from variation ${vid}`);
+
+        await Product.findOneAndUpdate(
+          { _id: pid, "variations._id": vid },
+          { $inc: { "variations.$.quantity": -item.quantity } }, // ✅ TRỪ
+          { session }
+        );
+      } else {
+        // ✅ FIX: Trừ (-) từ product
+        console.log(`🔄 Deducting ${item.quantity} units from product ${pid}`);
+
+        await Product.findByIdAndUpdate(
+          pid,
+          { $inc: { quantity: -item.quantity } }, // ✅ GIẢM: - (minus)
+          { new: true, session }
         );
       }
     }
 
-    // 👉 2. Trừ tồn kho quà tặng (gộp logic thành hàm riêng)
+    // ✅ STEP 3: TRỪ ĐI hàng quà tặng
     await deductGiftStockForItems(order.items, session);
 
-    // 👉 3. Cập nhật số lượng bán ra
-    await updateSoldCountForItems(order.items, session, false);
+    // ✅ STEP 4: CẬP NHẬT soldCount (tăng vì bán được)
+    await updateSoldCountForItems(order.items, session);
 
-    // 👉 4. Đặt lại trạng thái đơn hàng
-    order.status = "new";
+    // ✅ STEP 5: Cập nhật trạng thái đơn thành "processing"
+    order.status = "processing"; // ✅ Đổi từ "deleted" -> "processing" (đang xử lý)
+    order.cancelReason = "";
     await order.save({ session });
 
     await session.commitTransaction();
     session.endSession();
 
+    console.log('✅ Order restored successfully:', orderId);
     return order;
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    console.error("❌ Lỗi restoreOrder:", err.message);
+    console.error('❌ Restore order error:', err.message);
     throw err;
   }
 }

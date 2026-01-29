@@ -310,42 +310,69 @@ exports.getOrderStats = async (req, res) => {
 // Khôi phục đơn
 exports.restoreOrder = async (req, res) => {
   try {
+    console.log('🔄 Restoring order:', req.params.id);
+    
     const order = await orderService.restoreOrder(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
+    }
 
     const populatedOrder = await populateAndNormalizeOrder(
       Order.findById(order._id)
     );
 
-    res.json({ message: "Đơn hàng đã được khôi phục!", order: populatedOrder });
+    emitEvent(req, "order:restored", { order: populatedOrder });
+    res.json({ 
+      message: "Đơn hàng đã được khôi phục!", 
+      order: populatedOrder 
+    });
   } catch (err) {
+    console.error("❌ Lỗi khôi phục đơn:", err.message);
+    
     if (err.message === "NOT_FOUND") {
       return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
     }
-    if (err.message.startsWith("OUT_OF_STOCK")) {
-      return res
-        .status(400)
-        .json({ message: "Sản phẩm trong đơn đã hết hàng!" });
+    
+    // ✅ FIX: Catch lỗi variation/sản phẩm
+    if (err.message.includes("hết hàng") || err.message.includes("không tồn tại")) {
+      return res.status(400).json({ message: err.message });
     }
-    res.status(500).json({ message: "Lỗi khi khôi phục đơn hàng" });
+    
+    res.status(500).json({ 
+      message: "Lỗi khi khôi phục đơn hàng",
+      error: err.message 
+    });
   }
 };
 
 // Xóa vĩnh viễn
 exports.forceDeleteOrder = async (req, res) => {
   try {
+    console.log('🗑 Force deleting order:', req.params.id);
+    
     await orderService.forceDeleteOrder(req.params.id);
+    
+    emitEvent(req, "order:force-deleted", { orderId: req.params.id });
     res.json({ message: "Đơn hàng đã bị xóa vĩnh viễn!" });
   } catch (err) {
+    console.error("❌ Lỗi xóa vĩnh viễn:", err);
+    
     if (err.message === "NOT_FOUND") {
       return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
     }
-    res.status(500).json({ message: "Lỗi khi xóa vĩnh viễn đơn hàng" });
+    
+    res.status(500).json({ 
+      message: "Lỗi khi xóa vĩnh viễn đơn hàng",
+      error: err.message 
+    });
   }
 };
 
 // Lấy đơn đã xóa mềm
 exports.getDeletedOrders = async (req, res) => {
   try {
+    console.log('📋 Fetching deleted orders');
+    
     const orders = await orderService.getDeletedOrders();
 
     const normalizedOrders = await Promise.all(
@@ -354,7 +381,10 @@ exports.getDeletedOrders = async (req, res) => {
 
     res.status(200).json({ orders: normalizedOrders });
   } catch (err) {
-    console.error("🔥 Lỗi lấy deleted orders:", err);
-    res.status(500).json({ message: "Lỗi khi lấy đơn đã xóa" });
+    console.error("❌ Lỗi lấy deleted orders:", err);
+    res.status(500).json({ 
+      message: "Lỗi khi lấy đơn đã xóa",
+      error: err.message 
+    });
   }
 };
