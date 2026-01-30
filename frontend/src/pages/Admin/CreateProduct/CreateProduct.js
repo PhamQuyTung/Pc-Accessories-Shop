@@ -260,8 +260,15 @@ export default function CreateProduct() {
             return null;
         }
 
+        // 🔥 CONVERT specs thành mảng [{key, value}]
+        const specsArray = (form.specs || []).map(s => ({
+            key: s.key,
+            value: s.value || '',
+        }));
+
         const payload = {
             ...form,
+            specs: specsArray, // 👈 Thay vì gửi trực tiếp form.specs
             price: Number(form.price || 0),
             discountPrice: Number(form.discountPrice || 0),
             quantity: Number(form.quantity || 0),

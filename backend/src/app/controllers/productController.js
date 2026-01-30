@@ -859,27 +859,37 @@ class ProductController {
   // Trang edit sản phẩm
   async editProduct(req, res) {
     try {
-      const product = await Product.findById(req.params.id)
-        .populate("category", "name slug") // 👉 lấy thêm thông tin category
-        .populate("brand", "name slug") // 👉 lấy thêm thông tin brand
-        .lean();
+        const product = await Product.findById(req.params.id)
+            .populate("category", "name slug specs") // 🔥 BẮT BUỘC populate category.specs
+            .populate("brand", "name slug")
+            .lean();
 
-      if (!product) {
-        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
-      }
+        if (!product) {
+            return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+        }
 
-      const defaultVariant = product.variations?.length
-        ? product.variations[0]
-        : null;
+        // 🔥 FIX: Lấy specs mảng gốc từ product
+        // KHÔNG dùng mergeSpecs, vì nó sẽ filter theo category template
+        const productSpecs = Array.isArray(product.specs) 
+            ? product.specs 
+            : [];
 
-      res.json({
-        ...product,
-        specs: mergeSpecs(product, defaultVariant),
-        status: computeProductStatus(product, { importing: product.importing }), // ✅ đồng bộ status
-      });
+        console.log('✅ Product specs (original):', productSpecs);
+
+        const defaultVariant = product.variations?.length
+            ? product.variations[0]
+            : null;
+
+        res.json({
+            ...product,
+            specs: productSpecs, // 👈 Trả về specs gốc, không merge
+            categorySpecs: product.category?.specs || [], // 👈 Thêm dòng này để frontend biết category template
+            defaultVariant,
+            status: computeProductStatus(product, { importing: product.importing }),
+        });
     } catch (err) {
-      console.error("❌ Lỗi editProduct:", err);
-      res.status(500).json({ error: "Lỗi khi lấy thông tin sản phẩm" });
+        console.error("❌ Lỗi editProduct:", err);
+        res.status(500).json({ error: "Lỗi khi lấy thông tin sản phẩm" });
     }
   }
 

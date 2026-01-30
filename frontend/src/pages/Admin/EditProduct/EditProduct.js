@@ -63,18 +63,6 @@ function EditProduct() {
             .catch(() => setBrands([]));
     }, []);
 
-    // Load category specs based on selected category
-    useEffect(() => {
-        if (formData?.category) {
-            axios
-                .get(`http://localhost:5000/api/categories/${formData.category}`)
-                .then((res) => setCategorySpecs(res.data.specs || []))
-                .catch(() => setCategorySpecs([]));
-        } else {
-            setCategorySpecs([]);
-        }
-    }, [formData?.category]);
-
     // Ở useEffect khi load sản phẩm
     useEffect(() => {
         axios
@@ -82,12 +70,32 @@ function EditProduct() {
             .then((res) => {
                 const product = res.data;
 
-                const specsObject = Array.isArray(product.specs)
-                    ? product.specs.reduce((acc, cur) => {
-                          if (cur?.key) acc[cur.key] = cur.value || '';
-                          return acc;
-                      }, {})
-                    : {};
+                console.log('🔍 Product from API:', {
+                    id: product._id,
+                    specs: product.specs,
+                    categorySpecs: product.categorySpecs,
+                });
+
+                // 🔥 Lấy specs gốc từ backend
+                const productSpecs = Array.isArray(product.specs) ? product.specs : [];
+                
+                const specsObject = productSpecs.reduce((acc, cur) => {
+                    if (cur?.key) {
+                        acc[cur.key] = cur.value || '';
+                    }
+                    return acc;
+                }, {});
+
+                console.log('✅ Specs Object:', specsObject);
+
+                // 🔥 Merge với category template (nếu có)
+                const categoryTemplate = (product.categorySpecs || []).reduce((acc, catSpec) => {
+                    // Nếu product đã có value thì giữ, không thì lấy empty string
+                    acc[catSpec.key] = specsObject[catSpec.key] ?? '';
+                    return acc;
+                }, {});
+
+                console.log('📋 Merged specs:', categoryTemplate);
 
                 const isVariableProduct = Array.isArray(product.variations) && product.variations.length > 0;
 
@@ -106,24 +114,25 @@ function EditProduct() {
                     category: product.category?._id || product.category || '',
                     brand: product.brand?._id || product.brand || '',
                     isVariableProduct,
-
-                    // 🔥 FIX CHÍNH Ở ĐÂY
                     shortDescription: isVariableProduct ? '' : he.decode(product.shortDescription || ''),
                     longDescription: isVariableProduct ? '' : he.decode(product.longDescription || ''),
-
-                    specs: specsObject,
+                    specs: categoryTemplate || specsObject, // 👈 Dùng merged hoặc fallback specsObject
                     quantity: product.quantity ?? 0,
                     rating: product.rating ?? 0,
                     isBestSeller: !!product.isBestSeller,
                     hasGifts: !!product.gifts?.length,
                 });
 
-                // set selected gifts here as well
-                setSelectedGifts(product.gifts || []);
+                // 🔥 Set categorySpecs từ response
+                setCategorySpecs(product.categorySpecs || []);
 
+                setSelectedGifts(product.gifts || []);
                 setImporting(product.status?.includes('đang nhập hàng') || false);
             })
-            .catch(() => toast('Không tìm thấy sản phẩm!', 'error'));
+            .catch((err) => {
+                console.error('❌ Error loading product:', err);
+                toast('Không tìm thấy sản phẩm!', 'error');
+            });
     }, [id]);
 
     // Xử lý thay đổi form
@@ -217,8 +226,15 @@ function EditProduct() {
         }
 
         try {
+            // 🔥 CONVERT specs object {key: value} thành mảng [{key, value}]
+            const specsArray = Object.entries(formData.specs || {}).map(([key, value]) => ({
+                key,
+                value: value || '',
+            }));
+
             const payload = {
                 ...formData,
+                specs: specsArray, // 👈 Gửi mảng thay vì object
                 shortDescription: formData.shortDescription || '',
                 longDescription: formData.longDescription || '',
                 quantity: importing ? 0 : Number(formData.quantity),
@@ -227,7 +243,7 @@ function EditProduct() {
                 discountPrice: Number(formData.discountPrice),
                 rating: Number(formData.rating),
                 importing,
-                isBestSeller: !!formData.isBestSeller, // 👈 Thêm dòng này
+                isBestSeller: !!formData.isBestSeller,
                 gifts: formData.hasGifts ? selectedGifts.map((g) => g._id) : [],
             };
 
@@ -251,6 +267,7 @@ function EditProduct() {
     return (
         <div className={cx('wrapper')}>
             <h2 className={cx('title')}>Chỉnh sửa sản phẩm</h2>
+
             <form onSubmit={handleSubmit} className={cx('form')}>
                 <div className={cx('group')}>
                     <label>Tên sản phẩm</label>
@@ -411,9 +428,16 @@ function EditProduct() {
                                             },
                                         }))
                                     }
+                                    placeholder={`Nhập ${spec.label}`}
                                 />
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {categorySpecs.length === 0 && formData?.category && (
+                    <div style={{ color: 'orange', padding: '10px', background: '#fffacd', borderRadius: '4px' }}>
+                        ⚠️ Danh mục này chưa có thông số kỹ thuật. Vui lòng thêm specs trong cấu hình danh mục.
                     </div>
                 )}
 
