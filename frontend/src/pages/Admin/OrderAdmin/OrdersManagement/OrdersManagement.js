@@ -45,11 +45,34 @@ const OrdersManagement = () => {
 
     const showToast = useToast();
 
+    // ✅ Helper: Strip '#' từ search trước khi gửi
+    const sanitizeSearch = (searchText) => {
+      return searchText.replace(/^#+/, "").trim();
+    };
+
+    // Xử lý xóa đơn hàng
+    const handleDelete = async (orderId) => {
+        if (!window.confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) return;
+        try {
+            await axios.delete(`/api/orders/${orderId}`, {
+                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+            });
+            setOrders((prev) => prev.filter((o) => o._id !== orderId));
+            showToast("Xóa đơn hàng thành công!", "success");
+        } catch (err) {
+            console.error('Lỗi khi xóa đơn hàng:', err);
+            showToast("Xóa đơn hàng thất bại!", "error"); 
+        }
+    };
+
     // Tải dữ liệu
     useEffect(() => {
         const fetchOrders = async () => {
             setLoading(true);
             try {
+                // ✅ Strip '#' trước khi gửi
+                const sanitizedSearch = sanitizeSearch(filters.search);
+
                 const res = await axios.get('/api/orders/all', {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
                     params: {
@@ -58,6 +81,7 @@ const OrdersManagement = () => {
                         sortField,
                         sortOrder,
                         ...filters,
+                        search: sanitizedSearch,
                         status: filters.status === 'all' ? '' : filters.status,
                     },
                 });
@@ -77,23 +101,8 @@ const OrdersManagement = () => {
     // 🔹 Hàm reset bộ lọc
     const handleResetFilters = () => {
         setFilters(initialFilters);
-        setCurrentPage(1); // reset về trang 1
-        showToast('Đã xóa bộ lọc!', 'success'); // ✅ Toast báo
-    };
-
-    // Xử lý xóa đơn hàng
-    const handleDelete = async (orderId) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) return;
-        try {
-            await axios.delete(`/api/orders/${orderId}`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-            });
-            setOrders((prev) => prev.filter((o) => o._id !== orderId));
-            showToast("Xóa đơn hàng thành công!", "success");
-        } catch (err) {
-            console.error('Lỗi khi xóa đơn hàng:', err);
-            showToast("Xóa đơn hàng thất bại!", "error"); 
-        }
+        setCurrentPage(1);
+        showToast('Đã xóa bộ lọc!', 'success');
     };
 
     return (

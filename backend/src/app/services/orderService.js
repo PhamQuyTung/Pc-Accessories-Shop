@@ -462,12 +462,10 @@ async function getUserOrders(userId, filters = {}) {
         { "shippingInfo.address": regex },
       ];
 
-      // Hỗ trợ tìm theo mã rút gọn như "#5df0d0" hoặc "5df0d0" -> match trên chuỗi _id
-      // loại bỏ mọi ký tự không phải hex (xóa '#', khoảng trắng, ...)
+      // Hỗ trợ tìm theo mã rút gọn
+      // ✅ FIX: Chỉ loại bỏ hex chars, cho phép từ 1 ký tự
       const idSearch = (search || "").replace(/[^0-9a-fA-F]/g, "").trim();
-      // cho phép tìm từ 2 ký tự trở lên (thay đổi này giúp tìm sớm hơn)
-      if (/^[0-9a-fA-F]{2,24}$/.test(idSearch)) {
-        // dùng $expr + $regexMatch để so sánh string(_id)
+      if (/^[0-9a-fA-F]{1,24}$/.test(idSearch)) {
         query.$or.push({
           $expr: {
             $regexMatch: {
@@ -539,12 +537,10 @@ async function getAllOrders(filters = {}, includeDeleted = false) {
         { "shippingInfo.address": regex },
       ];
 
-      // Hỗ trợ tìm theo mã rút gọn như "#5df0d0" hoặc "5df0d0" -> match trên chuỗi _id
-      // loại bỏ mọi ký tự không phải hex (xóa '#', khoảng trắng, ...)
+      // Hỗ trợ tìm theo mã rút gọn
+      // ✅ FIX: Chỉ loại bỏ hex chars, cho phép từ 1 ký tự
       const idSearch = (search || "").replace(/[^0-9a-fA-F]/g, "").trim();
-      // cho phép tìm từ 2 ký tự trở lên (thay đổi này giúp tìm sớm hơn)
-      if (/^[0-9a-fA-F]{2,24}$/.test(idSearch)) {
-        // dùng $expr + $regexMatch để so sánh string(_id)
+      if (/^[0-9a-fA-F]{1,24}$/.test(idSearch)) {
         query.$or.push({
           $expr: {
             $regexMatch: {
