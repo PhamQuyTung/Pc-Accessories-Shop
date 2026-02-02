@@ -32,6 +32,9 @@ export default function PromotionForm() {
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 5;
 
+    // Thêm state để hiển thị variations
+    const [expandedProducts, setExpandedProducts] = useState(new Set());
+
     const navigate = useNavigate();
     const showToast = useToast();
 
@@ -40,9 +43,17 @@ export default function PromotionForm() {
             try {
                 // Lấy sản phẩm đủ điều kiện từ API
                 const { data } = await axiosClient.get('/promotions/available-products');
-                const productList = Array.isArray(data.products) ? data.products : [];
-                // Loại sản phẩm có giá gạch
-                const filteredList = productList.filter((p) => !p.discountPrice || p.discountPrice <= 0);
+                let productList = Array.isArray(data.products) ? data.products : [];
+                
+                // ✅ Lọc sản phẩm không có giá gạch (double-check ở frontend)
+                const filteredList = productList.filter((p) => {
+                    // Loại sản phẩm đã có giá gạch
+                    if (p.discountPrice && p.discountPrice > 0) return false;
+                    // Loại sản phẩm bị khóa bởi CTKM khác
+                    if (p.lockPromotionId) return false;
+                    return true;
+                });
+                
                 setProducts(filteredList);
 
                 if (isEdit) {
@@ -83,6 +94,16 @@ export default function PromotionForm() {
 
     const toggleSelect = (id) => {
         setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    };
+
+    const toggleExpand = (productId) => {
+        const newSet = new Set(expandedProducts);
+        if (newSet.has(productId)) {
+            newSet.delete(productId);
+        } else {
+            newSet.add(productId);
+        }
+        setExpandedProducts(newSet);
     };
 
     const submit = async () => {
@@ -395,44 +416,49 @@ export default function PromotionForm() {
                         </thead>
                         <tbody>
                             {paginatedProducts.map((p) => (
-                                <tr key={p._id}>
-                                    <td>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedIds.includes(p._id)}
-                                            onChange={() => toggleSelect(p._id)}
-                                        />
-                                    </td>
-                                    <td className={cx('product-name-cell')}>
-                                        <img
-                                            src={p.images?.[0] || '/default-product.jpg'}
-                                            alt={p.name}
-                                            className={cx('thumb')}
-                                        />
-                                        <span>{p.name}</span>
-                                    </td>
-                                    <td>
-                                        {p.discountPrice && p.discountPrice > 0 ? (
-                                            <>
-                                                <span className={cx('price-sale')}>
-                                                    {p.discountPrice.toLocaleString()}₫
-                                                </span>
-                                                <span className={cx('price-original')}>
-                                                    {p.price.toLocaleString()}₫
-                                                </span>
-                                            </>
-                                        ) : (
-                                            <span className={cx('price-sale')}>
-                                                {p.price.toLocaleString()}₫
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td>
-                                        <span className={cx('status')}>
-                                            {p.status}
-                                        </span>
-                                    </td>
-                                </tr>
+                                <React.Fragment key={p._id}>
+                                    <tr>
+                                        <td>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.includes(p._id)}
+                                                onChange={() => toggleSelect(p._id)}
+                                            />
+                                        </td>
+                                        <td className={cx('product-name-cell')}>
+                                            <img
+                                                src={p.images?.[0] || '/default-product.jpg'}
+                                                alt={p.name}
+                                                className={cx('thumb')}
+                                            />
+                                            <span>{p.name}</span>
+                                        </td>
+                                        <td>{p.price.toLocaleString()}₫</td>
+                                        <td>
+                                            <span className={cx('status')}>{p.status}</span>
+                                        </td>
+                                        <td>
+                                            {p.variations?.length > 0 && (
+                                                <button
+                                                    onClick={() => toggleExpand(p._id)}
+                                                    style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                                                >
+                                                    {expandedProducts.has(p._id) ? '▼' : '▶'} ({p.variations.length})
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                    {expandedProducts.has(p._id) && p.variations?.map((v) => (
+                                        <tr key={v._id} style={{ backgroundColor: '#f5f5f5' }}>
+                                            <td colSpan="2" style={{ paddingLeft: '40px' }}>
+                                                Biến thể: {v.sku}
+                                            </td>
+                                            <td>{v.price.toLocaleString()}₫</td>
+                                            <td>Qty: {v.quantity}</td>
+                                            <td></td>
+                                        </tr>
+                                    ))}
+                                </React.Fragment>
                             ))}
                         </tbody>
                     </table>

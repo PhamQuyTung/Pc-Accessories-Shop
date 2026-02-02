@@ -56,6 +56,37 @@ async function applyPromotionToProduct(promo, pp) {
         : 0,
   };
 
+  // ✅ Áp dụng cho variations
+  if (product.variations && product.variations.length > 0) {
+    if (!pp.variationBackups) {
+      pp.variationBackups = [];
+    }
+
+    for (const variation of product.variations) {
+      const percent = Number(promo.percent);
+      const basePrice = Number(variation.price);
+      const discounted = Math.round(basePrice * (1 - percent / 100));
+
+      // Lưu backup nếu chưa có
+      const existingBackup = pp.variationBackups.find(
+        (vb) => String(vb.variationId) === String(variation._id)
+      );
+
+      if (!existingBackup) {
+        pp.variationBackups.push({
+          variationId: variation._id,
+          backupPrice: basePrice,
+          backupDiscountPrice: variation.discountPrice || 0,
+        });
+        promo.markModified("assignedProducts");
+      }
+
+      // Áp dụng discount
+      variation.discountPrice = discounted;
+    }
+  }
+
+  product.markModified("variations");
   await product.save();
   await promo.save(); // lưu backup luôn
 }

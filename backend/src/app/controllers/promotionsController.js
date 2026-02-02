@@ -5,15 +5,6 @@ const { rollbackPromotion } = require("../../utils/promotionUtils");
 const Review = require("../models/review");
 const slugify = require("slugify");
 
-// Chỉ cho phép gán sản phẩm đang "còn hàng trở lên"
-const ELIGIBLE_STATUSES = [
-  "còn hàng",
-  "nhiều hàng",
-  "sản phẩm mới",
-  "sắp hết hàng",
-  "hàng rất nhiều",
-];
-
 // ===== Helper =====
 async function applyPromotionImmediately(promo) {
   if (!promo.assignedProducts || promo.assignedProducts.length === 0) return;
@@ -54,6 +45,35 @@ async function applyPromotionImmediately(promo) {
         ? product.promotionApplied.soldCount
         : 0,
     };
+
+    // ✅ Áp dụng cho variations
+    if (product.variations && product.variations.length > 0) {
+      if (!pp.variationBackups) {
+        pp.variationBackups = [];
+      }
+
+      for (const variation of product.variations) {
+        const percent = Number(promo.percent);
+        const basePrice = Number(variation.price);
+        const discounted = Math.round(basePrice * (1 - percent / 100));
+
+        const existingBackup = pp.variationBackups.find(
+          (vb) => String(vb.variationId) === String(variation._id)
+        );
+
+        if (!existingBackup) {
+          pp.variationBackups.push({
+            variationId: variation._id,
+            backupPrice: basePrice,
+            backupDiscountPrice: variation.discountPrice || 0,
+          });
+        }
+
+        variation.discountPrice = discounted;
+      }
+
+      product.markModified("variations");
+    }
 
     await product.save();
   }
@@ -479,31 +499,63 @@ exports.getAvailableProducts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // BỎ điều kiện status khỏi match
-    const match = {
-      deleted: false,
-      visible: true,
-      $and: [
-        {
+    const pipeline = [
+      {
+        $match: {
+          deleted: false,
+          visible: true,
           $or: [
             { quantity: { $gt: 0 } },
             { "variations.quantity": { $gt: 0 } },
           ],
         },
-        {
+      },
+      {
+        // ✅ Lọc sản phẩm KHÔNG có discountPrice ở product level
+        $match: {
           $or: [
             { discountPrice: { $exists: false } },
             { discountPrice: 0 },
             { discountPrice: null },
           ],
         },
-      ],
-    };
+      },
+      {
+        // ✅ Loại bỏ sản phẩm có variation với discountPrice
+        $addFields: {
+          hasDiscountVariation: {
+            $anyElementTrue: {
+              $map: {
+                input: "$variations",
+                as: "v",
+                in: {
+                  $and: [
+                    { $ne: ["$$v.discountPrice", null] },
+                    { $gt: ["$$v.discountPrice", 0] },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          hasDiscountVariation: false,
+        },
+      },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $project: {
+          hasDiscountVariation: 0,
+        },
+      },
+    ];
 
-    const totalCount = await Product.countDocuments(match);
-    const products = await Product.find(match).skip(skip).limit(limit).lean();
+    const products = await Product.aggregate(pipeline);
 
-    // ✅ Lọc lại theo status động ở đây
+    // ✅ Compute status
     const { computeProductStatus } = require("../../../../shared/productStatus");
     const ELIGIBLE_STATUSES = [
       "còn hàng",
@@ -512,13 +564,21 @@ exports.getAvailableProducts = async (req, res) => {
       "sắp hết hàng",
       "hàng rất nhiều",
     ];
+    
     const productsWithStatus = products.map((p) => ({
       ...p,
       status: computeProductStatus(p, { importing: p.importing }),
     }));
+
     const filtered = productsWithStatus.filter((p) =>
       ELIGIBLE_STATUSES.includes(String(p.status || "").toLowerCase())
     );
+
+    // ✅ Lấy tổng số
+    const totalCount = await Product.countDocuments({
+      deleted: false,
+      visible: true,
+    });
 
     res.json({
       products: filtered,

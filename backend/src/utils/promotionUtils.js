@@ -8,19 +8,33 @@ const Product = require("../app/models/product");
 async function rollbackPromotion(promo) {
   if (!promo?.assignedProducts?.length) return;
 
-  await Product.updateMany(
-    { lockPromotionId: promo._id },
-    {
-      $set: {
-        discountPrice: null,
-        discountPercent: null,
-        isOnPromotion: false,
-        promotionId: null,
-        lockPromotionId: null,
-        promotionApplied: null,
-      },
+  for (const pp of promo.assignedProducts) {
+    const product = await Product.findById(pp.product);
+    if (!product) continue;
+
+    // Rollback variations
+    if (product.variations && pp.variationBackups) {
+      for (const variation of product.variations) {
+        const backup = pp.variationBackups.find(
+          (vb) => String(vb.variationId) === String(variation._id)
+        );
+        if (backup) {
+          variation.discountPrice = backup.backupDiscountPrice;
+        }
+      }
+      product.markModified("variations");
     }
-  );
+
+    // Rollback product level
+    product.discountPrice = null;
+    product.discountPercent = null;
+    product.isOnPromotion = false;
+    product.promotionId = null;
+    product.lockPromotionId = null;
+    product.promotionApplied = null;
+
+    await product.save();
+  }
 }
 
 module.exports = { rollbackPromotion };

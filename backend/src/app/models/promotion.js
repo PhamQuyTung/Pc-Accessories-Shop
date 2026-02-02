@@ -8,6 +8,14 @@ const PromotionProductSchema = new Schema(
     product: { type: Schema.Types.ObjectId, ref: "Product", required: true },
     backupDiscountPrice: { type: Number, default: 0 },
     backupDiscountPercent: { type: Number, default: 0 },
+    // ✅ THÊM: Backup cho variations
+    variationBackups: [
+      {
+        variationId: { type: Schema.Types.ObjectId, required: true },
+        backupPrice: { type: Number, default: 0 },
+        backupDiscountPrice: { type: Number, default: 0 },
+      },
+    ],
   },
   { _id: false }
 );
