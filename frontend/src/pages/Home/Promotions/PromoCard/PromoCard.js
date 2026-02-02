@@ -17,12 +17,16 @@ export default function PromoCard({ product, promotionCardImg }) {
     );
 
     // 👉 Dùng trực tiếp các field đã normalize từ BE
-    const price = product.price || 0;
-    const promotionPrice = product.promotionPrice || price;
-    const discountPercent = product.discountPercent || 0;
-    // Lấy đúng field từ BE trả về
-    const stock = product?.quantity ?? null;
-    const soldCount = product?.promotionApplied?.soldCount ?? 0;
+    const price = Number(product.price ?? 0);
+    // BE lưu giá KM vào discountPrice; fallback về promotionPrice hoặc price
+    const promotionPrice = Number(product.discountPrice ?? product.promotionPrice ?? price);
+    // Ưu tiên discountPercent bên product, nếu không có thì tính từ price/promotionPrice
+    const discountPercent = Number(product.discountPercent ?? 0);
+    const computedDiscountPercent =
+        discountPercent > 0 ? discountPercent : price > 0 ? Math.round(((price - promotionPrice) / price) * 100) : 0;
+    // Lấy đúng field từ BE trả về (ép kiểu để tính toán an toàn)
+    const stock = Number(product?.quantity ?? 0);
+    const soldCount = Number(product?.promotionApplied?.soldCount ?? 0);
     // Tính % tiến trình bán hàng
     const total = soldCount + stock;
     const progressPercent = total > 0 ? Math.min((soldCount / total) * 100, 100) : 0;
@@ -32,6 +36,7 @@ export default function PromoCard({ product, promotionCardImg }) {
             {/* Khung + ảnh sản phẩm */}
             <div className={cx('frame-wrapper')}>
                 <img src={normalizeImageUrl(promotionCardImg)} alt="Khung CTKM" className={cx('frame-bg')} />
+
                 <div className={cx('product-wrapper')}>
                     <img src={image} alt={name} className={cx('product-image')} />
                 </div>
@@ -50,7 +55,9 @@ export default function PromoCard({ product, promotionCardImg }) {
                             <span className={cx('price-original')}>{price.toLocaleString()}₫</span>
                         )}
                     </div>
-                    {discountPercent > 0 && <span className={cx('discount-badge')}>-{discountPercent}%</span>}
+                    {computedDiscountPercent > 0 && (
+                        <div className={cx('overlay-badge')}>-{computedDiscountPercent}%</div>
+                    )}
                 </div>
 
                 {/* Đánh giá sao */}

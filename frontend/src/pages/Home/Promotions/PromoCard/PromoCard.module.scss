@@ -102,15 +102,6 @@
                 color: #888;
                 font-size: 13px;
             }
-
-            .discount-badge {
-                background: #e53935;
-                color: #fff;
-                font-size: 12px;
-                font-weight: bold;
-                padding: 2px 6px;
-                border-radius: 4px;
-            }
         }
 
         .rating {
@@ -232,6 +223,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            position: relative;
 
             .price-sale {
                 color: #e60023;
@@ -245,13 +237,17 @@
                 font-size: 13px;
             }
 
-            .discount-badge {
-                background: #e60023;
+            .overlay-badge {
+                position: absolute;
+                bottom: 0;
+                right: 0px;
+                background: linear-gradient(90deg, #ff512f, #dd2476);
                 color: #fff;
                 font-size: 12px;
-                font-weight: bold;
-                padding: 2px 6px;
-                border-radius: 4px;
+                font-weight: 700;
+                padding: 4px 8px;
+                border-radius: 6px;
+                z-index: 3;
             }
         }
 
@@ -271,7 +267,7 @@
             position: relative;
             margin-top: 8px;
             height: 20px;
-            background: #FF8D9B;
+            background: #ff8d9b;
             border-radius: 12px;
             overflow: hidden;
 
