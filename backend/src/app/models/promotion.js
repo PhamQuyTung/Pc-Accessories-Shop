@@ -29,6 +29,10 @@ const PromotionSchema = new Schema(
     bannerImg: { type: String },
     promotionCardImg: { type: String },
 
+    // ✅ THÊM: Lưu màu header
+    headerBgColor: { type: String, default: "#003bb8" },
+    headerTextColor: { type: String, default: "#ffee12" },
+
     percent: { type: Number, required: true, min: 1, max: 90 },
 
     type: { type: String, enum: ["once", "daily"], required: true },

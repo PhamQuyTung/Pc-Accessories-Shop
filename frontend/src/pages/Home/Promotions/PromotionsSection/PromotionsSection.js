@@ -21,6 +21,8 @@ export default function PromotionsSection({
     products = [],
     promotionCardImg,
     productBannerImg,
+    headerBgColor = '#003bb8', // ✅ THÊM: prop màu nền mặc định
+    headerTextColor = '#ffee12', // ✅ THÊM: prop màu chữ mặc định
 }) {
     const [timeLeft, setTimeLeft] = useState({
         days: 0,
@@ -51,10 +53,20 @@ export default function PromotionsSection({
 
     return (
         <section className={cx('section')}>
-            {/* Header */}
-            <div className={cx('header')}>
+            {/* Header - Thêm inline style động */}
+            <div
+                className={cx('header')}
+                style={{
+                    backgroundColor: headerBgColor,
+                }}
+            >
                 <div className={cx('header-right')}>
-                    <h2 className={cx('title')}>
+                    <h2
+                        className={cx('title')}
+                        style={{
+                            color: headerTextColor,
+                        }}
+                    >
                         <span className={cx('icon')}>🔥</span>
                         {title}
                     </h2>

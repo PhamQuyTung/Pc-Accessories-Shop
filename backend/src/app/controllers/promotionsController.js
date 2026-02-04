@@ -330,10 +330,11 @@ exports.create = async (req, res, next) => {
 
     const created = await Promotion.create({
       name: req.body.name.trim(),
-      // slug: slugify(req.body.name, { lower: true, strict: true }), // tự động sinh slug trong model nên code này không cần nữa
       productBannerImg: req.body.productBannerImg || "",
       bannerImg: req.body.bannerImg || "",
       promotionCardImg: req.body.promotionCardImg || "",
+      headerBgColor: req.body.headerBgColor || '#003bb8', // ✅ THÊM
+      headerTextColor: req.body.headerTextColor || '#ffee12', // ✅ THÊM
       percent: req.body.percent,
       type: req.body.type,
       once: req.body.once || undefined,
@@ -379,8 +380,9 @@ exports.update = async (req, res, next) => {
     if (req.body.productBannerImg)
       promo.productBannerImg = req.body.productBannerImg;
     if (req.body.bannerImg) promo.bannerImg = req.body.bannerImg;
-    if (req.body.promotionCardImg)
-      promo.promotionCardImg = req.body.promotionCardImg;
+    if (req.body.promotionCardImg) promo.promotionCardImg = req.body.promotionCardImg;
+    if (req.body.headerBgColor) promo.headerBgColor = req.body.headerBgColor; // ✅ THÊM
+    if (req.body.headerTextColor) promo.headerTextColor = req.body.headerTextColor; // ✅ THÊM
     if (req.body.percent) promo.percent = req.body.percent;
     if (req.body.type) promo.type = req.body.type;
     if (req.body.once) promo.once = req.body.once;

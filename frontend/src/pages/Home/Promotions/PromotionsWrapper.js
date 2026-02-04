@@ -5,11 +5,11 @@ import PromotionsSection from './PromotionsSection/PromotionsSection';
 function formatPromotionName(name) {
     return name
         .toLowerCase()
-        .normalize("NFD")               // tách dấu
-        .replace(/[\u0300-\u036f]/g, "") // xóa dấu
-        .replace(/đ/g, "d")
-        .replace(/[^a-z0-9]+/g, "-")    // thay space & ký tự đặc biệt bằng -
-        .replace(/^-+|-+$/g, "");       // xóa - ở đầu/cuối
+        .normalize('NFD') // tách dấu
+        .replace(/[\u0300-\u036f]/g, '') // xóa dấu
+        .replace(/đ/g, 'd')
+        .replace(/[^a-z0-9]+/g, '-') // thay space & ký tự đặc biệt bằng -
+        .replace(/^-+|-+$/g, ''); // xóa - ở đầu/cuối
 }
 
 export default function PromotionsWrapper() {
@@ -55,6 +55,8 @@ export default function PromotionsWrapper() {
                             alt: promo.name,
                         }}
                         products={promo.assignedProducts}
+                        headerBgColor={promo.headerBgColor}
+                        headerTextColor={promo.headerTextColor}
                         promotionCardImg={promo.promotionCardImg}
                         productBannerImg={promo.productBannerImg}
                     />

@@ -23,6 +23,8 @@ export default function PromotionForm() {
         bannerImg: '',
         promotionCardImg: '',
         productBannerImg: '',
+        headerBgColor: '#003bb8', // ✅ THÊM: màu nền header (mặc định xanh)
+        headerTextColor: '#ffee12', // ✅ THÊM: màu chữ tiêu đề (mặc định vàng)
     });
     const [products, setProducts] = useState([]);
     const [selectedIds, setSelectedIds] = useState([]);
@@ -69,6 +71,8 @@ export default function PromotionForm() {
                         hideWhenEnded: promo.hideWhenEnded ?? true,
                         bannerImg: promo.bannerImg || prev.bannerImg,
                         promotionCardImg: promo.promotionCardImg || prev.promotionCardImg,
+                        headerBgColor: promo.headerBgColor || '#003bb8', // ✅ THÊM
+                        headerTextColor: promo.headerTextColor || '#ffee12', // ✅ THÊM
                     }));
                     // Gán selectedIds là các sản phẩm đã gán vào CTKM
                     setSelectedIds(promo.assignedProducts.map((pp) => pp.product?._id || pp.product));
@@ -377,6 +381,64 @@ export default function PromotionForm() {
                     />
                     <label htmlFor="hideEnded">Tự ẩn CTKM khi kết thúc (không xoá DB)</label>
                 </div>
+            </div>
+
+            {/* ✅ THÊM: Chỉnh màu header */}
+            <div className={cx('section-title')}>Cấu hình Header</div>
+            <div className={cx('grid2')}>
+                <div className={cx('row')}>
+                    <label>Màu nền header</label>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <input
+                            type="color"
+                            name="headerBgColor"
+                            value={form.headerBgColor}
+                            onChange={onChange}
+                            style={{ width: '60px', height: '40px', cursor: 'pointer' }}
+                        />
+                        <input
+                            type="text"
+                            value={form.headerBgColor}
+                            onChange={onChange}
+                            name="headerBgColor"
+                            placeholder="#003bb8"
+                            style={{ flex: 1 }}
+                        />
+                    </div>
+                </div>
+                <div className={cx('row')}>
+                    <label>Màu chữ tiêu đề</label>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <input
+                            type="color"
+                            name="headerTextColor"
+                            value={form.headerTextColor}
+                            onChange={onChange}
+                            style={{ width: '60px', height: '40px', cursor: 'pointer' }}
+                        />
+                        <input
+                            type="text"
+                            value={form.headerTextColor}
+                            onChange={onChange}
+                            name="headerTextColor"
+                            placeholder="#ffee12"
+                            style={{ flex: 1 }}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Preview */}
+            <div style={{
+                padding: '16px',
+                marginTop: '16px',
+                backgroundColor: form.headerBgColor,
+                borderRadius: '8px',
+                color: form.headerTextColor,
+                fontSize: '20px',
+                fontWeight: 'bold',
+            }}>
+                🔥 Preview: {form.name || 'Tên CTKM'}
             </div>
 
             {/* Lựa chọn sản phẩm áp dụng (chỉ cho phép sản phẩm không có giá gạch) */}
