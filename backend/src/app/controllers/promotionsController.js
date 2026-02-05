@@ -416,12 +416,50 @@ exports.assignProducts = async (req, res) => {
   const { id } = req.params;
   const { productIds } = req.body;
 
-  const promo = await Promotion.findById(id).populate(
-    "assignedProducts.product"
-  );
+  const promo = await Promotion.findById(id).populate("assignedProducts.product");
   if (!promo) return res.status(404).json({ message: "Promotion not found" });
 
-  promo.assignedProducts = productIds.map((pid) => ({
+  // Dedupe incoming ids
+  const uniqueIds = Array.from(new Set(Array.isArray(productIds) ? productIds.map(String) : []));
+
+  // Load products
+  const products = await Product.find({ _id: { $in: uniqueIds } }).lean();
+
+  // Collect problems
+  const missing = uniqueIds.filter((pid) => !products.find((p) => String(p._id) === pid));
+  const invalid = [];
+
+  for (const pid of uniqueIds) {
+    const p = products.find((x) => String(x._id) === pid);
+    if (!p) continue;
+    if (p.deleted || !p.visible) {
+      invalid.push({ id: pid, reason: "deleted or not visible" });
+      continue;
+    }
+    if (p.discountPrice && p.discountPrice > 0) {
+      invalid.push({ id: pid, reason: "already has product-level discount" });
+      continue;
+    }
+    if (Array.isArray(p.variations) && p.variations.some((v) => v.discountPrice && v.discountPrice > 0)) {
+      invalid.push({ id: pid, reason: "has variation discount" });
+      continue;
+    }
+    if (p.lockPromotionId && String(p.lockPromotionId) !== String(promo._id)) {
+      invalid.push({ id: pid, reason: "locked by another active promotion" });
+      continue;
+    }
+  }
+
+  if (missing.length || invalid.length) {
+    return res.status(400).json({
+      message: "Một số sản phẩm không hợp lệ để gán vào CTKM.",
+      missing,
+      invalid,
+    });
+  }
+
+  // Safe to assign (use deduped list)
+  promo.assignedProducts = uniqueIds.map((pid) => ({
     product: pid,
     backupDiscountPrice: null,
     backupDiscountPercent: null,
@@ -429,7 +467,7 @@ exports.assignProducts = async (req, res) => {
 
   await promo.save();
 
-  // ✅ Nếu CTKM đang active thì apply luôn
+  // Apply immediately if active
   const current = computeStatus(promo);
   if (current.currentlyActive) {
     await applyPromotionImmediately(promo);

@@ -80,6 +80,8 @@ export default function PromotionsCollectionPage() {
         const fetchProductsByPromotion = async () => {
             try {
                 const res = await axiosClient.get(`/promotions/slug/${slug}/products`);
+                console.log('🔍 API Response:', res.data); // ✅ THÊM dòng này
+                console.log('🔍 Response length:', res.data.length); // ✅ THÊM dòng này
                 setProducts(res.data);
                 setFilteredProducts(res.data);
                 setFilters(extractFilters(res.data));
