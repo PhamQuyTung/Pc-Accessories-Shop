@@ -436,10 +436,12 @@ exports.assignProducts = async (req, res) => {
       invalid.push({ id: pid, reason: "deleted or not visible" });
       continue;
     }
+    // ✅ FIX: Chỉ reject nếu có discount > 0, không reject discount = 0
     if (p.discountPrice && p.discountPrice > 0) {
       invalid.push({ id: pid, reason: "already has product-level discount" });
       continue;
     }
+    // ✅ FIX: Check variation discount cẩn thận hơn
     if (Array.isArray(p.variations) && p.variations.some((v) => v.discountPrice && v.discountPrice > 0)) {
       invalid.push({ id: pid, reason: "has variation discount" });
       continue;
@@ -450,16 +452,19 @@ exports.assignProducts = async (req, res) => {
     }
   }
 
-  if (missing.length || invalid.length) {
+  // ✅ FIX: Silently filter invalid products thay vì reject toàn bộ
+  const validIds = uniqueIds.filter((pid) => !invalid.some((inv) => inv.id === pid) && !missing.includes(pid));
+
+  if (validIds.length === 0) {
     return res.status(400).json({
-      message: "Một số sản phẩm không hợp lệ để gán vào CTKM.",
+      message: "Không có sản phẩm nào hợp lệ để gán vào CTKM.",
       missing,
       invalid,
     });
   }
 
-  // Safe to assign (use deduped list)
-  promo.assignedProducts = uniqueIds.map((pid) => ({
+  // Safe to assign (use only valid ids)
+  promo.assignedProducts = validIds.map((pid) => ({
     product: pid,
     backupDiscountPrice: null,
     backupDiscountPercent: null,
@@ -473,6 +478,7 @@ exports.assignProducts = async (req, res) => {
     await applyPromotionImmediately(promo);
   }
 
+  // ✅ Return success khi có ít nhất 1 sản phẩm hợp lệ
   res.json(computeStatus(promo));
 };
 

@@ -47,6 +47,9 @@ export default function PromotionsWrapper() {
                     <PromotionsSection
                         key={promo._id}
                         title={promo.name}
+                        promotionType={promo.type}
+                        dailyStartDate={promo.daily?.startDate}
+                        dailyEndDate={promo.daily?.endDate}
                         endTime={promo.once?.endAt || promo.daily?.endDate || null}
                         detailHref={promoLink}
                         banner={{

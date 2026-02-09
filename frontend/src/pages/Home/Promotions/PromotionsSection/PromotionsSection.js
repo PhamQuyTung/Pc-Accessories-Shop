@@ -21,8 +21,11 @@ export default function PromotionsSection({
     products = [],
     promotionCardImg,
     productBannerImg,
-    headerBgColor = '#003bb8', // ✅ THÊM: prop màu nền mặc định
-    headerTextColor = '#ffee12', // ✅ THÊM: prop màu chữ mặc định
+    headerBgColor = '#003bb8',
+    headerTextColor = '#ffee12',
+    promotionType = 'once', // ✅ THÊM: nhận loại promotion
+    dailyStartDate, // ✅ THÊM: ngày bắt đầu
+    dailyEndDate, // ✅ THÊM: ngày kết thúc
 }) {
     const [timeLeft, setTimeLeft] = useState({
         days: 0,
@@ -51,13 +54,27 @@ export default function PromotionsSection({
         return () => clearInterval(interval);
     }, [endTime]);
 
+    // ✅ Format ngày theo kiểu VN: dd/MM/yyyy
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
     return (
         <section className={cx('section')}>
-            {/* Header - Thêm inline style động */}
+            {/* Header */}
             <div
                 className={cx('header')}
                 style={{
                     backgroundColor: headerBgColor,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '16px 20px',
                 }}
             >
                 <div className={cx('header-right')}>
@@ -71,7 +88,7 @@ export default function PromotionsSection({
                         {title}
                     </h2>
 
-                    {endTime && (
+                    {endTime && promotionType === 'once' && (
                         <div className={cx('countdown')}>
                             {timeLeft.days > 0 && (
                                 <div className={cx('timeBox')}>
@@ -94,13 +111,47 @@ export default function PromotionsSection({
                         </div>
                     )}
                 </div>
-                {detailHref && (
-                    <a href={detailHref} className={cx('detail-link')}>
-                        Xem chi tiết →
-                    </a>
-                )}
+
+                {/* ✅ THÊM: Hiển thị ngày tháng theo style GearVN */}
+                {(promotionType === 'once' && endTime) || (promotionType === 'daily' && (dailyStartDate || dailyEndDate)) ? (
+                    <div
+                        className={cx('date-range')}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '8px 12px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            borderRadius: '6px',
+                            whiteSpace: 'nowrap',
+                            marginLeft: 'auto',
+                        }}
+                    >
+                        {promotionType === 'once' && endTime ? (
+                            <>
+                                <span style={{ fontSize: '13px', fontWeight: '600', color: headerTextColor }}>
+                                    {formatDate(new Date()).slice(0, 5)}
+                                </span>
+                                <span style={{ margin: '0 6px', color: headerTextColor, fontWeight: '600' }}>-</span>
+                                <span style={{ fontSize: '13px', fontWeight: '600', color: headerTextColor }}>
+                                    {formatDate(endTime)}
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <span style={{ fontSize: '13px', fontWeight: '600', color: headerTextColor }}>
+                                    {formatDate(dailyStartDate).slice(0, 5)}
+                                </span>
+                                <span style={{ margin: '0 6px', color: headerTextColor, fontWeight: '600' }}>-</span>
+                                <span style={{ fontSize: '13px', fontWeight: '600', color: headerTextColor }}>
+                                    {formatDate(dailyEndDate)}
+                                </span>
+                            </>
+                        )}
+                    </div>
+                ) : null}
             </div>
-            
+
             {/* Body */}
             <div
                 className={cx('bg')}
@@ -155,6 +206,14 @@ export default function PromotionsSection({
                         </Col>
                     </Row>
                 </div>
+
+                {detailHref && (
+                    <div className={cx('footer')}>
+                        <a href={detailHref} className={cx('view-more-btn')}>
+                            Xem thêm khuyến mãi
+                        </a>
+                    </div>
+                )}
             </div>
         </section>
     );

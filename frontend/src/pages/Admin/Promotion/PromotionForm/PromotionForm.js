@@ -158,15 +158,20 @@ export default function PromotionForm() {
                 promo = await axiosClient.post('/promotions', payload);
             }
 
-            // Gán sản phẩm (dù là tạo mới hay sửa đều nên gọi lại để đồng bộ)
+            // Gán sản phẩm (dù là tạo mới hay sửa) — xử lý lỗi riêng biệt
             if (selectedIds.length > 0) {
-                await axiosClient.post(`/promotions/${promo.data?._id || promo.data.id}/assign-products`, {
-                    productIds: selectedIds,
-                });
+                try {
+                    await axiosClient.post(
+                        `/promotions/${promo.data?._id || promo.data.id}/assign-products`,
+                        { productIds: selectedIds }
+                    );
+                } catch (assignErr) {
+                    console.warn('Assign products warning:', assignErr);
+                    const assignMsg = assignErr.response?.data?.message || 'Lỗi khi gán sản phẩm';
+                    // Hiện warning nhưng KHÔNG block flow
+                    showToast(`CTKM tạo thành công nhưng: ${assignMsg}`, 'warning');
+                }
             }
-
-            // fetch lại để thấy assignedProducts đã update (nếu muốn)
-            // const updated = await axiosClient.get(`/promotions/${promo.data?._id || promo.data.id}`);
 
             showToast(isEdit ? 'Cập nhật CTKM thành công!' : 'Tạo CTKM thành công!', 'success');
             navigate('/admin/promotions');
