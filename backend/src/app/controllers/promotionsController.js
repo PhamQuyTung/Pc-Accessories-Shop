@@ -422,6 +422,50 @@ exports.assignProducts = async (req, res) => {
   // Dedupe incoming ids
   const uniqueIds = Array.from(new Set(Array.isArray(productIds) ? productIds.map(String) : []));
 
+  // ✅ THÊM: Lấy danh sách sản phẩm cũ
+  const oldProductIds = promo.assignedProducts.map((pp) =>
+    String(pp.product?._id || pp.product)
+  );
+
+  // ✅ THÊM: Tìm sản phẩm cần rollback (cũ nhưng không có trong mới)
+  const toRollback = oldProductIds.filter((oldId) => !uniqueIds.includes(oldId));
+
+  // ✅ THÊM: Rollback sản phẩm cũ bị xóa
+  if (toRollback.length > 0) {
+    for (const productId of toRollback) {
+      const product = await Product.findById(productId);
+      if (!product) continue;
+
+      // Rollback variations
+      if (product.variations && promo.assignedProducts) {
+        const pp = promo.assignedProducts.find(
+          (ap) => String(ap.product?._id || ap.product) === productId
+        );
+        if (pp && pp.variationBackups) {
+          for (const variation of product.variations) {
+            const backup = pp.variationBackups.find(
+              (vb) => String(vb.variationId) === String(variation._id)
+            );
+            if (backup) {
+              variation.discountPrice = backup.backupDiscountPrice;
+            }
+          }
+          product.markModified("variations");
+        }
+      }
+
+      // Rollback product level
+      product.discountPrice = null;
+      product.discountPercent = null;
+      product.isOnPromotion = false;
+      product.promotionId = null;
+      product.lockPromotionId = null;
+      product.promotionApplied = null;
+
+      await product.save();
+    }
+  }
+
   // Load products
   const products = await Product.find({ _id: { $in: uniqueIds } }).lean();
 
@@ -552,12 +596,12 @@ exports.getAvailableProducts = async (req, res) => {
           visible: true,
           $or: [
             { quantity: { $gt: 0 } },
+            { stock: { $gt: 0 } },
             { "variations.quantity": { $gt: 0 } },
           ],
         },
       },
       {
-        // ✅ Lọc sản phẩm KHÔNG có discountPrice ở product level
         $match: {
           $or: [
             { discountPrice: { $exists: false } },
@@ -567,18 +611,24 @@ exports.getAvailableProducts = async (req, res) => {
         },
       },
       {
-        // ✅ Loại bỏ sản phẩm có variation với discountPrice
+        // ✅ FIX: Kiểm tra variations, nhưng cho phép mảng rỗng
         $addFields: {
           hasDiscountVariation: {
-            $anyElementTrue: {
-              $map: {
-                input: "$variations",
-                as: "v",
-                in: {
-                  $and: [
-                    { $ne: ["$$v.discountPrice", null] },
-                    { $gt: ["$$v.discountPrice", 0] },
-                  ],
+            $cond: {
+              if: { $eq: [{ $size: { $ifNull: ["$variations", []] } }, 0] },
+              then: false, // ✅ Nếu không có variations → hasDiscountVariation = false (hợp lệ)
+              else: {
+                $anyElementTrue: {
+                  $map: {
+                    input: "$variations",
+                    as: "v",
+                    in: {
+                      $and: [
+                        { $ne: ["$$v.discountPrice", null] },
+                        { $gt: ["$$v.discountPrice", 0] },
+                      ],
+                    },
+                  },
                 },
               },
             },
@@ -620,10 +670,14 @@ exports.getAvailableProducts = async (req, res) => {
       ELIGIBLE_STATUSES.includes(String(p.status || "").toLowerCase())
     );
 
-    // ✅ Lấy tổng số
     const totalCount = await Product.countDocuments({
       deleted: false,
       visible: true,
+      $or: [
+        { quantity: { $gt: 0 } },
+        { stock: { $gt: 0 } },
+        { "variations.quantity": { $gt: 0 } },
+      ],
     });
 
     res.json({

@@ -8,7 +8,7 @@ import Pagination from '~/components/Pagination/Pagination';
 
 const cx = classNames.bind(styles);
 
-const ELIGIBLE_STATUSES = ['còn hàng', 'nhiều hàng', 'sản phẩm mới'];
+const ELIGIBLE_STATUSES = ['còn hàng', 'nhiều hàng', 'sản phẩm mới', 'sắp hết hàng', 'hàng rất nhiều'];
 
 export default function EditPromotion() {
     const { id } = useParams();
@@ -202,6 +202,20 @@ export default function EditPromotion() {
             // Gán lại sản phẩm
             await axiosClient.post(`/promotions/${id}/assign-products`, {
                 productIds: selectedIds,
+            });
+
+            // ✅ THÊM: Reload lại promotion để cập nhật assignedProducts
+            const { data: updatedPromo } = await axiosClient.get(`/promotions/${id}`);
+            setForm({
+                name: updatedPromo.name || '',
+                percent: updatedPromo.percent || 10,
+                type: updatedPromo.type || 'once',
+                once: updatedPromo.once || { startAt: '', endAt: '' },
+                daily: updatedPromo.daily || { startDate: '', endDate: '', startTime: '09:00', endTime: '18:00' },
+                hideWhenEnded: updatedPromo.hideWhenEnded ?? true,
+                assignedProducts: updatedPromo.assignedProducts || [],
+                bannerImg: updatedPromo.bannerImg || '',
+                promotionCardImg: updatedPromo.promotionCardImg || '',
             });
 
             showToast('Cập nhật CTKM thành công!', 'success');
