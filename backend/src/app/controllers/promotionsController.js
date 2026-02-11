@@ -505,8 +505,12 @@ exports.assignProducts = async (req, res) => {
         continue;
       }
 
-      // ❗ discountPrice = 0 là hợp lệ
-      if (p.discountPrice && p.discountPrice > 0) {
+      // ❗ CHỈ chặn nếu có discount nhưng KHÔNG phải do chính promo này
+      if (
+        p.discountPrice &&
+        p.discountPrice > 0 &&
+        (!p.lockPromotionId || String(p.lockPromotionId) !== String(promo._id))
+      ) {
         invalid.push({
           id: pid,
           reason: "already has product-level discount",
