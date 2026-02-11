@@ -8,6 +8,25 @@ import Pagination from '~/components/Pagination/Pagination';
 
 const cx = classNames.bind(styles);
 
+function formatDateTimeLocal(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+
+    const pad = (n) => n.toString().padStart(2, '0');
+
+    return (
+        date.getFullYear() +
+        '-' +
+        pad(date.getMonth() + 1) +
+        '-' +
+        pad(date.getDate()) +
+        'T' +
+        pad(date.getHours()) +
+        ':' +
+        pad(date.getMinutes())
+    );
+}
+
 export default function EditPromotion() {
     const { id } = useParams();
     const [form, setForm] = useState({
@@ -20,6 +39,9 @@ export default function EditPromotion() {
         assignedProducts: [],
         bannerImg: '',
         promotionCardImg: '',
+        productBannerImg: '',
+        headerBgColor: '#003bb8',
+        headerTextColor: '#ffee12',
     });
     const [products, setProducts] = useState([]);
     const [selectedIds, setSelectedIds] = useState([]);
@@ -119,12 +141,21 @@ export default function EditPromotion() {
                     name: promo.name || '',
                     percent: promo.percent || 10,
                     type: promo.type || 'once',
-                    once: promo.once || { startAt: '', endAt: '' },
+                    once: promo.once
+                        ? {
+                              startAt: formatDateTimeLocal(promo.once.startAt),
+                              endAt: formatDateTimeLocal(promo.once.endAt),
+                          }
+                        : { startAt: '', endAt: '' },
+
                     daily: promo.daily || { startDate: '', endDate: '', startTime: '09:00', endTime: '18:00' },
                     hideWhenEnded: promo.hideWhenEnded ?? true,
                     assignedProducts: promo.assignedProducts || [],
                     bannerImg: promo.bannerImg || '',
                     promotionCardImg: promo.promotionCardImg || '',
+                    productBannerImg: promo.productBannerImg || '',
+                    headerBgColor: promo.headerBgColor || '#003bb8',
+                    headerTextColor: promo.headerTextColor || '#ffee12',
                 });
                 setSelectedIds((promo.assignedProducts || []).map((ap) => ap.product?._id || ap.product));
             } catch (err) {
@@ -223,273 +254,317 @@ export default function EditPromotion() {
         }
     };
 
-    return (
-        <div className={cx('promotion-form')}>
-            <h2>Chỉnh sửa chương trình khuyến mãi</h2>
-            <form onSubmit={submit}>
-                <div className={cx('form-group')}>
-                    <label>Tên chương trình</label>
-                    <input name="name" value={form.name} onChange={onChange} required />
-                </div>
-                <div className={cx('form-group')}>
-                    <label>Phần trăm giảm (%)</label>
-                    <input
-                        name="percent"
-                        type="number"
-                        min={1}
-                        max={90}
-                        value={form.percent}
-                        onChange={onChange}
-                        required
-                    />
-                </div>
-                <div className={cx('form-group')}>
-                    <label>Kiểu lịch</label>
-                    <select name="type" value={form.type} onChange={onChange}>
-                        <option value="once">Một lần</option>
-                        <option value="daily">Lặp lại hàng ngày</option>
-                    </select>
-                </div>
-                {form.type === 'once' ? (
-                    <div className={cx('form-group')}>
-                        <label>Thời gian áp dụng</label>
-                        <input
-                            type="datetime-local"
-                            name="startAt"
-                            value={form.once.startAt || ''}
-                            onChange={onChangeOnce}
-                        />
-                        <input
-                            type="datetime-local"
-                            name="endAt"
-                            value={form.once.endAt || ''}
-                            onChange={onChangeOnce}
-                        />
-                    </div>
-                ) : (
-                    <div className={cx('form-group')}>
-                        <label>Ngày bắt đầu</label>
-                        <input
-                            type="date"
-                            name="startDate"
-                            value={form.daily.startDate || ''}
-                            onChange={onChangeDaily}
-                        />
-                        <label>Ngày kết thúc</label>
-                        <input type="date" name="endDate" value={form.daily.endDate || ''} onChange={onChangeDaily} />
-                        <label>Giờ bắt đầu</label>
-                        <input
-                            type="time"
-                            name="startTime"
-                            value={form.daily.startTime || ''}
-                            onChange={onChangeDaily}
-                        />
-                        <label>Giờ kết thúc</label>
-                        <input type="time" name="endTime" value={form.daily.endTime || ''} onChange={onChangeDaily} />
-                    </div>
-                )}
+    const handleUpload = async (file, fieldName) => {
+        if (!file) return;
 
-                <div className={cx('form-group')}>
-                    <label>Ẩn khi kết thúc</label>
-                    <input type="checkbox" name="hideWhenEnded" checked={form.hideWhenEnded} onChange={onChange} />
-                </div>
+        const formData = new FormData();
+        formData.append('file', file);
 
-                <div className={cx('form-group')}>
-                    <label>Banner</label>
-                    <input name="bannerImg" value={form.bannerImg} onChange={onChange} />
-                </div>
+        try {
+            const res = await axiosClient.post('/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
 
-                <div className={cx('form-group')}>
-                    <label>Khung sản phẩm</label>
-                    <input name="promotionCardImg" value={form.promotionCardImg} onChange={onChange} />
-                </div>
+            const url = res.data.url;
 
-                <div className={cx('form-group')}>
-                    <label className={cx('section-label')}>
-                        Sản phẩm đã áp dụng
-                        {form.assignedProducts.length > 0 && (
-                            <span className={cx('product-count')}>({form.assignedProducts.length} sản phẩm)</span>
-                        )}
-                    </label>
-                    <div className={cx('applied-products-list')}>
-                        {form.assignedProducts.length === 0 && (
-                            <div className={cx('empty')}>
-                                <span>📦</span> Chưa có sản phẩm nào được áp dụng
+            setForm((prev) => ({
+                ...prev,
+                [fieldName]: url,
+            }));
+        } catch (err) {
+            console.error('Upload error:', err);
+            showToast('Upload ảnh thất bại', 'error');
+        }
+    };
+
+    const renderUploadBlock = (label, field, inputId) => (
+        <div className={cx('form-group')}>
+            <div className={cx('row')}>
+                <label>{label}</label>
+
+                <input
+                    type="file"
+                    accept="image/*"
+                    id={inputId}
+                    style={{ display: 'none' }}
+                    onChange={(e) => handleUpload(e.target.files[0], field)}
+                />
+
+                <div className={cx('upload-wrapper')}>
+                    {form[field] ? (
+                        <>
+                            <img src={form[field]} alt="preview" className={cx('preview-img')} />
+
+                            <div className={cx('upload-actions')}>
+                                <button type="button" onClick={() => document.getElementById(inputId).click()}>
+                                    Đổi ảnh
+                                </button>
+
+                                <button type="button" onClick={() => setForm((prev) => ({ ...prev, [field]: '' }))}>
+                                    Xóa
+                                </button>
                             </div>
-                        )}
-                        {form.assignedProducts.map((ap) => {
-                            const product =
-                                typeof ap.product === 'object'
-                                    ? ap.product
-                                    : products.find((p) => p._id === ap.product);
-                            if (!product) return null;
-                            return (
-                                <div key={product._id} className={cx('applied-product-card')}>
-                                    <div className={cx('product-meta')}>
-                                        <div className={cx('product-name')}>{product.name}</div>
-                                        <div className={cx('product-price')}>
-                                            {product.discountPrice && product.discountPrice > 0 ? (
-                                                <>
-                                                    <span className={cx('price-sale')}>
-                                                        {product.discountPrice.toLocaleString()}₫
-                                                    </span>
-                                                    <span className={cx('price-original')}>
-                                                        {product.price.toLocaleString()}₫
-                                                    </span>
-                                                </>
-                                            ) : (
-                                                <span className={cx('price-sale')}>
-                                                    {product.price.toLocaleString()}₫
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div
-                                            className={cx('product-status', {
-                                                'in-stock': product.quantity > 0,
-                                                'out-stock': product.quantity <= 0,
-                                            })}
-                                        >
-                                            {product.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        className={cx('btn-remove')}
-                                        onClick={() => handleRemoveProduct(product._id)}
-                                    >
-                                        ✖
-                                    </button>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Chọn/thay thế sản phẩm áp dụng */}
-                <div className={cx('form-group')}>
-                    <label>Chọn/thay thế sản phẩm áp dụng</label>
-
-                    {/* Bộ lọc */}
-                    <div className={cx('filters')}>
-                        {/* Tìm kiếm */}
-                        <input
-                            type="text"
-                            placeholder="Tìm kiếm sản phẩm..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-
-                        {/* Lọc theo danh mục */}
-                        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-                            <option value="">--Danh mục--</option>
-                            {categories.length > 0 ? (
-                                categories.map((cate) => (
-                                    <option key={cate._id} value={cate._id}>
-                                        {cate.name}
-                                    </option>
-                                ))
-                            ) : (
-                                <option disabled>Đang tải...</option>
-                            )}
-                        </select>
-
-                        {/* Lọc theo thương hiệu */}
-                        <select value={brandFilter} onChange={(e) => setBrandFilter(e.target.value)}>
-                            <option value="">--Thương hiệu--</option>
-                            {brands.length > 0 ? (
-                                brands.map((brand) => (
-                                    <option key={brand._id} value={brand._id}>
-                                        {brand.name}
-                                    </option>
-                                ))
-                            ) : (
-                                <option disabled>Đang tải...</option>
-                            )}
-                        </select>
-
-                        {/* Lọc theo trạng thái */}
-                        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                            <option value="">--Trạng thái--</option>
-                            <option value="in-stock">Còn hàng</option>
-                            <option value="out-stock">Hết hàng</option>
-                        </select>
-
-                        {/* Nút reset */}
-                        <button type="button" className={cx('btn-reset')} onClick={resetFilters}>
-                            Reset
+                        </>
+                    ) : (
+                        <button
+                            type="button"
+                            className={cx('btn-upload')}
+                            onClick={() => document.getElementById(inputId).click()}
+                        >
+                            + Tải ảnh lên
                         </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className={cx('promotion-wrapper')}>
+            <h2>Chỉnh sửa chương trình khuyến mãi</h2>
+
+            <form onSubmit={submit} className={cx('promotion-layout')}>
+                {/* ================= LEFT COLUMN ================= */}
+                <div className={cx('left-column')}>
+                    {/* ===== Thông tin cơ bản ===== */}
+                    <div className={cx('form-group')}>
+                        <label>Tên chương trình</label>
+                        <input name="name" value={form.name} onChange={onChange} required />
                     </div>
 
-                    {/* Danh sách sản phẩm dạng table */}
-                    {paginatedProducts.length === 0 ? (
-                        <div className={cx('empty')}>
-                            <span>📦</span> Chưa có sản phẩm nào đủ điều kiện
+                    <div className={cx('form-group')}>
+                        <label>Phần trăm giảm (%)</label>
+                        <input
+                            name="percent"
+                            type="number"
+                            min={1}
+                            max={90}
+                            value={form.percent}
+                            onChange={onChange}
+                            required
+                        />
+                    </div>
+
+                    <div className={cx('form-group')}>
+                        <label>Kiểu lịch</label>
+                        <select name="type" value={form.type} onChange={onChange}>
+                            <option value="once">Một lần</option>
+                            <option value="daily">Lặp lại hàng ngày</option>
+                        </select>
+                    </div>
+
+                    {form.type === 'once' ? (
+                        <div className={cx('form-group')}>
+                            <label>Thời gian áp dụng</label>
+                            <input
+                                type="datetime-local"
+                                name="startAt"
+                                value={form.once.startAt || ''}
+                                onChange={onChangeOnce}
+                            />
+                            <input
+                                type="datetime-local"
+                                name="endAt"
+                                value={form.once.endAt || ''}
+                                onChange={onChangeOnce}
+                            />
                         </div>
                     ) : (
-                        <table className={cx('product-table')}>
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    <th>Sản phẩm</th>
-                                    <th>Giá</th>
-                                    <th>Trạng thái</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {paginatedProducts.map((p) => (
-                                    <tr key={p._id}>
-                                        <td>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedIds.includes(p._id)}
-                                                onChange={() => toggleSelect(p._id)}
-                                            />
-                                        </td>
-                                        <td className={cx('product-name-cell')}>
-                                            <img
-                                                src={p.images?.[0] || '/default-product.jpg'}
-                                                alt={p.name}
-                                                className={cx('thumb')}
-                                            />
-                                            <span>{p.name}</span>
-                                        </td>
-                                        <td>
-                                            {p.discountPrice && p.discountPrice > 0 ? (
-                                                <>
-                                                    <span className={cx('price-sale')}>
-                                                        {p.discountPrice.toLocaleString()}₫
-                                                    </span>
-                                                    <span className={cx('price-original')}>
-                                                        {p.price.toLocaleString()}₫
-                                                    </span>
-                                                </>
-                                            ) : (
-                                                <span className={cx('price-sale')}>{p.price.toLocaleString()}₫</span>
-                                            )}
-                                        </td>
-                                        <td>
-                                            <span
-                                                className={cx('status', {
-                                                    'in-stock': p.quantity > 0,
-                                                    'out-stock': p.quantity <= 0,
-                                                })}
-                                            >
-                                                {p.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        <div className={cx('form-group')}>
+                            <label>Ngày bắt đầu</label>
+                            <input
+                                type="date"
+                                name="startDate"
+                                value={form.daily.startDate || ''}
+                                onChange={onChangeDaily}
+                            />
+                            <label>Ngày kết thúc</label>
+                            <input
+                                type="date"
+                                name="endDate"
+                                value={form.daily.endDate || ''}
+                                onChange={onChangeDaily}
+                            />
+                            <label>Giờ bắt đầu</label>
+                            <input
+                                type="time"
+                                name="startTime"
+                                value={form.daily.startTime || ''}
+                                onChange={onChangeDaily}
+                            />
+                            <label>Giờ kết thúc</label>
+                            <input
+                                type="time"
+                                name="endTime"
+                                value={form.daily.endTime || ''}
+                                onChange={onChangeDaily}
+                            />
+                        </div>
                     )}
 
-                    {/* Pagination */}
-                    <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+                    <div className={cx('form-group')}>
+                        <label>
+                            <input
+                                type="checkbox"
+                                name="hideWhenEnded"
+                                checked={form.hideWhenEnded}
+                                onChange={onChange}
+                            />
+                            Ẩn khi kết thúc
+                        </label>
+                    </div>
+
+                    {/* ===== Upload hình ảnh ===== */}
+
+                    {/* Background sản phẩm */}
+                    {renderUploadBlock('Ảnh background sản phẩm', 'productBannerImg', 'productBgUpload')}
+
+                    {/* Banner */}
+                    {renderUploadBlock('Banner', 'bannerImg', 'bannerUpload')}
+
+                    {/* Khung sản phẩm */}
+                    {renderUploadBlock('Khung sản phẩm', 'promotionCardImg', 'promotionCardUpload')}
+
+                    {/* ===== Cấu hình Header ===== */}
+                    <div className={cx('form-group')}>
+                        <label className={cx('section-label')}>Cấu hình Header</label>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                            <div>
+                                <label>Màu nền</label>
+                                <input
+                                    type="color"
+                                    name="headerBgColor"
+                                    value={form.headerBgColor}
+                                    onChange={onChange}
+                                    style={{ width: 60, height: 40 }}
+                                />
+                            </div>
+
+                            <div>
+                                <label>Màu chữ</label>
+                                <input
+                                    type="color"
+                                    name="headerTextColor"
+                                    value={form.headerTextColor}
+                                    onChange={onChange}
+                                    style={{ width: 60, height: 40 }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Preview */}
+                    <div
+                        className={cx('header-preview')}
+                        style={{
+                            backgroundColor: form.headerBgColor,
+                            color: form.headerTextColor,
+                        }}
+                    >
+                        🔥 {form.name || 'Tên chương trình khuyến mãi'}
+                    </div>
+
+                    <button type="submit" className={cx('btn-submit')}>
+                        Lưu thay đổi
+                    </button>
                 </div>
 
-                <button type="submit" className={cx('btn-submit')}>
-                    Lưu thay đổi
-                </button>
+                {/* ================= RIGHT COLUMN ================= */}
+                <div className={cx('right-column')}>
+                    {/* ===== Danh sách đã áp dụng ===== */}
+                    <div className={cx('form-group')}>
+                        <label className={cx('section-label')}>
+                            Sản phẩm đã áp dụng ({form.assignedProducts.length})
+                        </label>
+
+                        <div className={cx('applied-products-list')}>
+                            {form.assignedProducts.length === 0 && (
+                                <div className={cx('empty')}>📦 Chưa có sản phẩm nào</div>
+                            )}
+
+                            {form.assignedProducts.map((ap) => {
+                                const product =
+                                    typeof ap.product === 'object'
+                                        ? ap.product
+                                        : products.find((p) => p._id === ap.product);
+                                if (!product) return null;
+
+                                return (
+                                    <div key={product._id} className={cx('applied-product-card')}>
+                                        <div className={cx('product-meta')}>
+                                            <div className={cx('product-name')}>{product.name}</div>
+                                            <div className={cx('product-price')}>{product.price.toLocaleString()}₫</div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className={cx('btn-remove')}
+                                            onClick={() => handleRemoveProduct(product._id)}
+                                        >
+                                            ✖
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* ===== Table chọn sản phẩm ===== */}
+                    <div className={cx('form-group')}>
+                        <label className={cx('section-label')}>Chọn / thay thế sản phẩm ({selectedIds.length})</label>
+
+                        {paginatedProducts.length === 0 ? (
+                            <div className={cx('empty')}>📦 Không có sản phẩm</div>
+                        ) : (
+                            <table className={cx('product-table')}>
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Sản phẩm</th>
+                                        <th>Giá</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paginatedProducts.map((p) => (
+                                        <tr key={p._id}>
+                                            <td>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedIds.includes(p._id)}
+                                                    onChange={() => toggleSelect(p._id)}
+                                                />
+                                            </td>
+                                            <td className={cx('product-name-cell')}>
+                                                <img
+                                                    src={p.images?.[0] || '/default-product.jpg'}
+                                                    alt={p.name}
+                                                    className={cx('thumb')}
+                                                />
+                                                <span>{p.name}</span>
+                                            </td>
+                                            <td>
+                                                <span className={cx('price-sale')}>{p.price.toLocaleString()}₫</span>
+                                            </td>
+                                            <td>
+                                                <span
+                                                    className={cx('status', {
+                                                        'in-stock': p.quantity > 0,
+                                                        'out-stock': p.quantity <= 0,
+                                                    })}
+                                                >
+                                                    {p.quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+
+                        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+                    </div>
+                </div>
             </form>
         </div>
     );
