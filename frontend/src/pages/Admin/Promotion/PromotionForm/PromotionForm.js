@@ -7,7 +7,25 @@ import { useToast } from '~/components/ToastMessager/ToastMessager';
 import Pagination from '~/components/Pagination/Pagination';
 
 const cx = classNames.bind(styles);
-const ELIGIBLE_STATUSES = ['còn hàng', 'nhiều hàng', 'sản phẩm mới', 'sắp hết hàng', 'hàng rất nhiều'];
+
+const normalizeVariations = (p) =>
+    Array.isArray(p.variations) ? p.variations : Array.isArray(p.variants) ? p.variants : [];
+
+const hasDiscountPrice = (p) => {
+    const value = Number(p.discountPrice);
+    return !Number.isNaN(value) && value > 0;
+};
+
+const isEligibleForPromotion = (p) => {
+    const variations = normalizeVariations(p);
+
+    if (variations.length > 0) return false;
+    if (hasDiscountPrice(p)) return false;
+    if (Number(p.quantity) <= 0) return false;
+    if (p.lockPromotionId) return false;
+
+    return true;
+};
 
 export default function PromotionForm() {
     const { id } = useParams(); // nếu có id => edit
@@ -33,6 +51,7 @@ export default function PromotionForm() {
     const [search, setSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 5;
+    const [totalPages, setTotalPages] = useState(1);
 
     // Thêm state để hiển thị variations
     const [expandedProducts, setExpandedProducts] = useState(new Set());
@@ -41,48 +60,42 @@ export default function PromotionForm() {
     const showToast = useToast();
 
     useEffect(() => {
-        (async () => {
+        const fetchData = async () => {
             try {
-                // Lấy sản phẩm đủ điều kiện từ API
-                const { data } = await axiosClient.get('/promotions/available-products');
-                let productList = Array.isArray(data.products) ? data.products : [];
-                
-                // ✅ Lọc sản phẩm không có giá gạch (double-check ở frontend)
-                const filteredList = productList.filter((p) => {
-                    // Loại sản phẩm đã có giá gạch
-                    if (p.discountPrice && p.discountPrice > 0) return false;
-                    // Loại sản phẩm bị khóa bởi CTKM khác
-                    if (p.lockPromotionId) return false;
-                    return true;
-                });
-                
-                setProducts(filteredList);
+                const { data } = await axiosClient.get(
+                    `/promotions/available-products?page=${currentPage}&limit=${pageSize}&search=${search}`,
+                );
+
+                setProducts(Array.isArray(data.products) ? data.products : []);
+                setTotalPages(data.totalPages || 1);
 
                 if (isEdit) {
-                    // Lấy thông tin CTKM và sản phẩm đã gán
                     const { data: promo } = await axiosClient.get(`/promotions/${id}`);
+
                     setForm((prev) => ({
                         ...prev,
                         name: promo.name,
                         percent: promo.percent,
                         type: promo.type,
-                        once: promo.once || { startAt: '', endAt: '' },
-                        daily: promo.daily || { startDate: '', endDate: '', startTime: '09:00', endTime: '18:00' },
+                        once: promo.once || prev.once,
+                        daily: promo.daily || prev.daily,
                         hideWhenEnded: promo.hideWhenEnded ?? true,
-                        bannerImg: promo.bannerImg || prev.bannerImg,
-                        promotionCardImg: promo.promotionCardImg || prev.promotionCardImg,
-                        headerBgColor: promo.headerBgColor || '#003bb8', // ✅ THÊM
-                        headerTextColor: promo.headerTextColor || '#ffee12', // ✅ THÊM
+                        bannerImg: promo.bannerImg || '',
+                        promotionCardImg: promo.promotionCardImg || '',
+                        productBannerImg: promo.productBannerImg || '',
+                        headerBgColor: promo.headerBgColor || '#003bb8',
+                        headerTextColor: promo.headerTextColor || '#ffee12',
                     }));
-                    // Gán selectedIds là các sản phẩm đã gán vào CTKM
-                    setSelectedIds(promo.assignedProducts.map((pp) => pp.product?._id || pp.product));
+
+                    setSelectedIds(promo.assignedProducts.map((p) => p.product?._id || p.product));
                 }
             } catch (err) {
-                console.error('Error fetching products or promotion:', err);
+                console.error('Fetch error:', err);
             }
-        })();
-        // eslint-disable-next-line
-    }, [id]);
+        };
+
+        fetchData();
+    }, [id, isEdit, currentPage, search]);
 
     const onChange = (e) => {
         const { name, value, type } = e.target;
@@ -111,85 +124,31 @@ export default function PromotionForm() {
     };
 
     const submit = async () => {
-        const payload = { ...form, assignedProducts: selectedIds };
+        if (!form.name.trim()) return showToast('Vui lòng nhập tên CTKM!', 'warning');
+        if (form.percent < 1 || form.percent > 90) return showToast('Giảm giá không hợp lệ (1-90)', 'error');
+        if (!selectedIds.length) return showToast('Hãy chọn ít nhất 1 sản phẩm!', 'warning');
+
+        const payload = {
+            ...form,
+            assignedProducts: selectedIds,
+        };
 
         if (payload.type === 'once') delete payload.daily;
         else delete payload.once;
-
-        // ✅ Validate trước khi call API
-        if (!payload.name.trim()) {
-            showToast('Vui lòng nhập tên chương trình!', 'warning');
-            return;
-        }
-
-        if (!payload.percent || payload.percent < 1 || payload.percent > 90) {
-            showToast('Phần trăm giảm không hợp lệ (1-90).', 'error');
-            return;
-        }
-
-        if (!form.productBannerImg || form.productBannerImg.trim() === '') {
-            showToast('Vui lòng chọn ảnh banner sản phẩm!', 'warning');
-            return;
-        }
-
-        if (!form.bannerImg || form.bannerImg.trim() === '') {
-            showToast('Vui lòng chọn ảnh cho chương trình!', 'warning');
-            return;
-        }
-
-        if (payload.type === 'once') delete payload.daily;
-        else delete payload.once;
-
-        if (!payload.promotionCardImg || payload.promotionCardImg.trim() === '') {
-            showToast('Vui lòng chọn ảnh viền card sản phẩm!', 'warning');
-            return;
-        }
-
-        if (selectedIds.length === 0) {
-            showToast('Hãy chọn ít nhất 1 sản phẩm!', 'warning');
-            return;
-        }
 
         try {
-            let promo;
-            if (isEdit) {
-                promo = await axiosClient.patch(`/promotions/${id}`, payload);
-            } else {
-                promo = await axiosClient.post('/promotions', payload);
-            }
+            const res = isEdit
+                ? await axiosClient.patch(`/promotions/${id}`, payload)
+                : await axiosClient.post('/promotions', payload);
 
-            // Gán sản phẩm (dù là tạo mới hay sửa) — xử lý lỗi riêng biệt
-            if (selectedIds.length > 0) {
-                try {
-                    await axiosClient.post(
-                        `/promotions/${promo.data?._id || promo.data.id}/assign-products`,
-                        { productIds: selectedIds }
-                    );
-                } catch (assignErr) {
-                    console.warn('Assign products warning:', assignErr);
-                    const assignMsg = assignErr.response?.data?.message || 'Lỗi khi gán sản phẩm';
-                    // Hiện warning nhưng KHÔNG block flow
-                    showToast(`CTKM tạo thành công nhưng: ${assignMsg}`, 'warning');
-                }
-            }
+            await axiosClient.post(`/promotions/${res.data._id}/assign-products`, { productIds: selectedIds });
 
             showToast(isEdit ? 'Cập nhật CTKM thành công!' : 'Tạo CTKM thành công!', 'success');
             navigate('/admin/promotions');
         } catch (err) {
-            console.error('❌ Error submit:', err);
-            const msg = err.response?.data?.message || 'Có lỗi xảy ra khi lưu CTKM!';
-            showToast(msg, 'error');
+            showToast(err.response?.data?.message || 'Có lỗi xảy ra', 'error');
         }
     };
-
-    // Lọc sản phẩm theo tên (có thể thêm lọc khác nếu muốn)
-    const filteredProducts = products.filter((p) =>
-        p.name.toLowerCase().includes(search.toLowerCase())
-    );
-
-    // Phân trang
-    const totalPages = Math.ceil(filteredProducts.length / pageSize);
-    const paginatedProducts = filteredProducts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
     return (
         <div className={cx('wrap')}>
@@ -434,15 +393,17 @@ export default function PromotionForm() {
             </div>
 
             {/* Preview */}
-            <div style={{
-                padding: '16px',
-                marginTop: '16px',
-                backgroundColor: form.headerBgColor,
-                borderRadius: '8px',
-                color: form.headerTextColor,
-                fontSize: '20px',
-                fontWeight: 'bold',
-            }}>
+            <div
+                style={{
+                    padding: '16px',
+                    marginTop: '16px',
+                    backgroundColor: form.headerBgColor,
+                    borderRadius: '8px',
+                    color: form.headerTextColor,
+                    fontSize: '20px',
+                    fontWeight: 'bold',
+                }}
+            >
                 🔥 Preview: {form.name || 'Tên CTKM'}
             </div>
 
@@ -467,7 +428,7 @@ export default function PromotionForm() {
                 </div>
 
                 {/* Danh sách sản phẩm dạng table */}
-                {paginatedProducts.length === 0 ? (
+                {products.length === 0 ? (
                     <div className={cx('empty')}>
                         <span>📦</span> Không tìm thấy sản phẩm nào
                     </div>
@@ -482,7 +443,7 @@ export default function PromotionForm() {
                             </tr>
                         </thead>
                         <tbody>
-                            {paginatedProducts.map((p) => (
+                            {products.map((p) => (
                                 <React.Fragment key={p._id}>
                                     <tr>
                                         <td>
@@ -504,27 +465,18 @@ export default function PromotionForm() {
                                         <td>
                                             <span className={cx('status')}>{p.status}</span>
                                         </td>
-                                        <td>
-                                            {p.variations?.length > 0 && (
-                                                <button
-                                                    onClick={() => toggleExpand(p._id)}
-                                                    style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                                                >
-                                                    {expandedProducts.has(p._id) ? '▼' : '▶'} ({p.variations.length})
-                                                </button>
-                                            )}
-                                        </td>
                                     </tr>
-                                    {expandedProducts.has(p._id) && p.variations?.map((v) => (
-                                        <tr key={v._id} style={{ backgroundColor: '#f5f5f5' }}>
-                                            <td colSpan="2" style={{ paddingLeft: '40px' }}>
-                                                Biến thể: {v.sku}
-                                            </td>
-                                            <td>{v.price.toLocaleString()}₫</td>
-                                            <td>Qty: {v.quantity}</td>
-                                            <td></td>
-                                        </tr>
-                                    ))}
+                                    {expandedProducts.has(p._id) &&
+                                        p.variations?.map((v) => (
+                                            <tr key={v._id} style={{ backgroundColor: '#f5f5f5' }}>
+                                                <td colSpan="2" style={{ paddingLeft: '40px' }}>
+                                                    Biến thể: {v.sku}
+                                                </td>
+                                                <td>{v.price.toLocaleString()}₫</td>
+                                                <td>Qty: {v.quantity}</td>
+                                                <td></td>
+                                            </tr>
+                                        ))}
                                 </React.Fragment>
                             ))}
                         </tbody>

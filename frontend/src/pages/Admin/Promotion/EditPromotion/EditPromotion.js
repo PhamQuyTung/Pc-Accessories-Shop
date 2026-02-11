@@ -8,8 +8,6 @@ import Pagination from '~/components/Pagination/Pagination';
 
 const cx = classNames.bind(styles);
 
-const ELIGIBLE_STATUSES = ['còn hàng', 'nhiều hàng', 'sản phẩm mới', 'sắp hết hàng', 'hàng rất nhiều'];
-
 export default function EditPromotion() {
     const { id } = useParams();
     const [form, setForm] = useState({

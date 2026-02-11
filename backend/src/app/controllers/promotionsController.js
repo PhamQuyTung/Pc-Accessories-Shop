@@ -41,9 +41,10 @@ async function applyPromotionImmediately(promo) {
       promoId: promo._id,
       percent,
       appliedAt: new Date(),
-      soldCount: typeof product.promotionApplied?.soldCount === 'number'
-        ? product.promotionApplied.soldCount
-        : 0,
+      soldCount:
+        typeof product.promotionApplied?.soldCount === "number"
+          ? product.promotionApplied.soldCount
+          : 0,
     };
 
     // ✅ Áp dụng cho variations
@@ -58,7 +59,7 @@ async function applyPromotionImmediately(promo) {
         const discounted = Math.round(basePrice * (1 - percent / 100));
 
         const existingBackup = pp.variationBackups.find(
-          (vb) => String(vb.variationId) === String(variation._id)
+          (vb) => String(vb.variationId) === String(variation._id),
         );
 
         if (!existingBackup) {
@@ -156,13 +157,13 @@ exports.list = async (req, res) => {
     const { q } = req.query;
 
     let promotions = await Promotion.find().populate(
-      "assignedProducts.product"
+      "assignedProducts.product",
     );
 
     if (q) {
       const keyword = q.toLowerCase();
       promotions = promotions.filter((p) =>
-        p.name.toLowerCase().includes(keyword)
+        p.name.toLowerCase().includes(keyword),
       );
     }
 
@@ -201,7 +202,7 @@ exports.list = async (req, res) => {
             ? productReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
             : 0;
           product.averageRating = Number(
-            (Math.round(averageRating * 10) / 10).toFixed(1)
+            (Math.round(averageRating * 10) / 10).toFixed(1),
           );
           product.reviewCount = reviewCount;
         }
@@ -218,13 +219,13 @@ exports.detail = async (req, res) => {
   try {
     const promo = await Promotion.findById(req.params.id).populate(
       "assignedProducts.product",
-      "name price discountPrice status sku stock quantity"
+      "name price discountPrice status sku stock quantity",
     );
     if (!promo) return res.status(404).json({ message: "Không tìm thấy CTKM" });
 
     // Lọc sản phẩm hết hàng
     promo.assignedProducts = promo.assignedProducts.filter(
-      (ap) => ap.product && (ap.product.quantity > 0 || ap.product.stock > 0)
+      (ap) => ap.product && (ap.product.quantity > 0 || ap.product.stock > 0),
     );
 
     // Gom tất cả productId
@@ -257,7 +258,7 @@ exports.detail = async (req, res) => {
           ? productReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
           : 0;
         product.averageRating = Number(
-          (Math.round(averageRating * 10) / 10).toFixed(1)
+          (Math.round(averageRating * 10) / 10).toFixed(1),
         );
         product.reviewCount = reviewCount;
       }
@@ -311,7 +312,7 @@ exports.active = async (req, res) => {
             ? productReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
             : 0;
           product.averageRating = Number(
-            (Math.round(averageRating * 10) / 10).toFixed(1)
+            (Math.round(averageRating * 10) / 10).toFixed(1),
           );
           product.reviewCount = reviewCount;
         }
@@ -333,8 +334,8 @@ exports.create = async (req, res, next) => {
       productBannerImg: req.body.productBannerImg || "",
       bannerImg: req.body.bannerImg || "",
       promotionCardImg: req.body.promotionCardImg || "",
-      headerBgColor: req.body.headerBgColor || '#003bb8', // ✅ THÊM
-      headerTextColor: req.body.headerTextColor || '#ffee12', // ✅ THÊM
+      headerBgColor: req.body.headerBgColor || "#003bb8", // ✅ THÊM
+      headerTextColor: req.body.headerTextColor || "#ffee12", // ✅ THÊM
       percent: req.body.percent,
       type: req.body.type,
       once: req.body.once || undefined,
@@ -380,9 +381,11 @@ exports.update = async (req, res, next) => {
     if (req.body.productBannerImg)
       promo.productBannerImg = req.body.productBannerImg;
     if (req.body.bannerImg) promo.bannerImg = req.body.bannerImg;
-    if (req.body.promotionCardImg) promo.promotionCardImg = req.body.promotionCardImg;
+    if (req.body.promotionCardImg)
+      promo.promotionCardImg = req.body.promotionCardImg;
     if (req.body.headerBgColor) promo.headerBgColor = req.body.headerBgColor; // ✅ THÊM
-    if (req.body.headerTextColor) promo.headerTextColor = req.body.headerTextColor; // ✅ THÊM
+    if (req.body.headerTextColor)
+      promo.headerTextColor = req.body.headerTextColor; // ✅ THÊM
     if (req.body.percent) promo.percent = req.body.percent;
     if (req.body.type) promo.type = req.body.type;
     if (req.body.once) promo.once = req.body.once;
@@ -413,117 +416,170 @@ exports.partialUpdate = async (req, res, next) => {
 };
 
 exports.assignProducts = async (req, res) => {
-  const { id } = req.params;
-  const { productIds } = req.body;
+  try {
+    const { id } = req.params;
+    const { productIds } = req.body;
 
-  const promo = await Promotion.findById(id).populate("assignedProducts.product");
-  if (!promo) return res.status(404).json({ message: "Promotion not found" });
+    const promo = await Promotion.findById(id).populate(
+      "assignedProducts.product",
+    );
+    if (!promo) {
+      return res.status(404).json({ message: "Promotion not found" });
+    }
 
-  // Dedupe incoming ids
-  const uniqueIds = Array.from(new Set(Array.isArray(productIds) ? productIds.map(String) : []));
+    // =============================
+    // 1️⃣ Chuẩn hoá & dedupe input
+    // =============================
+    const uniqueIds = Array.from(
+      new Set(Array.isArray(productIds) ? productIds.map(String) : []),
+    );
 
-  // ✅ THÊM: Lấy danh sách sản phẩm cũ
-  const oldProductIds = promo.assignedProducts.map((pp) =>
-    String(pp.product?._id || pp.product)
-  );
+    // Map assignedProducts cũ theo productId
+    const oldMap = new Map(
+      promo.assignedProducts.map((pp) => [
+        String(pp.product?._id || pp.product),
+        pp,
+      ]),
+    );
 
-  // ✅ THÊM: Tìm sản phẩm cần rollback (cũ nhưng không có trong mới)
-  const toRollback = oldProductIds.filter((oldId) => !uniqueIds.includes(oldId));
+    const oldIds = Array.from(oldMap.keys());
 
-  // ✅ THÊM: Rollback sản phẩm cũ bị xóa
-  if (toRollback.length > 0) {
+    // =============================
+    // 2️⃣ Xác định SP bị gỡ → rollback
+    // =============================
+    const toRollback = oldIds.filter((oldId) => !uniqueIds.includes(oldId));
+
     for (const productId of toRollback) {
       const product = await Product.findById(productId);
       if (!product) continue;
 
-      // Rollback variations
-      if (product.variations && promo.assignedProducts) {
-        const pp = promo.assignedProducts.find(
-          (ap) => String(ap.product?._id || ap.product) === productId
-        );
-        if (pp && pp.variationBackups) {
-          for (const variation of product.variations) {
-            const backup = pp.variationBackups.find(
-              (vb) => String(vb.variationId) === String(variation._id)
-            );
-            if (backup) {
-              variation.discountPrice = backup.backupDiscountPrice;
-            }
-          }
-          product.markModified("variations");
-        }
+      // ❗ CHỈ rollback nếu đang lock bởi CHÍNH promo này
+      if (
+        product.lockPromotionId &&
+        String(product.lockPromotionId) !== String(promo._id)
+      ) {
+        continue;
       }
 
-      // Rollback product level
+      const pp = oldMap.get(productId);
+
+      // Rollback variations
+      if (product.variations && pp?.variationBackups?.length) {
+        for (const variation of product.variations) {
+          const backup = pp.variationBackups.find(
+            (vb) => String(vb.variationId) === String(variation._id),
+          );
+          if (backup) {
+            variation.discountPrice = backup.backupDiscountPrice;
+          }
+        }
+        product.markModified("variations");
+      }
+
+      // Rollback product-level
       product.discountPrice = null;
       product.discountPercent = null;
-      product.isOnPromotion = false;
-      product.promotionId = null;
       product.lockPromotionId = null;
       product.promotionApplied = null;
 
       await product.save();
     }
-  }
 
-  // Load products
-  const products = await Product.find({ _id: { $in: uniqueIds } }).lean();
+    // =============================
+    // 3️⃣ Load & validate sản phẩm mới
+    // =============================
+    const products = await Product.find({ _id: { $in: uniqueIds } }).lean();
 
-  // Collect problems
-  const missing = uniqueIds.filter((pid) => !products.find((p) => String(p._id) === pid));
-  const invalid = [];
+    const missing = uniqueIds.filter(
+      (pid) => !products.find((p) => String(p._id) === pid),
+    );
 
-  for (const pid of uniqueIds) {
-    const p = products.find((x) => String(x._id) === pid);
-    if (!p) continue;
-    if (p.deleted || !p.visible) {
-      invalid.push({ id: pid, reason: "deleted or not visible" });
-      continue;
+    const invalid = [];
+
+    for (const pid of uniqueIds) {
+      const p = products.find((x) => String(x._id) === pid);
+      if (!p) continue;
+
+      if (p.deleted || !p.visible) {
+        invalid.push({ id: pid, reason: "deleted or not visible" });
+        continue;
+      }
+
+      // ❗ discountPrice = 0 là hợp lệ
+      if (p.discountPrice && p.discountPrice > 0) {
+        invalid.push({
+          id: pid,
+          reason: "already has product-level discount",
+        });
+        continue;
+      }
+
+      // ❗ Không cho SP có variations
+      if (Array.isArray(p.variations) && p.variations.length > 0) {
+        invalid.push({ id: pid, reason: "product has variations" });
+        continue;
+      }
+
+      if (
+        p.lockPromotionId &&
+        String(p.lockPromotionId) !== String(promo._id)
+      ) {
+        invalid.push({
+          id: pid,
+          reason: "locked by another active promotion",
+        });
+        continue;
+      }
     }
-    // ✅ FIX: Chỉ reject nếu có discount > 0, không reject discount = 0
-    if (p.discountPrice && p.discountPrice > 0) {
-      invalid.push({ id: pid, reason: "already has product-level discount" });
-      continue;
+
+    const validIds = uniqueIds.filter(
+      (pid) => !missing.includes(pid) && !invalid.some((i) => i.id === pid),
+    );
+
+    if (validIds.length === 0) {
+      return res.status(400).json({
+        message: "Không có sản phẩm hợp lệ để gán vào CTKM.",
+        missing,
+        invalid,
+      });
     }
-    // ✅ FIX: Check variation discount cẩn thận hơn
-    if (Array.isArray(p.variations) && p.variations.some((v) => v.discountPrice && v.discountPrice > 0)) {
-      invalid.push({ id: pid, reason: "has variation discount" });
-      continue;
+
+    // =============================
+    // 4️⃣ Merge với assignedProducts cũ để giữ nguyên backup nếu vẫn còn gán
+    // =============================
+    const merged = [];
+
+    for (const pid of validIds) {
+      const old = oldMap.get(pid);
+      if (old) {
+        merged.push(old);
+      } else {
+        merged.push({
+          product: pid,
+          backupDiscountPrice: null,
+          backupDiscountPercent: null,
+          variationBackups: [],
+        });
+      }
     }
-    if (p.lockPromotionId && String(p.lockPromotionId) !== String(promo._id)) {
-      invalid.push({ id: pid, reason: "locked by another active promotion" });
-      continue;
+
+    promo.assignedProducts = merged;
+
+    await promo.save();
+
+    // =============================
+    // 5️⃣ Apply KM nếu CTKM đang active
+    // =============================
+    const current = computeStatus(promo);
+    if (current.currentlyActive) {
+      await applyPromotionImmediately(promo);
     }
+
+    res.json(computeStatus(promo));
+  } catch (err) {
+    console.error("assignProducts error:", err);
+    res.status(500).json({ message: err.message });
   }
-
-  // ✅ FIX: Silently filter invalid products thay vì reject toàn bộ
-  const validIds = uniqueIds.filter((pid) => !invalid.some((inv) => inv.id === pid) && !missing.includes(pid));
-
-  if (validIds.length === 0) {
-    return res.status(400).json({
-      message: "Không có sản phẩm nào hợp lệ để gán vào CTKM.",
-      missing,
-      invalid,
-    });
-  }
-
-  // Safe to assign (use only valid ids)
-  promo.assignedProducts = validIds.map((pid) => ({
-    product: pid,
-    backupDiscountPrice: null,
-    backupDiscountPercent: null,
-  }));
-
-  await promo.save();
-
-  // Apply immediately if active
-  const current = computeStatus(promo);
-  if (current.currentlyActive) {
-    await applyPromotionImmediately(promo);
-  }
-
-  // ✅ Return success khi có ít nhất 1 sản phẩm hợp lệ
-  res.json(computeStatus(promo));
 };
 
 exports.unassignProduct = async (req, res, next) => {
@@ -538,7 +594,7 @@ exports.unassignProduct = async (req, res, next) => {
     // Xóa khỏi assignedProducts
     const result = await Promotion.updateOne(
       { _id: id },
-      { $pull: { assignedProducts: { product: productId } } }
+      { $pull: { assignedProducts: { product: productId } } },
     );
 
     if (result.modifiedCount === 0) {
@@ -550,8 +606,8 @@ exports.unassignProduct = async (req, res, next) => {
     // ✅ Rollback product về giá gốc
     const product = await Product.findById(productId);
     if (product) {
-      product.discountPrice = 0;
-      product.discountPercent = 0;
+      product.discountPrice = null;
+      product.discountPercent = null;
       product.lockPromotionId = null;
       product.promotionApplied = null;
       await product.save();
@@ -585,108 +641,63 @@ exports.remove = async (req, res, next) => {
 // Lấy sản phẩm để áp dụng CTKM
 exports.getAvailableProducts = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit) || 10, 1);
     const skip = (page - 1) * limit;
+    const search = req.query.search?.trim();
 
-    const pipeline = [
-      {
-        $match: {
-          deleted: false,
-          visible: true,
-          $or: [
-            { quantity: { $gt: 0 } },
-            { stock: { $gt: 0 } },
-            { "variations.quantity": { $gt: 0 } },
-          ],
-        },
-      },
-      {
-        $match: {
-          $or: [
-            { discountPrice: { $exists: false } },
-            { discountPrice: 0 },
-            { discountPrice: null },
-          ],
-        },
-      },
-      {
-        // ✅ FIX: Kiểm tra variations, nhưng cho phép mảng rỗng
-        $addFields: {
-          hasDiscountVariation: {
-            $cond: {
-              if: { $eq: [{ $size: { $ifNull: ["$variations", []] } }, 0] },
-              then: false, // ✅ Nếu không có variations → hasDiscountVariation = false (hợp lệ)
-              else: {
-                $anyElementTrue: {
-                  $map: {
-                    input: "$variations",
-                    as: "v",
-                    in: {
-                      $and: [
-                        { $ne: ["$$v.discountPrice", null] },
-                        { $gt: ["$$v.discountPrice", 0] },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      {
-        $match: {
-          hasDiscountVariation: false,
-        },
-      },
-      { $skip: skip },
-      { $limit: limit },
-      {
-        $project: {
-          hasDiscountVariation: 0,
-        },
-      },
-    ];
-
-    const products = await Product.aggregate(pipeline);
-
-    // ✅ Compute status
-    const { computeProductStatus } = require("../../../../shared/productStatus");
-    const ELIGIBLE_STATUSES = [
-      "còn hàng",
-      "nhiều hàng",
-      "sản phẩm mới",
-      "sắp hết hàng",
-      "hàng rất nhiều",
-    ];
-    
-    const productsWithStatus = products.map((p) => ({
-      ...p,
-      status: computeProductStatus(p, { importing: p.importing }),
-    }));
-
-    const filtered = productsWithStatus.filter((p) =>
-      ELIGIBLE_STATUSES.includes(String(p.status || "").toLowerCase())
-    );
-
-    const totalCount = await Product.countDocuments({
+    // =========================
+    // 1️⃣ Base điều kiện bắt buộc
+    // =========================
+    const match = {
       deleted: false,
       visible: true,
+      quantity: { $gt: 0 },
+
+      // Không có biến thể
+      $expr: {
+        $eq: [{ $size: { $ifNull: ["$variations", []] } }, 0],
+      },
+
+      // Không có giá KM
       $or: [
-        { quantity: { $gt: 0 } },
-        { stock: { $gt: 0 } },
-        { "variations.quantity": { $gt: 0 } },
+        { discountPrice: { $exists: false } },
+        { discountPrice: null },
+        { discountPrice: 0 },
       ],
-    });
+
+      // Không bị lock CTKM khác
+      lockPromotionId: null,
+    };
+
+    // =========================
+    // 2️⃣ Nếu có search → thêm regex
+    // =========================
+    if (search) {
+      match.name = { $regex: search, $options: "i" };
+    }
+
+    // =========================
+    // 3️⃣ Query song song
+    // =========================
+    const [products, totalCount] = await Promise.all([
+      Product.find(match)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+
+      Product.countDocuments(match),
+    ]);
 
     res.json({
-      products: filtered,
-      totalCount: filtered.length,
+      products,
+      totalCount,
       currentPage: page,
-      totalPages: Math.ceil(filtered.length / limit),
+      totalPages: Math.ceil(totalCount / limit),
     });
   } catch (error) {
+    console.error("getAvailableProducts error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -696,7 +707,7 @@ exports.productsBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
     const promo = await Promotion.findOne({ slug }).populate(
-      "assignedProducts.product"
+      "assignedProducts.product",
     );
 
     if (!promo) {
@@ -706,7 +717,8 @@ exports.productsBySlug = async (req, res) => {
     // Chỉ lấy sản phẩm còn hiển thị
     const products = promo.assignedProducts
       .map((ap) => {
-        if (!ap.product || ap.product.deleted || !ap.product.visible) return null;
+        if (!ap.product || ap.product.deleted || !ap.product.visible)
+          return null;
         // Lấy soldCount từ chính DB (product.promotionApplied)
         let soldCount = 0;
         if (
@@ -719,7 +731,7 @@ exports.productsBySlug = async (req, res) => {
         return {
           ...ap.product.toObject(),
           soldCount,
-          promoStatus: promo.status || 'active',
+          promoStatus: promo.status || "active",
         };
       })
       .filter(Boolean);
@@ -736,7 +748,7 @@ exports.detailBySlug = async (req, res) => {
     const { slug } = req.params;
     const promo = await Promotion.findOne({ slug }).populate(
       "assignedProducts.product",
-      "name price discountPrice status sku stock quantity"
+      "name price discountPrice status sku stock quantity",
     );
     if (!promo) return res.status(404).json({ message: "Không tìm thấy CTKM" });
 

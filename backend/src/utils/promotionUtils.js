@@ -6,32 +6,22 @@ const Product = require("../app/models/product");
  * @param {Promotion} promo - document CTKM
  */
 async function rollbackPromotion(promo) {
-  if (!promo?.assignedProducts?.length) return;
+  const products = await Product.find({
+    lockPromotionId: promo._id,
+  });
 
-  for (const pp of promo.assignedProducts) {
-    const product = await Product.findById(pp.product);
-    if (!product) continue;
+  for (const product of products) {
+    product.discountPrice = null;
+    product.discountPercent = null;
+    product.lockPromotionId = null;
+    product.promotionApplied = null;
 
-    // Rollback variations
-    if (product.variations && pp.variationBackups) {
+    if (product.variations?.length) {
       for (const variation of product.variations) {
-        const backup = pp.variationBackups.find(
-          (vb) => String(vb.variationId) === String(variation._id)
-        );
-        if (backup) {
-          variation.discountPrice = backup.backupDiscountPrice;
-        }
+        variation.discountPrice = null;
       }
       product.markModified("variations");
     }
-
-    // Rollback product level
-    product.discountPrice = null;
-    product.discountPercent = null;
-    product.isOnPromotion = false;
-    product.promotionId = null;
-    product.lockPromotionId = null;
-    product.promotionApplied = null;
 
     await product.save();
   }
