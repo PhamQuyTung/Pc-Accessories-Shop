@@ -35,6 +35,7 @@ import { getDisplayName } from '~/pages/Product/ProductDetail/utils/productHelpe
 import { mergeSpecsFlat } from '~/utils/mergeSpecsFlat';
 
 import styles from './ProductDetail.module.scss';
+import RecentlyViewed from '~/pages/Home/RecentlyViewed/RecentlyViewed';
 const cx = classNames.bind(styles);
 
 // COLOR_MAP để map tên màu sang mã HEX
@@ -94,6 +95,43 @@ export default function ProductDetail() {
     const displayImages = activeVariation?.images?.length ? activeVariation.images : product?.images || [];
 
     useEffect(() => window.scrollTo(0, 0), [product?._id]);
+
+    // =========================
+    // 🧠 Save Recently Viewed
+    // =========================
+    useEffect(() => {
+        if (!product?._id) return;
+
+        const stored = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+
+        // Lấy default variant nếu có
+        const defaultVariant = product.variations?.find((v) => v._id === product.defaultVariantId);
+
+        const basePrice = defaultVariant?.price ?? product.price ?? 0;
+        const baseDiscountPrice = defaultVariant?.discountPrice ?? product.discountPrice ?? 0;
+
+        const item = {
+            _id: product._id,
+            name: product.name,
+            slug: product.slug,
+            thumbnail: defaultVariant?.thumbnail || product.images?.[0] || '',
+
+            price: basePrice,
+            discountPrice: baseDiscountPrice,
+            promotionApplied: product.promotionApplied || null,
+
+            status: product.status,
+            createdAt: Date.now(),
+        };
+
+        // Xóa nếu đã tồn tại
+        const filtered = stored.filter((p) => p._id !== product._id);
+
+        // Thêm lên đầu + giới hạn 10
+        const updated = [item, ...filtered].slice(0, 10);
+
+        localStorage.setItem('recentlyViewed', JSON.stringify(updated));
+    }, [product?._id]);
 
     if (error) return <div>{error}</div>;
     if (loading || !product) return <SpinnerLoading />;
@@ -165,7 +203,9 @@ function ProductDetailView({
             console.log('🛒 Adding to cart:', {
                 product_id: product._id,
                 variation_id: activeVariation ? activeVariation._id : null,
-                variationLabel: activeVariation ? activeVariation.attributes?.map(a => a.terms?.name || a.terms).join('-') : 'No variation',
+                variationLabel: activeVariation
+                    ? activeVariation.attributes?.map((a) => a.terms?.name || a.terms).join('-')
+                    : 'No variation',
                 quantity,
             });
 
@@ -178,12 +218,12 @@ function ProductDetailView({
                     quantity,
                 });
             }
-            
+
             // ✅ Fetch cart again để đảm bảo data mới nhất
             if (cart?.fetchCart) {
                 await cart.fetchCart?.();
             }
-            
+
             toast('Đã thêm vào giỏ hàng', 'success');
             setQuantity(1); // ✅ Reset quantity
         } catch (err) {
@@ -352,6 +392,8 @@ function ProductDetailView({
             </Row>
 
             <RelatedProductsSlider relatedProducts={relatedProducts} />
+
+            <RecentlyViewed />
         </div>
     );
 }

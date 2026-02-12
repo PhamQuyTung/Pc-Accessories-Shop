@@ -12,6 +12,7 @@ import Screen from './Screen/Screen';
 import Phone from './Phone/phone';
 import Promotions from './Promotions/PromotionsWrapper';
 import LatestPosts from './LatestPosts/LatestPosts';
+import RecentlyViewed from './RecentlyViewed/RecentlyViewed';
 
 const cx = classNames.bind(styles);
 
@@ -20,6 +21,7 @@ function Home() {
 
     const sections = [
         <ContainerFluid key="container" />,
+        <RecentlyViewed key="recentlyViewed" />,
         <Promotions key="promo" />,
         <PC key="pc" />,
         <LT key="lt" />,
