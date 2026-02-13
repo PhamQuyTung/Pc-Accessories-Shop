@@ -37,16 +37,17 @@
 
         .countdown {
             display: flex;
-            gap: 8px;
-            justify-content: center;
             align-items: center;
+            gap: 14px;
         }
 
         .timeBox {
-            background: #fff; // đỏ kiểu flash sale
+            position: relative; // 🔥 BẮT BUỘC
+
+            background: #fff;
             color: #000;
             border-radius: 6px;
-            padding: 4px 6px;
+            padding: 6px 8px;
             text-align: center;
             min-width: 40px;
 
@@ -67,15 +68,16 @@
             }
         }
 
-        // Nếu muốn style tách biệt cho chữ “Ngày/Giờ/Phút/Giây”
+        /* 🔥 DẤU 2 CHẤM */
         .timeBox:not(:last-child)::after {
             content: ':';
-            color: #ff3b30;
-            font-weight: bold;
             position: absolute;
-            right: -6px;
+            right: -10px;
             top: 50%;
             transform: translateY(-50%);
+            font-size: 18px;
+            font-weight: 900;
+            color: #fff; // nếu header nền xanh
         }
     }
 

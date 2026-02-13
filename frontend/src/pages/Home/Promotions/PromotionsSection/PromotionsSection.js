@@ -96,14 +96,17 @@ export default function PromotionsSection({
                                     <span className={cx('label')}>Ngày</span>
                                 </div>
                             )}
+                            
                             <div className={cx('timeBox')}>
                                 <span className={cx('number')}>{String(timeLeft.hours).padStart(2, '0')}</span>
                                 <span className={cx('label')}>Giờ</span>
                             </div>
+                            
                             <div className={cx('timeBox')}>
                                 <span className={cx('number')}>{String(timeLeft.minutes).padStart(2, '0')}</span>
                                 <span className={cx('label')}>Phút</span>
                             </div>
+                            
                             <div className={cx('timeBox')}>
                                 <span className={cx('number')}>{String(timeLeft.seconds).padStart(2, '0')}</span>
                                 <span className={cx('label')}>Giây</span>
@@ -113,7 +116,8 @@ export default function PromotionsSection({
                 </div>
 
                 {/* ✅ THÊM: Hiển thị ngày tháng theo style GearVN */}
-                {(promotionType === 'once' && endTime) || (promotionType === 'daily' && (dailyStartDate || dailyEndDate)) ? (
+                {(promotionType === 'once' && endTime) ||
+                (promotionType === 'daily' && (dailyStartDate || dailyEndDate)) ? (
                     <div
                         className={cx('date-range')}
                         style={{
