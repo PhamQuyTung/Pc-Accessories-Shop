@@ -63,7 +63,7 @@ module.exports = {
         .findByIdAndUpdate(
           req.user.id,
           { $set: data },
-          { new: true, runValidators: true }
+          { new: true, runValidators: true },
         )
         .select("-password");
 
@@ -91,7 +91,7 @@ module.exports = {
         .findByIdAndUpdate(
           req.user.id,
           { $set: { avatar: fileUrl } },
-          { new: true }
+          { new: true },
         )
         .select("-password");
 
@@ -101,7 +101,7 @@ module.exports = {
         try {
           const oldFilePath = path.join(
             process.cwd(),
-            oldAvatar.replace(`${req.protocol}://${req.get("host")}`, "")
+            oldAvatar.replace(`${req.protocol}://${req.get("host")}`, ""),
           );
           if (fs.existsSync(oldFilePath)) {
             fs.unlink(oldFilePath, () => {});
@@ -113,6 +113,69 @@ module.exports = {
     } catch (err) {
       console.error("uploadAvatar error", err);
       res.status(500).json({ message: "Upload avatar thất bại" });
+    }
+  },
+
+  // ========== ADD RECENTLY VIEWED ==========
+  addRecentlyViewed: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { productId } = req.body;
+
+      if (!productId) {
+        return res.status(400).json({ message: "Thiếu productId" });
+      }
+
+      const user = await accountModel.findById(userId);
+
+      if (!user) {
+        return res.status(404).json({ message: "Không tìm thấy user" });
+      }
+
+      // XÓA nếu đã tồn tại (tránh trùng)
+      user.recentlyViewed = user.recentlyViewed.filter(
+        (id) => id.toString() !== productId,
+      );
+
+      // Thêm vào đầu danh sách
+      user.recentlyViewed.unshift(productId);
+
+      // Giới hạn 12 sản phẩm gần nhất
+      user.recentlyViewed = user.recentlyViewed.slice(0, 12);
+
+      await user.save();
+
+      res.json({ message: "Đã thêm sản phẩm đã xem" });
+    } catch (err) {
+      console.error("addRecentlyViewed error", err);
+      res.status(500).json({ message: "Lỗi server" });
+    }
+  },
+
+  // ========== GET RECENTLY VIEWED ==========
+  getRecentlyViewed: async (req, res) => {
+    try {
+      const userId = req.user.id;
+
+      const user = await accountModel
+        .findById(userId)
+        .populate({
+          path: "recentlyViewed",
+          match: { visible: true },
+          populate: {
+            path: "variations.attributes.terms",
+          },
+        })
+        .select("recentlyViewed");
+
+      if (!user) {
+        return res.status(404).json({ message: "Không tìm thấy user" });
+      }
+
+      res.json(user.recentlyViewed || []);
+    } catch (err) {
+      console.error("getRecentlyViewed error", err);
+      res.status(500).json({ message: "Lỗi server" });
     }
   },
 };

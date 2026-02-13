@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import classNames from 'classnames/bind';
 import styles from './RecentlyViewed.module.scss';
 import { Link } from 'react-router-dom';
+import axiosClient from '../../../utils/axiosClient';
 
 const cx = classNames.bind(styles);
 
@@ -10,8 +11,16 @@ function RecentlyViewed() {
     const listRef = useRef(null);
 
     useEffect(() => {
-        const stored = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
-        setProducts(stored);
+        const fetchRecentlyViewed = async () => {
+            try {
+                const res = await axiosClient.get('/accounts/me/recently-viewed');
+                setProducts(res.data);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        fetchRecentlyViewed();
     }, []);
 
     if (!products.length) return null;
@@ -41,23 +50,27 @@ function RecentlyViewed() {
 
             <div ref={listRef} className={cx('list')}>
                 {products.map((item) => {
-                    const hasDiscount = item.discountPrice && item.discountPrice > 0 && item.discountPrice < item.price;
+                    const defaultVariant = item.variations?.find((v) => v._id === item.defaultVariantId);
 
-                    const finalPrice = hasDiscount
-                        ? item.discountPrice
-                        : item.promotionApplied?.percent
-                          ? Math.round(item.price * (1 - item.promotionApplied.percent / 100))
-                          : item.price;
+                    const basePrice = defaultVariant?.price || item.price;
+                    const discountPrice = defaultVariant?.discountPrice ?? item.discountPrice ?? 0;
 
-                    const discountPercent =
-                        finalPrice < item.price ? Math.round(((item.price - finalPrice) / item.price) * 100) : 0;
+                    const hasDiscount =
+                        typeof discountPrice === 'number' && discountPrice > 0 && discountPrice < basePrice;
+
+                    const finalPrice = hasDiscount ? discountPrice : basePrice;
+
+                    const discountPercent = hasDiscount ? Math.round(((basePrice - finalPrice) / basePrice) * 100) : 0;
+
+                    const image =
+                        defaultVariant?.thumbnail || defaultVariant?.images?.[0] || item.images?.[0] || '/no-image.png';
 
                     return (
                         <Link key={item._id} to={`/products/${item.slug}`} className={cx('card')}>
                             {discountPercent > 0 && <div className={cx('discountBadge')}>-{discountPercent}%</div>}
 
                             <div className={cx('image')}>
-                                <img src={item.thumbnail} alt={item.name} />
+                                <img src={image} alt={item.name} />
                             </div>
 
                             <div className={cx('info')}>
@@ -66,9 +79,7 @@ function RecentlyViewed() {
                                 <div className={cx('price')}>
                                     <span className={cx('new')}>{finalPrice?.toLocaleString()}đ</span>
 
-                                    {finalPrice < item.price && (
-                                        <span className={cx('old')}>{item.price?.toLocaleString()}đ</span>
-                                    )}
+                                    {hasDiscount && <span className={cx('old')}>{basePrice?.toLocaleString()}đ</span>}
                                 </div>
                             </div>
                         </Link>

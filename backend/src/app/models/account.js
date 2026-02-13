@@ -28,8 +28,15 @@ const userSchema = new mongoose.Schema(
     avatar: { type: String, default: "" },
 
     role: { type: String, enum: ["admin", "user"], default: "user" },
+
+    recentlyViewed: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+      },
+    ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 userSchema.pre("save", async function (next) {

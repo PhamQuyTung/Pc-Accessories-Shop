@@ -97,40 +97,25 @@ export default function ProductDetail() {
     useEffect(() => window.scrollTo(0, 0), [product?._id]);
 
     // =========================
-    // 🧠 Save Recently Viewed
+    // 🧠 Save Recently Viewed (DB Version)
     // =========================
     useEffect(() => {
-        if (!product?._id) return;
+        const saveRecentlyViewed = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return; // chỉ lưu khi đã đăng nhập
 
-        const stored = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+                if (!product?._id) return;
 
-        // Lấy default variant nếu có
-        const defaultVariant = product.variations?.find((v) => v._id === product.defaultVariantId);
-
-        const basePrice = defaultVariant?.price ?? product.price ?? 0;
-        const baseDiscountPrice = defaultVariant?.discountPrice ?? product.discountPrice ?? 0;
-
-        const item = {
-            _id: product._id,
-            name: product.name,
-            slug: product.slug,
-            thumbnail: defaultVariant?.thumbnail || product.images?.[0] || '',
-
-            price: basePrice,
-            discountPrice: baseDiscountPrice,
-            promotionApplied: product.promotionApplied || null,
-
-            status: product.status,
-            createdAt: Date.now(),
+                await axiosClient.post('/accounts/me/recently-viewed', {
+                    productId: product._id,
+                });
+            } catch (err) {
+                console.error('Recently viewed error:', err);
+            }
         };
 
-        // Xóa nếu đã tồn tại
-        const filtered = stored.filter((p) => p._id !== product._id);
-
-        // Thêm lên đầu + giới hạn 10
-        const updated = [item, ...filtered].slice(0, 10);
-
-        localStorage.setItem('recentlyViewed', JSON.stringify(updated));
+        saveRecentlyViewed();
     }, [product?._id]);
 
     if (error) return <div>{error}</div>;
