@@ -5,6 +5,7 @@ const Review = require("../models/review");
 const mongoose = require("mongoose");
 const { computeProductStatus } = require("../../../../shared/productStatus");
 const { mergeSpecs } = require("../../helpers/mergeSpecs");
+const { promotionLookupPipeline } = require("../../helpers/promotionPipeline");
 
 // 🔧 Hàm sinh tổ hợp biến thể từ attributes
 const generateVariations = (attributes, baseSku = "SP") => {
@@ -96,6 +97,9 @@ class ProductController {
       // -----------------------------
       const pipeline = [
         { $match: match },
+
+        // ---- Promotion Info (🔥 CỐT LÕI) ----
+        ...promotionLookupPipeline(),
 
         // ---- Category ----
         {
@@ -395,6 +399,9 @@ class ProductController {
             visible: true,
           },
         },
+
+        // ================= PROMOTION (🔥 CỐT LÕI) =================
+        ...promotionLookupPipeline(),
 
         /* ================= CATEGORY (QUAN TRỌNG NHẤT) ================= */
         {
@@ -729,6 +736,9 @@ class ProductController {
           },
         },
 
+        // ================= PROMOTION (🔥 CỐT LÕI) =================
+        ...promotionLookupPipeline(),
+
         // 🔥 CATEGORY (BẮT BUỘC)
         {
           $lookup: {
@@ -859,37 +869,35 @@ class ProductController {
   // Trang edit sản phẩm
   async editProduct(req, res) {
     try {
-        const product = await Product.findById(req.params.id)
-            .populate("category", "name slug specs") // 🔥 BẮT BUỘC populate category.specs
-            .populate("brand", "name slug")
-            .lean();
+      const product = await Product.findById(req.params.id)
+        .populate("category", "name slug specs") // 🔥 BẮT BUỘC populate category.specs
+        .populate("brand", "name slug")
+        .lean();
 
-        if (!product) {
-            return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
-        }
+      if (!product) {
+        return res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+      }
 
-        // 🔥 FIX: Lấy specs mảng gốc từ product
-        // KHÔNG dùng mergeSpecs, vì nó sẽ filter theo category template
-        const productSpecs = Array.isArray(product.specs) 
-            ? product.specs 
-            : [];
+      // 🔥 FIX: Lấy specs mảng gốc từ product
+      // KHÔNG dùng mergeSpecs, vì nó sẽ filter theo category template
+      const productSpecs = Array.isArray(product.specs) ? product.specs : [];
 
-        console.log('✅ Product specs (original):', productSpecs);
+      console.log("✅ Product specs (original):", productSpecs);
 
-        const defaultVariant = product.variations?.length
-            ? product.variations[0]
-            : null;
+      const defaultVariant = product.variations?.length
+        ? product.variations[0]
+        : null;
 
-        res.json({
-            ...product,
-            specs: productSpecs, // 👈 Trả về specs gốc, không merge
-            categorySpecs: product.category?.specs || [], // 👈 Thêm dòng này để frontend biết category template
-            defaultVariant,
-            status: computeProductStatus(product, { importing: product.importing }),
-        });
+      res.json({
+        ...product,
+        specs: productSpecs, // 👈 Trả về specs gốc, không merge
+        categorySpecs: product.category?.specs || [], // 👈 Thêm dòng này để frontend biết category template
+        defaultVariant,
+        status: computeProductStatus(product, { importing: product.importing }),
+      });
     } catch (err) {
-        console.error("❌ Lỗi editProduct:", err);
-        res.status(500).json({ error: "Lỗi khi lấy thông tin sản phẩm" });
+      console.error("❌ Lỗi editProduct:", err);
+      res.status(500).json({ error: "Lỗi khi lấy thông tin sản phẩm" });
     }
   }
 
@@ -1162,7 +1170,7 @@ class ProductController {
     }
   }
 
-  // Tìm kiếm sản phẩm (Find + Populate)
+  // Tìm kiếm sản phẩm (Aggregate chuẩn)
   async searchProducts(req, res) {
     const { query, page = 1, limit = 10 } = req.query;
 
@@ -1175,110 +1183,93 @@ class ProductController {
       const limitNum = parseInt(limit);
       const skip = (pageNum - 1) * limitNum;
 
-      // --- 1) Tìm sản phẩm + populate đầy đủ ---
-      const products = await Product.find({
-        name: { $regex: query.trim(), $options: "i" },
-        deleted: { $ne: true },
-        visible: true,
-      })
-        .populate({
-          path: "category",
-          select: "name slug specs", // 🔥 BẮT BUỘC
-        })
-        .populate({
-          path: "variations",
-          populate: [
-            { path: "attributes.attrId" },
-            { path: "attributes.terms" },
-          ],
-        })
-        .populate({
-          path: "defaultVariantId",
-          populate: [
-            { path: "attributes.attrId" },
-            { path: "attributes.terms" },
-          ],
-        })
-        .lean()
-        .skip(skip)
-        .limit(limitNum);
-
-      // --- 2) Gắn defaultVariant đúng ---
-      const normalized = products.map((p) => {
-        const variations = Array.isArray(p.variations)
-          ? p.variations.filter(
-              (v) =>
-                v &&
-                typeof v === "object" &&
-                (v.price != null || v.discountPrice != null),
-            )
-          : [];
-
-        const defId = p.defaultVariantId?._id?.toString();
-
-        let defaultVariant = defId
-          ? variations.find((v) => v._id?.toString() === defId)
-          : null;
-
-        defaultVariant = defaultVariant || variations[0] || null;
-
-        if (!p.defaultVariant) {
-          console.warn("⚠️ Product has no valid variation:", p._id);
-        }
-
-        return {
-          ...p,
-          variations,
-          defaultVariant,
-        };
-      });
-
-      // --- 3) Lấy reviews ---
-      const productIds = normalized.map((p) => p._id);
-
-      const reviews = await Review.aggregate([
+      const pipeline = [
         {
-          $match: { product: { $in: productIds } },
-        },
-        {
-          $group: {
-            _id: "$product",
-            reviewCount: { $sum: 1 },
-            averageRating: { $avg: "$rating" },
+          $match: {
+            name: { $regex: query.trim(), $options: "i" },
+            deleted: { $ne: true },
+            visible: true,
           },
         },
-      ]);
 
-      const reviewMap = {};
-      reviews.forEach((r) => {
-        reviewMap[r._id.toString()] = {
-          averageRating: r.averageRating,
-          reviewCount: r.reviewCount,
-        };
-      });
+        // 🔥 PROMOTION
+        ...promotionLookupPipeline(),
 
-      // --- 4) Gắn rating + finalPrice ---
-      const finalData = normalized.map((p) => {
-        const rv = reviewMap[p._id.toString()] || {};
-        const dv = p.defaultVariant;
+        // 🔥 CATEGORY
+        {
+          $lookup: {
+            from: "categories",
+            let: { categoryId: "$category" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ["$_id", "$$categoryId"] },
+                },
+              },
+              {
+                $project: {
+                  name: 1,
+                  slug: 1,
+                  specs: 1,
+                },
+              },
+            ],
+            as: "category",
+          },
+        },
+        { $unwind: "$category" },
 
-        const toNum = (v) => (typeof v === "number" && !isNaN(v) ? v : null);
+        // 🔥 BRAND
+        {
+          $lookup: {
+            from: "brands",
+            localField: "brand",
+            foreignField: "_id",
+            as: "brand",
+          },
+        },
+        { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
 
-        const finalPrice =
-          toNum(dv?.discountPrice) && dv.discountPrice > 0
-            ? dv.discountPrice
-            : (toNum(dv?.price) ?? toNum(p.price) ?? 0);
+        // 🔥 REVIEWS
+        {
+          $lookup: {
+            from: "reviews",
+            localField: "_id",
+            foreignField: "product",
+            as: "reviews",
+          },
+        },
+        {
+          $addFields: {
+            averageRating: {
+              $cond: [
+                { $gt: [{ $size: "$reviews" }, 0] },
+                { $avg: "$reviews.rating" },
+                0,
+              ],
+            },
+            reviewCount: { $size: "$reviews" },
+          },
+        },
 
-        return {
-          ...p,
-          specs: mergeSpecs(p, dv),
-          finalPrice,
-          averageRating: rv.averageRating || 0,
-          reviewCount: rv.reviewCount || 0,
-        };
-      });
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limitNum },
+      ];
 
-      res.json(finalData);
+      const products = await Product.aggregate(pipeline);
+
+      // 🔥 Gắn status động
+      const productsWithStatus = products.map((p) => ({
+        ...p,
+        status: computeProductStatus({
+          importing: p.importing,
+          quantity: p.quantity ?? 0,
+          variations: p.variations ?? [],
+        }),
+      }));
+
+      res.json(productsWithStatus);
     } catch (err) {
       console.error("❌ Lỗi khi tìm kiếm sản phẩm:", err);
       res.status(500).json({ error: "Lỗi server" });
@@ -1338,6 +1329,10 @@ class ProductController {
             visible: true,
           },
         },
+
+        // ================= PROMOTION (🔥 CỐT LÕI) =================
+        ...promotionLookupPipeline(),
+
         {
           $lookup: {
             from: "brands",

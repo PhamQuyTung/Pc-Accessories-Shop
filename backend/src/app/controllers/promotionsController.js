@@ -2,6 +2,7 @@ const Promotion = require("../models/promotion");
 const Product = require("../models/product");
 const { isActiveNow } = require("../../utils/promotionTime");
 const { rollbackPromotion } = require("../../utils/promotionUtils");
+const { computeProductStatus } = require("../../../../shared/productStatus"); 
 const Review = require("../models/review");
 const slugify = require("slugify");
 
@@ -713,51 +714,102 @@ exports.productsBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
 
-    const promo = await Promotion.findOne({ slug }).populate(
-      "assignedProducts.product",
-    );
+    const promo = await Promotion.findOne({ slug }).populate({
+      path: "assignedProducts.product",
+      populate: [{ path: "category" }, { path: "brand" }],
+    });
 
     if (!promo) {
       return res.status(404).json({ message: "Không tìm thấy CTKM" });
     }
 
-    // ✅ Tính trạng thái hiện tại
     const promoWithStatus = computeStatus(promo);
 
-    // Ẩn nếu đã kết thúc và bật hideWhenEnded
     if (promoWithStatus.status === "ended" && promo.hideWhenEnded) {
       return res.status(404).json({ message: "CTKM đã kết thúc" });
     }
 
-    // ✅ Chỉ lấy sản phẩm còn hiển thị
-    const products = promo.assignedProducts
-      .map((ap) => {
-        if (!ap.product || ap.product.deleted || !ap.product.visible)
-          return null;
+    // =============================
+    // 1️⃣ Lọc product hợp lệ
+    // =============================
+    const rawProducts = promo.assignedProducts
+      .map((ap) => ap.product)
+      .filter((p) => p && !p.deleted && p.visible);
 
-        let soldCount = 0;
+    if (rawProducts.length === 0) {
+      return res.json({
+        promotion: promoWithStatus,
+        products: [],
+      });
+    }
 
-        if (
-          ap.product.promotionApplied &&
-          ap.product.promotionApplied.promoId &&
-          String(ap.product.promotionApplied.promoId) === String(promo._id)
-        ) {
-          soldCount = ap.product.promotionApplied.soldCount || 0;
-        }
+    // =============================
+    // 2️⃣ Lấy review
+    // =============================
+    const productIds = rawProducts.map((p) => p._id);
 
-        return {
-          ...ap.product.toObject(),
-          soldCount,
-        };
-      })
-      .filter(Boolean);
+    const reviews = await Review.find({
+      product: { $in: productIds },
+    }).lean();
 
-    // 🎯 TRẢ VỀ CẢ PROMOTION + PRODUCTS
+    const reviewMap = {};
+
+    reviews.forEach((r) => {
+      const pid = r.product.toString();
+      if (!reviewMap[pid]) reviewMap[pid] = [];
+      reviewMap[pid].push(r);
+    });
+
+    // =============================
+    // 3️⃣ Build product final
+    // =============================
+    const products = rawProducts.map((product) => {
+      const pid = product._id.toString();
+      const productReviews = reviewMap[pid] || [];
+
+      const reviewCount = productReviews.length;
+      const averageRating = reviewCount
+        ? productReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+        : 0;
+
+      let soldCount = 0;
+
+      if (
+        product.promotionApplied &&
+        product.promotionApplied.promoId &&
+        String(product.promotionApplied.promoId) === String(promo._id)
+      ) {
+        soldCount = product.promotionApplied.soldCount || 0;
+      }
+
+      return {
+        ...product.toObject(),
+
+        status: computeProductStatus(product),
+
+        averageRating: Number((Math.round(averageRating * 10) / 10).toFixed(1)),
+
+        reviewCount,
+
+        // 🔥 Promotion frame
+        promotionInfo: {
+          promotionId: promo._id,
+          promotionCardImg: promo.promotionCardImg,
+          headerBgColor: promo.headerBgColor,
+          headerTextColor: promo.headerTextColor,
+          percent: promo.percent,
+        },
+
+        soldCount,
+      };
+    });
+
     res.json({
       promotion: promoWithStatus,
       products,
     });
   } catch (err) {
+    console.error("productsBySlug error:", err);
     res.status(500).json({ message: err.message });
   }
 };
