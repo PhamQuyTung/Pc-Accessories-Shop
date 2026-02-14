@@ -28,6 +28,7 @@ const PromotionSchema = new Schema(
     productBannerImg: { type: String },
     bannerImg: { type: String },
     promotionCardImg: { type: String },
+    bigBannerImg: { type: String },
 
     // ✅ THÊM: Lưu màu header
     headerBgColor: { type: String, default: "#003bb8" },

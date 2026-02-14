@@ -334,6 +334,7 @@ exports.create = async (req, res, next) => {
       productBannerImg: req.body.productBannerImg || "",
       bannerImg: req.body.bannerImg || "",
       promotionCardImg: req.body.promotionCardImg || "",
+      bigBannerImg: req.body.bigBannerImg || "",
       headerBgColor: req.body.headerBgColor || "#003bb8", // ✅ THÊM
       headerTextColor: req.body.headerTextColor || "#ffee12", // ✅ THÊM
       percent: req.body.percent,
@@ -383,6 +384,7 @@ exports.update = async (req, res, next) => {
     if (req.body.bannerImg) promo.bannerImg = req.body.bannerImg;
     if (req.body.promotionCardImg)
       promo.promotionCardImg = req.body.promotionCardImg;
+    if (req.body.bigBannerImg) promo.bigBannerImg = req.body.bigBannerImg;
     if (req.body.headerBgColor) promo.headerBgColor = req.body.headerBgColor; // ✅ THÊM
     if (req.body.headerTextColor)
       promo.headerTextColor = req.body.headerTextColor; // ✅ THÊM
@@ -710,6 +712,7 @@ exports.getAvailableProducts = async (req, res) => {
 exports.productsBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
+
     const promo = await Promotion.findOne({ slug }).populate(
       "assignedProducts.product",
     );
@@ -718,13 +721,22 @@ exports.productsBySlug = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy CTKM" });
     }
 
-    // Chỉ lấy sản phẩm còn hiển thị
+    // ✅ Tính trạng thái hiện tại
+    const promoWithStatus = computeStatus(promo);
+
+    // Ẩn nếu đã kết thúc và bật hideWhenEnded
+    if (promoWithStatus.status === "ended" && promo.hideWhenEnded) {
+      return res.status(404).json({ message: "CTKM đã kết thúc" });
+    }
+
+    // ✅ Chỉ lấy sản phẩm còn hiển thị
     const products = promo.assignedProducts
       .map((ap) => {
         if (!ap.product || ap.product.deleted || !ap.product.visible)
           return null;
-        // Lấy soldCount từ chính DB (product.promotionApplied)
+
         let soldCount = 0;
+
         if (
           ap.product.promotionApplied &&
           ap.product.promotionApplied.promoId &&
@@ -732,15 +744,19 @@ exports.productsBySlug = async (req, res) => {
         ) {
           soldCount = ap.product.promotionApplied.soldCount || 0;
         }
+
         return {
           ...ap.product.toObject(),
           soldCount,
-          promoStatus: promo.status || "active",
         };
       })
       .filter(Boolean);
 
-    res.json(products);
+    // 🎯 TRẢ VỀ CẢ PROMOTION + PRODUCTS
+    res.json({
+      promotion: promoWithStatus,
+      products,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

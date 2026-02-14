@@ -25,6 +25,8 @@ export default function PromotionsCollectionPage() {
 
     const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
+    const [promotion, setPromotion] = useState(null);
+
     // 👉 Format tiền
     function formatCurrency(number) {
         return number.toLocaleString('vi-VN', {
@@ -77,20 +79,26 @@ export default function PromotionsCollectionPage() {
     // 👉 Fetch products theo promotion slug
     useEffect(() => {
         setCurrentPage(1);
+        setLoading(true);
+
         const fetchProductsByPromotion = async () => {
             try {
                 const res = await axiosClient.get(`/promotions/slug/${slug}/products`);
-                console.log('🔍 API Response:', res.data); // ✅ THÊM dòng này
-                console.log('🔍 Response length:', res.data.length); // ✅ THÊM dòng này
-                setProducts(res.data);
-                setFilteredProducts(res.data);
-                setFilters(extractFilters(res.data));
+                setProducts(res.data.products || res.data);
+                setFilteredProducts(res.data.products || res.data);
+                setFilters(extractFilters(res.data.products || res.data));
+
+                // ✅ LẤY promotion info
+                if (res.data.promotion) {
+                    setPromotion(res.data.promotion);
+                }
             } catch (err) {
                 console.error('Lỗi lấy sản phẩm theo promotion:', err);
             } finally {
                 setLoading(false);
             }
         };
+
         fetchProductsByPromotion();
     }, [slug]);
 
@@ -130,7 +138,10 @@ export default function PromotionsCollectionPage() {
 
             <div className={cx('collections-page')}>
                 <div className={cx('banner')}>
-                    <img src="https://via.placeholder.com/1320x300?text=Promotion+Banner" alt="Promotion Banner" />
+                    <img
+                        src={promotion?.bigBannerImg || 'https://via.placeholder.com/1320x300?text=Promotion+Banner'}
+                        alt="Promotion Banner"
+                    />
                 </div>
 
                 <div className={cx('content')}>

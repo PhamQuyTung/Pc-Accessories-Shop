@@ -41,6 +41,7 @@ export default function PromotionForm() {
         bannerImg: '',
         promotionCardImg: '',
         productBannerImg: '',
+        bigBannerImg: '',
         headerBgColor: '#003bb8', // ✅ THÊM: màu nền header (mặc định xanh)
         headerTextColor: '#ffee12', // ✅ THÊM: màu chữ tiêu đề (mặc định vàng)
     });
@@ -83,6 +84,7 @@ export default function PromotionForm() {
                         bannerImg: promo.bannerImg || '',
                         promotionCardImg: promo.promotionCardImg || '',
                         productBannerImg: promo.productBannerImg || '',
+                        bigBannerImg: promo.bigBannerImg || '',
                         headerBgColor: promo.headerBgColor || '#003bb8',
                         headerTextColor: promo.headerTextColor || '#ffee12',
                     }));
@@ -159,6 +161,41 @@ export default function PromotionForm() {
                 <div className={cx('row')}>
                     <label>Tên chương trình</label>
                     <input name="name" value={form.name} onChange={onChange} placeholder="Ví dụ: Back To School 2025" />
+                </div>
+
+                {/* Big Banner */}
+                <div className={cx('row')}>
+                    <label>Ảnh Big Banner (1320x300)</label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+
+                            const formData = new FormData();
+                            formData.append('file', file);
+
+                            try {
+                                const res = await axiosClient.post('/upload', formData, {
+                                    headers: { 'Content-Type': 'multipart/form-data' },
+                                });
+
+                                const url = res.data.url;
+                                setForm((prev) => ({ ...prev, bigBannerImg: url }));
+                            } catch (err) {
+                                console.error('Upload Big Banner error', err);
+                            }
+                        }}
+                    />
+
+                    {form.bigBannerImg && (
+                        <img
+                            src={form.bigBannerImg}
+                            alt="preview-big-banner"
+                            style={{ width: '100%', maxWidth: 500, marginTop: 8, borderRadius: 8 }}
+                        />
+                    )}
                 </div>
 
                 {/* Ảnh background sản phẩm */}
