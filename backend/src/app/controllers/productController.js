@@ -37,6 +37,11 @@ const generateVariations = (attributes, baseSku = "SP") => {
   }));
 };
 
+// Hàm format tiền tệ
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat("vi-VN").format(value) + "đ";
+};
+
 class ProductController {
   // Lấy tất cả sản phẩm
   async getAll(req, res) {
@@ -48,6 +53,7 @@ class ProductController {
         categoryId,
         visible,
         sort,
+        price, // 🔥 NEW
         page = 1,
         limit = 10,
       } = req.query;
@@ -56,14 +62,13 @@ class ProductController {
       const limitNum = Number(limit);
       const skip = (pageNum - 1) * limitNum;
 
-      // -----------------------------
-      // 1. Build match
-      // -----------------------------
+      // ================================
+      // 1️⃣ BUILD MATCH
+      // ================================
       const match = { deleted: { $ne: true } };
 
       const { productType } = req.query;
 
-      // 🔥 Filter theo loại sản phẩm
       if (productType === "variable") {
         match.$expr = { $gt: [{ $size: "$variations" }, 0] };
       }
@@ -72,7 +77,9 @@ class ProductController {
         match.$expr = { $eq: [{ $size: "$variations" }, 0] };
       }
 
-      if (search) match.name = { $regex: search, $options: "i" };
+      if (search) {
+        match.name = { $regex: search, $options: "i" };
+      }
 
       if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
         match.category = new mongoose.Types.ObjectId(categoryId);
@@ -85,47 +92,30 @@ class ProductController {
         match.visible = visible === "true";
       }
 
-      if (isAdmin !== "true") match.visible = true;
+      if (isAdmin !== "true") {
+        match.visible = true;
+      }
 
-      // -----------------------------
-      // 2. Count total
-      // -----------------------------
-      const totalCount = await Product.countDocuments(match);
+      if (req.query.brand) {
+        match["brand.slug"] = req.query.brand;
+      }
 
-      // -----------------------------
-      // 3. Pipeline
-      // -----------------------------
-      const pipeline = [
+      if (req.query.ram) {
+        match.ram = req.query.ram;
+      }
+
+      if (req.query.cpu) {
+        match.cpu = req.query.cpu;
+      }
+
+      // ================================
+      // 2️⃣ BASE PIPELINE
+      // ================================
+      const basePipeline = [
         { $match: match },
 
-        // ---- Promotion Info (🔥 CỐT LÕI) ----
         ...promotionLookupPipeline(),
 
-        // ---- Category ----
-        {
-          $lookup: {
-            from: "categories",
-            let: { categoryId: "$category" },
-            pipeline: [
-              {
-                $match: {
-                  $expr: { $eq: ["$_id", "$$categoryId"] },
-                },
-              },
-              {
-                $project: {
-                  name: 1,
-                  slug: 1,
-                  specs: 1, // 🔥 BẮT BUỘC
-                },
-              },
-            ],
-            as: "category",
-          },
-        },
-        { $unwind: "$category" },
-
-        // ---- Brand ----
         {
           $lookup: {
             from: "brands",
@@ -136,7 +126,6 @@ class ProductController {
         },
         { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
 
-        // ---- Reviews ----
         {
           $lookup: {
             from: "reviews",
@@ -146,7 +135,6 @@ class ProductController {
           },
         },
 
-        // ---- Final Price (simple product) ----
         {
           $addFields: {
             averageRating: {
@@ -167,9 +155,7 @@ class ProductController {
           },
         },
 
-        // ================================
-        // 🔥 TÍNH GIÁ BIẾN THỂ TRONG MONGO
-        // ================================
+        // 🔥 Tính giá biến thể
         {
           $addFields: {
             variantPrices: {
@@ -208,176 +194,120 @@ class ProductController {
       ];
 
       // ================================
-      // 🔥 SORT QUANTITY (DEFAULT VARIANT)
+      // 🔥 2.5️⃣ TÍNH PRICE RANGE ĐỘNG THEO CATEGORY
       // ================================
-      if (sort && sort.startsWith("quantity")) {
-        pipeline.push({
-          $addFields: {
-            sortQuantity: {
-              $cond: [
-                {
-                  $and: [
-                    { $isArray: "$variations" },
-                    { $gt: [{ $size: "$variations" }, 0] },
-                    { $ne: ["$defaultVariantId", null] },
-                  ],
-                },
-                {
-                  $let: {
-                    vars: {
-                      defaultVar: {
-                        $first: {
-                          $filter: {
-                            input: "$variations",
-                            as: "v",
-                            cond: { $eq: ["$$v._id", "$defaultVariantId"] },
-                          },
-                        },
-                      },
-                    },
-                    in: { $ifNull: ["$$defaultVar.quantity", 0] },
-                  },
-                },
-                { $ifNull: ["$quantity", 0] }, // simple product
-              ],
+
+      // 🔥 Lấy min/max price từ tập kết quả đã filter (chưa áp dụng price filter)
+      const priceStatsPipeline = [...basePipeline];
+
+      priceStatsPipeline.push({
+        $group: {
+          _id: null,
+          min: { $min: "$minPrice" },
+          max: { $max: "$maxPrice" },
+        },
+      });
+
+      const priceStatsResult = await Product.aggregate(priceStatsPipeline);
+
+      const minPriceValue = priceStatsResult[0]?.min || 0;
+      const maxPriceValue = priceStatsResult[0]?.max || 0;
+
+      let dynamicPriceRanges = [];
+
+      if (maxPriceValue > 0) {
+        const rangeCount = 4;
+        const step = Math.ceil((maxPriceValue - minPriceValue) / rangeCount);
+
+        for (let i = 0; i < rangeCount; i++) {
+          const min = minPriceValue + step * i;
+          const max =
+            i === rangeCount - 1 ? null : minPriceValue + step * (i + 1);
+
+          dynamicPriceRanges.push({
+            min,
+            max,
+            label:
+              max === null
+                ? `Trên ${formatCurrency(min)}`
+                : `${formatCurrency(min)} - ${formatCurrency(max)}`,
+          });
+        }
+      }
+
+      console.log("MATCH:", match);
+      console.log("MIN MAX:", minPriceValue, maxPriceValue);
+      const test = await Product.find(match);
+      console.log("TEST COUNT:", test.length);
+
+      // ================================
+      // 3️⃣ FILTER PRICE (MULTI RANGE)
+      // ================================
+      if (price) {
+        const [min, max] = price.split("-");
+
+        basePipeline.push({
+          $match: {
+            minPrice: {
+              $gte: Number(min),
+              $lte: Number(max),
             },
           },
         });
       }
 
-      // -----------------------------
-      // 4. Sort + Pagination
-      // -----------------------------
-      if (sort && sort.startsWith("price")) {
-        pipeline.push({
-          $addFields: {
-            sortPrice: "$minPrice", // 🔥 SORT THEO MIN PRICE
-          },
-        });
-      }
+      // ================================
+      // 4️⃣ COUNT (🔥 ĐÚNG 100%)
+      // ================================
+      const countPipeline = [...basePipeline, { $count: "total" }];
+      const countResult = await Product.aggregate(countPipeline);
+      const totalCount = countResult[0]?.total || 0;
 
+      // ================================
+      // 5️⃣ SORT
+      // ================================
       if (sort) {
         const [field, order] = sort.split("_");
         const sortValue = order === "asc" ? 1 : -1;
         let sortField = field;
 
-        if (field === "price") sortField = "sortPrice";
-        if (field === "quantity") sortField = "sortQuantity";
+        if (field === "price") sortField = "minPrice";
 
-        pipeline.push({ $sort: { [sortField]: sortValue } });
+        basePipeline.push({ $sort: { [sortField]: sortValue } });
       } else {
-        pipeline.push({ $sort: { createdAt: -1 } });
+        basePipeline.push({ $sort: { createdAt: -1 } });
       }
 
-      pipeline.push({ $skip: skip }, { $limit: limitNum });
+      // ================================
+      // 6️⃣ PAGINATION
+      // ================================
+      basePipeline.push({ $skip: skip }, { $limit: limitNum });
 
-      // -----------------------------
-      // 5. Execute
-      // -----------------------------
-      const products = await Product.aggregate(pipeline).collation({
+      // ================================
+      // 7️⃣ EXECUTE
+      // ================================
+      const products = await Product.aggregate(basePipeline).collation({
         locale: "vi",
         strength: 1,
       });
 
-      // -----------------------------
-      // 5.5 Self-heal defaultVariantId
-      // -----------------------------
-      const bulkUpdates = [];
+      // ================================
+      // 8️⃣ CLEAN RESPONSE
+      // ================================
+      const cleanedProducts = products.map((p) => ({
+        ...p,
+        _id: p._id?.toString(),
+        minPrice: p.minPrice,
+        maxPrice: p.maxPrice,
+      }));
 
-      for (const p of products) {
-        if (
-          p.defaultVariantId &&
-          Array.isArray(p.variations) &&
-          p.variations.length > 0
-        ) {
-          const exists = p.variations.some(
-            (v) => String(v._id) === String(p.defaultVariantId),
-          );
-
-          if (!exists) {
-            bulkUpdates.push({
-              updateOne: {
-                filter: { _id: p._id },
-                update: { defaultVariantId: p.variations[0]._id },
-              },
-            });
-
-            // 🔥 cập nhật luôn object đang dùng để trả response
-            p.defaultVariantId = p.variations[0]._id;
-          }
-        }
-
-        // Trường hợp không còn variant nào
-        if (
-          p.defaultVariantId &&
-          (!p.variations || p.variations.length === 0)
-        ) {
-          bulkUpdates.push({
-            updateOne: {
-              filter: { _id: p._id },
-              update: { defaultVariantId: null },
-            },
-          });
-
-          p.defaultVariantId = null;
-        }
-      }
-
-      if (bulkUpdates.length > 0) {
-        await Product.bulkWrite(bulkUpdates);
-      }
-
-      // -----------------------------
-      // 6. Clean + Compute status
-      // -----------------------------
-      const cleanedProducts = products.map((p) => {
-        const convertedVariations = (p.variations || []).map((v) => ({
-          ...v,
-          _id: v._id?.toString(),
-          attributes: v.attributes || [],
-        }));
-
-        // ✅ tìm biến thể mặc định
-        const defaultVar =
-          convertedVariations.find(
-            (v) => v._id === p.defaultVariantId?.toString(),
-          ) || null;
-
-        // ✅ quantity dùng để hiển thị
-        const displayQuantity =
-          defaultVar?.quantity ??
-          p.quantity ?? // fallback cho simple product
-          0;
-
-        const status = computeProductStatus({
-          importing: p.importing,
-          quantity: displayQuantity,
-          variations: defaultVar ? [defaultVar] : [],
-        });
-
-        return {
-          ...p,
-          _id: p._id?.toString(),
-          defaultVariantId: p.defaultVariantId?.toString(),
-          variations: convertedVariations,
-
-          // 🔥 QUAN TRỌNG
-          displayQuantity,
-
-          status,
-          minPrice: p.minPrice,
-          maxPrice: p.maxPrice,
-        };
-      });
-
-      // -----------------------------
-      // 7. Return
-      // -----------------------------
       res.status(200).json({
         products: cleanedProducts,
         totalCount,
         currentPage: pageNum,
         totalPages: Math.ceil(totalCount / limitNum),
+        priceMin: minPriceValue,
+        priceMax: maxPriceValue,
       });
     } catch (err) {
       console.error("❌ Lỗi getAll:", err);

@@ -168,4 +168,4 @@ function ProductCard({ product, viewMode }) {
     );
 }
 
-export default ProductCard;
+export default React.memo(ProductCard);

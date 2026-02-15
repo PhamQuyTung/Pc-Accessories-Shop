@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import Breadcrumb from '~/components/Breadcrumb/Breadcrumb';
 import axiosClient from '~/utils/axiosClient';
@@ -12,133 +12,113 @@ import Pagination from '~/components/Pagination/Pagination';
 
 const cx = classNames.bind(styles);
 
+const DEFAULT_FILTERS = {
+    price: [],
+    brand: '',
+    ram: '',
+    cpu: '',
+};
+
 export default function CollectionsPage() {
     const { slug } = useParams();
+
     const [products, setProducts] = useState([]);
+    const [filterOptions, setFilterOptions] = useState({
+        brands: [],
+        rams: [],
+        cpus: [],
+        priceMin: 0,
+        priceMax: 0,
+    });
+
+    // 🔥 Draft (đang chỉnh)
+    const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
+
+    // 🔥 Applied (đã áp dụng → mới fetch)
+    const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS);
+
     const [loading, setLoading] = useState(true);
-
-    const [filters, setFilters] = useState({ brands: [], rams: [], cpus: [] });
-    const [filteredProducts, setFilteredProducts] = useState([]);
-
     const [viewMode, setViewMode] = useState('grid4');
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
     const itemsPerPage = 8;
 
-    const totalPages = Math.ceil(products.length / itemsPerPage);
-
-    // 👉 Hàm làm tròn lên theo bước
-    const roundUpTo = (value, step) => Math.ceil(value / step) * step;
-
-    // 👉 Format tiền tệ
-    function formatCurrency(number) {
-        return number.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
-    }
-
-    // 👉 Trích xuất bộ lọc từ danh sách sản phẩm
-    const extractFilters = (products) => {
-        const brands = [
-            ...new Map(
-                products.filter((p) => p.brand).map((p) => [p.brand.slug, { name: p.brand.name, slug: p.brand.slug }]),
-            ).values(),
-        ];
-
-        const rams = [...new Set(products.map((p) => p.ram))].filter(Boolean);
-        const cpus = [...new Set(products.map((p) => p.cpu))].filter(Boolean);
-
-        // Lấy giá thực (ưu tiên discountPrice nếu > 0)
-        const prices = products
-            .map((p) => Number(p.discountPrice > 0 ? p.discountPrice : p.price))
-            .filter((price) => !isNaN(price))
-            .sort((a, b) => a - b);
-
-        if (prices.length === 0) {
-            return { brands, rams, cpus, priceRanges: [] };
-        }
-
-        const minPrice = prices[0];
-        const maxPrice = prices[prices.length - 1];
-        const rangeSize = Math.ceil((maxPrice - minPrice) / 3);
-
-        const priceRanges = [];
-        if (rangeSize > 0) {
-            // Nhóm 1: Dưới X
-            priceRanges.push({
-                label: `Dưới ${formatCurrency(minPrice + rangeSize)}`,
-                value: `${0}-${minPrice + rangeSize - 1}`,
-            });
-            // Nhóm 2: X – Y
-            priceRanges.push({
-                label: `${formatCurrency(minPrice + rangeSize)} – ${formatCurrency(minPrice + rangeSize * 2)}`,
-                value: `${minPrice + rangeSize}-${minPrice + rangeSize * 2}`,
-            });
-            // Nhóm 3: Trên Z
-            priceRanges.push({
-                label: `Trên ${formatCurrency(minPrice + rangeSize * 2)}`,
-                value: `${minPrice + rangeSize * 2}-999999999`,
-            });
-        }
-
-        return { brands, rams, cpus, priceRanges };
-    };
-
-    // 👉 Gọi API khi thay đổi danh mục
+    // ===============================
+    // RESET khi đổi category
+    // ===============================
     useEffect(() => {
-        setCurrentPage(1); // Reset về trang 1
-        const fetchProductsByCategory = async () => {
-            try {
-                const res = await axiosClient.get(`/products?category=${slug}`);
-
-                // Kiểm tra cấu trúc dữ liệu trả về
-                const productsArr = Array.isArray(res.data.products) ? res.data.products : [];
-                setFilteredProducts(productsArr);
-                setProducts(productsArr);
-                setFilters(extractFilters(productsArr));
-            } catch (err) {
-                console.error('Lỗi lấy sản phẩm theo danh mục:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchProductsByCategory();
+        setCurrentPage(1);
+        setDraftFilters(DEFAULT_FILTERS);
+        setAppliedFilters(DEFAULT_FILTERS);
     }, [slug]);
 
-    // 👉 Hàm xử lý lọc sản phẩm (đã fix)
-    const handleFilterChange = (selectedFilters) => {
-        let filtered = Array.isArray(products) ? [...products] : [];    // Đảm bảo products luôn là mảng
+    // ===============================
+    // FETCH PRODUCTS
+    // ===============================
+    const fetchProducts = useCallback(async () => {
+        try {
+            setLoading(true);
 
-        // Xử lý nhiều khoảng giá
-        if (selectedFilters.price.length > 0) {
-            filtered = filtered.filter((p) => {
-                const realPrice = Number(p.discountPrice > 0 ? p.discountPrice : p.price);
-                return selectedFilters.price.some((range) => {
-                    const [min, max] = range.split('-').map(Number);
-                    if (max >= 999999999) {
-                        return realPrice > min;
-                    }
-                    return realPrice >= min && realPrice <= max;
-                });
-            });
+            const params = new URLSearchParams();
+            params.append('category', slug);
+            params.append('page', currentPage);
+            params.append('limit', itemsPerPage);
+
+            if (appliedFilters.price.length > 0) {
+                params.append('price', appliedFilters.price.join(','));
+            }
+
+            if (appliedFilters.brand) params.append('brand', appliedFilters.brand);
+            if (appliedFilters.ram) params.append('ram', appliedFilters.ram);
+            if (appliedFilters.cpu) params.append('cpu', appliedFilters.cpu);
+
+            const res = await axiosClient.get(`/products?${params.toString()}`);
+
+            // ⬇️ delay 5 giây
+            await new Promise((resolve) => setTimeout(resolve, 5000));
+
+            setProducts(res.data.products || []);
+            setTotalPages(res.data.totalPages || 1);
+
+            setFilterOptions((prev) => ({
+                ...prev,
+                brands: res.data.brands || [],
+                rams: res.data.rams || [],
+                cpus: res.data.cpus || [],
+                priceMin: prev.priceMin || res.data.priceMin || 0,
+                priceMax: prev.priceMax || res.data.priceMax || 0,
+            }));
+        } catch (err) {
+            console.error('Lỗi fetch products:', err);
+        } finally {
+            setLoading(false);
         }
+    }, [slug, currentPage, appliedFilters]);
 
-        if (selectedFilters.brand) {
-            filtered = filtered.filter((p) => p.brand?.slug === selectedFilters.brand);
-        }
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
 
-        if (selectedFilters.ram) {
-            filtered = filtered.filter((p) => p.ram === selectedFilters.ram);
-        }
+    // ===============================
+    // APPLY FILTER
+    // ===============================
+    const handleApplyFilters = () => {
+        setCurrentPage(1);
+        setAppliedFilters(draftFilters);
+    };
 
-        if (selectedFilters.cpu) {
-            filtered = filtered.filter((p) => p.cpu === selectedFilters.cpu);
-        }
-
-        setFilteredProducts(filtered);
+    // ===============================
+    // RESET FILTER
+    // ===============================
+    const handleResetFilters = () => {
+        setDraftFilters(DEFAULT_FILTERS);
+        setAppliedFilters(DEFAULT_FILTERS);
+        setCurrentPage(1);
     };
 
     return (
         <div className={cx('collections-page-wrapper')}>
-            {/* Breadcrumb */}
             <Breadcrumb type="category" categorySlug={slug} />
 
             <div className={cx('collections-page')}>
@@ -148,14 +128,19 @@ export default function CollectionsPage() {
                 </div>
 
                 <div className={cx('content')}>
-                    {/* Bộ lọc */}
+                    {/* Sidebar */}
                     <aside className={cx('filter')}>
-                        <FilterSidebar filters={filters} onChange={handleFilterChange} />
+                        <FilterSidebar
+                            filters={filterOptions}
+                            draftFilters={draftFilters}
+                            setDraftFilters={setDraftFilters}
+                            onApply={handleApplyFilters}
+                            onReset={handleResetFilters}
+                        />
                     </aside>
 
-                    {/* Danh sách sản phẩm */}
+                    {/* Product List */}
                     <div className={cx('product-list')}>
-                        {/* ShowByBar */}
                         <ShowByBar
                             viewMode={viewMode}
                             setViewMode={setViewMode}
@@ -164,21 +149,19 @@ export default function CollectionsPage() {
                             itemsPerPage={itemsPerPage}
                         />
 
-                        {/* Container danh sách sản phẩm */}
                         <Container
-                            products={filteredProducts}
+                            products={products}
                             loading={loading}
                             viewMode={viewMode}
                             currentPage={currentPage}
                             itemsPerPage={itemsPerPage}
                         />
 
-                        {/* Pagination */}
                         {totalPages > 1 && (
                             <Pagination
                                 currentPage={currentPage}
                                 totalPages={totalPages}
-                                onPageChange={(page) => setCurrentPage(page)}
+                                onPageChange={setCurrentPage}
                             />
                         )}
                     </div>
