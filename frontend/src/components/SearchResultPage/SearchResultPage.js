@@ -4,7 +4,7 @@ import axios from 'axios';
 import styles from './SearchResultPage.module.scss';
 import classNames from 'classnames/bind';
 
-import ProductCard from '~/components/Product/ProductCard';
+import ProductCard from '~/components/Product/ProductCard/ProductCard';
 import { SearchNoResults } from '../Icons';
 import LoadingSpinner from '../SpinnerLoading/SpinnerLoading';
 

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import styles from './Chuot.module.scss';
 import classNames from 'classnames/bind';
 import SectionHeading from '~/components/SectionHeading/SectionHeading';
-import ProductList from '~/components/Product/Product';
+import ProductList from '~/components/Product/HomeProduct/HomeProduct';
 import { CATEGORY_LIST } from '~/constants/categories';
 
 const cx = classNames.bind(styles);

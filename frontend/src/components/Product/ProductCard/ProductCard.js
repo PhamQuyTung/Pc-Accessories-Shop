@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import styles from './ProductCard.module.scss';
 import classNames from 'classnames/bind';
-import { FireIcon, GiftIcon } from '../Icons/Icons';
+import { FireIcon, GiftIcon } from '../../Icons/Icons';
 import BasicRating from '~/components/Rating/Rating';
 import { getDefaultDisplayName } from '~/utils/getDefaultDisplayName';
 import { getCardSpecs } from '~/utils/getCardSpecs';

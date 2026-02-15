@@ -3,7 +3,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation } from 'swiper/modules';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons';
-import ProductCard from '~/components/Product/ProductCard';
+import ProductCard from '~/components/Product/ProductCard/ProductCard';
 import classNames from 'classnames/bind';
 import styles from './RelatedProductsSlider.module.scss';
 

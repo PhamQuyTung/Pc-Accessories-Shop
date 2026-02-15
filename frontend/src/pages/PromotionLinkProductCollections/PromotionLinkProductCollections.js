@@ -6,7 +6,7 @@ import classNames from 'classnames/bind';
 import styles from './PromotionLinkProductCollections.module.scss';
 
 import Breadcrumb from '~/components/Breadcrumb/Breadcrumb';
-import ProductCard from '~/components/Product/ProductCard';
+import ProductCard from '~/components/Product/ProductCard/ProductCard';
 import ExpandableContent from '~/components/ExpandableContent/ExpandableContent';
 
 const cx = classNames.bind(styles);

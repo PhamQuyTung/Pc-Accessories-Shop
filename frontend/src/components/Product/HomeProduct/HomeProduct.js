@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axiosClient from '~/utils/axiosClient';
-import styles from './ProductCard.module.scss';
+import styles from './HomeProduct.module.scss';
 import classNames from 'classnames/bind';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation } from 'swiper/modules';
@@ -10,7 +10,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons';
-import { FireIcon } from '../Icons/Icons';
+import { FireIcon } from '../../Icons/Icons';
 import BasicRating from '~/components/Rating/Rating';
 import { getDefaultDisplayName } from '~/utils/getDefaultDisplayName';
 import { SPEC_ICON_MAP } from '~/constants/specIcons';
@@ -18,7 +18,7 @@ import { getCardSpecs } from '~/utils/getCardSpecs';
 
 const cx = classNames.bind(styles);
 
-function Product({ category, onHasProductChange }) {
+function HomeProduct({ category, onHasProductChange }) {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -108,6 +108,9 @@ function Product({ category, onHasProductChange }) {
                     // ===================== Merge Specs =====================
                     const cardSpecs = getCardSpecs(product, defaultVariation, 4);
 
+                    // ===================== Promotion Frame =====================
+                    const promotionFrame = product?.promotionInfo?.promotionCardImg;
+
                     // ===================== Display Data =====================
                     const displayImage =
                         defaultVariation?.thumbnail || defaultVariation?.images?.[0] || product.images?.[0];
@@ -160,9 +163,15 @@ function Product({ category, onHasProductChange }) {
                         <SwiperSlide key={product._id} className={cx('custom-slide')}>
                             <div className={cx('product-card')}>
                                 {/* IMAGE WITH DEFAULT VARIATION */}
-                                <Link to={`/products/${product.slug}`}>
-                                    <img src={displayImage} alt={product.name} />
-                                </Link>
+                                <div className={cx('product-image-wrapper')}>
+                                    <Link to={`/products/${product.slug}`}>
+                                        <img src={displayImage} alt={product.name} />
+                                    </Link>
+    
+                                    {promotionFrame && (
+                                        <img src={promotionFrame} alt="promotion-frame" className={cx('promotion-frame')} />
+                                    )}
+                                </div>
 
                                 <div className={cx('proloop-label--bottom')}>
                                     {(() => {
@@ -260,4 +269,4 @@ function Product({ category, onHasProductChange }) {
     );
 }
 
-export default Product;
+export default HomeProduct;

@@ -2,7 +2,7 @@
 import React from 'react';
 import styles from '../CollectionsPage.module.scss';
 import classNames from 'classnames/bind';
-import ProductCard from '~/components/Product/ProductCard';
+import ProductCard from '~/components/Product/ProductCard/ProductCard';
 
 const cx = classNames.bind(styles);
 
