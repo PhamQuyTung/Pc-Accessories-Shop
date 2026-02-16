@@ -11,8 +11,10 @@ export default function FilterSidebar({ filters, draftFilters, setDraftFilters, 
 
     // Reset khi min/max thay đổi
     useEffect(() => {
-        setPriceRange([filters.priceMin, filters.priceMax]);
-    }, [filters.priceMin, filters.priceMax]);
+        if (!draftFilters.price || draftFilters.price.length === 0) {
+            setPriceRange([filters.priceMin, filters.priceMax]);
+        }
+    }, [draftFilters.price, filters.priceMin, filters.priceMax]);
 
     // Khi kéo slider (chỉ update draft, chưa fetch)
     const handlePriceChange = (event, newValue) => {
