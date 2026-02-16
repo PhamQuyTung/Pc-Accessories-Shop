@@ -461,6 +461,38 @@ export const SearchNoResults = ({ width = '132px', height = '170px', className }
     </svg>
 );
 
+export const Grid5Icons = ({ width = '132px', height = '170px', className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <g>
+            <rect x="6" y="6" width="16" height="16" rx="2" />
+            <rect x="24" y="6" width="16" height="16" rx="2" />
+            <rect x="42" y="6" width="16" height="16" rx="2" />
+            <rect x="60" y="6" width="16" height="16" rx="2" />
+            <rect x="78" y="6" width="16" height="16" rx="2" />
+            <rect x="6" y="24" width="16" height="16" rx="2" />
+            <rect x="24" y="24" width="16" height="16" rx="2" />
+            <rect x="42" y="24" width="16" height="16" rx="2" />
+            <rect x="60" y="24" width="16" height="16" rx="2" />
+            <rect x="78" y="24" width="16" height="16" rx="2" />
+            <rect x="6" y="42" width="16" height="16" rx="2" />
+            <rect x="24" y="42" width="16" height="16" rx="2" />
+            <rect x="42" y="42" width="16" height="16" rx="2" />
+            <rect x="60" y="42" width="16" height="16" rx="2" />
+            <rect x="78" y="42" width="16" height="16" rx="2" />
+            <rect x="6" y="60" width="16" height="16" rx="2" />
+            <rect x="24" y="60" width="16" height="16" rx="2" />
+            <rect x="42" y="60" width="16" height="16" rx="2" />
+            <rect x="60" y="60" width="16" height="16" rx="2" />
+            <rect x="78" y="60" width="16" height="16" rx="2" />
+            <rect x="6" y="78" width="16" height="16" rx="2" />
+            <rect x="24" y="78" width="16" height="16" rx="2" />
+            <rect x="42" y="78" width="16" height="16" rx="2" />
+            <rect x="60" y="78" width="16" height="16" rx="2" />
+            <rect x="78" y="78" width="16" height="16" rx="2" />
+        </g>
+    </svg>
+);
+
 export const Grid4Icons = ({ width = '132px', height = '170px', className }) => (
     <svg
         stroke="currentColor"

@@ -26,12 +26,14 @@
             align-items: center;
 
             svg {
-                font-size: 18px;
+                width: 18px;
+                height: 18px;
             }
 
             &.active {
                 background-color: #e4002b;
                 color: white;
+                fill: white;
                 border-color: #e4002b;
             }
         }

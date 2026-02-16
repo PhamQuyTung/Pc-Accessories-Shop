@@ -2,7 +2,7 @@ import React from 'react';
 import styles from './ShowByBar.module.scss';
 import classNames from 'classnames/bind';
 import { FaList } from 'react-icons/fa';
-import { Grid3Icons, Grid4Icons } from '~/components/Icons';
+import { Grid3Icons, Grid4Icons, Grid5Icons } from '~/components/Icons';
 
 const cx = classNames.bind(styles);
 
@@ -21,6 +21,9 @@ export default function ShowByBar({ viewMode, setViewMode, totalProducts, curren
                 </button>
                 <button className={cx({ active: viewMode === 'grid4' })} onClick={() => setViewMode('grid4')}>
                     <Grid4Icons />
+                </button>
+                <button className={cx({ active: viewMode === 'grid5' })} onClick={() => setViewMode('grid5')}>
+                    <Grid5Icons />
                 </button>
             </div>
 

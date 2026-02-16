@@ -38,11 +38,11 @@ export default function CollectionsPage() {
     const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS);
 
     const [loading, setLoading] = useState(true);
-    const [viewMode, setViewMode] = useState('grid4');
+    const [viewMode, setViewMode] = useState('grid5');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
-    const itemsPerPage = 8;
+    const itemsPerPage = 10; // Số sản phẩm trên mỗi trang
 
     // ===============================
     // RESET khi đổi category

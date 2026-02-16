@@ -38,7 +38,8 @@
                 flex-direction: column;
 
                 &.grid3 .product-card,
-                &.grid4 .product-card {
+                &.grid4 .product-card,
+                &.grid5 .product-card {
                     animation: scaleIn 0.2s ease;
                 }
 
@@ -54,6 +55,10 @@
 
                     &.grid4 {
                         grid-template-columns: repeat(4, 1fr);
+                    }
+
+                    &.grid5 {
+                        grid-template-columns: repeat(5, 1fr);
                     }
 
                     &.list {
