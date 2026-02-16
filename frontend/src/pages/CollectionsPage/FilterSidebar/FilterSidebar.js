@@ -9,9 +9,12 @@ const cx = classNames.bind(styles);
 export default function FilterSidebar({ filters, draftFilters, setDraftFilters, onApply, onReset }) {
     const [priceRange, setPriceRange] = useState([filters.priceMin, filters.priceMax]);
 
-    // Reset khi min/max thay đổi
+    // Khi filters.priceMin, priceMax hoặc draftFilters.price thay đổi, cập nhật lại priceRange để hiển thị đúng trên slider
     useEffect(() => {
-        if (!draftFilters.price || draftFilters.price.length === 0) {
+        if (draftFilters.price) {
+            const [min, max] = draftFilters.price.split('-').map(Number);
+            setPriceRange([min, max]);
+        } else {
             setPriceRange([filters.priceMin, filters.priceMax]);
         }
     }, [draftFilters.price, filters.priceMin, filters.priceMax]);
@@ -22,7 +25,7 @@ export default function FilterSidebar({ filters, draftFilters, setDraftFilters, 
 
         setDraftFilters({
             ...draftFilters,
-            price: [`${newValue[0]}-${newValue[1]}`],
+            price: `${newValue[0]}-${newValue[1]}`,
         });
     };
 
@@ -35,7 +38,7 @@ export default function FilterSidebar({ filters, draftFilters, setDraftFilters, 
         });
     };
 
-    if (!filters.priceMin || !filters.priceMax) return null;
+    if (filters.priceMax <= 0) return null;
 
     return (
         <div className={cx('filter-sidebar')}>

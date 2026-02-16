@@ -1,177 +1,105 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Breadcrumb from '~/components/Breadcrumb/Breadcrumb';
 import axiosClient from '~/utils/axiosClient';
 import styles from '../CollectionsPage/CollectionsPage.module.scss';
 import classNames from 'classnames/bind';
+
 import Container from '~/pages/CollectionsPage/Container/Container';
 import FilterSidebar from '~/pages/CollectionsPage/FilterSidebar/FilterSidebar';
 import ShowByBar from '~/pages/CollectionsPage/ShowByBar/ShowByBar';
 import Pagination from '~/components/Pagination/Pagination';
 
+import useCollectionFilters from '~/hooks/useCollectionFilters';
+
 const cx = classNames.bind(styles);
 
 export default function PromotionsCollectionPage() {
     const { slug } = useParams();
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
 
-    const [filters, setFilters] = useState({ brands: [], rams: [], cpus: [] });
-    const [filteredProducts, setFilteredProducts] = useState([]);
-
-    const [viewMode, setViewMode] = useState('grid4');
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 8;
-
-    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-
+    const [viewMode, setViewMode] = useState('grid5');
     const [promotion, setPromotion] = useState(null);
 
-    // 👉 Format tiền
-    function formatCurrency(number) {
-        return number.toLocaleString('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-        });
-    }
+    const {
+        products,
+        filterOptions,
+        draftFilters,
+        setDraftFilters,
+        handleApply,
+        handleReset,
+        loading,
+        currentPage,
+        setCurrentPage,
+        totalPages,
+    } = useCollectionFilters({
+        mode: 'promotion',
+        slug,
+        itemsPerPage: 8,
+        delay: 5000,
+    });
 
-    // 👉 Extract filters từ products
-    const extractFilters = (products) => {
-        const brands = [
-            ...new Map(
-                products.filter((p) => p.brand).map((p) => [p.brand.slug, { name: p.brand.name, slug: p.brand.slug }]),
-            ).values(),
-        ];
-
-        const rams = [...new Set(products.map((p) => p.ram))].filter(Boolean);
-        const cpus = [...new Set(products.map((p) => p.cpu))].filter(Boolean);
-
-        const prices = products
-            .map((p) => Number(p.discountPrice > 0 ? p.discountPrice : p.price))
-            .filter((price) => !isNaN(price))
-            .sort((a, b) => a - b);
-
-        if (prices.length === 0) return { brands, rams, cpus, priceRanges: [] };
-
-        const minPrice = prices[0];
-        const maxPrice = prices[prices.length - 1];
-        const rangeSize = Math.ceil((maxPrice - minPrice) / 3);
-
-        const priceRanges = [];
-        if (rangeSize > 0) {
-            priceRanges.push({
-                label: `Dưới ${formatCurrency(minPrice + rangeSize)}`,
-                value: `0-${minPrice + rangeSize - 1}`,
-            });
-            priceRanges.push({
-                label: `${formatCurrency(minPrice + rangeSize)} – ${formatCurrency(minPrice + rangeSize * 2)}`,
-                value: `${minPrice + rangeSize}-${minPrice + rangeSize * 2}`,
-            });
-            priceRanges.push({
-                label: `Trên ${formatCurrency(minPrice + rangeSize * 2)}`,
-                value: `${minPrice + rangeSize * 2}-999999999`,
-            });
-        }
-
-        return { brands, rams, cpus, priceRanges };
-    };
-
-    // 👉 Fetch products theo promotion slug
+    /* ================= FETCH PROMOTION INFO (banner) ================= */
     useEffect(() => {
-        setCurrentPage(1);
-        setLoading(true);
-
-        const fetchProductsByPromotion = async () => {
+        const fetchPromotionInfo = async () => {
             try {
-                const res = await axiosClient.get(`/promotions/slug/${slug}/products`);
-                setProducts(res.data.products || res.data);
-                setFilteredProducts(res.data.products || res.data);
-                setFilters(extractFilters(res.data.products || res.data));
-
-                // ✅ LẤY promotion info
-                if (res.data.promotion) {
-                    setPromotion(res.data.promotion);
-                }
+                const res = await axiosClient.get(`/promotions/slug/${slug}`);
+                setPromotion(res.data);
             } catch (err) {
-                console.error('Lỗi lấy sản phẩm theo promotion:', err);
-            } finally {
-                setLoading(false);
+                console.error('Lỗi lấy promotion info:', err);
             }
         };
 
-        fetchProductsByPromotion();
+        fetchPromotionInfo();
     }, [slug]);
-
-    // 👉 Filter
-    const handleFilterChange = (selectedFilters) => {
-        let filtered = [...products];
-
-        if (selectedFilters.price.length > 0) {
-            filtered = filtered.filter((p) => {
-                const realPrice = Number(p.discountPrice > 0 ? p.discountPrice : p.price);
-                return selectedFilters.price.some((range) => {
-                    const [min, max] = range.split('-').map(Number);
-                    if (max >= 999999999) return realPrice > min;
-                    return realPrice >= min && realPrice <= max;
-                });
-            });
-        }
-
-        if (selectedFilters.brand) {
-            filtered = filtered.filter((p) => p.brand?.slug === selectedFilters.brand);
-        }
-
-        if (selectedFilters.ram) {
-            filtered = filtered.filter((p) => p.ram === selectedFilters.ram);
-        }
-
-        if (selectedFilters.cpu) {
-            filtered = filtered.filter((p) => p.cpu === selectedFilters.cpu);
-        }
-
-        setFilteredProducts(filtered);
-    };
 
     return (
         <div className={cx('collections-page-wrapper')}>
+            {/* Breadcrumb */}
             <Breadcrumb type="promotion" categorySlug={slug} />
 
             <div className={cx('collections-page')}>
-                <div className={cx('banner')}>
-                    <img
-                        src={promotion?.bigBannerImg || 'https://via.placeholder.com/1320x300?text=Promotion+Banner'}
-                        alt="Promotion Banner"
-                    />
-                </div>
+                {/* Banner */}
+                {loading ? (
+                    <div className={cx('banner-skeleton')} />
+                ) : (
+                    <img className={cx('fade-in')} src={promotion?.bigBannerImg} alt="Promotion Banner" />
+                )}
 
                 <div className={cx('content')}>
-                    {/* Sidebar filter */}
+                    {/* Sidebar */}
                     <aside className={cx('filter')}>
-                        <FilterSidebar filters={filters} onChange={handleFilterChange} />
+                        <FilterSidebar
+                            filters={filterOptions}
+                            draftFilters={draftFilters}
+                            setDraftFilters={setDraftFilters}
+                            onApply={handleApply}
+                            onReset={handleReset}
+                        />
                     </aside>
 
+                    {/* Product List */}
                     <div className={cx('product-list')}>
                         <ShowByBar
                             viewMode={viewMode}
                             setViewMode={setViewMode}
-                            totalProducts={filteredProducts.length}
+                            totalProducts={products.length}
                             currentPage={currentPage}
-                            itemsPerPage={itemsPerPage}
+                            itemsPerPage={8}
                         />
 
                         <Container
-                            products={filteredProducts}
+                            products={products}
                             loading={loading}
                             viewMode={viewMode}
                             currentPage={currentPage}
-                            itemsPerPage={itemsPerPage}
+                            itemsPerPage={8}
                         />
 
                         {totalPages > 1 && (
                             <Pagination
                                 currentPage={currentPage}
                                 totalPages={totalPages}
-                                onPageChange={(page) => setCurrentPage(page)}
+                                onPageChange={setCurrentPage}
                             />
                         )}
                     </div>

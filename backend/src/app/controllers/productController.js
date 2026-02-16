@@ -194,51 +194,81 @@ class ProductController {
       ];
 
       // ================================
-      // 🔥 2.5️⃣ TÍNH PRICE RANGE ĐỘNG THEO CATEGORY
+      // 🔥 2.5️⃣ TÍNH PRICE RANGE ĐỘNG (KHÔNG DÍNH PRICE FILTER)
       // ================================
 
-      // 🔥 Lấy min/max price từ tập kết quả đã filter (chưa áp dụng price filter)
-      const priceStatsPipeline = [...basePipeline];
-
-      priceStatsPipeline.push({
-        $group: {
-          _id: null,
-          min: { $min: "$minPrice" },
-          max: { $max: "$maxPrice" },
+      // Clone pipeline TRƯỚC KHI thêm price filter
+      const priceStatsPipeline = [
+        { $match: match },
+        ...promotionLookupPipeline(),
+        {
+          $lookup: {
+            from: "brands",
+            localField: "brand",
+            foreignField: "_id",
+            as: "brand",
+          },
         },
-      });
+        { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
+        {
+          $addFields: {
+            finalPrice: {
+              $cond: [
+                { $gt: ["$discountPrice", 0] },
+                "$discountPrice",
+                "$price",
+              ],
+            },
+          },
+        },
+        {
+          $addFields: {
+            variantPrices: {
+              $map: {
+                input: { $ifNull: ["$variations", []] },
+                as: "v",
+                in: {
+                  $cond: [
+                    { $gt: ["$$v.discountPrice", 0] },
+                    "$$v.discountPrice",
+                    "$$v.price",
+                  ],
+                },
+              },
+            },
+          },
+        },
+        {
+          $addFields: {
+            minPrice: {
+              $cond: [
+                { $gt: [{ $size: "$variantPrices" }, 0] },
+                { $min: "$variantPrices" },
+                "$finalPrice",
+              ],
+            },
+            maxPrice: {
+              $cond: [
+                { $gt: [{ $size: "$variantPrices" }, 0] },
+                { $max: "$variantPrices" },
+                "$finalPrice",
+              ],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            min: { $min: "$minPrice" },
+            max: { $max: "$maxPrice" },
+          },
+        },
+      ];
 
       const priceStatsResult = await Product.aggregate(priceStatsPipeline);
 
       const minPriceValue = priceStatsResult[0]?.min || 0;
       const maxPriceValue = priceStatsResult[0]?.max || 0;
-
-      let dynamicPriceRanges = [];
-
-      if (maxPriceValue > 0) {
-        const rangeCount = 4;
-        const step = Math.ceil((maxPriceValue - minPriceValue) / rangeCount);
-
-        for (let i = 0; i < rangeCount; i++) {
-          const min = minPriceValue + step * i;
-          const max =
-            i === rangeCount - 1 ? null : minPriceValue + step * (i + 1);
-
-          dynamicPriceRanges.push({
-            min,
-            max,
-            label:
-              max === null
-                ? `Trên ${formatCurrency(min)}`
-                : `${formatCurrency(min)} - ${formatCurrency(max)}`,
-          });
-        }
-      }
-
-      console.log("MATCH:", match);
-      console.log("MIN MAX:", minPriceValue, maxPriceValue);
-      const test = await Product.find(match);
-      console.log("TEST COUNT:", test.length);
 
       // ================================
       // 3️⃣ FILTER PRICE (MULTI RANGE)

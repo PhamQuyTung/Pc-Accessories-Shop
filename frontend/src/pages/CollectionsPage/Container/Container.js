@@ -13,7 +13,7 @@ function Container({ products, loading, viewMode, currentPage, itemsPerPage }) {
 
     if (loading) {
         return (
-            <section className={cx('product-list', viewMode)}>
+            <section>
                 <div className={cx('grid', viewMode)}>
                     {Array.from({ length: itemsPerPage }).map((_, index) => (
                         <div key={index} className={cx('skeleton-card')}>
