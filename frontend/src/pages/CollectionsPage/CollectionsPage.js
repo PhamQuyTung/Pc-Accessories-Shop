@@ -37,6 +37,8 @@ export default function CollectionsPage() {
         delay: 5000,
     });
 
+    console.log('COLLECTION PRODUCTS:', products);
+
     return (
         <div className={cx('collections-page-wrapper')}>
             {/* Breadcrumb */}

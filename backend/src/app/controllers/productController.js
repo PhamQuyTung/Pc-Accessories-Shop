@@ -37,6 +37,20 @@ const generateVariations = (attributes, baseSku = "SP") => {
   }));
 };
 
+// Hàm gắn status động cho product list (GIỮ NGUYÊN)
+const attachStatus = (products) =>
+  products.map((p) => ({
+    ...p,
+    status: computeProductStatus(
+      {
+        importing: p.importing,
+        quantity: p.quantity ?? 0,
+        variations: p.variations ?? [],
+      },
+      { importing: p.importing },
+    ),
+  }));
+
 // Hàm format tiền tệ
 const formatCurrency = (value) => {
   return new Intl.NumberFormat("vi-VN").format(value) + "đ";
@@ -116,6 +130,31 @@ class ProductController {
 
         ...promotionLookupPipeline(),
 
+        // ================  CATEGORY (🔥 CỐT LÕI) =================
+        {
+          $lookup: {
+            from: "categories",
+            let: { categoryId: "$category" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ["$_id", "$$categoryId"] },
+                },
+              },
+              {
+                $project: {
+                  name: 1,
+                  slug: 1,
+                  specs: 1, // 🔥 BẮT BUỘC
+                },
+              },
+            ],
+            as: "category",
+          },
+        },
+        { $unwind: "$category" },
+
+        // ================  BRAND (🔥 QUAN TRỌNG) =================
         {
           $lookup: {
             from: "brands",
@@ -126,6 +165,7 @@ class ProductController {
         },
         { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
 
+        // ================  REVIEWS (🔥 QUAN TRỌNG) =================
         {
           $lookup: {
             from: "reviews",
@@ -135,6 +175,7 @@ class ProductController {
           },
         },
 
+        // ================  RATING + COUNT (🔥 QUAN TRỌNG) =================
         {
           $addFields: {
             averageRating: {
@@ -324,15 +365,10 @@ class ProductController {
       // ================================
       // 8️⃣ CLEAN RESPONSE
       // ================================
-      const cleanedProducts = products.map((p) => ({
-        ...p,
-        _id: p._id?.toString(),
-        minPrice: p.minPrice,
-        maxPrice: p.maxPrice,
-      }));
+      const productsWithStatus = attachStatus(products);
 
       res.status(200).json({
-        products: cleanedProducts,
+        products: productsWithStatus, 
         totalCount,
         currentPage: pageNum,
         totalPages: Math.ceil(totalCount / limitNum),
@@ -1293,6 +1329,31 @@ class ProductController {
         // ================= PROMOTION (🔥 CỐT LÕI) =================
         ...promotionLookupPipeline(),
 
+        // ================= CATEGORY (QUAN TRỌNG NHẤT) =================
+        {
+          $lookup: {
+            from: "categories",
+            let: { categoryId: "$category" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ["$_id", "$$categoryId"] },
+                },
+              },
+              {
+                $project: {
+                  name: 1,
+                  slug: 1,
+                  specs: 1,
+                },
+              },
+            ],
+            as: "category",
+          },
+        },
+        { $unwind: "$category" },
+
+        // ================= BRAND =================
         {
           $lookup: {
             from: "brands",
@@ -1302,6 +1363,8 @@ class ProductController {
           },
         },
         { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
+
+        // ================= REVIEWS =================
         {
           $lookup: {
             from: "reviews",
