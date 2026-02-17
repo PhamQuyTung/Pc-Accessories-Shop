@@ -75,6 +75,7 @@ class ProductController {
       const pageNum = Number(page);
       const limitNum = Number(limit);
       const skip = (pageNum - 1) * limitNum;
+      const { promotion } = req.query;
 
       // ================================
       // 1️⃣ BUILD MATCH
@@ -129,6 +130,17 @@ class ProductController {
         { $match: match },
 
         ...promotionLookupPipeline(),
+
+        // 🔥 FILTER THEO PROMOTION SLUG
+        ...(promotion
+          ? [
+              {
+                $match: {
+                  "promotionInfo.slug": promotion,
+                },
+              },
+            ]
+          : []),
 
         // ================  CATEGORY (🔥 CỐT LÕI) =================
         {
@@ -312,6 +324,40 @@ class ProductController {
       const maxPriceValue = priceStatsResult[0]?.max || 0;
 
       // ================================
+      // 🔥 BUILD BRAND FILTER OPTIONS
+      // ================================
+
+      const brandFilterPipeline = [
+        { $match: match },
+        {
+          $lookup: {
+            from: "brands",
+            localField: "brand",
+            foreignField: "_id",
+            as: "brand",
+          },
+        },
+        { $unwind: { path: "$brand", preserveNullAndEmptyArrays: false } },
+        {
+          $group: {
+            _id: "$brand._id",
+            name: { $first: "$brand.name" },
+            slug: { $first: "$brand.slug" },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            name: 1,
+            slug: 1,
+          },
+        },
+        { $sort: { name: 1 } },
+      ];
+
+      const brands = await Product.aggregate(brandFilterPipeline);
+
+      // ================================
       // 3️⃣ FILTER PRICE (MULTI RANGE)
       // ================================
       if (price) {
@@ -368,12 +414,13 @@ class ProductController {
       const productsWithStatus = attachStatus(products);
 
       res.status(200).json({
-        products: productsWithStatus, 
+        products: productsWithStatus,
         totalCount,
         currentPage: pageNum,
         totalPages: Math.ceil(totalCount / limitNum),
         priceMin: minPriceValue,
         priceMax: maxPriceValue,
+        brands,
       });
     } catch (err) {
       console.error("❌ Lỗi getAll:", err);

@@ -61,10 +61,6 @@ export default function useCollectionFilters({
             if (appliedFilters.ram) params.append('ram', appliedFilters.ram);
             if (appliedFilters.cpu) params.append('cpu', appliedFilters.cpu);
 
-            if (mode === 'promotion') {
-                params.append('promotion', slug);
-            }
-
             const endpoint = `/products?${params.toString()}`;
 
             const res = await axiosClient.get(endpoint);
@@ -73,11 +69,11 @@ export default function useCollectionFilters({
 
             const data = mode === 'promotion' ? res.data.products || res.data : res.data.products || [];
 
+            console.log("FILTER OPTIONS:", res.data);
+
             setProducts(data);
 
-            if (mode === 'category') {
-                setTotalPages(res.data.totalPages || 1);
-            }
+            setTotalPages(res.data.totalPages || 1);
 
             setFilterOptions({
                 brands: res.data.brands || [],
