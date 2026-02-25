@@ -2,7 +2,7 @@ const Promotion = require("../models/promotion");
 const Product = require("../models/product");
 const { isActiveNow } = require("../../utils/promotionTime");
 const { rollbackPromotion } = require("../../utils/promotionUtils");
-const { computeProductStatus } = require("../../../../shared/productStatus"); 
+const { computeProductStatus } = require("../../../../shared/productStatus");
 const Review = require("../models/review");
 const slugify = require("slugify");
 
@@ -330,14 +330,21 @@ exports.create = async (req, res, next) => {
   try {
     validatePayload(req.body);
 
+    const slug = slugify(req.body.name, {
+      lower: true,
+      strict: true,
+      locale: "vi", // chuẩn tiếng Việt
+    });
+
     const created = await Promotion.create({
       name: req.body.name.trim(),
+      slug, // ✅ THÊM DÒNG NÀY
       productBannerImg: req.body.productBannerImg || "",
       bannerImg: req.body.bannerImg || "",
       promotionCardImg: req.body.promotionCardImg || "",
       bigBannerImg: req.body.bigBannerImg || "",
-      headerBgColor: req.body.headerBgColor || "#003bb8", // ✅ THÊM
-      headerTextColor: req.body.headerTextColor || "#ffee12", // ✅ THÊM
+      headerBgColor: req.body.headerBgColor || "#003bb8",
+      headerTextColor: req.body.headerTextColor || "#ffee12",
       percent: req.body.percent,
       type: req.body.type,
       once: req.body.once || undefined,
@@ -349,7 +356,6 @@ exports.create = async (req, res, next) => {
       createdBy: req.user?._id,
     });
 
-    // 🔁 reload lại doc đầy đủ
     const promo = await Promotion.findById(created._id);
 
     if (isActiveNow(promo)) {
@@ -379,7 +385,14 @@ exports.update = async (req, res, next) => {
       });
     }
 
-    if (req.body.name) promo.name = req.body.name.trim();
+    if (req.body.name) {
+      promo.name = req.body.name.trim();
+      promo.slug = slugify(req.body.name, {
+        lower: true,
+        strict: true,
+        locale: "vi",
+      });
+    }
     if (req.body.productBannerImg)
       promo.productBannerImg = req.body.productBannerImg;
     if (req.body.bannerImg) promo.bannerImg = req.body.bannerImg;

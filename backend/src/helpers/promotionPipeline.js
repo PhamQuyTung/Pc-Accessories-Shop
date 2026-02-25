@@ -4,18 +4,36 @@ const promotionLookupPipeline = () => [
   {
     $lookup: {
       from: "promotions",
-      let: { productId: "$_id" },
+      let: { productId: "$_id", now: "$$NOW" },
       pipeline: [
         {
           $match: {
-            currentlyActive: true,
-            deleted: { $ne: true }, // nếu sau này bạn có soft delete promotion
+            deleted: { $ne: true },
           },
         },
         {
           $match: {
             $expr: {
-              $in: ["$$productId", "$assignedProducts.product"],
+              $and: [
+                { $lte: ["$once.startAt", "$$now"] },
+                { $gte: ["$once.endAt", "$$now"] },
+              ],
+            },
+          },
+        },
+        {
+          $match: {
+            $expr: {
+              $in: [
+                "$$productId",
+                {
+                  $map: {
+                    input: "$assignedProducts",
+                    as: "ap",
+                    in: "$$ap.product",
+                  },
+                },
+              ],
             },
           },
         },
@@ -24,6 +42,9 @@ const promotionLookupPipeline = () => [
             name: 1,
             slug: 1,
             promotionCardImg: 1,
+            percent: 1,
+            headerBgColor: 1,
+            headerTextColor: 1,
           },
         },
         { $limit: 1 },

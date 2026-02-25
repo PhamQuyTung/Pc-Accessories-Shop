@@ -67,22 +67,24 @@ class ProductController {
         categoryId,
         visible,
         sort,
-        price, // 🔥 NEW
+        price,
         page = 1,
         limit = 10,
+        promotion,
+        productType,
+        brand,
+        ram,
+        cpu,
       } = req.query;
 
       const pageNum = Number(page);
       const limitNum = Number(limit);
       const skip = (pageNum - 1) * limitNum;
-      const { promotion } = req.query;
 
       // ================================
-      // 1️⃣ BUILD MATCH
+      // 1️⃣ BUILD MATCH (BASE FILTER)
       // ================================
       const match = { deleted: { $ne: true } };
-
-      const { productType } = req.query;
 
       if (productType === "variable") {
         match.$expr = { $gt: [{ $size: "$variations" }, 0] };
@@ -111,62 +113,40 @@ class ProductController {
         match.visible = true;
       }
 
-      if (req.query.brand) {
-        match["brand.slug"] = req.query.brand;
-      }
-
-      if (req.query.ram) {
-        match.ram = req.query.ram;
-      }
-
-      if (req.query.cpu) {
-        match.cpu = req.query.cpu;
-      }
+      if (brand) match["brand.slug"] = brand;
+      if (ram) match.ram = ram;
+      if (cpu) match.cpu = cpu;
 
       // ================================
-      // 2️⃣ BASE PIPELINE
+      // 🔥 COMMON LOOKUPS
       // ================================
-      const basePipeline = [
-        { $match: match },
-
+      const commonLookups = [
         ...promotionLookupPipeline(),
 
-        // 🔥 FILTER THEO PROMOTION SLUG
         ...(promotion
           ? [
               {
+                $lookup: {
+                  from: "promotions",
+                  localField: "lockPromotionId",
+                  foreignField: "_id",
+                  as: "lockedPromotion",
+                },
+              },
+              {
+                $unwind: {
+                  path: "$lockedPromotion",
+                  preserveNullAndEmptyArrays: false,
+                },
+              },
+              {
                 $match: {
-                  "promotionInfo.slug": promotion,
+                  "lockedPromotion.slug": promotion,
                 },
               },
             ]
           : []),
 
-        // ================  CATEGORY (🔥 CỐT LÕI) =================
-        {
-          $lookup: {
-            from: "categories",
-            let: { categoryId: "$category" },
-            pipeline: [
-              {
-                $match: {
-                  $expr: { $eq: ["$_id", "$$categoryId"] },
-                },
-              },
-              {
-                $project: {
-                  name: 1,
-                  slug: 1,
-                  specs: 1, // 🔥 BẮT BUỘC
-                },
-              },
-            ],
-            as: "category",
-          },
-        },
-        { $unwind: "$category" },
-
-        // ================  BRAND (🔥 QUAN TRỌNG) =================
         {
           $lookup: {
             from: "brands",
@@ -176,93 +156,15 @@ class ProductController {
           },
         },
         { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
-
-        // ================  REVIEWS (🔥 QUAN TRỌNG) =================
-        {
-          $lookup: {
-            from: "reviews",
-            localField: "_id",
-            foreignField: "product",
-            as: "reviews",
-          },
-        },
-
-        // ================  RATING + COUNT (🔥 QUAN TRỌNG) =================
-        {
-          $addFields: {
-            averageRating: {
-              $cond: [
-                { $gt: [{ $size: "$reviews" }, 0] },
-                { $avg: "$reviews.rating" },
-                0,
-              ],
-            },
-            reviewCount: { $size: "$reviews" },
-            finalPrice: {
-              $cond: [
-                { $gt: ["$discountPrice", 0] },
-                "$discountPrice",
-                "$price",
-              ],
-            },
-          },
-        },
-
-        // 🔥 Tính giá biến thể
-        {
-          $addFields: {
-            variantPrices: {
-              $map: {
-                input: { $ifNull: ["$variations", []] },
-                as: "v",
-                in: {
-                  $cond: [
-                    { $gt: ["$$v.discountPrice", 0] },
-                    "$$v.discountPrice",
-                    "$$v.price",
-                  ],
-                },
-              },
-            },
-          },
-        },
-        {
-          $addFields: {
-            minPrice: {
-              $cond: [
-                { $gt: [{ $size: "$variantPrices" }, 0] },
-                { $min: "$variantPrices" },
-                "$finalPrice",
-              ],
-            },
-            maxPrice: {
-              $cond: [
-                { $gt: [{ $size: "$variantPrices" }, 0] },
-                { $max: "$variantPrices" },
-                "$finalPrice",
-              ],
-            },
-          },
-        },
       ];
 
       // ================================
-      // 🔥 2.5️⃣ TÍNH PRICE RANGE ĐỘNG (KHÔNG DÍNH PRICE FILTER)
+      // 2️⃣ PRICE STATS PIPELINE (FIXED)
       // ================================
-
-      // Clone pipeline TRƯỚC KHI thêm price filter
       const priceStatsPipeline = [
         { $match: match },
-        ...promotionLookupPipeline(),
-        {
-          $lookup: {
-            from: "brands",
-            localField: "brand",
-            foreignField: "_id",
-            as: "brand",
-          },
-        },
-        { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
+        ...commonLookups,
+
         {
           $addFields: {
             finalPrice: {
@@ -319,25 +221,16 @@ class ProductController {
       ];
 
       const priceStatsResult = await Product.aggregate(priceStatsPipeline);
-
       const minPriceValue = priceStatsResult[0]?.min || 0;
       const maxPriceValue = priceStatsResult[0]?.max || 0;
 
       // ================================
-      // 🔥 BUILD BRAND FILTER OPTIONS
+      // 3️⃣ BRAND FILTER PIPELINE (FIXED)
       // ================================
-
       const brandFilterPipeline = [
         { $match: match },
-        {
-          $lookup: {
-            from: "brands",
-            localField: "brand",
-            foreignField: "_id",
-            as: "brand",
-          },
-        },
-        { $unwind: { path: "$brand", preserveNullAndEmptyArrays: false } },
+        ...commonLookups,
+
         {
           $group: {
             _id: "$brand._id",
@@ -358,11 +251,95 @@ class ProductController {
       const brands = await Product.aggregate(brandFilterPipeline);
 
       // ================================
-      // 3️⃣ FILTER PRICE (MULTI RANGE)
+      // 4️⃣ MAIN PIPELINE
+      // ================================
+      const basePipeline = [
+        { $match: match },
+        ...commonLookups,
+
+        {
+          $lookup: {
+            from: "categories",
+            let: { categoryId: "$category" },
+            pipeline: [
+              { $match: { $expr: { $eq: ["$_id", "$$categoryId"] } } },
+              { $project: { name: 1, slug: 1, specs: 1 } },
+            ],
+            as: "category",
+          },
+        },
+        { $unwind: "$category" },
+
+        {
+          $lookup: {
+            from: "reviews",
+            localField: "_id",
+            foreignField: "product",
+            as: "reviews",
+          },
+        },
+
+        {
+          $addFields: {
+            averageRating: {
+              $cond: [
+                { $gt: [{ $size: "$reviews" }, 0] },
+                { $avg: "$reviews.rating" },
+                0,
+              ],
+            },
+            reviewCount: { $size: "$reviews" },
+            finalPrice: {
+              $cond: [
+                { $gt: ["$discountPrice", 0] },
+                "$discountPrice",
+                "$price",
+              ],
+            },
+          },
+        },
+        {
+          $addFields: {
+            variantPrices: {
+              $map: {
+                input: { $ifNull: ["$variations", []] },
+                as: "v",
+                in: {
+                  $cond: [
+                    { $gt: ["$$v.discountPrice", 0] },
+                    "$$v.discountPrice",
+                    "$$v.price",
+                  ],
+                },
+              },
+            },
+          },
+        },
+        {
+          $addFields: {
+            minPrice: {
+              $cond: [
+                { $gt: [{ $size: "$variantPrices" }, 0] },
+                { $min: "$variantPrices" },
+                "$finalPrice",
+              ],
+            },
+            maxPrice: {
+              $cond: [
+                { $gt: [{ $size: "$variantPrices" }, 0] },
+                { $max: "$variantPrices" },
+                "$finalPrice",
+              ],
+            },
+          },
+        },
+      ];
+
+      // ================================
+      // 5️⃣ PRICE FILTER
       // ================================
       if (price) {
         const [min, max] = price.split("-");
-
         basePipeline.push({
           $match: {
             minPrice: {
@@ -374,43 +351,34 @@ class ProductController {
       }
 
       // ================================
-      // 4️⃣ COUNT (🔥 ĐÚNG 100%)
+      // 6️⃣ COUNT
       // ================================
       const countPipeline = [...basePipeline, { $count: "total" }];
       const countResult = await Product.aggregate(countPipeline);
       const totalCount = countResult[0]?.total || 0;
 
       // ================================
-      // 5️⃣ SORT
+      // 7️⃣ SORT
       // ================================
       if (sort) {
         const [field, order] = sort.split("_");
         const sortValue = order === "asc" ? 1 : -1;
-        let sortField = field;
-
-        if (field === "price") sortField = "minPrice";
-
+        const sortField = field === "price" ? "minPrice" : field;
         basePipeline.push({ $sort: { [sortField]: sortValue } });
       } else {
         basePipeline.push({ $sort: { createdAt: -1 } });
       }
 
       // ================================
-      // 6️⃣ PAGINATION
+      // 8️⃣ PAGINATION
       // ================================
       basePipeline.push({ $skip: skip }, { $limit: limitNum });
 
-      // ================================
-      // 7️⃣ EXECUTE
-      // ================================
       const products = await Product.aggregate(basePipeline).collation({
         locale: "vi",
         strength: 1,
       });
 
-      // ================================
-      // 8️⃣ CLEAN RESPONSE
-      // ================================
       const productsWithStatus = attachStatus(products);
 
       res.status(200).json({

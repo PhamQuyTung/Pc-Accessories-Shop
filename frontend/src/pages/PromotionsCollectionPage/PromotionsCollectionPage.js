@@ -34,7 +34,7 @@ export default function PromotionsCollectionPage() {
     } = useCollectionFilters({
         mode: 'promotion',
         slug,
-        itemsPerPage: 8,
+        itemsPerPage: 100,
         delay: 5000,
     });
 
@@ -84,7 +84,7 @@ export default function PromotionsCollectionPage() {
                             setViewMode={setViewMode}
                             totalProducts={products.length}
                             currentPage={currentPage}
-                            itemsPerPage={8}
+                            itemsPerPage={100}
                         />
 
                         <Container
@@ -92,7 +92,7 @@ export default function PromotionsCollectionPage() {
                             loading={loading}
                             viewMode={viewMode}
                             currentPage={currentPage}
-                            itemsPerPage={8}
+                            itemsPerPage={100}
                         />
 
                         {totalPages > 1 && (

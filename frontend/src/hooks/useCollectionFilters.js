@@ -11,7 +11,7 @@ const DEFAULT_FILTERS = {
 export default function useCollectionFilters({
     mode, // "category" | "promotion"
     slug,
-    itemsPerPage = 10,
+    itemsPerPage = 100,
     delay = 5000,
 }) {
     const [products, setProducts] = useState([]);

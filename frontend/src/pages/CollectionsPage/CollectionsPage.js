@@ -33,7 +33,7 @@ export default function CollectionsPage() {
     } = useCollectionFilters({
         mode: 'category',
         slug,
-        itemsPerPage: 10,
+        itemsPerPage: 100,
         delay: 5000,
     });
 
@@ -69,7 +69,7 @@ export default function CollectionsPage() {
                             setViewMode={setViewMode}
                             totalProducts={products.length}
                             currentPage={currentPage}
-                            itemsPerPage={10}
+                            itemsPerPage={100}
                         />
 
                         <Container
@@ -77,7 +77,7 @@ export default function CollectionsPage() {
                             loading={loading}
                             viewMode={viewMode}
                             currentPage={currentPage}
-                            itemsPerPage={10}
+                            itemsPerPage={100}
                         />
 
                         {totalPages > 1 && (
