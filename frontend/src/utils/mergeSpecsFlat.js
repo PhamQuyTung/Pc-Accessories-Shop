@@ -6,6 +6,8 @@ export function mergeSpecsFlat(categorySpecs = [], productSpecs = [], variantOve
     });
 
     return categorySpecs
+        // only exclude specs explicitly turned off
+        .filter((catSpec) => catSpec.showOnTable !== false)
         .map((catSpec) => {
             const key = catSpec.key;
             const baseValue = productMap[key] ?? '';

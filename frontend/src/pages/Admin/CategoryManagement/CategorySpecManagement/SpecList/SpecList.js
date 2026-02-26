@@ -30,6 +30,12 @@ export default function SpecList({ specs, onEdit, onDelete }) {
                                             CARD
                                         </span>
                                     )}
+
+                                    {spec.showOnTable && (
+                                        <span className={cx('badge')} title="Spec này hiển thị trong bảng thông số">
+                                            TABLE
+                                        </span>
+                                    )}
                                 </div>
 
                                 <span className={cx('meta')}>

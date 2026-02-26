@@ -21,6 +21,9 @@ function mergeSpecs(product, variant, categorySpecs = []) {
     const key = catSpec.key;
     if (!key) continue;
 
+    // respect showOnTable flag: we only include specs that are meant to be shown in tables
+    if (catSpec.showOnTable === false) continue;
+
     const value = overrideMap[key] ?? productSpecsMap.get(key) ?? "";
 
     finalSpecs.push({
@@ -30,6 +33,7 @@ function mergeSpecs(product, variant, categorySpecs = []) {
       type: catSpec.type || "text",
       icon: catSpec.icon || "default",
       showOnCard: !!catSpec.showOnCard,
+      showOnTable: !!catSpec.showOnTable,
     });
   }
 

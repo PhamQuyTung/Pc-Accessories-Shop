@@ -32,6 +32,8 @@ function CategorySpecManagement() {
             type: s.type,
             icon: s.icon || 'default',
             showOnCard: !!s.showOnCard,
+            // keep existing true unless explicitly false
+            showOnTable: s.showOnTable !== false,
         }));
 
     useEffect(() => {

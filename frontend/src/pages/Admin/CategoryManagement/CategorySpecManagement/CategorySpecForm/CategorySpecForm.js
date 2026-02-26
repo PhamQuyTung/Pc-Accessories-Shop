@@ -9,7 +9,19 @@ export default function CategorySpecForm({ value = [], onChange }) {
     const [specs, setSpecs] = useState(value);
 
     useEffect(() => {
-        setSpecs(value || []);
+        // normalize incoming specs to ensure boolean flags exist
+        if (Array.isArray(value)) {
+            setSpecs(
+                value.map((s) => ({
+                    ...s,
+                    showOnCard: !!s.showOnCard,
+                    // undefined -> true
+                    showOnTable: s.showOnTable !== false,
+                })),
+            );
+        } else {
+            setSpecs([]);
+        }
     }, [value]);
 
     const updateSpecs = (next) => {
@@ -26,6 +38,7 @@ export default function CategorySpecForm({ value = [], onChange }) {
                 type: 'text',
                 icon: 'default',
                 showOnCard: false,
+                showOnTable: true, // show by default when creating new spec
             },
         ]);
     };
@@ -55,6 +68,7 @@ export default function CategorySpecForm({ value = [], onChange }) {
                         <th>Key</th>
                         <th>Kiểu</th>
                         <th>Card</th>
+                        <th>Table</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -99,6 +113,15 @@ export default function CategorySpecForm({ value = [], onChange }) {
                                     type="checkbox"
                                     checked={!!spec.showOnCard}
                                     onChange={(e) => updateSpec(index, 'showOnCard', e.target.checked)}
+                                />
+                            </td>
+
+                            {/* ✅ SHOW ON TABLE */}
+                            <td style={{ textAlign: 'center' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={!!spec.showOnTable}
+                                    onChange={(e) => updateSpec(index, 'showOnTable', e.target.checked)}
                                 />
                             </td>
 

@@ -17,6 +17,10 @@ const categorySchema = new mongoose.Schema(
           type: Boolean,
           default: false,
         },
+        showOnTable: {
+          type: Boolean,
+          default: true, // show specs in table by default for backward compatibility
+        },
       },
     ],
 

@@ -106,7 +106,7 @@ function HomeProduct({ category, onHasProductChange }) {
                     }
 
                     // ===================== Merge Specs =====================
-                    const cardSpecs = getCardSpecs(product, defaultVariation, 4);
+                    const cardSpecs = getCardSpecs(product, defaultVariation, 6);
 
                     // ===================== Promotion Frame =====================
                     const promotionFrame = product?.promotionInfo?.promotionCardImg;

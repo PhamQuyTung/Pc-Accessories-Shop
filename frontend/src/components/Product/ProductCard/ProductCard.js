@@ -150,6 +150,10 @@ function ProductCard({ product, viewMode }) {
                                     -{Math.round((1 - discountPrice / price) * 100)}%
                                 </span>
                             </div>
+                            {/* savings text similar to Gearvn style */}
+                            <div className={cx('discount-saved')}>
+                                Giảm&nbsp;{(price - discountPrice).toLocaleString()}₫
+                            </div>
                         </>
                     ) : (
                         <div className={cx('price-wrap2')}>
