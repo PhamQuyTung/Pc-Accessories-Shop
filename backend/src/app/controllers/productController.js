@@ -37,10 +37,26 @@ const generateVariations = (attributes, baseSku = "SP") => {
   }));
 };
 
-// Hàm gắn status động cho product list (GIỮ NGUYÊN)
+// Helper: Tính displayQuantity dựa trên biến thể mặc định hoặc sản phẩm simple
+const calculateDisplayQuantity = (product) => {
+  if (!product) return 0;
+  
+  if (product.variations?.length > 0 && product.defaultVariantId) {
+    const defaultVariant = product.variations.find(
+      (v) => String(v._id) === String(product.defaultVariantId)
+    );
+    if (defaultVariant) return defaultVariant.quantity ?? 0;
+    if (product.variations[0]) return product.variations[0].quantity ?? 0;
+  }
+  
+  return product.quantity ?? 0;
+};
+
+// Hàm gắn status động cho product list + displayQuantity
 const attachStatus = (products) =>
   products.map((p) => ({
     ...p,
+    displayQuantity: calculateDisplayQuantity(p),
     status: computeProductStatus(
       {
         importing: p.importing,

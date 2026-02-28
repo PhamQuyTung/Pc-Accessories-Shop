@@ -476,12 +476,12 @@ const ProductManagement = () => {
                                             appendTo={document.body}
                                         >
                                             <span className={cx('quantity-tooltip')}>
-                                                <span>{product.displayQuantity}</span>
+                                                <span>{product.displayQuantity ?? product.quantity ?? 0}</span>
                                                 <span className={cx('quantity-tooltip-icon')}>ⓘ</span>
                                             </span>
                                         </Tippy>
                                     ) : (
-                                        product.displayQuantity
+                                        product.displayQuantity ?? product.quantity ?? 0
                                     )}
                                 </td>
 

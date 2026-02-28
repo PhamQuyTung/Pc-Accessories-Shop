@@ -171,14 +171,31 @@ function CartPage() {
         const product = item.product_id || {};
         const variation = item.variation_id || null;
 
-        const { basePrice } = getPriceData(product, variation);
+        const { basePrice, originalPrice, hasDiscount } = getPriceData(product, variation);
         const quantity = quantities[item._id] || item.quantity || 1;
 
-        return acc + (basePrice * quantity);
+        // Tìm khuyến mãi được áp cho sản phẩm này
+        const relatedPromo = (promotionSummary.discounts || []).find(
+            (d) => String(d.productId) === String(product._id)
+        );
+        const appliedDiscount = relatedPromo && relatedPromo.discountPerItem ? Number(relatedPromo.discountPerItem) : 0;
+        const discountedQty = relatedPromo ? Math.min(Number(relatedPromo.discountedQty || 0), quantity) : 0;
+        const undiscountedQty = quantity - discountedQty;
+
+        // Tính subtotal: chỉ áp dụng discount cho discountedQty sản phẩm
+        let itemTotal;
+        if (appliedDiscount > 0 && discountedQty > 0) {
+            const discountedPrice = Math.max(basePrice - appliedDiscount, 0);
+            itemTotal = (discountedQty * discountedPrice) + (undiscountedQty * basePrice);
+        } else {
+            itemTotal = quantity * basePrice;
+        }
+
+        return acc + itemTotal;
     }, 0);
 
     const totalDiscount = promotionSummary.totalDiscount || 0;
-    const totalPrice = subTotal - totalDiscount;
+    const totalPrice = subTotal; // Tổng = Tạm tính (khuyến mãi đã tính vào giá)
 
     // === Giỏ hàng rỗng ===
     if (cartItems.length === 0) {
@@ -212,8 +229,47 @@ function CartPage() {
         // ✅ Quantity
         const qty = quantities[cartItemId] || item.quantity || 1;
 
-        // ✅ Subtotal
-        const subtotal = basePrice * qty;
+
+        // Nếu sản phẩm này nằm trong danh sách sản phẩm điều kiện của 1 chương trình,
+        // hiển thị tên chương trình dưới tên sản phẩm chính
+        const mainPromo = (promotionSummary.discounts || []).find((d) =>
+            Array.isArray(d.promotionConditionIds) && d.promotionConditionIds.includes(String(product._id))
+        );
+
+        // Tìm khuyến mãi áp cho sản phẩm này (sản phẩm được giảm giá, không phải điều kiện)
+        const relatedPromo = (promotionSummary.discounts || []).find((d) =>
+            String(d.productId) === String(product._id)
+        );
+
+        // ===== Tính toán giá hiển thị (bao gồm khuyến mãi áp cho sản phẩm này) =====
+        const appliedDiscount = relatedPromo && relatedPromo.discountPerItem ? Number(relatedPromo.discountPerItem) : 0;
+
+        // displayOriginalPrice: giá bị gạch (nếu có)
+        // displayFinalPrice: giá sau tất cả các giảm (product discount + promo)
+        let displayOriginalPrice = null;
+        let displayFinalPrice = basePrice; // basePrice đã tính discountPrice của product/variation nếu có
+
+        if (hasDiscount) {
+            displayOriginalPrice = originalPrice; // gạch giá gốc nếu product đã có discount
+            displayFinalPrice = basePrice;
+        }
+
+        if (appliedDiscount > 0) {
+            // Nếu có khuyến mãi dạng giảm thêm, gạch giá hiện tại và hiển thị giá sau khuyến mãi
+            displayOriginalPrice = displayFinalPrice;
+            displayFinalPrice = Math.max(displayFinalPrice - appliedDiscount, 0);
+        }
+
+        // ✅ Subtotal = tính riêng: chỉ áp discount cho discountedQty sản phẩm
+        const discountedQty = relatedPromo ? Math.min(Number(relatedPromo.discountedQty || 0), qty) : 0;
+        const undiscountedQty = qty - discountedQty;
+        let subtotal;
+        if (appliedDiscount > 0 && discountedQty > 0) {
+            const discountedPrice = Math.max(basePrice - appliedDiscount, 0);
+            subtotal = (discountedQty * discountedPrice) + (undiscountedQty * basePrice);
+        } else {
+            subtotal = qty * basePrice;
+        }
 
         return (
             <div key={cartItemId} className={cx('row-wrapper')}>
@@ -225,10 +281,30 @@ function CartPage() {
                             <Link to={`/products/${product.slug}`} className={cx('product-name')}>
                                 {product.name}
                             </Link>
+
+                            {/* Hiển thị tên chương trình nếu đây là sản phẩm chính của khuyến mãi */}
+                            {mainPromo && (
+                                <div className={cx('promotion-note')}>
+                                    Áp dụng khuyến mãi: <strong>{mainPromo.promotionTitle}</strong>
+                                </div>
+                            )}
+
                             {/* Hiển thị biến thể attributes */}
                             {variationLabel && (
                                 <div className={cx('variation-label')}>
                                     {variationLabel}
+                                </div>
+                            )}
+
+                            {/* Nếu đây là sản phẩm được giảm giá, hiển thị chi tiết giảm giá */}
+                            {relatedPromo && relatedPromo.discountedQty > 0 && (
+                                <div className={cx('promotion-note', 'applied')}>
+                                    🎁
+                                    {' '}
+                                    Giảm {Number(relatedPromo.discountPerItem).toLocaleString()}₫ bởi <strong>{relatedPromo.promotionTitle}</strong>
+                                    {relatedPromo.discountedQty < qty && (
+                                        <span> — {relatedPromo.discountedQty}/{qty} được giảm</span>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -236,18 +312,18 @@ function CartPage() {
 
                     {/* Giá */}
                     <div className={cx('price')}>
-                        {hasDiscount ? (
+                        {displayOriginalPrice && displayOriginalPrice !== displayFinalPrice ? (
                             <>
                                 <span className={cx('original-price')}>
-                                    {originalPrice.toLocaleString()}₫
+                                    {displayOriginalPrice.toLocaleString()}₫
                                 </span>
                                 <span className={cx('discount-price')}>
-                                    {basePrice.toLocaleString()}₫
+                                    {displayFinalPrice.toLocaleString()}₫
                                 </span>
                             </>
                         ) : (
                             <span className={cx('price-value')}>
-                                {basePrice.toLocaleString()}₫
+                                {displayFinalPrice.toLocaleString()}₫
                             </span>
                         )}
                     </div>
@@ -318,10 +394,10 @@ function CartPage() {
                                 <span>Miễn phí</span>
                             </div>
 
-                            <div className={cx('summary-item')}>
+                            {/* <div className={cx('summary-item')}>
                                 <span>Khuyến mãi</span>
                                 <span>- {totalDiscount.toLocaleString()}₫</span>
-                            </div>
+                            </div> */}
 
                             <div className={cx('total')}>
                                 <span>Tổng thanh toán</span>

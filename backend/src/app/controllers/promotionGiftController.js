@@ -1,5 +1,6 @@
 // app/controllers/promotionGiftController.js
 const PromotionGift = require("../models/promotionGift");
+const Product = require("../models/product");
 const { computeProductStatus } = require("../../../../shared/productStatus");
 
 /* ============================================================
@@ -9,7 +10,7 @@ const populateGift = [
   {
     path: "conditionProducts",
     select:
-      "name slug price discountPrice images specs category variations defaultVariantId",
+      "name slug price discountPrice images specs category variations defaultVariantId quantity",
     populate: {
       path: "category",
       select: "name slug specs",
@@ -18,7 +19,7 @@ const populateGift = [
   {
     path: "relatedProducts",
     select:
-      "name slug price discountPrice images specs category variations defaultVariantId",
+      "name slug price discountPrice images specs category variations defaultVariantId quantity",
     populate: {
       path: "category",
       select: "name slug specs",
@@ -356,7 +357,7 @@ exports.applyCart = async (req, res) => {
 
         const totalItemDiscount = discountAmount * discountedQty;
 
-        // ✅ Push thông tin vào mảng
+        // ✅ Push thông tin vào mảng (thêm thông tin về sản phẩm điều kiện để frontend có thể hiển thị)
         discounts.push({
           productId: item.product_id,
           discountPerItem: discountAmount,
@@ -364,6 +365,8 @@ exports.applyCart = async (req, res) => {
           promotionTitle: promo.title,
           discountedQty,
           normalQty,
+          promotionId: promo._id,
+          promotionConditionIds: (promo.conditionProducts || []).map((p) => p._id.toString()),
         });
 
         totalDiscount += totalItemDiscount;
