@@ -1,13 +1,29 @@
 // app/controllers/promotionGiftController.js
 const PromotionGift = require("../models/promotionGift");
-const Product = require("../models/product");
+const { computeProductStatus } = require("../../../../shared/productStatus");
 
 /* ============================================================
    🧩 Helper functions
 ============================================================ */
 const populateGift = [
-  { path: "conditionProducts", select: "name price images slug" },
-  { path: "relatedProducts", select: "name price images slug" },
+  {
+    path: "conditionProducts",
+    select:
+      "name slug price discountPrice images specs category variations defaultVariantId",
+    populate: {
+      path: "category",
+      select: "name slug specs",
+    },
+  },
+  {
+    path: "relatedProducts",
+    select:
+      "name slug price discountPrice images specs category variations defaultVariantId",
+    populate: {
+      path: "category",
+      select: "name slug specs",
+    },
+  },
 ];
 
 const validateGiftData = (body) => {
@@ -64,10 +80,10 @@ const validateDiscount = (discountType, discountValue, related) => {
     if (value > minPrice)
       throw new Error(
         `Giá trị giảm (${value.toLocaleString(
-          "vi-VN"
+          "vi-VN",
         )}₫) vượt quá giá sản phẩm thấp nhất (${minPrice.toLocaleString(
-          "vi-VN"
-        )}₫)`
+          "vi-VN",
+        )}₫)`,
       );
   }
 };
@@ -77,7 +93,25 @@ const validateDiscount = (discountType, discountValue, related) => {
 ============================================================ */
 exports.list = async (req, res) => {
   try {
-    const gifts = await PromotionGift.find().populate(populateGift);
+    // lean() trả về plain object, vì vậy không còn toObject/Document nữa
+    const gifts = await PromotionGift.find().populate(populateGift).lean();
+
+    // nếu cần tính status giống bên productController
+    gifts.forEach((p) => {
+      if (Array.isArray(p.relatedProducts)) {
+        p.relatedProducts = p.relatedProducts.map((prod) => ({
+          ...prod,
+          status: computeProductStatus(prod, { importing: prod.importing }),
+        }));
+      }
+      if (Array.isArray(p.conditionProducts)) {
+        p.conditionProducts = p.conditionProducts.map((prod) => ({
+          ...prod,
+          status: computeProductStatus(prod, { importing: prod.importing }),
+        }));
+      }
+    });
+
     res.json(gifts);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -271,7 +305,7 @@ exports.applyCart = async (req, res) => {
 
     // 👉 Sắp xếp cartItems theo thời gian thêm để ưu tiên giảm cho sản phẩm thêm sớm hơn
     const sortedCartItems = [...cartItems].sort(
-      (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
     );
 
     // =========================================================
@@ -287,7 +321,7 @@ exports.applyCart = async (req, res) => {
         .reduce((sum, i) => sum + i.quantity, 0);
 
       const relatedItems = sortedCartItems.filter((i) =>
-        relatedIds.includes(i.product_id)
+        relatedIds.includes(i.product_id),
       );
 
       if (mainCount === 0 || relatedItems.length === 0) continue;
@@ -302,7 +336,7 @@ exports.applyCart = async (req, res) => {
         if (eligiblePairs <= 0) break; // Hết lượt giảm
 
         const relatedProduct = promo.relatedProducts.find(
-          (p) => p._id.toString() === item.product_id
+          (p) => p._id.toString() === item.product_id,
         );
         if (!relatedProduct) continue;
 

@@ -360,7 +360,7 @@ function ProductDetailView({
                                             : product.shortDescription || ''
                                     }
                                 />
-                                <PromotionSection promotions={promotionGifts || product.promotions} />
+                                <PromotionSection promotions={Array.isArray(promotionGifts) ? promotionGifts : promotionGifts ? [promotionGifts] : product.promotions} />
                             </div>
                         </div>
                     </Col>
@@ -469,15 +469,4 @@ function AddReviewForm({ productId, submitReview, toast }) {
             </button>
         </div>
     );
-}
-
-function buildSpecs(specs) {
-    if (!specs) return {};
-    if (Array.isArray(specs))
-        return specs.reduce((acc, cur) => {
-            if (cur?.key && cur?.value) acc[cur.key] = cur.value;
-            return acc;
-        }, {});
-    if (typeof specs === 'object') return specs;
-    return {};
 }

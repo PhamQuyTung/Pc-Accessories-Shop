@@ -33,7 +33,7 @@ export default function useProductDetail(slug) {
     useEffect(() => {
         axiosClient
             .get('/posts?limit=4')
-            .then((res) => setPosts(Array.isArray(res.data) ? res.data : res.data.posts || []))
+            // .then((res) => setPosts(Array.isArray(res.data) ? res.data : res.data.posts || []))
             .catch(() => setPosts([]));
     }, []);
 
@@ -43,7 +43,7 @@ export default function useProductDetail(slug) {
 
         axiosClient
             .get(`/promotion-gifts/by-product/${product._id}`)
-            .then((res) => setPromotionGifts(res.data || []))
+            .then((res) => setPromotionGifts(Array.isArray(res.data) ? res.data : [res.data]))
             .catch(() => setPromotionGifts([]));
     }, [product]);
 

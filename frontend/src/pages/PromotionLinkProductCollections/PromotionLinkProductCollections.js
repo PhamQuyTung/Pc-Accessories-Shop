@@ -79,8 +79,11 @@ function PromotionLinkProductCollections() {
                     <section className={cx('related-section')}>
                         <h2 className={cx('section-title')}>🛒 Danh sách sản phẩm mua kèm</h2>
                         <div className={cx('product-grid')}>
-                            {promotion.relatedProducts.map((item) => (
-                                <ProductCard key={item._id} product={item} />
+                            {promotion.relatedProducts.map((item, idx) => (
+                                <ProductCard
+                                    key={item._id ? item._id.toString() : `related-${idx}`}
+                                    product={item}
+                                />
                             ))}
                         </div>
                     </section>

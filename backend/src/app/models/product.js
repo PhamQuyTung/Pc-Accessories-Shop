@@ -185,4 +185,11 @@ productSchema.post("findOne", attachStatus);
 productSchema.post("findOneAndUpdate", attachStatus);
 productSchema.post("findById", attachStatus);
 
+// ================= Virtual Field =================
+productSchema.virtual('reviews', {
+  ref: 'Review',
+  localField: '_id',
+  foreignField: 'product',
+});
+
 module.exports = mongoose.model("Product", productSchema);
