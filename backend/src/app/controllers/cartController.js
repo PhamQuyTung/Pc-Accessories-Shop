@@ -70,20 +70,26 @@ exports.addToCart = async (req, res) => {
     });
 
     // =============================
-    // Auto-add Gifts
+    // Auto-add Gifts (use Product.gifts referencing Gift IDs)
     // =============================
-    const gifts = await Gift.find({ "products.productId": product_id });
+    const giftIds = product.gifts || [];
+    if (giftIds.length > 0) {
+      const gifts = await Gift.find({ _id: { $in: giftIds } });
 
-    for (const gift of gifts) {
-      for (const g of gift.products) {
-        const giftProduct = await Product.findById(g.productId);
-        if (!giftProduct || giftProduct.deleted || !giftProduct.visible) continue;
+      for (const gift of gifts) {
+        for (const g of gift.products) {
+          const giftProduct = await Product.findById(g.productId);
+          if (!giftProduct || giftProduct.deleted || !giftProduct.visible) continue;
 
-        await Cart.findOneAndUpdate(
-          { user_id: userId, product_id: g.productId, isGift: true },
-          { $set: { quantity: g.quantity } },
-          { upsert: true, new: true }
-        );
+          // Multiply gift quantity by the quantity of the main cart item
+          const giftQty = (Number(g.quantity) || 1) * (Number(cartItem.quantity) || Number(quantity) || 1);
+
+          await Cart.findOneAndUpdate(
+            { user_id: userId, product_id: g.productId, isGift: true },
+            { $set: { quantity: giftQty, parentProductId: product_id } },
+            { upsert: true, new: true }
+          );
+        }
       }
     }
 
@@ -130,6 +136,10 @@ exports.getCart = async (req, res) => {
             select: "name slug price",
           },
         },
+      })
+      .populate({
+        path: "parentProductId",
+        select: "name slug",
       });
 
     if (!items || items.length === 0) {
@@ -225,6 +235,7 @@ exports.getCart = async (req, res) => {
         variation_id: variation,
         quantity: item.quantity,
         isGift: item.isGift,
+        parentProductId: item.parentProductId || null,
         createdAt: item.createdAt,
         updatedAt: item.updatedAt,
       });
@@ -288,9 +299,32 @@ exports.removeFromCart = async (req, res) => {
     }
 
     if (cartItemId) {
-      await Cart.deleteOne({ _id: cartItemId, user_id: userId });
+      // If deleting by cartItemId, fetch the item first to detect if it's a main product
+      const item = await Cart.findOne({ _id: cartItemId, user_id: userId });
+      if (item) {
+        await Cart.deleteOne({ _id: cartItemId, user_id: userId });
+
+        // If the deleted item was a main (non-gift) product, convert its gift children back
+        // to regular products (remove isGift flag and parentProductId)
+        if (!item.isGift) {
+          const parentId = item.product_id;
+          const filter = {
+            user_id: userId,
+            $or: [{ parentProductId: parentId }, { parentProductId: String(parentId) }],
+          };
+          await Cart.updateMany(filter, { $set: { isGift: false, parentProductId: null } });
+        }
+      }
     } else {
+      // Deleting by product_id: remove the item(s) and convert related gifts
       await Cart.deleteOne({ user_id: userId, product_id });
+
+      // Convert any gift items that referenced this product as parent into normal items
+      const filter = {
+        user_id: userId,
+        $or: [{ parentProductId: product_id }, { parentProductId: String(product_id) }],
+      };
+      await Cart.updateMany(filter, { $set: { isGift: false, parentProductId: null } });
     }
 
     return res.status(200).json({ message: "Đã xoá sản phẩm khỏi giỏ hàng" });

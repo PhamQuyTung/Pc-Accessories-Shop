@@ -42,13 +42,16 @@ function CheckoutPage() {
     // === Tính toán tổng giá ===
     const installFee = form.installService === 'yes' ? 200000 : 0;
     const totalDiscount = promotionSummary.totalDiscount || 0;
-    const afterDiscount = subtotal - totalDiscount;
-    const tax = Math.round(afterDiscount * 0.15);
-    const total = afterDiscount + tax + installFee + (form.deliveryMethod === 'express' ? 40000 : 0);
+    // `subtotal` state is computed after promotions (excluding gifts), so use it directly
+    const subtotalAfterPromo = subtotal;
+    const tax = Math.round(subtotalAfterPromo * 0.15);
+    const total = subtotalAfterPromo + tax + installFee + (form.deliveryMethod === 'express' ? 40000 : 0);
 
     // === Tính tổng phụ sau khi áp dụng khuyến mãi (từng sản phẩm) ===
     const calcSubtotalAfterPromotion = () => {
         return cartItems.reduce((sum, item) => {
+            // Skip gift items — they are free and should not contribute to subtotal
+            if (item.isGift) return sum;
             const product = item.product_id;
             const basePrice = product.discountPrice > 0 ? product.discountPrice : product.price;
             const promoItem = promotionSummary.discounts.find((d) => d.productId === product._id);
@@ -118,17 +121,8 @@ function CheckoutPage() {
                 const items = Array.isArray(res.data.items) ? res.data.items : [];
                 setCartItems(items);
 
-                // ✅ Tính subtotal lấy từ variation hoặc product
-                const sub = items.reduce((acc, item) => {
-                    const product = item.product_id || {};
-                    const variation = item.variation_id || null;
-                    const { basePrice } = getPriceData(product, variation);
-                    const quantity = item.quantity || 1;
-                    return acc + basePrice * quantity;
-                }, 0);
-                setSubtotal(sub);
-
-                // Gọi API tính khuyến mãi
+                // Gọi API tính khuyến mãi và tính subtotal sau khi áp khuyến mãi
+                let promoData = { discounts: [], totalDiscount: 0 };
                 if (items.length > 0) {
                     const promoRes = await axiosClient.post('/promotion-gifts/apply-cart', {
                         cartItems: items.map((i) => ({
@@ -138,8 +132,34 @@ function CheckoutPage() {
                             createdAt: i.createdAt,
                         })),
                     });
-                    setPromotionSummary(promoRes.data || { totalDiscount: 0, discounts: [] });
+                    promoData = promoRes.data || promoData;
+                    setPromotionSummary(promoData);
                 }
+
+                // Tính subtotal dựa trên kết quả khuyến mãi (đồng bộ với calcSubtotalAfterPromotion)
+                const subAfterPromo = items.reduce((acc, item) => {
+                    // Skip gift items — they are free and should not contribute to subtotal
+                    if (item.isGift) return acc;
+
+                    const product = item.product_id || {};
+                    const variation = item.variation_id || null;
+                    const { basePrice } = getPriceData(product, variation);
+
+                    const relatedPromo = (promoData.discounts || []).find(
+                        (d) => String(d.productId) === String(product._id),
+                    );
+
+                    if (relatedPromo) {
+                        const discountedPrice = basePrice - relatedPromo.discountPerItem;
+                        const totalDiscounted = (relatedPromo.discountedQty || 0) * discountedPrice;
+                        const totalNormal = (relatedPromo.normalQty || 0) * basePrice;
+                        return acc + totalDiscounted + totalNormal;
+                    } else {
+                        return acc + basePrice * (item.quantity || 1);
+                    }
+                }, 0);
+
+                setSubtotal(subAfterPromo);
             } catch (err) {
                 console.error('Lỗi khi lấy giỏ hàng:', err);
             }
@@ -197,6 +217,8 @@ function CheckoutPage() {
         const variation = item.variation_id || null;
         const productId = product._id;
 
+        const isGift = !!item.isGift;
+
         // ✅ Lấy giá từ variation hoặc product
         const { basePrice, originalPrice, hasDiscount } = getPriceData(product, variation);
 
@@ -209,6 +231,33 @@ function CheckoutPage() {
         const promoItem = promotionSummary.discounts.find((d) => d.productId === productId);
 
         const rows = [];
+
+        // If this cart entry is a gift, render as free with a clear description
+        if (isGift) {
+            rows.push(
+                <div key={`gift-${item._id}`} className={cx('cart-item')}>
+                    <img src={imageSrc || '/placeholder.png'} alt={product.name} />
+                    <div className={cx('cart-item__info')}>
+                        <p className={cx('cart-item__name')}>{product.name}</p>
+                        {variationLabel && <div className={cx('variation-label')}>{variationLabel}</div>}
+                        {item.parentProductId && (
+                            <div className={cx('promo-tag')}>
+                                🎁 Quà tặng miễn phí khi mua{' '}
+                                <Link to={`/products/${item.parentProductId.slug}`}>{item.parentProductId.name}</Link>
+                            </div>
+                        )}
+                        <p className={cx('cart-item__qty')}>SL: {item.quantity}</p>
+                        <p className={cx('cart-item__price')}>Đơn giá: 0₫</p>
+                        <div className={cx('cart-item__total')}>
+                            <span>Thành tiền:</span>
+                            <strong>0₫</strong>
+                        </div>
+                    </div>
+                </div>,
+            );
+
+            return rows;
+        }
 
         if (promoItem) {
             // Dòng khuyến mãi

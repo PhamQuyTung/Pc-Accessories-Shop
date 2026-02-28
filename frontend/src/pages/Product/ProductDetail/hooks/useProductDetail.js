@@ -7,6 +7,7 @@ export default function useProductDetail(slug) {
     const [posts, setPosts] = useState([]);
     const [relatedProducts, setRelatedProducts] = useState([]);
     const [promotionGifts, setPromotionGifts] = useState([]);
+    const [promotions, setPromotions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -37,14 +38,24 @@ export default function useProductDetail(slug) {
             .catch(() => setPosts([]));
     }, []);
 
-    // Fetch promotions
+    // lấy quà tặng trực tiếp từ product.gifts (API products trả về)
+    useEffect(() => {
+        if (!product) return;
+        const gifts = Array.isArray(product.gifts) ? product.gifts : [];
+        setPromotionGifts(gifts);
+    }, [product]);
+
+    // Fetch promotion offers (discount rules) that apply to this product
     useEffect(() => {
         if (!product?._id) return;
 
         axiosClient
             .get(`/promotion-gifts/by-product/${product._id}`)
-            .then((res) => setPromotionGifts(Array.isArray(res.data) ? res.data : [res.data]))
-            .catch(() => setPromotionGifts([]));
+            .then((res) => {
+                const data = res.data?.promotion || res.data?.promotions || res.data;
+                setPromotions(Array.isArray(data) ? data : data ? [data] : []);
+            })
+            .catch(() => setPromotions([]));
     }, [product]);
 
     // Fetch related products
@@ -62,6 +73,7 @@ export default function useProductDetail(slug) {
         posts,
         relatedProducts,
         promotionGifts,
+        promotions,
         loading,
         error,
     };

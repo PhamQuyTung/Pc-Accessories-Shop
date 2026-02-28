@@ -23,9 +23,15 @@ export default function CreateGiftPage() {
             return alert('Vui lòng chọn ít nhất 1 sản phẩm!');
         }
 
+        // make sure each product entry matches backend schema
         const newGift = {
             title: giftTitle,
-            products: giftProducts,
+            products: giftProducts.map((p) => ({
+                productId: p.product?._id || p.productId, // handle either
+                productName: p.productName,
+                quantity: p.quantity,
+                finalPrice: p.finalPrice,
+            })),
         };
 
         try {

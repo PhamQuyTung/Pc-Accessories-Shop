@@ -32,13 +32,20 @@ const cartSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // when true, this cart entry was added as a gift selection
+    parentProductId: {
+      type: ObjectId,
+      ref: "Product",
+      default: null,
+    },
   },
   { timestamps: true }
 );
 
-// ✅ FIX: Unique index phải bao gồm variation_id
+// ✅ FIX: Unique index phải bao gồm variation_id and parentProductId
 cartSchema.index(
-  { user_id: 1, product_id: 1, variation_id: 1 },
+  { user_id: 1, product_id: 1, variation_id: 1, parentProductId: 1 },
   { unique: true, sparse: true }
 );
 

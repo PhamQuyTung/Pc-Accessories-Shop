@@ -93,12 +93,11 @@ const ProductSelectModal = ({ onAdd, onClose, currentOrderItems = [] }) => {
         const finalPrice = selectedProduct.discountPrice > 0 ? selectedProduct.discountPrice : selectedProduct.price;
 
         onAdd({
-            // productId: selectedProduct._id,
-            // productName: selectedProduct.name,
-            // price: selectedProduct.price,
-            // discountPrice: selectedProduct.discountPrice || 0,
-            // finalPrice,
+            // provide enough info for parent component
+            productId: selectedProduct._id,
             product: selectedProduct, // gửi luôn object sản phẩm
+            productName: selectedProduct.name,
+            finalPrice,
             quantity: parseInt(quantity, 10),
         });
 

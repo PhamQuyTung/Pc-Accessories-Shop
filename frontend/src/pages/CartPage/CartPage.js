@@ -174,6 +174,12 @@ function CartPage() {
         const { basePrice, originalPrice, hasDiscount } = getPriceData(product, variation);
         const quantity = quantities[item._id] || item.quantity || 1;
 
+        // If this cart entry is a gift, its price contribution is zero
+        const isGift = !!item.isGift;
+        if (isGift) {
+            return acc; // gift items do not add to subtotal
+        }
+
         // Tìm khuyến mãi được áp cho sản phẩm này
         const relatedPromo = (promotionSummary.discounts || []).find(
             (d) => String(d.productId) === String(product._id)
@@ -216,18 +222,19 @@ function CartPage() {
         const product = item.product_id || {};
         const variation = item.variation_id || null;
         const cartItemId = item._id;
+        const isGift = item.isGift;
 
         // ✅ Extract image ưu tiên variation → product
         const imageSrc = variation?.images?.[0] || product.images?.[0];
 
-        // ✅ Get price data
-        const { basePrice, originalPrice, hasDiscount } = getPriceData(product, variation);
+        // ✅ Get base price data (for gifts we override later)
+        let { basePrice, originalPrice, hasDiscount } = getPriceData(product, variation);
 
         // ✅ Get variation label (attributes)
         const variationLabel = getVariationLabel(variation);
 
-        // ✅ Quantity
-        const qty = quantities[cartItemId] || item.quantity || 1;
+        // ✅ Quantity: gifts keep their stored quantity and are not editable
+        const qty = isGift ? item.quantity : quantities[cartItemId] || item.quantity || 1;
 
 
         // Nếu sản phẩm này nằm trong danh sách sản phẩm điều kiện của 1 chương trình,
@@ -249,6 +256,13 @@ function CartPage() {
         let displayOriginalPrice = null;
         let displayFinalPrice = basePrice; // basePrice đã tính discountPrice của product/variation nếu có
 
+        // nếu là quà tặng thì giá luôn bằng 0
+        if (isGift) {
+            displayFinalPrice = 0;
+            displayOriginalPrice = null;
+            hasDiscount = false;
+        }
+
         if (hasDiscount) {
             displayOriginalPrice = originalPrice; // gạch giá gốc nếu product đã có discount
             displayFinalPrice = basePrice;
@@ -264,7 +278,9 @@ function CartPage() {
         const discountedQty = relatedPromo ? Math.min(Number(relatedPromo.discountedQty || 0), qty) : 0;
         const undiscountedQty = qty - discountedQty;
         let subtotal;
-        if (appliedDiscount > 0 && discountedQty > 0) {
+        if (isGift) {
+            subtotal = 0;
+        } else if (appliedDiscount > 0 && discountedQty > 0) {
             const discountedPrice = Math.max(basePrice - appliedDiscount, 0);
             subtotal = (discountedQty * discountedPrice) + (undiscountedQty * basePrice);
         } else {
@@ -275,15 +291,22 @@ function CartPage() {
             <div key={cartItemId} className={cx('row-wrapper')}>
                 <div className={cx('row')}>
                     {/* Sản phẩm + Ảnh */}
-                    <div className={cx('product')}>
+                    <div className={cx('product', { 'gift-product': isGift })}>
                         <img src={imageSrc || '/placeholder.png'} alt={product.name} />
                         <div>
                             <Link to={`/products/${product.slug}`} className={cx('product-name')}>
                                 {product.name}
                             </Link>
 
+                            {isGift && item.parentProductId && (
+                                <div className={cx('gift-note')}>
+                                    🎁 Quà tặng kèm khi mua sản phẩm{' '}
+                                    <Link to={`/products/${item.parentProductId.slug}`}>{item.parentProductId.name}</Link>
+                                </div>
+                            )}
+
                             {/* Hiển thị tên chương trình nếu đây là sản phẩm chính của khuyến mãi */}
-                            {mainPromo && (
+                            {!isGift && mainPromo && (
                                 <div className={cx('promotion-note')}>
                                     Áp dụng khuyến mãi: <strong>{mainPromo.promotionTitle}</strong>
                                 </div>
@@ -297,7 +320,7 @@ function CartPage() {
                             )}
 
                             {/* Nếu đây là sản phẩm được giảm giá, hiển thị chi tiết giảm giá */}
-                            {relatedPromo && relatedPromo.discountedQty > 0 && (
+                            {!isGift && relatedPromo && relatedPromo.discountedQty > 0 && (
                                 <div className={cx('promotion-note', 'applied')}>
                                     🎁
                                     {' '}
@@ -328,11 +351,17 @@ function CartPage() {
                         )}
                     </div>
 
-                    {/* Số lượng */}
+                    {/* Số lượng (không sửa khi là quà tặng) */}
                     <div className={cx('quantity')}>
-                        <button onClick={() => updateQuantity(cartItemId, -1)}>−</button>
-                        <span>{qty}</span>
-                        <button onClick={() => updateQuantity(cartItemId, 1)}>+</button>
+                        {isGift ? (
+                            <span>{qty}</span>
+                        ) : (
+                            <>
+                                <button onClick={() => updateQuantity(cartItemId, -1)}>−</button>
+                                <span>{qty}</span>
+                                <button onClick={() => updateQuantity(cartItemId, 1)}>+</button>
+                            </>
+                        )}
                     </div>
 
                     {/* Thành tiền */}
@@ -341,6 +370,10 @@ function CartPage() {
                             {subtotal.toLocaleString()}₫
                         </span>
                     </div>
+                    {/* nếu quà tặng thì ghi chú thêm giá 0 */}
+                    {/* {isGift && (
+                        <div className={cx('gift-price-note')}>Giá: miễn phí</div>
+                    )} */}
 
                     {/* Xóa */}
                     <div>

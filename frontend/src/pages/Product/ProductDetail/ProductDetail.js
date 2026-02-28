@@ -15,6 +15,7 @@ import PriceDisplay from './components/PriceDisplay/PriceDisplay';
 import SKUDisplay from './components/SKUDisplay/SKUDisplay';
 import ProductStockStatus from './components/ProductStockStatus/ProductStockStatus';
 import ProductActions from './components/ProductActions/ProductActions';
+import GiftList from '~/components/GiftList/GiftList';
 import ProductShortDescription from './components/ProductShortDescription/ProductShortDescription';
 import PromotionSection from './components/PromotionSection/PromotionSection';
 import ProductTabs from './components/ProductTabs/ProductTabs';
@@ -69,7 +70,7 @@ export default function ProductDetail() {
     const vid = searchParams.get('vid');
 
     // Data hooks
-    const { product, posts, relatedProducts, promotionGifts, loading, error } = useProductDetail(slug);
+    const { product, posts, relatedProducts, promotionGifts, promotions, loading, error } = useProductDetail(slug);
     const { selectedAttributes, activeVariation, handleSelectAttribute, handleSelectVariation } = useProductVariations(
         product,
         vid,
@@ -127,6 +128,7 @@ export default function ProductDetail() {
             posts={posts}
             relatedProducts={relatedProducts}
             promotionGifts={promotionGifts}
+            promotions={promotions}
             displayImages={displayImages}
             activeVariation={activeVariation}
             selectedAttributes={selectedAttributes}
@@ -153,6 +155,7 @@ function ProductDetailView({
     posts,
     relatedProducts,
     promotionGifts,
+    promotions,
     displayImages,
     activeVariation,
     selectedAttributes,
@@ -345,6 +348,10 @@ function ProductDetailView({
                                     product={product}
                                     getVariationStatus={getVariationStatus}
                                 />
+                                
+                                {/* GiftList */}
+                                <GiftList gifts={promotionGifts} />
+
                                 <ProductActions
                                     isAddingToCart={isAddingToCart}
                                     product={product}
@@ -360,7 +367,7 @@ function ProductDetailView({
                                             : product.shortDescription || ''
                                     }
                                 />
-                                <PromotionSection promotions={Array.isArray(promotionGifts) ? promotionGifts : promotionGifts ? [promotionGifts] : product.promotions} />
+                                <PromotionSection promotions={Array.isArray(promotions) ? promotions : promotions ? [promotions] : product.promotions} />
                             </div>
                         </div>
                     </Col>

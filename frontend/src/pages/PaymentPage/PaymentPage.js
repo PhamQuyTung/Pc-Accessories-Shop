@@ -109,6 +109,9 @@ function PaymentPage() {
     // === Tính tạm tính sau khuyến mãi ===
     const calcSubtotalAfterPromotion = () => {
         return products.reduce((sum, item) => {
+            // Skip gift items — they are free and shouldn't count towards subtotal
+            if (item.isGift) return sum;
+
             const product = item.product_id;
             const variation = item.variation_id || null;
             const { basePrice } = getPriceData(product, variation);
@@ -128,8 +131,10 @@ function PaymentPage() {
     const subtotal = calcSubtotalAfterPromotion();
     const deliveryFee = shippingInfo.deliveryFee ? 40000 : 0;
     const installFee = shippingInfo.installFee ? 200000 : 0;
-    const tax = shippingInfo.tax || 0;
+    // Recompute tax from the subtotal after promotions to avoid mismatch
+    // (shippingInfo.tax may have been calculated earlier and become inconsistent)
     const promoDiscount = promotionSummary.totalDiscount || 0;
+    const tax = Math.round(subtotal * 0.15) || 0;
 
     // === Áp dụng mã giảm giá (giảm 10%) ===
     const handleApplyDiscount = () => {
@@ -156,6 +161,43 @@ function PaymentPage() {
         const variationLabel = getVariationLabel(variation);
         const promoItem = promotionSummary.discounts.find((d) => d.productId === productId);
         const rows = [];
+
+        // If this cart item is a gift (admin-added), render it as a free gift with description
+        if (item.isGift) {
+            const parentName = item.parentProductId?.name || item.parentProductId || 'sản phẩm chính';
+            const parentSlug = item.parentProductId?.slug;
+
+            rows.push(
+                <li key={`gift-${productId}`} className={cx('productItem')}>
+                    <img
+                        src={
+                            imageSrc ||
+                            (Array.isArray(product.images) ? product.images[0] : product.images) ||
+                            '/placeholder.png'
+                        }
+                        alt={product.name}
+                        className={cx('productImage')}
+                    />
+                    <div className={cx('productInfo')}>
+                        <p className={cx('productName')}>{product.name}</p>
+                        {variationLabel && <div className={cx('variation-label')}>{variationLabel}</div>}
+                        <p className={cx('productDetail')}>Số lượng: {item.quantity}</p>
+                        <div className={cx('giftList')}>
+                            <div className={cx('giftTitle')}>🎁 Quà tặng miễn phí khi mua{' '}
+                                {parentSlug ? (
+                                    <Link to={`/product/${parentSlug}`}>{parentName}</Link>
+                                ) : (
+                                    parentName
+                                )}
+                            </div>
+                        </div>
+                        <p className={cx('productTotal')}>Thành tiền: {(0).toLocaleString()}₫</p>
+                    </div>
+                </li>,
+            );
+
+            return rows;
+        }
 
         if (promoItem) {
             if (promoItem.discountedQty > 0) {

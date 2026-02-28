@@ -21,7 +21,10 @@ function GiftList({ gifts }) {
                         {/* ✅ Title */}
                         <div className={cx('gift-header')}>
                             <FontAwesomeIcon icon={faGift} className={cx('gift-icon')} />
-                            <span className={cx('gift-title')}>{g.title || g.name || `Quà tặng ${i + 1}`}</span>
+                            <span className={cx('gift-title')}>
+                                {/* {g.title || g.name || `Quà tặng ${i + 1}`} */}
+                                Quà tặng khuyến mãi
+                            </span>
                         </div>
 
                         {/* Danh sách quà */}
