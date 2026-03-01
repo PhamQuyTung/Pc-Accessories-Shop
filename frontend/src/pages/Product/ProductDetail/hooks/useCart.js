@@ -31,18 +31,23 @@ export default function useCart(userId) {
     // ============================
     const addToCart = async (productId, variationId, qty = 1) => {
         try {
-            await axiosClient.post('/carts/add', {
+            const response = await axiosClient.post('/carts/add', {
                 product_id: productId,
                 variation_id: variationId,
                 quantity: qty,
             });
 
-            await fetchCart(); // đồng bộ lại giỏ
+            // ✅ Fetch cart ngay để đảm bảo sync state
+            await fetchCart();
 
+            // ✅ Emit event để update cart count ở header
             cartEvent.emit('update-cart-count');
+
+            return response.data;
         } catch (error) {
-            console.error('Add cart error:', error);
-            throw error; // ✅ Throw để component catch
+            console.error('❌ Add cart error:', error.response?.data || error.message);
+            // ✅ Throw error để component catch và hiển thị toast
+            throw error;
         }
     };
 

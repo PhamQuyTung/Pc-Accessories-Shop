@@ -23,18 +23,44 @@ exports.addToCart = async (req, res) => {
       return res.status(404).json({ message: "Sản phẩm không khả dụng." });
     }
 
-    // ✅ Build query chính xác
+    // === Xác định xem sản phẩm được thêm có phải là quà tặng của một sản phẩm khác đang có trong giỏ ===
+    let isGiftItem = false;
+    let parentProductIdForGift = null;
+
+    // Tìm các sản phẩm chính (isGift=false) hiện có trong giỏ
+    const existingMainItems = await Cart.find({ user_id: userId, isGift: false });
+
+    if (existingMainItems.length > 0) {
+      // lookup gifts for each main product
+      for (const mainItem of existingMainItems) {
+        const mainProd = await Product.findById(mainItem.product_id).select('gifts');
+        if (!mainProd || !Array.isArray(mainProd.gifts)) continue;
+
+        // fetch gift documents to inspect product list
+        const gifts = await Gift.find({ _id: { $in: mainProd.gifts } });
+        for (const giftDoc of gifts) {
+          for (const g of giftDoc.products) {
+            if (String(g.productId) === String(product_id)) {
+              isGiftItem = true;
+              parentProductIdForGift = mainProd._id;
+              break;
+            }
+          }
+          if (isGiftItem) break;
+        }
+        if (isGiftItem) break;
+      }
+    }
+
+    // Build query chính xác: nếu là gift thì tìm theo isGift:true
     const query = {
       user_id: userId,
       product_id,
-      isGift: false,
+      isGift: isGiftItem,
     };
-
-    // Nếu có variation_id, thêm vào query (convert sang ObjectId)
     if (variation_id) {
       query.variation_id = new mongoose.Types.ObjectId(variation_id);
     } else {
-      // Nếu không có variation_id thì search item không variation
       query.variation_id = null;
     }
 
@@ -42,53 +68,104 @@ exports.addToCart = async (req, res) => {
       user_id: String(userId),
       product_id: String(product_id),
       variation_id: variation_id ? String(variation_id) : 'null',
+      isGiftItem,
     });
 
     // Tìm item đã tồn tại
     let cartItem = await Cart.findOne(query);
 
+    // Nếu chúng ta đang thêm gift nhưng item hiện có cóisGift=false,
+    // hãy convert nó thay vì tạo mới
+    if (!cartItem && isGiftItem) {
+      cartItem = await Cart.findOne({
+        user_id: userId,
+        product_id,
+        variation_id: query.variation_id,
+        isGift: false,
+      });
+      if (cartItem) {
+        console.log('🎁 Found existing normal item while adding gift, converting');
+        cartItem.isGift = true;
+        cartItem.parentProductId = parentProductIdForGift;
+      }
+    }
+
     if (cartItem) {
       // ✅ UPDATE: Tăng quantity
       console.log('✅ Item exists, updating qty:', cartItem.quantity, '+', quantity);
       cartItem.quantity += quantity;
+      // nếu đang chuyển từ normal -> gift convert (có thể đã được set phía trên)
+      if (!cartItem.isGift && isGiftItem) {
+        cartItem.isGift = true;
+        cartItem.parentProductId = parentProductIdForGift;
+      }
       await cartItem.save();
     } else {
       // ✅ CREATE: Tạo item mới
-      console.log('➕ Creating new cart item');
+      console.log('➕ Creating new cart item', { isGiftItem, parentProductIdForGift });
       cartItem = await Cart.create({
         user_id: userId,
         product_id,
         variation_id: variation_id ? new mongoose.Types.ObjectId(variation_id) : null,
         quantity,
-        isGift: false,
+        isGift: isGiftItem,
+        parentProductId: parentProductIdForGift || null,
       });
     }
 
     console.log('✅ Cart item saved:', {
       _id: cartItem._id,
       quantity: cartItem.quantity,
+      isGift: cartItem.isGift,
+      parentProductId: cartItem.parentProductId,
     });
 
     // =============================
     // Auto-add Gifts (use Product.gifts referencing Gift IDs)
+    // Only trigger when the item we just added is not itself a gift
     // =============================
-    const giftIds = product.gifts || [];
-    if (giftIds.length > 0) {
-      const gifts = await Gift.find({ _id: { $in: giftIds } });
+    if (!isGiftItem) {
+      const giftIds = product.gifts || [];
+      if (giftIds.length > 0) {
+        const gifts = await Gift.find({ _id: { $in: giftIds } });
 
-      for (const gift of gifts) {
-        for (const g of gift.products) {
-          const giftProduct = await Product.findById(g.productId);
-          if (!giftProduct || giftProduct.deleted || !giftProduct.visible) continue;
+        for (const gift of gifts) {
+          for (const g of gift.products) {
+            const giftProduct = await Product.findById(g.productId);
+            if (!giftProduct || giftProduct.deleted || !giftProduct.visible) continue;
 
-          // Multiply gift quantity by the quantity of the main cart item
-          const giftQty = (Number(g.quantity) || 1) * (Number(cartItem.quantity) || Number(quantity) || 1);
+            // Multiply gift quantity by the quantity of the main cart item
+            const giftQty = (Number(g.quantity) || 1) * (Number(cartItem.quantity) || Number(quantity) || 1);
 
-          await Cart.findOneAndUpdate(
-            { user_id: userId, product_id: g.productId, isGift: true },
-            { $set: { quantity: giftQty, parentProductId: product_id } },
-            { upsert: true, new: true }
-          );
+            // ✅ FIX: Tìm item quà tặng (bất kể isGift hay không)
+            let giftItem = await Cart.findOne({
+              user_id: userId,
+              product_id: g.productId,
+              variation_id: null,
+              isGift: false,
+              parentProductId: null
+            });
+
+            if (giftItem) {
+              // ✅ Convert normal item to gift item
+              console.log('🎁 Converting normal item to gift:', g.productId);
+              giftItem.isGift = true;
+              giftItem.quantity = giftQty;
+              giftItem.parentProductId = product_id;
+              await giftItem.save();
+            } else {
+              // ✅ Tạo gift item mới nếu chưa tồn tại
+              console.log('🎁 Creating new gift item:', g.productId);
+              await Cart.create({
+                user_id: userId,
+                product_id: g.productId,
+                variation_id: null,
+                quantity: giftQty,
+                isGift: true,
+                parentProductId: product_id
+              });
+            }
+          }
         }
       }
     }
@@ -189,6 +266,14 @@ exports.getCart = async (req, res) => {
 
       if (!product || product.deleted || !product.visible) {
         removed.push({ _id: item._id, name: product?.name });
+        await Cart.deleteOne({ _id: item._id });
+        continue;
+      }
+
+      // ✅ FIX: Kiểm tra orphan gift items (gift nhưng parent product không còn)
+      if (item.isGift && !item.parentProductId) {
+        console.warn(`⚠️ Orphan gift item detected: ${item._id}`);
+        removed.push({ _id: item._id, name: `${product.name} - (Quà tặng không hợp lệ)` });
         await Cart.deleteOne({ _id: item._id });
         continue;
       }
@@ -304,27 +389,30 @@ exports.removeFromCart = async (req, res) => {
       if (item) {
         await Cart.deleteOne({ _id: cartItemId, user_id: userId });
 
-        // If the deleted item was a main (non-gift) product, convert its gift children back
-        // to regular products (remove isGift flag and parentProductId)
+        // ✅ FIX: Nếu xóa sản phẩm chính (isGift: false), xóa luôn tất cả gift items
         if (!item.isGift) {
           const parentId = item.product_id;
+          console.log('🗑️  Deleting all gifts related to product:', parentId);
           const filter = {
             user_id: userId,
             $or: [{ parentProductId: parentId }, { parentProductId: String(parentId) }],
+            isGift: true,
           };
-          await Cart.updateMany(filter, { $set: { isGift: false, parentProductId: null } });
+          await Cart.deleteMany(filter);
         }
       }
     } else {
-      // Deleting by product_id: remove the item(s) and convert related gifts
+      // ✅ FIX: Deleting by product_id - xóa sản phẩm chính và gift liên quan
       await Cart.deleteOne({ user_id: userId, product_id });
 
-      // Convert any gift items that referenced this product as parent into normal items
+      // Xóa any gift items that referenced this product as parent
+      console.log('🗑️  Deleting all gifts related to product:', product_id);
       const filter = {
         user_id: userId,
         $or: [{ parentProductId: product_id }, { parentProductId: String(product_id) }],
+        isGift: true,
       };
-      await Cart.updateMany(filter, { $set: { isGift: false, parentProductId: null } });
+      await Cart.deleteMany(filter);
     }
 
     return res.status(200).json({ message: "Đã xoá sản phẩm khỏi giỏ hàng" });
@@ -355,8 +443,29 @@ exports.updateCartQuantity = async (req, res) => {
         .json({ message: "Sản phẩm không tồn tại trong giỏ hàng" });
     }
 
+    const oldQuantity = item.quantity;
     item.quantity = quantity;
     await item.save();
+
+    // ✅ FIX: Nếu update product chính (isGift: false), update lại gift quantity
+    if (!item.isGift && item.product_id) {
+      const quantityRatio = quantity / oldQuantity;
+      
+      // Cập nhật tất cả gift items có parentProductId = product._id
+      const filter = {
+        user_id: userId,
+        $or: [{ parentProductId: item.product_id }, { parentProductId: String(item.product_id) }],
+        isGift: true,
+      };
+
+      const giftItems = await Cart.find(filter);
+      for (const giftItem of giftItems) {
+        giftItem.quantity = Math.round((giftItem.quantity || 1) * quantityRatio);
+        await giftItem.save();
+      }
+
+      console.log(`✅ Updated ${giftItems.length} gift items with ratio ${quantityRatio}`);
+    }
 
     return res.status(200).json({ message: "Cập nhật số lượng thành công" });
   } catch (error) {

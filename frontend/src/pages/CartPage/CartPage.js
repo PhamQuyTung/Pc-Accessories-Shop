@@ -115,6 +115,7 @@ function CartPage() {
             cartEvent.emit('update-cart-count');
         } catch (err) {
             console.error('❌ Lỗi removeFromCart:', err);
+            toast(err.response?.data?.message || 'Không thể xóa sản phẩm khỏi giỏ hàng', 'error');
         }
     };
 

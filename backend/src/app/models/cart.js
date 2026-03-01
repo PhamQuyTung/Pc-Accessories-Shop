@@ -43,9 +43,11 @@ const cartSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// ✅ FIX: Unique index phải bao gồm variation_id and parentProductId
+// ✅ FIX: Unique index phải bao gồm isGift để phân biệt normal vs gift items
+// - Normal items: user_id + product_id + variation_id + isGift=false
+// - Gift items: user_id + product_id + isGift=true (có thể có parentProductId khác nhau)
 cartSchema.index(
-  { user_id: 1, product_id: 1, variation_id: 1, parentProductId: 1 },
+  { user_id: 1, product_id: 1, variation_id: 1, isGift: 1 },
   { unique: true, sparse: true }
 );
 
